@@ -202,7 +202,7 @@ def create_app(token: str, port: int | None = None, project: Path | None = None)
             session.open(project)
             _recent(project)
         except LoadError as exc:
-            print(f"warning: {exc}")  # GUI starts on the start page instead
+            print(f"warning: {exc}", flush=True)  # GUI starts on the start page instead
 
     @app.middleware("http")
     async def guard(request: Request, call_next: Any) -> Response:
@@ -824,10 +824,13 @@ def serve(project: Path | None, open_browser: bool = True) -> None:
     port = sock.getsockname()[1]
     app = create_app(token, port, project)
     url = f"http://127.0.0.1:{port}/#token={token}"
-    print(f"{PRODUCT_NAME} {__version__} running at http://127.0.0.1:{port}/ (Ctrl+C to stop)")
+    print(
+        f"{PRODUCT_NAME} {__version__} running at http://127.0.0.1:{port}/ (Ctrl+C to stop)",
+        flush=True,
+    )
     if open_browser:
         threading.Timer(0.8, webbrowser.open, args=(url,)).start()
     else:
-        print(f"open: {url}")
+        print(f"open: {url}", flush=True)
     config = uvicorn.Config(app, log_level="warning", server_header=False)
     uvicorn.Server(config).run(sockets=[sock])

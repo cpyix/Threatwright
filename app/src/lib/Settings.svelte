@@ -67,7 +67,8 @@
     <input placeholder={tr(lang, 'ci_image')} bind:value={image} onchange={load} aria-label={tr(lang, 'ci_image')} />
   </div>
   {#if ci}
-    <pre class="ci" data-testid="ci-text">{ci.text}</pre>
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex (scrollable region must be keyboard reachable) -->
+    <pre class="ci" data-testid="ci-text" tabindex="0" aria-label={tr(lang, 'ci_pipeline')}>{ci.text}</pre>
     <div class="row">
       <button class="primary" onclick={copy}>{tr(lang, 'copy')}</button>
       <button onclick={write}>{tr(lang, 'write_to')} {ci.target}</button>

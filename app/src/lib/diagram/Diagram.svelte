@@ -30,7 +30,8 @@
 </script>
 
 <section class="diagram">
-  <aside class="palette" aria-label={tr(lang, 'palette')}>
+  <!-- svelte-ignore a11y_no_noninteractive_tabindex (scrollable region must be keyboard reachable) -->
+  <aside class="palette" aria-label={tr(lang, 'palette')} tabindex="0">
     <h2>{tr(lang, 'palette')}</h2>
     <p class="muted">{tr(lang, 'palette_help')}</p>
     <ul>

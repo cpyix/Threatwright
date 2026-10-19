@@ -10,6 +10,7 @@ import json
 import os
 import re
 import secrets
+import shutil
 import subprocess
 import sys
 import threading
@@ -193,6 +194,45 @@ def _recent(add: Path | None = None) -> list[str]:
     return [i for i in items if (Path(i) / PROJECT_FILE).exists()]
 
 
+def pick_folder(title: str, initial: str | None = None) -> str | None:
+    """Native folder dialog on the local machine; None when cancelled.
+
+    Linux prefers zenity/kdialog (desktop-native), otherwise Tk, which uses the
+    Explorer dialog on Windows. Raises RuntimeError without a desktop (container, SSH).
+    """
+    start = initial or str(Path.home())
+    if sys.platform.startswith("linux"):
+        for cmd in (
+            [
+                "zenity",
+                "--file-selection",
+                "--directory",
+                f"--title={title}",
+                f"--filename={start}/",
+            ],
+            ["kdialog", "--getexistingdirectory", start, "--title", title],
+        ):
+            if shutil.which(cmd[0]):
+                result = subprocess.run(cmd, capture_output=True, text=True, check=False)  # noqa: S603
+                return result.stdout.strip() or None
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+    except ImportError as exc:
+        raise RuntimeError("no folder dialog available") from exc
+    try:
+        root = tk.Tk()
+    except tk.TclError as exc:
+        raise RuntimeError("no desktop available for a folder dialog") from exc
+    try:
+        root.withdraw()
+        root.attributes("-topmost", True)  # otherwise the dialog may open behind the browser
+        path = filedialog.askdirectory(parent=root, title=title, initialdir=start, mustexist=False)
+    finally:
+        root.destroy()
+    return path or None
+
+
 def create_app(token: str, port: int | None = None, project: Path | None = None) -> FastAPI:
     app = FastAPI(title=PRODUCT_NAME, docs_url=None, redoc_url=None, openapi_url=None)
     session = Session()
@@ -245,6 +285,19 @@ def create_app(token: str, port: int | None = None, project: Path | None = None)
                 raise HTTPException(400, str(exc)) from exc
             _recent(path)
             return project_info()
+
+    dialog_lock = threading.Lock()
+
+    @app.post("/api/pick-folder")
+    def pick_folder_endpoint(body: dict[str, str]) -> dict[str, str | None]:
+        if not dialog_lock.acquire(blocking=False):
+            raise HTTPException(409, "a folder dialog is already open")
+        try:
+            return {"path": pick_folder(body.get("title") or PRODUCT_NAME, body.get("initial"))}
+        except RuntimeError as exc:
+            raise HTTPException(501, str(exc)) from exc
+        finally:
+            dialog_lock.release()
 
     @app.post("/api/project/new")
     def new_project(body: dict[str, str]) -> dict[str, Any]:

@@ -19,7 +19,7 @@ a = Analysis(
     pathex=[str(ROOT / "src")],
     datas=collect_data_files("threatwright") + collect_data_files("docx"),
     hiddenimports=collect_submodules("threatwright") + collect_submodules("uvicorn"),
-    excludes=["tkinter", "pytest", "playwright"],
+    excludes=["pytest", "playwright"],  # tkinter stays: native folder dialog
 )
 pyz = PYZ(a.pure)
 exe = EXE(

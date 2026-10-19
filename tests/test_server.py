@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from threatwright import server
 from threatwright.server import TOKEN_HEADER, create_app
 
 TOKEN = "test-token"
@@ -115,3 +116,21 @@ def test_external_changes_are_detected(client: TestClient, project_dir: Path) ->
     model = client.get("/api/models/main").json()
     assert {a["title"] for a in model["objects"]["assets"]} >= {"Changed"}
     assert client.get("/api/changes").json()["changed"] == []
+
+
+def test_pick_folder(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[tuple[str, str | None]] = []
+
+    def fake(title: str, initial: str | None = None) -> str | None:
+        calls.append((title, initial))
+        return "/picked"
+
+    monkeypatch.setattr(server, "pick_folder", fake)
+    assert client.post("/api/pick-folder", json={"title": "T"}).json() == {"path": "/picked"}
+    assert calls == [("T", None)]
+
+    def headless(title: str, initial: str | None = None) -> str | None:
+        raise RuntimeError("no desktop")
+
+    monkeypatch.setattr(server, "pick_folder", headless)
+    assert client.post("/api/pick-folder", json={}).status_code == 501

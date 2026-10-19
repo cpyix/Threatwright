@@ -1,0 +1,121 @@
+{
+  "$id": "flow.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "assets": {
+      "default": [],
+      "items": {
+        "pattern": "^[A-Za-z][A-Za-z0-9_]*-[0-9]{4,}$",
+        "type": "string"
+      },
+      "title": "Assets",
+      "type": "array"
+    },
+    "bidirectional": {
+      "default": false,
+      "title": "Bidirectional",
+      "type": "boolean"
+    },
+    "configurations": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Configurations",
+      "type": "array"
+    },
+    "custom": {
+      "additionalProperties": true,
+      "default": {},
+      "title": "Custom",
+      "type": "object"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Description"
+    },
+    "id": {
+      "pattern": "^[A-Za-z][A-Za-z0-9_]*-[0-9]{4,}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "library_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Library Ref"
+    },
+    "protocol": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Protocol"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "short_name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Short Name"
+    },
+    "source": {
+      "pattern": "^[A-Za-z][A-Za-z0-9_]*-[0-9]{4,}$",
+      "title": "Source",
+      "type": "string"
+    },
+    "target": {
+      "pattern": "^[A-Za-z][A-Za-z0-9_]*-[0-9]{4,}$",
+      "title": "Target",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "uuid": {
+      "format": "uuid",
+      "title": "Uuid",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "title",
+    "source",
+    "target"
+  ],
+  "title": "Flow",
+  "type": "object"
+}

@@ -1,0 +1,166 @@
+{
+  "$defs": {
+    "CiaAmplifier": {
+      "additionalProperties": false,
+      "description": "Deviation from the class base values; rationale is mandatory (rules).",
+      "properties": {
+        "a": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "A"
+        },
+        "c": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "C"
+        },
+        "i": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "I"
+        },
+        "rationale": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rationale"
+        }
+      },
+      "title": "CiaAmplifier",
+      "type": "object"
+    }
+  },
+  "$id": "asset.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "amplifier": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CiaAmplifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "asset_class": {
+      "title": "Asset Class",
+      "type": "string"
+    },
+    "configurations": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Configurations",
+      "type": "array"
+    },
+    "custom": {
+      "additionalProperties": true,
+      "default": {},
+      "title": "Custom",
+      "type": "object"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Description"
+    },
+    "id": {
+      "pattern": "^[A-Za-z][A-Za-z0-9_]*-[0-9]{4,}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "library_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Library Ref"
+    },
+    "protects": {
+      "default": [],
+      "items": {
+        "pattern": "^[A-Za-z][A-Za-z0-9_]*-[0-9]{4,}$",
+        "type": "string"
+      },
+      "title": "Protects",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "short_name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Short Name"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "uuid": {
+      "format": "uuid",
+      "title": "Uuid",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "title",
+    "asset_class"
+  ],
+  "title": "Asset",
+  "type": "object"
+}

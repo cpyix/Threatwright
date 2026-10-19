@@ -1,0 +1,5 @@
+schema_version: 1
+id: Q-0001
+uuid: 00000000-0000-4000-8000-000000000601
+title: Does the controller detect topology changes at runtime?
+threats: [T-0001]

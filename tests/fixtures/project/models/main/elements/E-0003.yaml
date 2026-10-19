@@ -1,0 +1,10 @@
+schema_version: 1
+id: E-0003
+uuid: 00000000-0000-4000-8000-000000000103
+title: Safety device
+description: >-
+  External element used to test folded multi-line
+  strings.
+kind: external
+zone: Z-FIELD
+configurations: [K-A, K-B]

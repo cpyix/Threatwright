@@ -1,0 +1,9 @@
+schema_version: 1
+id: F-0001
+uuid: 00000000-0000-4000-8000-000000000201
+title: Fieldbus process data
+source: E-0001
+target: E-0002
+bidirectional: true
+assets: [A-0002]
+configurations: [K-B]

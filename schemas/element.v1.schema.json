@@ -1,0 +1,106 @@
+{
+  "$id": "element.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "configurations": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Configurations",
+      "type": "array"
+    },
+    "custom": {
+      "additionalProperties": true,
+      "default": {},
+      "title": "Custom",
+      "type": "object"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Description"
+    },
+    "id": {
+      "pattern": "^[A-Za-z][A-Za-z0-9_]*-[0-9]{4,}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "process",
+        "device",
+        "datastore",
+        "external"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "library_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Library Ref"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "short_name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Short Name"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "uuid": {
+      "format": "uuid",
+      "title": "Uuid",
+      "type": "string"
+    },
+    "zone": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Zone"
+    }
+  },
+  "required": [
+    "id",
+    "title",
+    "kind"
+  ],
+  "title": "Element",
+  "type": "object"
+}

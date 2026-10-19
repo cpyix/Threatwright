@@ -1,0 +1,57 @@
+{
+  "$id": "project.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "language": {
+      "default": "de",
+      "enum": [
+        "de",
+        "en"
+      ],
+      "title": "Language",
+      "type": "string"
+    },
+    "libraries": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Libraries",
+      "type": "array"
+    },
+    "method": {
+      "default": "tr-03183-1",
+      "title": "Method",
+      "type": "string"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "templates": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Templates",
+      "type": "array"
+    },
+    "uuid": {
+      "format": "uuid",
+      "title": "Uuid",
+      "type": "string"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "title": "ProjectConfig",
+  "type": "object"
+}

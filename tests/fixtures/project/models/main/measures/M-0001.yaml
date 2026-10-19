@@ -1,0 +1,8 @@
+schema_version: 1
+id: M-0001
+uuid: 00000000-0000-4000-8000-000000000501
+title: Restrict physical access to the fieldbus
+kind: design
+compensating: true
+status: decided
+cra_refs: [AI-I-2-e]

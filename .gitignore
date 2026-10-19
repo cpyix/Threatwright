@@ -1,0 +1,71 @@
+# --- AI assistant / local tooling: never publish -------------------------
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+**/CLAUDE.md
+**/CLAUDE.local.md
+.mcp.json
+graphify-out/
+.cursor/
+.aider*
+.continue/
+.copilot/
+AGENTS.md
+
+# --- Private notes (customer references, drafts): never publish -------------
+.private/
+
+# --- Secrets and local config ---------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.kdbx
+secrets/
+*.local.yaml
+*.local.yml
+
+# --- Python -----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.python-version
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# --- Node / frontend ----------------------------------------------------------
+node_modules/
+.svelte-kit/
+app/dist/
+
+# --- Build artefacts ---------------------------------------------------------
+build/
+dist/
+*.spec.bak
+sbom*.json
+playwright-report/
+test-results/
+
+# --- Editors / OS ------------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Office lock files -------------------------------------------------------
+~$*
+.~lock.*#

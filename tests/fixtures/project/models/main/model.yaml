@@ -1,0 +1,26 @@
+schema_version: 1
+title: Main
+uuid: 00000000-0000-4000-8000-000000000002
+description: Generic test model with umlauts äöü ß.
+configurations:
+  - id: K-A
+    title: Base
+  - id: K-B
+    title: Extended
+zones:
+  - id: Z-CABINET
+    title: Cabinet
+    environment:
+      interface: local
+      access: restricted
+      user: non_user_related
+  - id: Z-FIELD
+    title: Field
+    environment:
+      interface: local
+      access: public_supervised
+      user: non_user_related
+changelog:
+  - version: '0.1'
+    date: 2026-01-01
+    summary: Initial version.

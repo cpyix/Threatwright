@@ -1,0 +1,69 @@
+{
+  "$defs": {
+    "NodeLayout": {
+      "additionalProperties": false,
+      "properties": {
+        "height": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Height"
+        },
+        "width": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Width"
+        },
+        "x": {
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "title": "NodeLayout",
+      "type": "object"
+    }
+  },
+  "$id": "diagram-layout.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Content of diagram.layout.yaml: positions only, never content.",
+  "properties": {
+    "nodes": {
+      "additionalProperties": {
+        "$ref": "#/$defs/NodeLayout"
+      },
+      "default": {},
+      "title": "Nodes",
+      "type": "object"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    }
+  },
+  "title": "DiagramLayout",
+  "type": "object"
+}

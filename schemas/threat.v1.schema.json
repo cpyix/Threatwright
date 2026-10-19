@@ -1,0 +1,342 @@
+{
+  "$defs": {
+    "Assessment": {
+      "additionalProperties": false,
+      "properties": {
+        "access": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Access"
+        },
+        "impact": {
+          "anyOf": [
+            {
+              "maximum": 5,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Impact"
+        },
+        "interface": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Interface"
+        },
+        "rationale": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rationale"
+        },
+        "user": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "User"
+        }
+      },
+      "title": "Assessment",
+      "type": "object"
+    },
+    "Decision": {
+      "additionalProperties": false,
+      "description": "Acceptance or rejection of a threat: who and why.",
+      "properties": {
+        "by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "By"
+        },
+        "rationale": {
+          "title": "Rationale",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rationale"
+      ],
+      "title": "Decision",
+      "type": "object"
+    }
+  },
+  "$id": "threat.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "acceptance": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Decision"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "assessment": {
+      "$ref": "#/$defs/Assessment",
+      "default": {
+        "access": null,
+        "impact": null,
+        "interface": null,
+        "rationale": null,
+        "user": null
+      }
+    },
+    "assets": {
+      "default": [],
+      "items": {
+        "pattern": "^[A-Za-z][A-Za-z0-9_]*-[0-9]{4,}$",
+        "type": "string"
+      },
+      "title": "Assets",
+      "type": "array"
+    },
+    "configurations": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Configurations",
+      "type": "array"
+    },
+    "consequence": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Consequence"
+    },
+    "cra_refs": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Cra Refs",
+      "type": "array"
+    },
+    "custom": {
+      "additionalProperties": true,
+      "default": {},
+      "title": "Custom",
+      "type": "object"
+    },
+    "cyber_cause": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Cyber Cause"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Description"
+    },
+    "finding": {
+      "default": false,
+      "title": "Finding",
+      "type": "boolean"
+    },
+    "id": {
+      "pattern": "^[A-Za-z][A-Za-z0-9_]*-[0-9]{4,}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "library_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Library Ref"
+    },
+    "measures": {
+      "default": [],
+      "items": {
+        "pattern": "^[A-Za-z][A-Za-z0-9_]*-[0-9]{4,}$",
+        "type": "string"
+      },
+      "title": "Measures",
+      "type": "array"
+    },
+    "questions": {
+      "default": [],
+      "items": {
+        "pattern": "^[A-Za-z][A-Za-z0-9_]*-[0-9]{4,}$",
+        "type": "string"
+      },
+      "title": "Questions",
+      "type": "array"
+    },
+    "rejection": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Decision"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "residual": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Assessment"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "safety_related": {
+      "default": false,
+      "title": "Safety Related",
+      "type": "boolean"
+    },
+    "scenario": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Scenario"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "short_name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Short Name"
+    },
+    "status": {
+      "default": "identified",
+      "enum": [
+        "identified",
+        "assessed",
+        "treated",
+        "accepted",
+        "rejected"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "stride": {
+      "default": [],
+      "items": {
+        "enum": [
+          "S",
+          "T",
+          "R",
+          "I",
+          "D",
+          "E"
+        ],
+        "type": "string"
+      },
+      "title": "Stride",
+      "type": "array"
+    },
+    "targets": {
+      "default": [],
+      "items": {
+        "pattern": "^[A-Za-z][A-Za-z0-9_]*-[0-9]{4,}$",
+        "type": "string"
+      },
+      "title": "Targets",
+      "type": "array"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "uuid": {
+      "format": "uuid",
+      "title": "Uuid",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "title"
+  ],
+  "title": "Threat",
+  "type": "object"
+}

@@ -1,0 +1,7 @@
+schema_version: 1
+id: E-0002
+uuid: 00000000-0000-4000-8000-000000000102
+title: Remote I/O module
+kind: device
+zone: Z-FIELD
+configurations: [K-B]

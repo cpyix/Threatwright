@@ -1,0 +1,24 @@
+schema_version: 1
+id: T-0001
+uuid: 00000000-0000-4000-8000-000000000401
+title: Unauthorised device on the fieldbus reads and modifies process data
+stride: [S, T, I]
+targets: [E-0002, F-0001]
+assets: [A-0002]
+configurations: [K-B]
+cyber_cause: true  # comment must survive a save
+scenario: >-
+  An attacker connects a device to the fieldbus and sees
+  all process data.
+consequence: Manipulated inputs.
+safety_related: true
+assessment:
+  interface: local
+  access: public_supervised
+  user: non_user_related
+  impact: 4
+  rationale: Test rationale.
+measures: [M-0001]
+questions: [Q-0001]
+cra_refs: [AI-I-2-e]
+status: assessed

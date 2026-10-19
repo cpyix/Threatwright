@@ -24,7 +24,9 @@ def test_add_element_and_flow_from_library(loaded) -> None:  # type: ignore[no-u
     project, libs, _ = loaded
     sub = project.models["main"]
     before = len(sub.objects["assets"])
-    plc = assistant.add_element(sub, libs, project.config, "plc", zone="Z-CABINET", position=(10, 20))
+    plc = assistant.add_element(
+        sub, libs, project.config, "plc", zone="Z-CABINET", position=(10, 20)
+    )
     assert plc.kind == "device" and plc.library_ref == "lib:ot/element/plc@1"
     assert plc.title == "SPS"  # project language de
     assert len(sub.objects["assets"]) == before + len(libs.elements["plc"].assets)
@@ -91,13 +93,16 @@ def test_m4_endpoints(project_dir: Path, monkeypatch: pytest.MonkeyPatch, tmp_pa
         (project_dir / "threatwright.yaml").read_text(encoding="utf-8") + "libraries: [ot]\n",
         encoding="utf-8",
     )
-    c = TestClient(create_app("t", None, project_dir), base_url="http://127.0.0.1",
-                   headers={TOKEN_HEADER: "t"})
+    c = TestClient(
+        create_app("t", None, project_dir), base_url="http://127.0.0.1", headers={TOKEN_HEADER: "t"}
+    )
     assert any(e["id"] == "plc" for e in c.get("/api/library").json()["elements"])
     el = c.post("/api/models/main/add/element", json={"type": "drive", "x": 5, "y": 6}).json()
     eid = el["id"]
-    flow = c.post("/api/models/main/add/flow",
-                  json={"source": "E-0001", "target": eid, "type": "fieldbus-canopen"}).json()
+    flow = c.post(
+        "/api/models/main/add/flow",
+        json={"source": "E-0001", "target": eid, "type": "fieldbus-canopen"},
+    ).json()
     assert flow["id"].startswith("F-")
     sugg = c.get(f"/api/models/main/assistant/{eid}").json()["categories"]
     tpl = sugg["T"]["suggestions"][0]["template_id"]

@@ -59,7 +59,10 @@
       <tbody>
         {#each rows as o (o.id)}
           <tr class:active={o.id === current?.id}>
-            <td class="id"><button class="rowlink" onclick={() => select(o.id)}>{o.id}</button></td>
+            <td class="id">
+              <button class="rowlink" onclick={() => select(o.id)}>{o.id}</button>
+              {#if app.changed.has(o.id)}<span class="changed" title={tr(lang, 'changed')}>●</span>{/if}
+            </td>
             <td>{o.title}</td>
             {#each COLUMNS[collection] as c}<td>{cell(o, c)}</td>{/each}
             {#if collection === 'threats'}
@@ -92,6 +95,11 @@
   }
   td.id {
     white-space: nowrap;
+  }
+  .changed {
+    color: var(--accent);
+    font-size: 0.8em;
+    margin-left: 0.25rem;
   }
   .toolbar {
     display: flex;

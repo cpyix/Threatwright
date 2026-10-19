@@ -8,6 +8,7 @@
   import Diagram from './lib/diagram/Diagram.svelte'
   import Objects from './lib/Objects.svelte'
   import Overview from './lib/Overview.svelte'
+  import Settings from './lib/Settings.svelte'
   import Start from './lib/Start.svelte'
   import Validation from './lib/Validation.svelte'
   import { app } from './state.svelte'
@@ -107,6 +108,7 @@
       <button class:active={app.view.kind === 'validation'} onclick={() => (app.view = { kind: 'validation' })} data-testid="nav-validation">
         {tr(lang, 'validation')} {#if errors}<span class="count error">{errors}</span>{/if}
       </button>
+      <button class:active={app.view.kind === 'settings'} onclick={() => (app.view = { kind: 'settings' })} data-testid="nav-settings">{tr(lang, 'settings')}</button>
     {/if}
   </nav>
 
@@ -125,6 +127,8 @@
       <Assistant target={app.view.target} />
     {:else if app.view.kind === 'coverage'}
       <Coverage />
+    {:else if app.view.kind === 'settings'}
+      <Settings />
     {:else if app.view.kind === 'objects'}
       <Objects collection={app.view.collection} selected={app.view.selected} />
     {/if}

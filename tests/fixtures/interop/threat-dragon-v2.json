@@ -1,0 +1,187 @@
+{
+  "version": "2.2.0",
+  "summary": {
+    "title": "Generic demo system",
+    "owner": "Example",
+    "description": "Synthetic Threat Dragon v2 model for import tests.",
+    "id": 0
+  },
+  "detail": {
+    "contributors": [],
+    "diagrams": [
+      {
+        "id": 0,
+        "title": "Overview",
+        "diagramType": "STRIDE",
+        "placeholder": "New STRIDE diagram description",
+        "thumbnail": "./public/content/images/thumbnail.stride.jpg",
+        "version": "2.2.0",
+        "cells": [
+          {
+            "position": {"x": 40, "y": 60},
+            "size": {"width": 160, "height": 80},
+            "shape": "actor",
+            "id": "a1",
+            "zIndex": 1,
+            "data": {
+              "type": "tm.Actor",
+              "name": "Operator",
+              "description": "Person at the panel",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "providesAuthentication": false,
+              "hasOpenThreats": true,
+              "threats": [
+                {
+                  "id": "t1",
+                  "title": "Operator identity spoofed",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Spoofing",
+                  "description": "Someone uses the operator account.",
+                  "mitigation": "Individual accounts with passwords",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 1,
+                  "score": ""
+                }
+              ]
+            }
+          },
+          {
+            "position": {"x": 400, "y": 60},
+            "size": {"width": 100, "height": 100},
+            "shape": "process",
+            "id": "p1",
+            "zIndex": 2,
+            "data": {
+              "type": "tm.Process",
+              "name": "Controller",
+              "description": "",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "handlesCardPayment": false,
+              "handlesGoodsOrServices": false,
+              "isWebApplication": false,
+              "privilegeLevel": "",
+              "hasOpenThreats": true,
+              "threats": [
+                {
+                  "id": "t2",
+                  "title": "Firmware modified",
+                  "status": "Mitigated",
+                  "severity": "Medium",
+                  "type": "Tampering",
+                  "description": "Manipulated firmware is installed.",
+                  "mitigation": "Signed firmware updates\nVerified at boot.",
+                  "modelType": "STRIDE",
+                  "number": 2,
+                  "score": ""
+                },
+                {
+                  "id": "t3",
+                  "title": "Controller overloaded",
+                  "status": "NA",
+                  "severity": "Low",
+                  "type": "Denial of service",
+                  "description": "",
+                  "mitigation": "",
+                  "modelType": "STRIDE",
+                  "number": 3,
+                  "score": ""
+                }
+              ]
+            }
+          },
+          {
+            "position": {"x": 400, "y": 300},
+            "size": {"width": 160, "height": 80},
+            "shape": "store",
+            "id": "s1",
+            "zIndex": 3,
+            "data": {
+              "type": "tm.Store",
+              "name": "Parameter memory",
+              "description": "",
+              "outOfScope": false,
+              "isALog": false,
+              "storesCredentials": false,
+              "isEncrypted": false,
+              "isSigned": false,
+              "hasOpenThreats": false,
+              "threats": []
+            }
+          },
+          {
+            "shape": "flow",
+            "id": "f1",
+            "zIndex": 4,
+            "source": {"cell": "a1"},
+            "target": {"cell": "p1"},
+            "vertices": [],
+            "data": {
+              "type": "tm.Flow",
+              "name": "Commands",
+              "description": "",
+              "outOfScope": false,
+              "isBidirectional": true,
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "protocol": "HMI",
+              "hasOpenThreats": true,
+              "threats": [
+                {
+                  "id": "t4",
+                  "title": "Commands read on the line",
+                  "status": "Open",
+                  "severity": "Medium",
+                  "type": "Information disclosure",
+                  "description": "",
+                  "mitigation": "",
+                  "modelType": "STRIDE",
+                  "number": 4,
+                  "score": ""
+                }
+              ]
+            }
+          },
+          {
+            "shape": "flow",
+            "id": "f2",
+            "zIndex": 5,
+            "source": {"cell": "p1"},
+            "target": {"cell": "s1"},
+            "data": {"type": "tm.Flow", "name": "Store parameters", "threats": []}
+          },
+          {
+            "shape": "flow",
+            "id": "f3",
+            "zIndex": 6,
+            "source": {"x": 10, "y": 10},
+            "target": {"cell": "s1"},
+            "data": {"type": "tm.Flow", "name": "Dangling", "threats": []}
+          },
+          {
+            "position": {"x": 350, "y": 20},
+            "size": {"width": 300, "height": 400},
+            "shape": "trust-boundary-box",
+            "id": "b1",
+            "zIndex": -1,
+            "data": {"type": "tm.BoundaryBox", "name": "Cabinet", "description": ""}
+          },
+          {
+            "shape": "trust-boundary-curve",
+            "id": "b2",
+            "zIndex": 7,
+            "source": {"x": 300, "y": 0},
+            "target": {"x": 300, "y": 500},
+            "data": {"type": "tm.Boundary", "name": "Network edge"}
+          }
+        ]
+      }
+    ],
+    "diagramTop": 1,
+    "reviewer": "",
+    "threatTop": 4
+  }
+}

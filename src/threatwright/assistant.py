@@ -27,6 +27,7 @@ from threatwright.model.store import SubModel
 
 Lang = Literal["de", "en"]
 
+
 def _lang(config: ProjectConfig) -> Lang:
     return config.language
 

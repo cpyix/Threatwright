@@ -21,6 +21,8 @@ from pydantic import ValidationError
 
 from threatwright import __version__, assistant
 from threatwright.branding import PRODUCT_NAME, PROJECT_FILE
+from threatwright.ci import render_ci
+from threatwright.ci import target_path as ci_target_path
 from threatwright.diagram import render_svg
 from threatwright.library import Libraries, load_catalog, load_libraries
 from threatwright.method import (
@@ -43,6 +45,7 @@ from threatwright.model.objects import (
 from threatwright.model.store import LoadError, Project, SubModel
 from threatwright.rules import relative, validate
 from threatwright.scaffold import ProjectExists, create_project
+from threatwright.vcs import VcsError, changed_objects, release_tags
 
 WEB_DIR = Path(__file__).parent / "web"
 TOKEN_HEADER = "X-Threatwright-Token"  # noqa: S105 - header name, not a secret
@@ -485,6 +488,50 @@ def create_app(token: str, port: int | None = None, project: Path | None = None)
             sub = session.model(name)
             risks = _max_risks(model_payload(sub)["evaluations"], sub)
             return Response(render_svg(sub, risks), media_type="image/svg+xml")
+
+    # --- Git (optional) ----------------------------------------------------------------
+
+    @app.get("/api/vcs/changed")
+    def vcs_changed(since: str = "") -> dict[str, Any]:
+        """Objects changed since HEAD or a revision (e.g. the last release tag)."""
+        with session.lock:
+            root = session.require().root
+        try:
+            changed = changed_objects(root, since or None)
+            tags = [asdict(t) for t in release_tags(root)]
+        except VcsError as exc:
+            return {"available": False, "error": str(exc), "models": {}, "tags": []}
+        return {
+            "available": True,
+            "models": {m: sorted(ids) for m, ids in changed.items()},
+            "tags": tags,
+        }
+
+    # --- CI templates (ADR-0009) ----------------------------------------------------
+
+    @app.get("/api/ci/{kind}")
+    def ci_template(kind: str, image: str | None = None) -> dict[str, Any]:
+        if kind not in ("gitlab", "github"):
+            raise HTTPException(404, "unknown CI kind")
+        with session.lock:
+            root = session.require().root
+        try:
+            text = render_ci(root, kind, image)  # type: ignore[arg-type]
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        target = ci_target_path(root, kind)  # type: ignore[arg-type]
+        return {"text": text, "target": str(target), "exists": target.exists()}
+
+    @app.post("/api/ci/{kind}/write")
+    def ci_write(kind: str, body: dict[str, Any]) -> dict[str, Any]:
+        """Write the pipeline file; only on explicit user action, never overwrites silently."""
+        data = ci_template(kind, body.get("image"))
+        target = Path(data["target"])
+        if target.exists() and not body.get("overwrite"):
+            raise HTTPException(409, f"{target} exists")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(data["text"], encoding="utf-8", newline="\n")
+        return {"written": str(target)}
 
     # --- session actions ------------------------------------------------------------
 

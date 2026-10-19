@@ -52,6 +52,24 @@
     <div class="bar muted">{tr(lang, 'not_assessed')}: {unassessed}</div>
   </div>
 
+  {#if app.vcs}
+    <h2>{tr(lang, 'changes')}</h2>
+    <label>
+      {tr(lang, 'changes_since')}
+      <select
+        value={app.changedSince}
+        onchange={(e) => {
+          app.changedSince = e.currentTarget.value
+          app.refreshChanges()
+        }}
+      >
+        <option value="">{tr(lang, 'last_commit')}</option>
+        {#each app.tags as tag}<option value={tag.name}>{tag.name} ({tag.date.slice(0, 10)})</option>{/each}
+      </select>
+    </label>
+    <p>{app.changed.size} {tr(lang, 'changed_objects')}</p>
+  {/if}
+
   <h2>{tr(lang, 'tr_status')}</h2>
   <ul class="status">
     {#each status as [text, done, total]}

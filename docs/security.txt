@@ -1,0 +1,13 @@
+# security.txt template (RFC 9116). Fill in the placeholders, sign optionally, and serve it
+# at https://<your-domain>/.well-known/security.txt. Lines starting with # are comments.
+# Expires is required and must be less than a year in the future; renew it in time.
+
+Contact: https://github.com/<OWNER>/threatwright/security/advisories/new
+Expires: <YYYY-MM-DD>T00:00:00Z
+Preferred-Languages: de, en
+Canonical: https://<your-domain>/.well-known/security.txt
+Policy: https://github.com/<OWNER>/threatwright/blob/main/SECURITY.md
+# Optional:
+# Encryption: https://<your-domain>/pgp-key.txt
+# Acknowledgments: https://github.com/<OWNER>/threatwright/security/advisories
+# Hiring: <url>

@@ -8,11 +8,20 @@ import typer
 
 from threatwright import __version__
 from threatwright.branding import PRODUCT_NAME, PROJECT_FILE
+from threatwright.ci import render_ci
+from threatwright.interop import (
+    ImportFailed,
+    export_threats,
+    import_csv,
+    import_threat_dragon,
+)
 from threatwright.library import check_library_refs, load_libraries
+from threatwright.method import Method, MethodError, load_method
 from threatwright.model.store import LoadError, Project
 from threatwright.report import as_json, as_junit, as_sarif, as_text
 from threatwright.rules import has_errors, validate
 from threatwright.scaffold import ProjectExists, create_project
+from threatwright.vcs import VcsError, load_project_at, render_diff, semantic_diff
 
 app = typer.Typer(
     name=PRODUCT_NAME.lower(),
@@ -110,6 +119,110 @@ def init_cmd(
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(1) from exc
     typer.echo(f"created {PRODUCT_NAME} project in {path}")
+
+
+class DiffFormat(StrEnum):
+    md = "md"
+    json = "json"
+
+
+class ExportFormat(StrEnum):
+    csv = "csv"
+    json = "json"
+    xlsx = "xlsx"
+
+
+class ImportSource(StrEnum):
+    threat_dragon = "threat-dragon"
+    csv = "csv"
+
+
+def _method_or_exit(project: Project) -> Method:
+    try:
+        return load_method(project.root, project.config)
+    except MethodError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(2) from exc
+
+
+@app.command("diff")
+def diff_cmd(
+    rev1: Annotated[str, typer.Argument(help="Older revision (tag, branch, commit).")],
+    rev2: Annotated[
+        str | None, typer.Argument(help="Newer revision; default: working copy.")
+    ] = None,
+    path: Annotated[Path, typer.Option("--path", help="Project folder.")] = Path("."),
+    fmt: Annotated[DiffFormat, typer.Option("--format")] = DiffFormat.md,
+    output: Annotated[Path | None, typer.Option("-o", "--output")] = None,
+) -> None:
+    """Semantic change evidence between two Git revisions."""
+    project = _load(path)
+    method = _method_or_exit(project)
+    try:
+        old = load_project_at(path, rev1)
+        new = load_project_at(path, rev2) if rev2 else project
+    except VcsError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(2) from exc
+    diff = semantic_diff(old, new, method, rev1, rev2 or "working copy")
+    text = render_diff(diff, fmt.value, project.config.language)
+    if output:
+        output.write_text(text, encoding="utf-8", newline="\n")
+    else:
+        typer.echo(text, nl=False)
+
+
+@app.command("export")
+def export_cmd(
+    path: Annotated[Path, typer.Argument(help="Project folder.")] = Path("."),
+    fmt: Annotated[ExportFormat, typer.Option("--format")] = ExportFormat.csv,
+    output: Annotated[Path | None, typer.Option("-o", "--output")] = None,
+) -> None:
+    """Threat and measure lists for other tools."""
+    project = _load(path)
+    out = output or project.root / "build" / f"threats.{fmt.value}"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    for written in export_threats(project, _method_or_exit(project), fmt.value, out):
+        typer.echo(f"wrote {written}")
+
+
+@app.command("import")
+def import_cmd(
+    file: Annotated[Path, typer.Argument(help="File to import.")],
+    source: Annotated[ImportSource, typer.Option("--from", help="Source format.")],
+    model: Annotated[str, typer.Option(help="Target model (created if missing).")],
+    path: Annotated[Path, typer.Option("--path", help="Project folder.")] = Path("."),
+) -> None:
+    """Import from Threat Dragon (v2 JSON) or CSV. Only adds objects."""
+    importer = import_threat_dragon if source is ImportSource.threat_dragon else import_csv
+    try:
+        result = importer(path, file, model)
+    except ImportFailed as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(1) from exc
+    counts = ", ".join(f"{k}: {v}" for k, v in result.counts.items())
+    typer.echo(f"imported into model '{result.model}': {counts}")
+    for warning in result.warnings:
+        typer.echo(f"warning: {warning}")
+
+
+class CiKind(StrEnum):
+    gitlab = "gitlab"
+    github = "github"
+
+
+@app.command("ci")
+def ci_cmd(
+    kind: Annotated[CiKind, typer.Argument(help="gitlab or github.")] = CiKind.gitlab,
+    path: Annotated[Path, typer.Argument(help="Project folder.")] = Path("."),
+    image: Annotated[str | None, typer.Option(help="Container image to use.")] = None,
+) -> None:
+    """Print a pipeline template pre-filled for this project."""
+    try:
+        typer.echo(render_ci(path, kind.value, image), nl=False)
+    except ValueError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(2) from exc
 
 
 @library_app.command("update")

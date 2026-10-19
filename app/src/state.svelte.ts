@@ -8,6 +8,8 @@ export type View =
   | { kind: 'diagram' }
   | { kind: 'assistant'; target: string | null }
   | { kind: 'coverage' }
+  | { kind: 'settings' }
+  | { kind: 'documents' }
   | { kind: 'objects'; collection: Collection; selected: string | null }
 
 class AppState {
@@ -24,6 +26,10 @@ class AppState {
   message = $state('')
   externalChange = $state(false)
   cyberCheck = $state<string | null>(null) // threat id awaiting rule 3.3 answer
+  changedSince = $state('') // '' = last commit, else a tag/revision
+  changed = $state<Set<string>>(new Set())
+  tags = $state<{ name: string; date: string }[]>([])
+  vcs = $state(false)
 
   async init(): Promise<void> {
     const info = await api<{ version: string; recent: string[] }>('GET', '/app')
@@ -57,6 +63,17 @@ class AppState {
       ? await api<ModelPayload>('GET', `/models/${this.modelName}`)
       : null
     this.issues = await api<Issue[]>('GET', '/validate')
+    await this.refreshChanges()
+  }
+
+  async refreshChanges(): Promise<void> {
+    const r = await api<{ available: boolean; models: Record<string, string[]>; tags: { name: string; date: string }[] }>(
+      'GET',
+      `/vcs/changed?since=${encodeURIComponent(this.changedSince)}`,
+    )
+    this.vcs = r.available
+    this.tags = r.tags
+    this.changed = new Set(this.modelName ? (r.models[this.modelName] ?? []) : [])
   }
 
   async afterChange(model?: ModelPayload): Promise<void> {
@@ -70,6 +87,7 @@ class AppState {
     await api('POST', '/save')
     this.externalChange = false
     await this.refreshProject()
+    await this.refreshChanges()
     this.flash('saved')
   }
 

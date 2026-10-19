@@ -1,0 +1,9 @@
+# Hooks offered to other repositories (docs/ci.md). Pass the project folder via `args`,
+# e.g. `args: [--strict, threatmodel]`; default is the repository root.
+- id: threatwright-validate
+  name: threatwright validate
+  description: Check a Threatwright project (schema, references, rules).
+  entry: threatwright validate
+  language: python
+  files: \.ya?ml$
+  pass_filenames: false

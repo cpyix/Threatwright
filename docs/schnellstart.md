@@ -31,6 +31,10 @@ Der Standardbrowser öffnet sich. Die Oberfläche läuft nur auf Ihrem Rechner u
 
 ## 4. Modell aufbauen
 
+**Mit dem Einrichtungsassistenten (empfohlen für den Einstieg):** Ein in der Oberfläche neu angelegtes Projekt öffnet direkt den Assistenten. Bei bestehenden Projekten erreichen Sie ihn über **Einrichtung** in der Navigation. Er führt in sieben Schritten durch Produktbeschreibung und Einsatzzweck, Zonen mit Schnittstelle, Zugang und Nutzer, Komponenten aus der Bibliothek, Verbindungen, Assets mit TR-Klasse, Bedrohungsvorschläge samt Ursachenfrage (Regel 3.3) und eine Abschlussübersicht. Alles landet als normaler Modellinhalt im Projekt; Rückgängig und Speichern funktionieren wie überall.
+
+**Von Hand** in den einzelnen Ansichten:
+
 1. **Diagramm:** Bausteine aus der Liste links auf die Fläche ziehen, z. B. „Steuerungsrechner Linux“, „Antriebsregler“, „HMI“. Die typischen Assets jedes Bausteins legt das Werkzeug gleich mit an.
 2. **Verbindungen:** Oben den Typ wählen, z. B. „EtherCAT“, dann von einem Anschlusspunkt eines Elements zu einem anderen ziehen.
 3. **Zonen:** Ein Element anklicken und rechts die Zone setzen. Die Zone gibt die Umgebung für die Bewertung vor.

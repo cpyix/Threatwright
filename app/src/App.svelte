@@ -11,6 +11,7 @@
   import Objects from './lib/Objects.svelte'
   import Overview from './lib/Overview.svelte'
   import Settings from './lib/Settings.svelte'
+  import Setup from './lib/Setup.svelte'
   import Start from './lib/Start.svelte'
   import Validation from './lib/Validation.svelte'
   import { app } from './state.svelte'
@@ -96,6 +97,7 @@
   <nav aria-label="Navigation">
     <button class:active={app.view.kind === 'start'} onclick={() => (app.view = { kind: 'start' })}>{tr(lang, 'start')}</button>
     {#if app.project}
+      <button class:active={app.view.kind === 'setup'} onclick={() => (app.view = { kind: 'setup', step: 0 })} data-testid="nav-setup">{tr(lang, 'setup')}</button>
       <button class:active={app.view.kind === 'overview'} onclick={() => (app.view = { kind: 'overview' })}>{tr(lang, 'overview')}</button>
       <button class:active={app.view.kind === 'diagram'} onclick={() => (app.view = { kind: 'diagram' })} data-testid="nav-diagram">{tr(lang, 'diagram')}</button>
       <button class:active={app.view.kind === 'assistant'} onclick={() => (app.view = { kind: 'assistant', target: null })} data-testid="nav-assistant">{tr(lang, 'assistant')}</button>
@@ -119,6 +121,8 @@
   <main>
     {#if app.view.kind === 'start' || !app.project}
       <Start />
+    {:else if app.view.kind === 'setup'}
+      <Setup step={app.view.step} />
     {:else if !app.model}
       <p class="muted">{tr(lang, 'project_none')}</p>
     {:else if app.view.kind === 'overview'}

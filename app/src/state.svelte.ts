@@ -4,6 +4,7 @@ import type { Collection, I18n, Issue, Lang, Method, ModelPayload, Obj, ProjectI
 export type View =
   | { kind: 'start' }
   | { kind: 'overview' }
+  | { kind: 'setup'; step: number }
   | { kind: 'validation' }
   | { kind: 'diagram' }
   | { kind: 'assistant'; target: string | null }

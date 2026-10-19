@@ -7,7 +7,16 @@ from conftest import ROOT
 from playwright.sync_api import Page
 
 AXE = ROOT / "app" / "node_modules" / "axe-core" / "axe.min.js"
-VIEWS = ["overview", "diagram", "assistant", "coverage", "threats", "validation", "settings"]
+VIEWS = [
+    "overview",
+    "setup",
+    "diagram",
+    "assistant",
+    "coverage",
+    "threats",
+    "validation",
+    "settings",
+]
 
 
 @pytest.fixture

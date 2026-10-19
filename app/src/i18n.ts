@@ -176,6 +176,9 @@ const de = {
   changes_since: 'Änderungen markieren seit',
   last_commit: 'letztem Commit',
   changed_objects: 'geänderte Objekte im Teilmodell',
+  setup: 'Einrichtung',
+  setup_hint: 'Das Modell ist noch leer. Der Einrichtungsassistent führt Sie Schritt für Schritt zu einem ersten Bedrohungsmodell.',
+  setup_open: 'Einrichtungsassistent starten',
 } as const
 
 export type Key = keyof typeof de
@@ -355,6 +358,9 @@ const en: Record<Key, string> = {
   changes_since: 'Mark changes since',
   last_commit: 'last commit',
   changed_objects: 'changed objects in this model',
+  setup: 'Setup',
+  setup_hint: 'The model is still empty. The setup wizard guides you step by step to a first threat model.',
+  setup_open: 'Start setup wizard',
 }
 
 // Enum values stored in files (English identifiers) -> display labels.

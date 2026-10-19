@@ -2,7 +2,7 @@
   import { api, ApiError } from '../api'
   import { PRODUCT_NAME } from '../branding'
   import { tr } from '../i18n'
-  import { app } from '../state.svelte'
+  import { app, type View } from '../state.svelte'
   import type { ProjectInfo } from '../types'
 
   let openPath = $state('')
@@ -12,11 +12,11 @@
   let error = $state('')
   const lang = $derived(app.lang)
 
-  async function run(fn: () => Promise<ProjectInfo>) {
+  async function run(fn: () => Promise<ProjectInfo>, view: View = { kind: 'overview' }) {
     error = ''
     try {
-      app.view = { kind: 'overview' }
       await app.loadProject(await fn())
+      app.view = view
     } catch (e) {
       app.view = { kind: 'start' }
       error = e instanceof ApiError ? e.message : String(e)
@@ -47,6 +47,8 @@
         template,
         language: app.lang,
       }),
+      // new projects start in the setup wizard
+      { kind: 'setup', step: 0 },
     )
 </script>
 

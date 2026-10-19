@@ -28,6 +28,12 @@
 
 <section>
   <h1>{app.model?.meta.title ?? tr(lang, 'overview')}</h1>
+  {#if app.objects('elements').length === 0}
+    <p class="hint">
+      {tr(lang, 'setup_hint')}
+      <button class="primary" onclick={() => (app.view = { kind: 'setup', step: 0 })} data-testid="open-setup">{tr(lang, 'setup_open')}</button>
+    </p>
+  {/if}
   <div class="cards">
     {#each COLLECTIONS as c}
       <button class="card" onclick={() => (app.view = { kind: 'objects', collection: c, selected: null })}>
@@ -93,6 +99,16 @@
   h2 {
     font-size: 1.05rem;
     margin-top: 1.5rem;
+  }
+  .hint {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 0.6rem 0.9rem;
   }
   .cards {
     display: grid;

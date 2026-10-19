@@ -19,7 +19,7 @@ def _load(text: str) -> dict[str, object]:
 def test_gitlab_jobs(project_dir: Path) -> None:
     text = render_ci(project_dir, "gitlab")
     data = _load(text)
-    assert data["default"]["image"]["name"] == f"ghcr.io/OWNER/threatwright:{__version__}"  # type: ignore[index]
+    assert data["default"]["image"]["name"] == f"ghcr.io/cpyix/threatwright:{__version__}"  # type: ignore[index]
     assert data["variables"]["TW_PROJECT"] == "."  # type: ignore[index]
     validate = data["threatwright-validate"]
     assert "--strict --format junit" in " ".join(validate["script"])  # type: ignore[index]

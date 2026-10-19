@@ -12,7 +12,7 @@ variables:
 
 default:
   image:
-    name: ghcr.io/OWNER/threatwright:VERSION
+    name: ghcr.io/cpyix/threatwright:VERSION
     entrypoint: [""]
 
 stages:

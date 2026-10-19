@@ -63,6 +63,4 @@ Bis zur Version 1.0 erhält nur die jeweils neueste Minor-Version Sicherheitsfix
   erfordern ein neues Release.
 - Die Portable-Builds sind nicht mit einem Code-Signing-Zertifikat (Authenticode) signiert;
   Windows SmartScreen kann warnen. Integrität ist über `SHA256SUMS` und Sigstore prüfbar.
-- Der Image-Namensraum in den CI-Vorlagen ist ein Platzhalter (`ghcr.io/OWNER/threatwright`),
-  bis der Veröffentlichungsort feststeht.
 - Rolle unter dem CRA (Hersteller vs. Open-Source-Steward) ist nicht abschließend geklärt.

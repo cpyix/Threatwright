@@ -17,9 +17,8 @@ from threatwright.render.package import active as active_templates
 
 CiKind = Literal["gitlab", "github"]
 
-# Owner of the published image. Stays a placeholder until the release namespace is fixed;
-# users replace OWNER or pass --image.
-IMAGE_REPO = "ghcr.io/OWNER/threatwright"
+# Published image (GitHub Container Registry of the project); --image overrides it.
+IMAGE_REPO = "ghcr.io/cpyix/threatwright"
 DEFAULT_FORMATS = ["docx", "md"]
 DEFAULT_DOCUMENTS = {"tr-analysis": DEFAULT_FORMATS}
 

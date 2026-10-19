@@ -12,13 +12,13 @@ Pipeline identisch.
 | Hauptzweig, Tags | `threatwright build` für jede konfigurierte Dokumentvorlage | Dokumente als Job-Artefakt `threatwright-out/` |
 | Tags | `threatwright diff <vorheriger Tag> <Tag> --format md` | Änderungsnachweis `change-evidence.md` |
 
-Die Jobs laufen im Container-Image `ghcr.io/OWNER/threatwright:<Version>` (CLI und
+Die Jobs laufen im Container-Image `ghcr.io/cpyix/threatwright:<Version>` (CLI und
 LibreOffice für PDF). Außer dem Laden des Images braucht die Pipeline **keinen
 Netzwerkzugriff**; es wird nichts nachinstalliert. Der Tag ist auf eine Version gepinnt, damit
 Dokumente reproduzierbar bleiben.
 
-> `OWNER` ist ein Platzhalter, bis der Veröffentlichungsort des Images feststeht. Ersetzen Sie
-> ihn durch den tatsächlichen Namensraum oder durch Ihre eigene Registry
+> Ohne Zugriff auf `ghcr.io` (z. B. in abgeschotteten Netzen) spiegeln Sie das Image in Ihre
+> eigene Registry und geben es an
 > (`threatwright ci gitlab --image registry.example.local/threatwright:0.1.0`).
 > Ohne Internetzugang: Image einmal in die interne Registry spiegeln
 > (`docker pull` / `docker tag` / `docker push`) und dort referenzieren.
@@ -40,7 +40,7 @@ threatwright ci gitlab --image registry.example.local/threatwright:0.1.0
 ```
 
 **Von Hand:** `ci/gitlab-ci.yml` bzw. `ci/github-actions.yml` aus diesem Repository kopieren
-und `OWNER`, `VERSION` sowie `TW_PROJECT` (Projektordner relativ zum Repository) anpassen.
+und `VERSION` sowie `TW_PROJECT` (Projektordner relativ zum Repository) anpassen.
 
 ## GitLab einrichten
 
@@ -74,7 +74,7 @@ Fehler schon vor dem Commit finden: in `.pre-commit-config.yaml` Ihres Repositor
 
 ```yaml
 repos:
-  - repo: https://github.com/OWNER/threatwright
+  - repo: https://github.com/cpyix/threatwright
     rev: v0.1.0            # Version wie im CI-Image
     hooks:
       - id: threatwright-validate

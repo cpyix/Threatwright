@@ -15,7 +15,7 @@
   }: {
     collection: Collection
     source: Partial<Obj>
-    onsaved: (id: string) => void
+    onsaved: (id: string, created: boolean) => void
     onclose: () => void
   } = $props()
 
@@ -66,9 +66,10 @@
         isNew ? path : `${path}/${draft.id}`,
         body,
       )
+      const created = isNew
       draft = structuredClone(r.object)
       await app.afterChange(r.model)
-      onsaved(r.object.id)
+      onsaved(r.object.id, created)
     } catch (e) {
       error = e instanceof ApiError ? e.message : String(e)
     }

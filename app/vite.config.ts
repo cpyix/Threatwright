@@ -9,5 +9,6 @@ export default defineConfig({
     outDir: '../src/threatwright/web',
     emptyOutDir: true,
     assetsInlineLimit: 0,
+    chunkSizeWarningLimit: 1600, // ELK layout engine, loaded on demand only
   },
 })

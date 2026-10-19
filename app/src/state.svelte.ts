@@ -5,6 +5,9 @@ export type View =
   | { kind: 'start' }
   | { kind: 'overview' }
   | { kind: 'validation' }
+  | { kind: 'diagram' }
+  | { kind: 'assistant'; target: string | null }
+  | { kind: 'coverage' }
   | { kind: 'objects'; collection: Collection; selected: string | null }
 
 class AppState {
@@ -20,6 +23,7 @@ class AppState {
   view = $state<View>({ kind: 'start' })
   message = $state('')
   externalChange = $state(false)
+  cyberCheck = $state<string | null>(null) // threat id awaiting rule 3.3 answer
 
   async init(): Promise<void> {
     const info = await api<{ version: string; recent: string[] }>('GET', '/app')

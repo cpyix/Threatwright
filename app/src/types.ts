@@ -48,6 +48,8 @@ export interface ModelPayload {
   }
   objects: Record<Collection, Obj[]>
   evaluations: Record<string, ThreatEvaluation>
+  max_risks: Record<string, number>
+  layout: { nodes: Record<string, { x: number; y: number }> }
   asset_impacts: Record<string, Record<'C' | 'I' | 'A', number | null>>
 }
 
@@ -66,6 +68,37 @@ export interface Method {
   user: { values: Record<string, IndicatorValue> }
   risk_matrix: { matrix_row_from_exposure: 'literal' | 'inverted' }
   acceptance: { max_acceptable_risk: number }
+  stride_per_kind: { map: Record<string, string[]> }
+}
+
+export interface ElementType {
+  id: string
+  name: I18n
+  kind: 'process' | 'device' | 'datastore' | 'external' | 'flow'
+  icon: string | null
+}
+
+export interface Suggestion {
+  template_id: string
+  title: string
+  scenario: string
+  impact: number | null
+  safety_related: boolean
+  adopted: boolean
+}
+
+export interface Category {
+  relevant: boolean
+  existing: string[]
+  not_relevant: string | null
+  suggestions: Suggestion[]
+}
+
+export interface CoverageRow {
+  id: string
+  title: string
+  kind: string
+  cells: Record<string, Category>
 }
 
 export interface Issue {

@@ -25,6 +25,13 @@
     app.view = { kind: 'objects', collection, selected: id }
   }
 
+  // Rule 3.3: ask for new threats unless the form already answered it.
+  function afterSave(id: string, created: boolean) {
+    select(id)
+    const threat = app.objects('threats').find((t) => t.id === id)
+    if (created && collection === 'threats' && threat?.cyber_cause == null) app.cyberCheck = id
+  }
+
   function cell(o: Obj, col: string): string {
     const v = getPath(o, col)
     return Array.isArray(v) ? v.join(' ') : v == null ? '' : label(lang, String(v))
@@ -66,7 +73,7 @@
   <div class="detail">
     {#if current}
       {#key `${current.id ?? 'new'}-${collection}`}
-        <ObjectForm {collection} source={current} onsaved={(id) => select(id)} onclose={() => select(null)} />
+        <ObjectForm {collection} source={current} onsaved={(id, created) => afterSave(id, created)} onclose={() => select(null)} />
       {/key}
     {/if}
   </div>

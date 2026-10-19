@@ -2,6 +2,10 @@
   import { onMount } from 'svelte'
   import { PRODUCT_NAME } from './branding'
   import { tr, type Key } from './i18n'
+  import Assistant from './lib/Assistant.svelte'
+  import Coverage from './lib/Coverage.svelte'
+  import CyberCauseDialog from './lib/CyberCauseDialog.svelte'
+  import Diagram from './lib/diagram/Diagram.svelte'
   import Objects from './lib/Objects.svelte'
   import Overview from './lib/Overview.svelte'
   import Start from './lib/Start.svelte'
@@ -90,6 +94,9 @@
     <button class:active={app.view.kind === 'start'} onclick={() => (app.view = { kind: 'start' })}>{tr(lang, 'start')}</button>
     {#if app.project}
       <button class:active={app.view.kind === 'overview'} onclick={() => (app.view = { kind: 'overview' })}>{tr(lang, 'overview')}</button>
+      <button class:active={app.view.kind === 'diagram'} onclick={() => (app.view = { kind: 'diagram' })} data-testid="nav-diagram">{tr(lang, 'diagram')}</button>
+      <button class:active={app.view.kind === 'assistant'} onclick={() => (app.view = { kind: 'assistant', target: null })} data-testid="nav-assistant">{tr(lang, 'assistant')}</button>
+      <button class:active={app.view.kind === 'coverage'} onclick={() => (app.view = { kind: 'coverage' })} data-testid="nav-coverage">{tr(lang, 'coverage')}</button>
       {#each COLLECTIONS as c}
         <button
           class:active={app.view.kind === 'objects' && app.view.collection === c}
@@ -112,11 +119,19 @@
       <Overview />
     {:else if app.view.kind === 'validation'}
       <Validation />
+    {:else if app.view.kind === 'diagram'}
+      <Diagram />
+    {:else if app.view.kind === 'assistant'}
+      <Assistant target={app.view.target} />
+    {:else if app.view.kind === 'coverage'}
+      <Coverage />
     {:else if app.view.kind === 'objects'}
       <Objects collection={app.view.collection} selected={app.view.selected} />
     {/if}
   </main>
 </div>
+
+<CyberCauseDialog />
 
 <div class="toast" role="status" aria-live="polite" data-testid="toast">
   {#if app.message}{tr(lang, app.message as Key)}{/if}

@@ -11,6 +11,7 @@ import os
 import re
 import secrets
 import threading
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
@@ -18,8 +19,9 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import ValidationError
 
-from threatwright import __version__
+from threatwright import __version__, assistant
 from threatwright.branding import PRODUCT_NAME, PROJECT_FILE
+from threatwright.diagram import render_svg
 from threatwright.library import Libraries, load_catalog, load_libraries
 from threatwright.method import (
     Method,
@@ -29,7 +31,15 @@ from threatwright.method import (
     load_method,
     suggest_impact,
 )
-from threatwright.model.objects import COLLECTIONS, Asset, ModelMeta, ModelObject, Threat, new_uuid
+from threatwright.model.objects import (
+    COLLECTIONS,
+    Asset,
+    DiagramLayout,
+    ModelMeta,
+    ModelObject,
+    Threat,
+    new_uuid,
+)
 from threatwright.model.store import LoadError, Project, SubModel
 from threatwright.rules import relative, validate
 from threatwright.scaffold import ProjectExists, create_project
@@ -296,6 +306,7 @@ def create_app(token: str, port: int | None = None, project: Path | None = None)
                 for c, objs in sub.objects.items()
             },
             "evaluations": evaluations,
+            "max_risks": _max_risks(evaluations, sub),
             "asset_impacts": {aid: asset_impact(session.method, assets, aid) for aid in assets}
             if session.method
             else {},
@@ -365,6 +376,116 @@ def create_app(token: str, port: int | None = None, project: Path | None = None)
             del sub.objects[collection][obj_id]
             return model_payload(sub)
 
+    # --- diagram, library and assistant (M4) ----------------------------------------
+
+    def libs() -> Libraries:
+        if session.libs is None:
+            raise HTTPException(409, "no project open")
+        return session.libs
+
+    def need_method() -> Method:
+        if session.method is None:
+            raise HTTPException(409, "method invalid, see validation")
+        return session.method
+
+    @app.get("/api/library")
+    def library_info() -> dict[str, Any]:
+        with session.lock:
+            return {
+                "elements": [e.model_dump(mode="json") for e in libs().elements.values()],
+                "issues": len(libs().issues),
+            }
+
+    @app.put("/api/models/{name}/layout")
+    def put_layout(name: str, body: dict[str, Any]) -> dict[str, Any]:
+        with session.lock:
+            sub = session.model(name)
+            try:
+                layout = DiagramLayout.model_validate({"nodes": body.get("nodes", {})})
+            except ValidationError as exc:
+                raise HTTPException(422, json.loads(exc.json(include_url=False))) from exc
+            if layout != sub.layout:
+                session.checkpoint()
+                sub.layout = layout
+            return {"ok": True}
+
+    @app.post("/api/models/{name}/add/element")
+    def add_element_endpoint(name: str, body: dict[str, Any]) -> dict[str, Any]:
+        with session.lock:
+            sub = session.model(name)
+            if body.get("type") not in libs().elements:
+                raise HTTPException(422, "unknown element type")
+            session.checkpoint()
+            try:
+                element = assistant.add_element(
+                    sub,
+                    libs(),
+                    session.require().config,
+                    body["type"],
+                    zone=body.get("zone"),
+                    position=(float(body.get("x", 0)), float(body.get("y", 0))),
+                )
+            except ValueError as exc:
+                raise HTTPException(422, str(exc)) from exc
+            return {"id": element.id, "model": model_payload(sub)}
+
+    @app.post("/api/models/{name}/add/flow")
+    def add_flow_endpoint(name: str, body: dict[str, Any]) -> dict[str, Any]:
+        with session.lock:
+            sub = session.model(name)
+            session.checkpoint()
+            try:
+                flow = assistant.add_flow(
+                    sub,
+                    libs(),
+                    session.require().config,
+                    str(body.get("source")),
+                    str(body.get("target")),
+                    body.get("type") or None,
+                )
+            except (KeyError, ValueError) as exc:
+                raise HTTPException(422, str(exc)) from exc
+            return {"id": flow.id, "model": model_payload(sub)}
+
+    @app.get("/api/models/{name}/assistant/{target}")
+    def assistant_get(name: str, target: str) -> dict[str, Any]:
+        with session.lock:
+            sub = session.model(name)
+            try:
+                cats = assistant.suggestions(
+                    sub, libs(), need_method(), session.require().config, target
+                )
+            except KeyError as exc:
+                raise HTTPException(404, f"{target} not found") from exc
+            return {"target": target, "categories": {s: asdict(c) for s, c in cats.items()}}
+
+    @app.post("/api/models/{name}/assistant/{target}")
+    def assistant_adopt(name: str, target: str, body: dict[str, str]) -> dict[str, Any]:
+        with session.lock:
+            sub = session.model(name)
+            if body.get("template") not in libs().threats:
+                raise HTTPException(422, "unknown threat template")
+            session.checkpoint()
+            try:
+                threat = assistant.adopt_threat(
+                    sub, libs(), session.require().config, body["template"], target
+                )
+            except KeyError as exc:
+                raise HTTPException(404, f"{target} not found") from exc
+            return {"id": threat.id, "model": model_payload(sub)}
+
+    @app.get("/api/models/{name}/coverage")
+    def coverage(name: str) -> list[dict[str, Any]]:
+        with session.lock:
+            return [asdict(r) for r in assistant.coverage(session.model(name), need_method())]
+
+    @app.get("/api/models/{name}/diagram.svg")
+    def diagram_svg(name: str) -> Response:
+        with session.lock:
+            sub = session.model(name)
+            risks = _max_risks(model_payload(sub)["evaluations"], sub)
+            return Response(render_svg(sub, risks), media_type="image/svg+xml")
+
     # --- session actions ------------------------------------------------------------
 
     @app.post("/api/save")
@@ -428,6 +549,19 @@ def create_app(token: str, port: int | None = None, project: Path | None = None)
         return FileResponse(index)
 
     return app
+
+
+def _max_risks(evaluations: dict[str, Any], sub: SubModel) -> dict[str, int]:
+    """Highest risk of non-rejected threats per targeted element or flow."""
+    out: dict[str, int] = {}
+    for tid, ev in evaluations.items():
+        t = sub.objects["threats"].get(tid)
+        risk = ev["assessment"]["risk"]
+        if not isinstance(t, Threat) or t.status == "rejected" or risk is None:
+            continue
+        for target in t.targets:
+            out[target] = max(out.get(target, 0), risk)
+    return out
 
 
 def _evaluation(

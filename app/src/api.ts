@@ -47,3 +47,15 @@ export async function api<T>(method: string, path: string, body?: unknown): Prom
   }
   return response.json() as Promise<T>
 }
+
+/** Download an API resource (e.g. the diagram SVG) as a file. */
+export async function download(path: string, filename: string): Promise<void> {
+  const response = await fetch(`/api${path}`, { headers: { 'X-Threatwright-Token': token } })
+  if (!response.ok) throw new ApiError(response.status, response.statusText)
+  const url = URL.createObjectURL(await response.blob())
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}

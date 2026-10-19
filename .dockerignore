@@ -5,6 +5,13 @@ build
 dist
 .claude
 .private
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+secrets
 **/__pycache__
 .mypy_cache
 .ruff_cache

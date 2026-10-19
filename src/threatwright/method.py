@@ -45,6 +45,7 @@ class IndicatorValue(Strict):
     factor: Decimal = Field(ge=0, le=1)
     de: str
     en: str
+    help: dict[Literal["de", "en"], str] = {}  # short own explanation shown at the field
 
 
 class Indicator(Strict):

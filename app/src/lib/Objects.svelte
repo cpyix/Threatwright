@@ -3,12 +3,14 @@
   import { label, tr, type Key } from '../i18n'
   import { app } from '../state.svelte'
   import type { Collection, Obj } from '../types'
+  import MeasureBoard from './MeasureBoard.svelte'
   import ObjectForm from './ObjectForm.svelte'
   import RiskBadge from './RiskBadge.svelte'
 
   let { collection, selected }: { collection: Collection; selected: string | null } = $props()
 
   let filter = $state('')
+  let board = $state(false)
   let draft = $state<Partial<Obj> | null>(null)
   const lang = $derived(app.lang)
   const rows = $derived(
@@ -42,10 +44,16 @@
   <div class="list">
     <div class="toolbar">
       <h1>{tr(lang, collection)}</h1>
+      {#if collection === 'measures'}
+        <button onclick={() => (board = !board)} aria-pressed={board}>{tr(lang, 'board')}</button>
+      {/if}
       <button class="primary" onclick={() => (draft = NEW[collection]())} data-testid="new-object">
         + {tr(lang, 'new')}
       </button>
     </div>
+    {#if board && collection === 'measures'}
+      <MeasureBoard onselect={(id) => select(id)} />
+    {:else}
     <input type="search" placeholder={tr(lang, 'filter')} bind:value={filter} aria-label={tr(lang, 'filter')} />
     <table>
       <thead>
@@ -72,6 +80,7 @@
         {/each}
       </tbody>
     </table>
+    {/if}
   </div>
   <div class="detail">
     {#if current}
@@ -103,6 +112,7 @@
   }
   .toolbar {
     display: flex;
+    gap: 0.5rem;
     justify-content: space-between;
     align-items: center;
   }

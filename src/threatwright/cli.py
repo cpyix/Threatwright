@@ -17,6 +17,7 @@ from threatwright.interop import (
 )
 from threatwright.library import check_library_refs, load_libraries
 from threatwright.method import Method, MethodError, load_method
+from threatwright.model.objects import SCHEMA_VERSION
 from threatwright.model.store import LoadError, Project
 from threatwright.oscal import OSCAL_VERSION, OscalError, validate_oscal
 from threatwright.oscal.project import import_into_project
@@ -249,6 +250,20 @@ def oscal_import_cmd(
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(1) from exc
     typer.echo(f"imported into {written}")
+
+
+@app.command("migrate")
+def migrate_cmd(path: Annotated[Path, typer.Argument(help="Project folder.")] = Path(".")) -> None:
+    """Bring all project files to the current schema version."""
+    project = _load(path)
+    outdated = [i for i in project.issues if i.location == "schema_version"]
+    for issue in outdated:
+        typer.echo(str(issue), err=True)
+    if outdated:
+        # ponytail: no older schema exists yet; add a migration step per version here
+        typer.echo("error: unknown schema_version; this release only knows version 1", err=True)
+        raise typer.Exit(1)
+    typer.echo(f"all files at schema version {SCHEMA_VERSION}; nothing to migrate")
 
 
 class CiKind(StrEnum):

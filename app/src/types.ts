@@ -55,6 +55,7 @@ export interface ModelPayload {
 
 export interface IndicatorValue extends I18n {
   factor: string
+  help?: Partial<I18n>
 }
 
 export interface Method {
@@ -63,9 +64,9 @@ export interface Method {
   impact_levels: { levels: Record<string, I18n> }
   risk_levels: { levels: Record<string, I18n> }
   asset_classes: Record<string, { source: string }>
-  interface: { values: Record<string, IndicatorValue> }
-  access: { values: Record<string, IndicatorValue> }
-  user: { values: Record<string, IndicatorValue> }
+  interface: { source: string; values: Record<string, IndicatorValue> }
+  access: { source: string; values: Record<string, IndicatorValue> }
+  user: { source: string; values: Record<string, IndicatorValue> }
   risk_matrix: { matrix_row_from_exposure: 'literal' | 'inverted' }
   acceptance: { max_acceptable_risk: number }
   stride_per_kind: { map: Record<string, string[]> }

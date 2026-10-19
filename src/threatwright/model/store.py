@@ -286,6 +286,13 @@ class Project:
         self._docs[path] = doc
         return obj
 
+    def move_document(self, model: str, collection: str, old_id: str, new_id: str) -> None:
+        """Keep comments of a renamed object: its YAML document moves to the new file."""
+        base = self.root / "models" / model / collection
+        doc = self._docs.pop(base / f"{old_id}.yaml", None)
+        if doc is not None:
+            self._docs[base / f"{new_id}.yaml"] = doc
+
     def _save_one(self, path: Path, obj: BaseModel, written: list[Path]) -> None:
         doc = self._docs.setdefault(path, CommentedMap())
         if merge_into(doc, obj) or not path.exists():

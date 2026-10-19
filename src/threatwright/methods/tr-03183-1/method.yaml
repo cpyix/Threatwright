@@ -42,29 +42,108 @@ asset_classes:
   Security.Logs: {c: [C], i: [I], a: 2, source: 'Table 3, p. 49'}
   Security.Mechanism: {c: null, i: [I, C], a: [A], source: 'Table 3, p. 49'}
 
-# Environment indicators and factors (Annex D.1).
+# Environment indicators and factors (Annex D.1). `help` texts are own short
+# explanations of the TR rationale, shown at the form field.
 interface:
   source: Table 11, p. 74-75
   values:
-    physical: {factor: 0.38, de: physisch, en: physical}
-    local: {factor: 0.55, de: lokal, en: local}
-    dedicated_known_network: {factor: 0.70, de: dediziertes bekanntes Netz, en: dedicated known network}
-    known_network: {factor: 0.80, de: bekanntes Netz, en: known network}
-    external_network: {factor: 1.0, de: externes Netz, en: external network}
+    physical:
+      factor: 0.38
+      de: physisch
+      en: physical
+      help:
+        de: Angreifer muss das Gerät öffnen oder intern manipulieren (z. B. Platine, interner Bus).
+        en: The attacker has to open the device or manipulate it internally (e.g. board, internal bus).
+    local:
+      factor: 0.55
+      de: lokal
+      en: local
+      help:
+        de: Kurze lokale Schnittstelle am Gerät, z. B. Bedienfeld, USB, Service-Port, Feldbusbuchse. Angreifer muss vor Ort sein.
+        en: Short local interface on the device, e.g. panel, USB, service port, fieldbus socket. The attacker must be on site.
+    dedicated_known_network:
+      factor: 0.70
+      de: dediziertes bekanntes Netz
+      en: dedicated known network
+      help:
+        de: Eigenes Netz nur für diesen Zweck mit wenigen Teilnehmern, ohne vorgesehene Verbindung nach außen.
+        en: Network dedicated to this use case with few participants and no intended external connection.
+    known_network:
+      factor: 0.80
+      de: bekanntes Netz
+      en: known network
+      help:
+        de: Gemeinsam genutztes Netz des Betreibers (z. B. Anlagen- oder Büronetz), ohne vorgesehenen Zugriff von außen.
+        en: Multi-purpose network of the operator (e.g. plant or office network) without intended external access.
+    external_network:
+      factor: 1.0
+      de: externes Netz
+      en: external network
+      help:
+        de: Netz außerhalb der Kontrolle des Betreibers, z. B. Internet, Mobilfunk, fremdes WLAN. Angriff von überall möglich.
+        en: Network outside the operator's control, e.g. internet, mobile network, unknown WLAN. Attack possible from anywhere.
 access:
   source: Table 12, p. 76
   values:
-    restricted: {factor: 0.42, de: beschränkt, en: restricted}
-    public_restricted: {factor: 0.58, de: öffentlich beaufsichtigt, en: public restricted}
-    movable: {factor: 0.81, de: beweglich, en: movable}
-    non_restricted: {factor: 1.0, de: unbeschränkt, en: non restricted}
+    restricted:
+      factor: 0.42
+      de: beschränkt
+      en: restricted
+      help:
+        de: Nur ein bekannter Personenkreis kommt an das Gerät, z. B. abgeschlossener Schaltschrank.
+        en: Only a known group of people can reach the device, e.g. locked control cabinet.
+    public_restricted:
+      factor: 0.58
+      de: öffentlich beaufsichtigt
+      en: public restricted
+      help:
+        de: Zugang für Dritte möglich, aber normalerweise beaufsichtigt; das Zeitfenster für einen Angriff ist klein.
+        en: Third parties can reach it, but it is normally supervised; the window for an attack is small.
+    movable:
+      factor: 0.81
+      de: beweglich
+      en: movable
+      help:
+        de: Wie beaufsichtigt, aber das Gerät kann mitgenommen und ungestört angegriffen werden.
+        en: Like supervised, but the device can be taken away and attacked undisturbed.
+    non_restricted:
+      factor: 1.0
+      de: unbeschränkt
+      en: non restricted
+      help:
+        de: Keine Einschränkung des Angreiferkreises oder Zeitfensters; gilt auch, wenn der Angriff ohne Vor-Ort-Zugang geht.
+        en: No limit on attackers or attack window; also applies if the attack works without local access.
 user:
   source: Table 13, p. 77
   values:
-    non_user_related: {factor: 1.0, de: nicht nutzerabhängig, en: non-user-related}
-    skilled: {factor: 0.58, de: fachkundig, en: skilled}
-    instructed: {factor: 0.81, de: unterwiesen, en: instructed}
-    layman: {factor: 1.0, de: Laie, en: layman}
+    non_user_related:
+      factor: 1.0
+      de: nicht nutzerabhängig
+      en: non-user-related
+      help:
+        de: Das Verhalten des Nutzers beeinflusst die Wahrscheinlichkeit nicht.
+        en: User behaviour does not influence the likelihood.
+    skilled:
+      factor: 0.58
+      de: fachkundig
+      en: skilled
+      help:
+        de: Fachkraft (z. B. IT- oder Automatisierungsexperte), die das Produkt sicher konfiguriert und selbst absichern kann.
+        en: Expert (e.g. IT or automation specialist) who configures the product securely and can harden it.
+    instructed:
+      factor: 0.81
+      de: unterwiesen
+      en: instructed
+      help:
+        de: Unterwiesene Person, die die Anleitung kennt und das Produkt nicht unnötig angreifbar macht.
+        en: Instructed person who knows the manual and does not expose the product unnecessarily.
+    layman:
+      factor: 1.0
+      de: Laie
+      en: layman
+      help:
+        de: Nutzer ohne Fachkenntnis; Fehlkonfiguration und Social Engineering sind wahrscheinlich.
+        en: User without expertise; misconfiguration and social engineering are likely.
 
 # environment = round(offset + interface * access * user * scale), half up.
 exposure:

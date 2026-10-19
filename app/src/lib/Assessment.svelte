@@ -40,6 +40,9 @@
             <option value={key}>{v[lang]} ({factor(v.factor)})</option>
           {/each}
         </select>
+        {#if value?.[name] && app.method?.[name].values[value[name]]?.help?.[lang]}
+          <small class="muted">{app.method[name].values[value[name]].help?.[lang]} (TR {app.method[name].source})</small>
+        {/if}
       </label>
     {/each}
   </div>

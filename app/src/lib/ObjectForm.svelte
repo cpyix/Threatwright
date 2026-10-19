@@ -5,6 +5,7 @@
   import { app } from '../state.svelte'
   import type { Collection, ModelPayload, Obj, ThreatEvaluation } from '../types'
   import Assessment from './Assessment.svelte'
+  import CustomFieldInput from './CustomField.svelte'
   import MultiSelect from './MultiSelect.svelte'
 
   let {
@@ -23,6 +24,7 @@
   let draft = $state<Record<string, any>>(structuredClone($state.snapshot(source)))
   let error = $state('')
   let live = $state<ThreatEvaluation | null>(null)
+  let renaming = $state<string | null>(null)
   const lang = $derived(app.lang)
   const isNew = $derived(!draft.id)
   const custom = $derived(app.project?.custom_fields.fields[collection.replace(/s$/, '')] ?? [])
@@ -81,6 +83,22 @@
     onclose()
   }
 
+  async function rename() {
+    error = ''
+    try {
+      const r = await api<{ id: string; model: ModelPayload }>(
+        'POST',
+        `/models/${app.modelName}/${collection}/${draft.id}/rename`,
+        { id: renaming },
+      )
+      renaming = null
+      await app.afterChange(r.model)
+      onsaved(r.id, false)
+    } catch (e) {
+      error = e instanceof ApiError ? e.message : String(e)
+    }
+  }
+
   function fieldLabel(f: Field): string {
     const dim = f.key.match(/^amplifier\.([cia])$/)
     return tr(lang, f.label) + (dim ? ` ${dim[1].toUpperCase()}` : '')
@@ -98,7 +116,18 @@
   data-testid="object-form"
 >
   <header>
-    <h2>{isNew ? tr(lang, 'new') : draft.id}</h2>
+    {#if renaming !== null}
+      <span class="rename">
+        <input bind:value={renaming} aria-label={tr(lang, 'rename_id')} />
+        <button type="button" onclick={rename}>{tr(lang, 'apply')}</button>
+        <button type="button" onclick={() => (renaming = null)}>{tr(lang, 'cancel')}</button>
+      </span>
+    {:else}
+      <h2>
+        {isNew ? tr(lang, 'new') : draft.id}
+        {#if !isNew}<button type="button" class="link" onclick={() => (renaming = draft.id)} title={tr(lang, 'rename_id')}>✎</button>{/if}
+      </h2>
+    {/if}
     <div class="actions">
       <button type="submit" class="primary" data-testid="apply">{isNew ? tr(lang, 'create') : tr(lang, 'apply')}</button>
       {#if !isNew}<button type="button" onclick={remove}>{tr(lang, 'delete')}</button>{/if}
@@ -151,7 +180,7 @@
       {#each custom as c (c.name)}
         <div class="field">
           <label for="custom-{c.name}">{c.label?.[lang] ?? c.name}{c.required ? ' *' : ''}</label>
-          <input id="custom-{c.name}" value={draft.custom?.[c.name] ?? ''} oninput={(e) => set(`custom.${c.name}`, e.currentTarget.value)} />
+          <CustomFieldInput field={c} value={draft.custom?.[c.name]} set={(v) => set(`custom.${c.name}`, v)} />
           {#if c.help?.[lang]}<small class="muted">{c.help[lang]}</small>{/if}
         </div>
       {/each}
@@ -198,6 +227,19 @@
   }
   .check input {
     width: auto;
+  }
+  .rename {
+    display: flex;
+    gap: 0.3rem;
+  }
+  .rename input {
+    width: 9rem;
+  }
+  .link {
+    border: none;
+    background: none;
+    color: var(--accent);
+    padding: 0 0.25rem;
   }
   pre.error {
     white-space: pre-wrap;

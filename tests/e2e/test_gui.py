@@ -28,7 +28,7 @@ def test_create_assess_link_save(
     form.get_by_role("checkbox", name="M-0001 Restrict physical access to the fieldbus").check()
     form.get_by_test_id("field-status").select_option("treated")
     form.get_by_test_id("apply").click()
-    expect(form.locator("h2")).to_have_text("T-0002")
+    expect(form.locator("h2")).to_contain_text("T-0002")
 
     page.keyboard.press("Control+s")
     target = project_dir / "models/main/threats/T-0002.yaml"

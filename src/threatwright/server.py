@@ -43,6 +43,7 @@ from threatwright.model.objects import (
     Threat,
     new_uuid,
 )
+from threatwright.model.refactor import rename_id
 from threatwright.model.store import LoadError, Project, SubModel
 from threatwright.oscal import OscalError, imported_libraries
 from threatwright.oscal.project import import_into_project
@@ -370,6 +371,25 @@ def create_app(token: str, port: int | None = None, project: Path | None = None)
                 session.checkpoint()
                 sub.objects[collection][obj_id] = obj
             return {"object": obj.model_dump(mode="json"), "model": model_payload(sub)}
+
+    @app.post("/api/models/{name}/{collection}/{obj_id}/rename")
+    def rename_object(name: str, collection: str, obj_id: str, body: dict[str, str]) -> Any:
+        _collection(collection)
+        with session.lock:
+            project = session.require()
+            session.model(name)
+            new_id = body.get("id", "")
+            snapshot = {k: _copy_model(v) for k, v in project.models.items()}
+            try:
+                updated = rename_id(project, name, collection, obj_id, new_id)
+            except KeyError as exc:
+                raise HTTPException(404, f"{obj_id} not found") from exc
+            except ValueError as exc:
+                raise HTTPException(422, str(exc)) from exc
+            session.undo.append(snapshot)
+            session.redo.clear()
+            session.dirty = True
+            return {"id": new_id, "updated": updated, "model": model_payload(project.models[name])}
 
     @app.delete("/api/models/{name}/{collection}/{obj_id}")
     def delete_object(name: str, collection: str, obj_id: str) -> dict[str, Any]:

@@ -15,6 +15,7 @@ Die Oberfläche zeigt dieselben Meldungen, weil sie dieselbe Prüfung aufruft.
 |---|---|
 | `schema` | Datei verletzt das Schema (falscher Typ, unbekanntes Feld, ungültiges YAML) |
 | `method-invalid` | Methode nicht gefunden oder `method-overrides.yaml` ungültig |
+| `library-invalid` | aktivierte Bibliothek fehlt, ist ungültig oder verweist auf unbekannte IDs |
 | `duplicate-uuid` | UUID kommt mehrfach vor (z. B. Datei kopiert) |
 | `unresolved-ref` | Verweis auf eine ID, die es nicht gibt |
 | `unresolved-text-ref` | ID im Fließtext (z. B. „siehe M-0042“), die es nicht gibt |
@@ -46,3 +47,6 @@ Die Oberfläche zeigt dieselben Meldungen, weil sie dieselbe Prüfung aufruft.
 | `cyber-cause-unanswered` | Die Prüfregel „Ist das ein Cyberrisiko?“ ist nicht beantwortet |
 | `residual-not-acceptable` | Restrisiko liegt über der Akzeptanzgrenze |
 | `custom-unknown` | Feld ist nicht in `custom-fields.yaml` definiert |
+| `library-outdated` | Die Bibliothek hat eine neuere Fassung des übernommenen Eintrags |
+| `library-ref-unknown` | `library_ref` verweist auf einen Eintrag, den es nicht (mehr) gibt |
+| `unknown-cra-ref` | CRA-Bezug ist nicht im CRA-Katalog |

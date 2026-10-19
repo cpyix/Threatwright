@@ -1,0 +1,170 @@
+measures:
+  - id: data-encryption-transit
+    rev: 1
+    title:
+      de: Verschlüsselte Datenübertragung
+      en: Encryption of data in transit
+    description:
+      de: >-
+        Vertrauliche Daten wie Rezepte, Produktionsdaten, Zugangsdaten und Projektdateien
+        werden zwischen Maschine und anderen Systemen nur verschlüsselt übertragen (TLS, VPN,
+        verschlüsselte Protokollvarianten). Unverschlüsselte Alternativen wie FTP, Telnet
+        oder HTTP sind abgeschaltet. Wo ein Protokoll keine Verschlüsselung kennt, wird die
+        Übertragung auf das abgeschottete Maschinennetz beschränkt.
+      en: >-
+        Confidential data such as recipes, production data, credentials and project files is
+        transferred between the machine and other systems only in encrypted form (TLS, VPN,
+        encrypted protocol variants). Unencrypted alternatives such as FTP, Telnet or HTTP are
+        disabled. Where a protocol offers no encryption, transfer is restricted to the
+        isolated machine network.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Liste der Datenflüsse mit Schutzverfahren, Netzwerkmitschnitt bzw. TLS-Prüfbericht.
+      en: >-
+        List of data flows with protection method, network capture or TLS test report.
+    cra_refs: [AI-I-2-e]
+    iec62443: [FR4]
+    sources: ["generic OT security practice"]
+
+  - id: data-encryption-rest
+    rev: 1
+    title:
+      de: Verschlüsselte Datenspeicherung
+      en: Encryption of data at rest
+    description:
+      de: >-
+        Vertrauliche Daten auf Datenträgern von Bedien-PC, Edge-Gerät oder Datensicherung
+        werden verschlüsselt gespeichert (Laufwerks- oder Dateiverschlüsselung). Die Schlüssel
+        sind gerätegebunden, z. B. im TPM. Ein ausgebauter oder entwendeter Datenträger
+        gibt so keine Rezepte, Zugangsdaten oder Produktionsdaten preis.
+      en: >-
+        Confidential data on storage media of HMI PC, edge device or backups is stored
+        encrypted (drive or file encryption). Keys are bound to the device, e.g. in the TPM.
+        A removed or stolen storage medium thus does not reveal recipes, credentials or
+        production data.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Konfigurationsnachweis der Verschlüsselung, Testprotokoll des Auslesens eines
+        ausgebauten Datenträgers.
+      en: >-
+        Configuration proof of encryption, test report of reading a removed storage medium.
+    cra_refs: [AI-I-2-e]
+    iec62443: [FR4]
+    sources: ["generic OT security practice"]
+
+  - id: data-minimisation
+    rev: 1
+    title:
+      de: Datenminimierung
+      en: Data minimisation
+    description:
+      de: >-
+        Die Maschine erfasst, speichert und überträgt nur die Daten, die für ihren Zweck
+        notwendig sind. Personenbezogene Daten (z. B. Bedienerkennungen) und
+        Produktionsdaten werden nach festgelegten Fristen gelöscht oder anonymisiert. Welche
+        Daten an Hersteller oder Cloud gehen, ist dokumentiert und vom Betreiber einstellbar.
+      en: >-
+        The machine collects, stores and transmits only the data necessary for its purpose.
+        Personal data (e.g. operator IDs) and production data are deleted or anonymised after
+        defined periods. Which data goes to the manufacturer or cloud is documented and
+        configurable by the operator.
+    kind: design
+    compensating: false
+    evidence:
+      de: >-
+        Datenverzeichnis mit Zweck und Löschfrist, Konfigurationsmöglichkeiten in der
+        Betriebsanleitung.
+      en: >-
+        Data inventory with purpose and retention period, configuration options in the
+        operating manual.
+    cra_refs: [AI-I-2-g]
+    iec62443: [FR4]
+    sources: ["generic OT security practice"]
+
+  - id: backup-restore
+    rev: 1
+    title:
+      de: Datensicherung und Wiederherstellung
+      en: Backup and restore
+    description:
+      de: >-
+        Steuerungsprogramme, Konfigurationen, Antriebsparameter, Rezepte und PC-Images werden
+        nach jeder Änderung gesichert und offline bzw. getrennt vom Maschinennetz
+        aufbewahrt. Die Wiederherstellung ist dokumentiert und wird regelmäßig geübt, sodass
+        die Maschine nach einem Vorfall in bekannter Zeit wieder läuft.
+      en: >-
+        Control programs, configurations, drive parameters, recipes and PC images are backed
+        up after each change and stored offline or separately from the machine network.
+        Restoration is documented and practised regularly so that the machine runs again in a
+        known time after an incident.
+    kind: organizational
+    compensating: false
+    evidence:
+      de: >-
+        Sicherungskonzept, Protokoll eines Wiederherstellungstests mit gemessener Dauer.
+      en: >-
+        Backup concept, report of a restore test with measured duration.
+    cra_refs: [AI-I-2-h, AI-I-2-k]
+    iec62443: [FR7]
+    sources: ["generic OT security practice"]
+
+  - id: secure-decommissioning
+    rev: 1
+    title:
+      de: Sichere Außerbetriebnahme
+      en: Secure decommissioning
+    description:
+      de: >-
+        Für Verkauf, Rücknahme, Verschrottung oder Austausch von Komponenten ist beschrieben,
+        wie alle Daten, Zugangsdaten, Zertifikate und Schlüssel sicher gelöscht oder
+        Datenträger vernichtet werden. Die Maschine bietet dafür eine Löschfunktion, deren
+        Ergebnis überprüfbar ist. Zugänge im Fernwartungsportal werden gleichzeitig gesperrt.
+      en: >-
+        For sale, take-back, scrapping or replacement of components, it is described how all
+        data, credentials, certificates and keys are securely erased or storage media
+        destroyed. The machine offers an erase function whose result can be verified.
+        Accounts in the remote maintenance portal are revoked at the same time.
+    kind: user_information
+    compensating: false
+    evidence:
+      de: >-
+        Abschnitt zur Außerbetriebnahme in der Betriebsanleitung, Testprotokoll der
+        Löschfunktion.
+      en: >-
+        Decommissioning section in the operating manual, test report of the erase function.
+    cra_refs: [AI-I-2-m, AII]
+    iec62443: [FR4]
+    sources: ["generic OT security practice"]
+
+  - id: factory-reset
+    rev: 1
+    title:
+      de: Rücksetzen auf sicheren Auslieferungszustand
+      en: Reset to secure factory state
+    description:
+      de: >-
+        Die Maschine bzw. ihre Komponenten lassen sich auf einen sicheren Auslieferungszustand
+        zurücksetzen, bei dem Benutzerdaten, Zugangsdaten und Konfigurationen gelöscht und
+        sichere Grundeinstellungen wiederhergestellt werden. Das Rücksetzen erfordert eine
+        Handlung vor Ort oder eine berechtigte Rolle und ist nicht aus der Ferne ohne
+        Authentisierung auslösbar.
+      en: >-
+        The machine and its components can be reset to a secure factory state in which user
+        data, credentials and configurations are erased and secure default settings are
+        restored. The reset requires a local action or an authorised role and cannot be
+        triggered remotely without authentication.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Beschreibung in der Betriebsanleitung, Testprotokoll mit Prüfung des Zustands nach
+        dem Rücksetzen.
+      en: >-
+        Description in the operating manual, test report checking the state after the reset.
+    cra_refs: [AI-I-2-b, AI-I-2-m]
+    iec62443: [FR4]
+    sources: ["generic OT security practice"]

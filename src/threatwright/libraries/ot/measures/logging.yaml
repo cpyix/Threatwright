@@ -1,0 +1,114 @@
+measures:
+  - id: security-logging
+    rev: 1
+    title:
+      de: Protokollierung sicherheitsrelevanter Ereignisse
+      en: Logging of security-relevant events
+    description:
+      de: >-
+        Die Maschine protokolliert sicherheitsrelevante Ereignisse mit Zeitstempel und
+        Benutzer: An- und Abmeldungen, Fehlversuche, Programm- und Parameteränderungen,
+        Firmware-Updates, Aktivierung des Fernzugriffs, Betriebsartenwechsel. Die Protokolle
+        können exportiert oder per Syslog an ein zentrales System des Betreibers
+        weitergeleitet werden.
+      en: >-
+        The machine logs security-relevant events with timestamp and user: logins and logouts,
+        failed attempts, program and parameter changes, firmware updates, activation of remote
+        access, mode changes. Logs can be exported or forwarded via syslog to a central system
+        of the operator.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Liste der protokollierten Ereignistypen, Beispielauszug des Protokolls,
+        Konfiguration der Weiterleitung.
+      en: >-
+        List of logged event types, sample log extract, forwarding configuration.
+    cra_refs: [AI-I-2-l]
+    iec62443: [FR6, FR2]
+    sources: ["generic OT security practice"]
+
+  - id: log-protection
+    rev: 1
+    title:
+      de: Schutz der Protokolle
+      en: Protection of logs
+    description:
+      de: >-
+        Sicherheitsprotokolle können von normalen Benutzern weder geändert noch gelöscht
+        werden. Der Speicher ist so bemessen, dass auch bei vielen Ereignissen ein
+        ausreichender Zeitraum erhalten bleibt; bei Überlauf wird gewarnt. Die Weiterleitung
+        an ein externes System verhindert, dass ein Angreifer seine Spuren lokal verwischt.
+      en: >-
+        Security logs cannot be modified or deleted by normal users. Storage is sized so that
+        a sufficient period is retained even with many events; a warning is issued on
+        overflow. Forwarding to an external system prevents an attacker from covering tracks
+        locally.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Rechtekonzept für Protokolldateien, Testprotokoll eines verweigerten Löschversuchs,
+        Konfiguration der Weiterleitung.
+      en: >-
+        Permission concept for log files, test report of a denied deletion attempt, forwarding
+        configuration.
+    cra_refs: [AI-I-2-l, AI-I-2-f]
+    iec62443: [FR3, FR6]
+    sources: ["generic OT security practice"]
+
+  - id: time-synchronization
+    rev: 1
+    title:
+      de: Zeitsynchronisation
+      en: Time synchronisation
+    description:
+      de: >-
+        Alle protokollierenden Komponenten der Maschine beziehen ihre Uhrzeit von einer
+        gemeinsamen, vom Betreiber vorgegebenen Zeitquelle (NTP, PTP), möglichst
+        authentisiert. Damit lassen sich Ereignisse verschiedener Geräte zeitlich zuordnen.
+        Große Zeitsprünge werden protokolliert.
+      en: >-
+        All logging components of the machine obtain their time from a common time source
+        specified by the operator (NTP, PTP), authenticated where possible. This allows events
+        from different devices to be correlated. Large time jumps are logged.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Konfigurationsexport der Zeitquelle je Gerät, Vergleich der Uhrzeiten in einem
+        Prüfprotokoll.
+      en: >-
+        Configuration export of the time source per device, comparison of clocks in a test
+        report.
+    cra_refs: [AI-I-2-l]
+    iec62443: [FR6]
+    sources: ["generic OT security practice"]
+
+  - id: tamper-alarm
+    rev: 1
+    title:
+      de: Meldung bei Manipulationsversuchen
+      en: Tamper alarm
+    description:
+      de: >-
+        Das Öffnen von Schaltschranktüren, das Ziehen von Netzwerk- oder Feldbussteckern und
+        das Stecken unbekannter Geräte werden über Türkontakte, Link-Status und
+        Teilnehmerüberwachung erkannt. Die Steuerung erzeugt eine Meldung am Bediengerät und im
+        Sicherheitsprotokoll, außerhalb von Wartungszeiten gegebenenfalls auch an das
+        Leitsystem.
+      en: >-
+        Opening of control cabinet doors, unplugging network or fieldbus connectors and
+        plugging in unknown devices are detected via door contacts, link status and device
+        monitoring. The controller generates an alarm on the HMI and in the security log,
+        outside maintenance times also to the control system where applicable.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Elektroplan mit Türkontakten, Testprotokoll mit ausgelöster Meldung.
+      en: >-
+        Electrical drawing with door contacts, test report with triggered alarm.
+    cra_refs: [AI-I-2-l, AI-I-2-f]
+    iec62443: [FR6]
+    sources: ["generic OT security practice"]

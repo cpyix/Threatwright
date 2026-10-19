@@ -1,0 +1,1461 @@
+# Threat templates for the field level: fieldbuses, field devices, drives,
+# controllers at the bus and the interface to safety functions.
+threats:
+  # --- fieldbus: authentication, topology, interception ------------------------
+  - id: fieldbus-rogue-master
+    rev: 1
+    stride: [S, T]
+    applies_to: [fieldbus-ethercat, fieldbus-canopen, fieldbus-modbus-rtu, plc]
+    title:
+      de: Fremder Master übernimmt den Feldbus {element}
+      en: Rogue master takes over fieldbus {element}
+    scenario:
+      de: >-
+        Der Feldbus kennt keine Authentisierung des Masters. Ein Angreifer schließt
+        ein eigenes Gerät (z. B. Laptop mit Feldbus-Master-Software) an einen freien
+        Anschluss an oder trennt die Steuerung ab und tritt selbst als Master auf.
+        Die Slaves akzeptieren seine Telegramme wie die der regulären Steuerung.
+      en: >-
+        The fieldbus has no authentication of the master. An attacker connects
+        their own device (e.g. a laptop with fieldbus master software) to a free
+        connector, or disconnects the controller and acts as master. The slaves
+        accept the attacker's telegrams just like those of the regular controller.
+    consequence:
+      de: >-
+        Der Angreifer setzt Ausgänge, fährt Antriebe und ändert Parameter an der
+        Steuerung vorbei. Bewegungen ohne Kontrolle der Maschinensteuerung können
+        Personen gefährden.
+      en: >-
+        The attacker sets outputs, moves drives and changes parameters bypassing
+        the controller. Movements outside the control of the machine controller
+        can endanger persons.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T0848, T1692, T0831]
+    emb3d: [TID-406]
+    iec62443: [FR1, FR3]
+    measures: [fieldbus-physical-protection, fieldbus-topology-monitoring, unused-ports-closed, safety-separation]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: fieldbus-device-inserted-mitm
+    rev: 1
+    stride: [T, I]
+    applies_to: [fieldbus-ethercat, fieldbus-profinet, fieldbus-modbus-tcp, fieldbus-modbus-rtu, fieldbus-canopen, io-link]
+    title:
+      de: Eingeschleiftes Gerät manipuliert Telegramme auf {element}
+      en: Device inserted into the line manipulates telegrams on {element}
+    scenario:
+      de: >-
+        Ein Angreifer trennt die Leitung zwischen zwei Teilnehmern auf und schleift
+        ein eigenes Gerät ein, das alle Telegramme mitliest und weiterleitet. Da
+        die Telegramme weder signiert noch verschlüsselt sind, kann das Gerät
+        Prozessdaten unbemerkt verändern, z. B. Sensorwerte zur Steuerung oder
+        Sollwerte zu den Antrieben.
+      en: >-
+        An attacker cuts the line between two nodes and inserts their own device
+        that reads and forwards all telegrams. Since telegrams are neither signed
+        nor encrypted, the device can alter process data unnoticed, e.g. sensor
+        values sent to the controller or set points sent to the drives.
+    consequence:
+      de: >-
+        Die Steuerung arbeitet mit falschen Eingangsdaten oder die Aktoren erhalten
+        verfälschte Befehle; gefährliche Bewegungen und Fehlproduktion sind möglich.
+        Zusätzlich werden alle Prozessdaten offengelegt.
+      en: >-
+        The controller works with false input data or the actuators receive
+        falsified commands; hazardous movements and faulty production are possible.
+        In addition, all process data are disclosed.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-I-2-e]
+    attack_ics: [T0830, T0831]
+    emb3d: [TID-406, TID-408]
+    iec62443: [FR3, FR4]
+    measures: [fieldbus-physical-protection, fieldbus-topology-monitoring, tamper-evident-seals, protocol-security-extension]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: fieldbus-open-port-end-of-line
+    rev: 1
+    stride: [I, T]
+    applies_to: [fieldbus-ethercat, fieldbus-canopen, fieldbus-modbus-rtu]
+    title:
+      de: Offener Anschluss am Linienende von {element} gibt alle Telegramme preis
+      en: Open port at the end of line {element} exposes all telegrams
+    scenario:
+      de: >-
+        Am letzten Teilnehmer einer Linie oder an einem Abzweig bleibt ein
+        Busanschluss frei. Bei Linientopologien wie EtherCAT laufen die Telegramme
+        durch alle Teilnehmer, bei CAN und RS-485 sieht jeder Teilnehmer den ganzen
+        Verkehr. Ein dort angeschlossenes Gerät empfängt sämtliche Telegramme und
+        kann eigene einspeisen, ohne die Linie auftrennen zu müssen.
+      en: >-
+        A bus connector remains free at the last node of a line or at a branch.
+        In line topologies such as EtherCAT telegrams pass through every node; on
+        CAN and RS-485 every node sees all traffic. A device connected there
+        receives all telegrams and can inject its own without cutting the line.
+    consequence:
+      de: >-
+        Prozessdaten und Anlagenaufbau werden offengelegt und dienen als Grundlage
+        für gezielte Manipulation; eingespeiste Telegramme können Aktoren beeinflussen.
+      en: >-
+        Process data and plant structure are disclosed and serve as basis for
+        targeted manipulation; injected telegrams can influence actuators.
+    environment: {interface: local, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-j, AI-I-2-e]
+    attack_ics: [T0842]
+    emb3d: [TID-408]
+    iec62443: [FR4, FR5]
+    measures: [unused-ports-closed, fieldbus-physical-protection, fieldbus-topology-monitoring]
+    sources: ["generic OT threat knowledge"]
+
+  - id: fieldbus-process-data-sniffing
+    rev: 1
+    stride: [I]
+    applies_to: [fieldbus-ethercat, fieldbus-profinet, fieldbus-modbus-tcp, fieldbus-modbus-rtu, fieldbus-canopen, io-link]
+    title:
+      de: Mitschneiden der Prozessdaten auf {element}
+      en: Eavesdropping on process data on {element}
+    scenario:
+      de: >-
+        Ein Angreifer mit Zugang zum Bus oder zum Netz (z. B. über einen
+        Spiegel-Port, einen freien Anschluss oder ein kompromittiertes Gerät) zeichnet
+        den unverschlüsselten Verkehr auf. Aus den Telegrammen lassen sich
+        Prozesswerte, Rezeptparameter und die Belegung der Ein- und Ausgänge ableiten.
+      en: >-
+        An attacker with access to the bus or network (e.g. via a mirror port, a
+        free connector or a compromised device) records the unencrypted traffic.
+        Process values, recipe parameters and the I/O assignment can be derived
+        from the telegrams.
+    consequence:
+      de: >-
+        Verfahrens-Know-how geht verloren und der Angreifer erhält die Informationen,
+        die er für gezielte Manipulationen benötigt.
+      en: >-
+        Process know-how is lost and the attacker obtains the information needed
+        for targeted manipulation.
+    environment: {interface: local, access: restricted}
+    impact: 2
+    cra_refs: [AI-I-2-e]
+    attack_ics: [T0842]
+    emb3d: [TID-408]
+    iec62443: [FR4]
+    measures: [fieldbus-physical-protection, network-segmentation, protocol-security-extension]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- fieldbus: acyclic services, firmware, tunnels ---------------------------
+  - id: fieldbus-mailbox-parameter-access
+    rev: 1
+    stride: [T, E]
+    applies_to: [fieldbus-ethercat, fieldbus-profinet, fieldbus-canopen, drive, remote-io, smart-field-device]
+    title:
+      de: Parameteränderung über azyklische Dienste auf {element}
+      en: Parameter change via acyclic services on {element}
+    scenario:
+      de: >-
+        Neben den zyklischen Prozessdaten bieten Feldbusse azyklische Dienste für
+        Parameterzugriffe, z. B. CoE-SDO bei EtherCAT, Record-Data bei PROFINET
+        oder SDO bei CANopen. Diese Zugriffe sind nicht authentisiert. Wer Telegramme
+        auf den Bus bringen kann, liest und schreibt damit beliebige Objekte im
+        Gerät, auch solche, die nur zur Inbetriebnahme gedacht sind.
+      en: >-
+        Besides cyclic process data, fieldbuses offer acyclic services for
+        parameter access, e.g. CoE SDO on EtherCAT, record data on PROFINET or
+        SDO on CANopen. These accesses are not authenticated. Anyone able to put
+        telegrams on the bus can read and write any object in the device, including
+        those intended only for commissioning.
+    consequence:
+      de: >-
+        Grenzwerte, Skalierungen, Prozessdatenzuordnung oder Fehlerreaktionen werden
+        verändert; das Gerät verhält sich anders als von der Steuerung erwartet,
+        bis hin zu gefährlichen Bewegungen.
+      en: >-
+        Limits, scaling, process data mapping or fault reactions are changed; the
+        device behaves differently than the controller expects, up to hazardous
+        movements.
+    environment: {interface: local, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f, AI-I-2-j]
+    attack_ics: [T0836, T1692]
+    emb3d: [TID-310, TID-406]
+    iec62443: [FR1, FR2, FR3]
+    measures: [fieldbus-mailbox-restriction, parameter-plausibility, config-integrity-check, write-protection-switch]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: fieldbus-firmware-download
+    rev: 1
+    stride: [T, E]
+    applies_to: [fieldbus-ethercat, fieldbus-profinet, fieldbus-canopen, drive, remote-io, smart-field-device]
+    title:
+      de: Manipulierte Firmware wird über {element} eingespielt
+      en: Manipulated firmware is loaded via {element}
+    scenario:
+      de: >-
+        Viele Feldgeräte nehmen neue Firmware direkt über den Feldbus an, z. B. per
+        FoE (File over EtherCAT) oder herstellerspezifische Download-Dienste. Ist
+        die Firmware nicht signiert oder wird die Signatur nicht geprüft, spielt ein
+        Angreifer mit Buszugang eine veränderte Firmware ein, die dauerhaft im Gerät
+        verbleibt.
+      en: >-
+        Many field devices accept new firmware directly via the fieldbus, e.g. via
+        FoE (File over EtherCAT) or vendor-specific download services. If the
+        firmware is not signed or the signature is not checked, an attacker with
+        bus access loads modified firmware that persists in the device.
+    consequence:
+      de: >-
+        Das Gerät führt beliebigen Code aus, meldet falsche Werte, ignoriert Befehle
+        oder fällt dauerhaft aus. Die Manipulation überlebt Neustarts und ist von
+        der Steuerung aus kaum erkennbar.
+      en: >-
+        The device executes arbitrary code, reports false values, ignores commands
+        or fails permanently. The manipulation survives restarts and is hardly
+        detectable from the controller.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-I-2-d, AI-II-7]
+    attack_ics: [T1693, T0800]
+    emb3d: [TID-211, TID-213]
+    iec62443: [FR3, FR1]
+    measures: [signed-firmware, fieldbus-firmware-download-lock, secure-boot, anti-rollback]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: ethercat-eoe-hidden-ip-path
+    rev: 1
+    stride: [E, T, I]
+    applies_to: [fieldbus-ethercat, plc]
+    title:
+      de: EoE-Tunnel als verdeckter IP-Zugang zur Steuerung über {element}
+      en: EoE tunnel as hidden IP path into the controller via {element}
+    scenario:
+      de: >-
+        Ethernet over EtherCAT (EoE) überträgt IP-Verkehr im Mailbox-Kanal des
+        Feldbusses. Der Master leitet diesen Verkehr an einen virtuellen Switch oder
+        an das IP-Netz der Steuerung weiter. Ein Angreifer, der ein Gerät am Bus
+        kontrolliert oder einen eigenen Teilnehmer anschließt, erreicht über diesen
+        Tunnel Webserver, Engineering-Dienste und das Betriebssystem der Steuerung,
+        vorbei an Firewall und Netzsegmentierung.
+      en: >-
+        Ethernet over EtherCAT (EoE) carries IP traffic in the fieldbus mailbox
+        channel. The master forwards this traffic to a virtual switch or to the
+        controller's IP network. An attacker controlling a bus device or connecting
+        their own node reaches web servers, engineering services and the operating
+        system of the controller through this tunnel, bypassing firewall and
+        network segmentation.
+    consequence:
+      de: >-
+        Der Feldbus wird zum Einfallstor in die Steuerungsebene; Programme und
+        Konfiguration der Steuerung können verändert oder ausgelesen werden.
+      en: >-
+        The fieldbus becomes an entry point into the control level; controller
+        programs and configuration can be modified or read.
+    environment: {interface: local, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-j, AI-I-2-d]
+    attack_ics: [T0884]
+    emb3d: [TID-412]
+    iec62443: [FR5, FR1]
+    measures: [fieldbus-tunnel-disabled, firewall-allowlist, least-privilege-services, network-segmentation]
+    sources: ["generic OT threat knowledge; MITRE EMB3D"]
+
+  - id: ethercat-sii-eeprom-manipulation
+    rev: 1
+    stride: [T]
+    applies_to: [fieldbus-ethercat, remote-io, drive, smart-field-device]
+    title:
+      de: Manipulation der Gerätebeschreibung im EEPROM über {element}
+      en: Manipulation of the device description in EEPROM via {element}
+    scenario:
+      de: >-
+        EtherCAT-Slaves speichern Identität, Mailbox-Einstellungen und
+        Prozessdatenbeschreibung in einem EEPROM (SII), das über den Bus beschreibbar
+        ist. Ein Angreifer mit Buszugang überschreibt diese Daten, z. B. Hersteller-
+        und Produktkennung oder die Prozessdatenzuordnung.
+      en: >-
+        EtherCAT slaves store identity, mailbox settings and process data
+        description in an EEPROM (SII) that is writable via the bus. An attacker
+        with bus access overwrites this data, e.g. vendor and product identifiers
+        or the process data mapping.
+    consequence:
+      de: >-
+        Das Gerät wird nach dem nächsten Hochlauf falsch eingebunden oder bringt
+        den Bus nicht mehr in Betrieb; die Manipulation bleibt dauerhaft gespeichert.
+      en: >-
+        After the next start-up the device is integrated incorrectly or the bus no
+        longer becomes operational; the manipulation persists.
+    environment: {interface: local, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-f]
+    attack_ics: [T1692]
+    emb3d: [TID-406]
+    iec62443: [FR3]
+    measures: [fieldbus-mailbox-restriction, config-integrity-check, fieldbus-topology-monitoring]
+    sources: ["generic OT threat knowledge"]
+
+  # --- protocol-specific -------------------------------------------------------
+  - id: modbus-unauthenticated-write
+    rev: 1
+    stride: [T]
+    applies_to: [fieldbus-modbus-tcp, fieldbus-modbus-rtu, plc, process-device]
+    title:
+      de: Unautorisiertes Schreiben von Coils und Registern über {element}
+      en: Unauthorised write of coils and registers via {element}
+    scenario:
+      de: >-
+        Modbus kennt weder Authentisierung noch Berechtigungen. Jeder Teilnehmer,
+        der den Server über das Netz oder die serielle Leitung erreicht, kann mit
+        Standardwerkzeugen Coils und Holding-Register beschreiben, etwa Freigaben,
+        Sollwerte oder Betriebsbefehle.
+      en: >-
+        Modbus has neither authentication nor authorisation. Any party that can
+        reach the server via the network or the serial line can write coils and
+        holding registers with standard tools, such as enables, set points or
+        operating commands.
+    consequence:
+      de: >-
+        Der Prozess wird gezielt verstellt oder Aktoren werden ausgelöst; je nach
+        Belegung der Register sind gefährliche Zustände möglich.
+      en: >-
+        The process is deliberately misadjusted or actuators are triggered;
+        depending on the register assignment hazardous states are possible.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T1692, T0836, T0831]
+    emb3d: [TID-310, TID-406]
+    iec62443: [FR1, FR2, FR3]
+    measures: [firewall-allowlist, network-segmentation, parameter-plausibility, protocol-security-extension]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: modbus-tcp-connection-exhaustion
+    rev: 1
+    stride: [D]
+    applies_to: [fieldbus-modbus-tcp, process-device, remote-io]
+    title:
+      de: Erschöpfung der Modbus-TCP-Verbindungen von {element}
+      en: Exhaustion of Modbus TCP connections of {element}
+    scenario:
+      de: >-
+        Modbus-TCP-Geräte erlauben meist nur wenige gleichzeitige Verbindungen. Ein
+        Angreifer im Netz öffnet diese Verbindungen und hält sie offen, sodass die
+        Steuerung keine Verbindung mehr aufbauen kann.
+      en: >-
+        Modbus TCP devices usually allow only a few simultaneous connections. An
+        attacker in the network opens these connections and keeps them open, so the
+        controller can no longer connect.
+    consequence:
+      de: >-
+        Die Kommunikation zwischen Steuerung und Gerät fällt aus; die Maschine
+        stoppt oder läuft ohne aktuelle Werte weiter.
+      en: >-
+        Communication between controller and device fails; the machine stops or
+        continues without current values.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h]
+    attack_ics: [T0814]
+    emb3d: [TID-405]
+    iec62443: [FR7, FR5]
+    measures: [firewall-allowlist, dos-rate-limiting, network-segmentation, watchdog-safe-state]
+    sources: ["generic OT threat knowledge"]
+
+  - id: profinet-dcp-reconfiguration
+    rev: 1
+    stride: [T, D]
+    applies_to: [fieldbus-profinet, remote-io, drive]
+    title:
+      de: Umbenennung oder Neuadressierung von Geräten über DCP auf {element}
+      en: Renaming or readdressing devices via DCP on {element}
+    scenario:
+      de: >-
+        Das Discovery and Configuration Protocol (DCP) von PROFINET ist ohne
+        Security-Klasse nicht authentisiert. Ein Angreifer im selben Netzsegment
+        ändert damit Gerätenamen oder IP-Adressen von Teilnehmern oder setzt sie
+        auf Werkseinstellungen zurück.
+      en: >-
+        The PROFINET Discovery and Configuration Protocol (DCP) is not
+        authenticated without a security class. An attacker in the same network
+        segment uses it to change device names or IP addresses of nodes, or resets
+        them to factory settings.
+    consequence:
+      de: >-
+        Die Steuerung verliert die Verbindung zu den betroffenen Geräten und die
+        Maschine stoppt; im ungünstigen Fall wird ein falsches Gerät unter dem
+        erwarteten Namen eingebunden.
+      en: >-
+        The controller loses connection to the affected devices and the machine
+        stops; in the worst case a wrong device is integrated under the expected name.
+    environment: {interface: dedicated_known_network, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-d, AI-I-2-h]
+    attack_ics: [T1692, T0814]
+    emb3d: [TID-310]
+    iec62443: [FR1, FR7]
+    measures: [network-segmentation, protocol-security-extension, write-protection-switch, network-monitoring-ids]
+    sources: ["generic OT threat knowledge"]
+
+  - id: canopen-nmt-stop
+    rev: 1
+    stride: [D, T]
+    applies_to: [fieldbus-canopen]
+    title:
+      de: Netzwerkmanagement-Befehle stoppen oder setzen Knoten auf {element} zurück
+      en: Network management commands stop or reset nodes on {element}
+    scenario:
+      de: >-
+        CANopen-NMT-Befehle wie Stop, Reset Node oder Reset Communication sind nicht
+        authentisiert und können an alle Knoten gleichzeitig gesendet werden. Ein
+        Angreifer mit Zugang zum CAN-Bus sendet diese Befehle wiederholt.
+      en: >-
+        CANopen NMT commands such as stop, reset node or reset communication are
+        not authenticated and can be broadcast to all nodes. An attacker with access
+        to the CAN bus sends these commands repeatedly.
+    consequence:
+      de: >-
+        Antriebe und E/A-Module verlassen den Betriebszustand, die Maschine steht
+        still; nach einem Reset können Parameter auf Standardwerte zurückfallen.
+      en: >-
+        Drives and I/O modules leave the operational state and the machine stops;
+        after a reset parameters may fall back to default values.
+    environment: {interface: local, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h, AI-I-2-d]
+    attack_ics: [T1692, T0816, T0814]
+    emb3d: [TID-406]
+    iec62443: [FR7, FR1]
+    measures: [fieldbus-physical-protection, fieldbus-topology-monitoring, watchdog-safe-state]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: canopen-pdo-injection
+    rev: 1
+    stride: [S, T]
+    applies_to: [fieldbus-canopen, remote-io, smart-field-device]
+    title:
+      de: Eingespeiste Prozessdaten-Telegramme auf {element}
+      en: Injected process data telegrams on {element}
+    scenario:
+      de: >-
+        Auf dem CAN-Bus wird der Absender eines Telegramms nur über den Identifier
+        bestimmt. Ein Angreifer sendet Prozessdaten-Telegramme (PDO) mit dem
+        Identifier eines Sensors oder E/A-Moduls und überlagert so die echten Werte.
+      en: >-
+        On the CAN bus the sender of a telegram is only identified by its
+        identifier. An attacker sends process data telegrams (PDO) with the
+        identifier of a sensor or I/O module and thus overrides the genuine values.
+    consequence:
+      de: >-
+        Die Steuerung reagiert auf vorgetäuschte Eingänge, z. B. Endlagen oder
+        Füllstände; Fehlfunktionen und gefährliche Bewegungen sind möglich.
+      en: >-
+        The controller reacts to spoofed inputs, e.g. end positions or fill
+        levels; malfunctions and hazardous movements are possible.
+    environment: {interface: local, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    attack_ics: [T1692, T0832]
+    emb3d: [TID-406]
+    iec62443: [FR3, FR1]
+    measures: [fieldbus-physical-protection, parameter-plausibility, fieldbus-topology-monitoring]
+    sources: ["generic OT threat knowledge"]
+
+  # --- IO-Link -----------------------------------------------------------------
+  - id: io-link-parameter-manipulation
+    rev: 1
+    stride: [T]
+    applies_to: [io-link, smart-field-device]
+    title:
+      de: Manipulation von Sensorparametern über {element}
+      en: Manipulation of sensor parameters via {element}
+    scenario:
+      de: >-
+        IO-Link-Geräte werden über ihren Master ohne Authentisierung parametriert.
+        Ein Angreifer mit Zugriff auf den Master (z. B. über dessen Webserver,
+        Feldbus-Zugang oder ein angeschlossenes Parametriertool) ändert Schaltpunkte,
+        Filterzeiten, Messbereiche oder Teach-Werte eines Sensors.
+      en: >-
+        IO-Link devices are parameterised via their master without authentication.
+        An attacker with access to the master (e.g. via its web server, fieldbus
+        access or a connected parameterisation tool) changes switching points,
+        filter times, measuring ranges or teach values of a sensor.
+    consequence:
+      de: >-
+        Der Sensor schaltet zu spät, gar nicht oder dauerhaft; Prozessfehler und bei
+        Positions- oder Präsenzerkennung gefährliche Situationen sind möglich.
+      en: >-
+        The sensor switches too late, not at all or permanently; process errors
+        and, for position or presence detection, hazardous situations are possible.
+    environment: {interface: local, access: public_restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T0836]
+    emb3d: [TID-310]
+    iec62443: [FR1, FR3]
+    measures: [write-protection-switch, config-integrity-check, parameter-plausibility, role-based-access]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: io-link-data-storage-propagation
+    rev: 1
+    stride: [T]
+    applies_to: [io-link, smart-field-device]
+    title:
+      de: Data-Storage verteilt manipulierte Parameter über {element}
+      en: Data storage propagates manipulated parameters via {element}
+    scenario:
+      de: >-
+        Der IO-Link-Master sichert die Parameter angeschlossener Geräte (Data
+        Storage) und überträgt sie beim Gerätetausch automatisch auf das neue Gerät.
+        Hat ein Angreifer die Parameter einmal verändert, wird der manipulierte
+        Stand bei jedem Tausch wiederhergestellt und überdauert so die Fehlersuche.
+      en: >-
+        The IO-Link master backs up the parameters of connected devices (data
+        storage) and automatically transfers them to a replacement device. Once an
+        attacker has changed the parameters, the manipulated set is restored on
+        every replacement and thus survives troubleshooting.
+    consequence:
+      de: >-
+        Fehlfunktionen treten nach dem Gerätetausch erneut auf; die Ursache wird
+        lange nicht erkannt.
+      en: >-
+        Malfunctions reappear after device replacement; the cause remains
+        undetected for a long time.
+    environment: {interface: local, access: public_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-f]
+    attack_ics: [T0836]
+    iec62443: [FR3]
+    measures: [config-integrity-check, backup-restore, change-management]
+    sources: ["generic OT threat knowledge"]
+
+  - id: io-link-forged-sensor
+    rev: 1
+    stride: [S, T]
+    applies_to: [io-link, smart-field-device]
+    title:
+      de: Untergeschobenes Gerät gibt sich als Sensor an {element} aus
+      en: Substituted device impersonates the sensor on {element}
+    scenario:
+      de: >-
+        Ein Angreifer ersetzt einen IO-Link-Sensor durch ein eigenes Gerät, das
+        dieselbe Hersteller- und Gerätekennung meldet. Die Identitätsprüfung des
+        Masters beruht nur auf diesen frei setzbaren Kennungen und erkennt den
+        Tausch nicht. Das Gerät liefert beliebige Messwerte.
+      en: >-
+        An attacker replaces an IO-Link sensor with their own device reporting the
+        same vendor and device identifiers. The master's identity check relies only
+        on these freely settable identifiers and does not detect the swap. The
+        device delivers arbitrary measured values.
+    consequence:
+      de: >-
+        Die Steuerung arbeitet mit vorgetäuschten Messwerten; Fehlproduktion und
+        gefährliche Zustände sind möglich.
+      en: >-
+        The controller works with spoofed measured values; faulty production and
+        hazardous states are possible.
+    environment: {interface: local, access: public_restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T0849]
+    iec62443: [FR1, FR3]
+    measures: [physical-access-control, tamper-evident-seals, parameter-plausibility, genuine-spare-parts]
+    sources: ["generic OT threat knowledge"]
+
+  # --- denial of service --------------------------------------------------------
+  - id: fieldbus-dos
+    rev: 1
+    stride: [D]
+    applies_to: [fieldbus-ethercat, fieldbus-profinet, fieldbus-modbus-tcp, fieldbus-modbus-rtu, fieldbus-canopen, io-link]
+    title:
+      de: Störung von {element} führt zum Stillstand
+      en: Disruption of {element} leads to standstill
+    scenario:
+      de: >-
+        Ein Angreifer überflutet den Bus oder das Netz mit Telegrammen, sendet
+        hochpriore Störtelegramme (z. B. dominante CAN-Identifier) oder unterbricht
+        bzw. stört die Leitung physisch. Die zyklische Kommunikation verpasst ihre
+        Zeitfenster und die Watchdogs der Teilnehmer lösen aus.
+      en: >-
+        An attacker floods the bus or network with telegrams, sends high-priority
+        jamming telegrams (e.g. dominant CAN identifiers) or physically interrupts
+        or disturbs the line. Cyclic communication misses its time slots and the
+        watchdogs of the nodes trip.
+    consequence:
+      de: >-
+        Die Maschine stoppt, Produktion fällt aus; wiederholte Störungen können
+        Bediener dazu verleiten, Schutzfunktionen zu umgehen.
+      en: >-
+        The machine stops and production is lost; repeated disruptions may tempt
+        operators to bypass protective functions.
+    environment: {interface: local, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h, AI-I-2-i]
+    attack_ics: [T0814, T0813, T1695]
+    emb3d: [TID-405]
+    iec62443: [FR7]
+    measures: [fieldbus-physical-protection, dos-rate-limiting, watchdog-safe-state, network-monitoring-ids]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: field-device-malformed-telegram-crash
+    rev: 1
+    stride: [D]
+    applies_to: [remote-io, drive, smart-field-device, process-device, plc]
+    title:
+      de: Fehlerhafte Telegramme bringen {element} zum Absturz
+      en: Malformed telegrams crash {element}
+    scenario:
+      de: >-
+        Der Protokollstapel des Geräts prüft Länge und Inhalt eingehender
+        Telegramme unzureichend. Ein Angreifer mit Bus- oder Netzzugang sendet
+        gezielt fehlerhafte Telegramme, woraufhin das Gerät hängen bleibt oder neu
+        startet.
+      en: >-
+        The device's protocol stack insufficiently checks length and content of
+        incoming telegrams. An attacker with bus or network access sends crafted
+        malformed telegrams, causing the device to hang or restart.
+    consequence:
+      de: >-
+        Das Gerät fällt aus und muss ggf. vor Ort neu gestartet werden; die
+        Maschine steht still.
+      en: >-
+        The device fails and may need to be restarted on site; the machine stops.
+    environment: {interface: local, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h, AI-I-2-a]
+    attack_ics: [T0814]
+    emb3d: [TID-404, TID-202]
+    iec62443: [FR7, FR3]
+    measures: [input-validation, security-testing, watchdog-safe-state, security-update-process]
+    sources: ["generic OT threat knowledge; MITRE EMB3D"]
+
+  # --- field devices ------------------------------------------------------------
+  - id: field-device-impersonation
+    rev: 1
+    stride: [S]
+    applies_to: [remote-io, drive, smart-field-device, process-device]
+    title:
+      de: Fremdes Gerät gibt sich als {element} aus
+      en: Foreign device impersonates {element}
+    scenario:
+      de: >-
+        Die Steuerung erkennt Feldgeräte nur an Adresse, Gerätename oder
+        Identitätsobjekt, die sich frei einstellen lassen. Ein Angreifer ersetzt
+        das Gerät oder emuliert es mit eigener Hardware und meldet sich mit
+        denselben Kennungen am Bus an.
+      en: >-
+        The controller identifies field devices only by address, device name or
+        identity object, all of which can be set freely. An attacker replaces the
+        device or emulates it with their own hardware and joins the bus with the
+        same identifiers.
+    consequence:
+      de: >-
+        Die Steuerung tauscht Daten mit einem Gerät unter fremder Kontrolle aus;
+        Eingänge werden vorgetäuscht und Ausgänge nicht wie befohlen ausgeführt.
+      en: >-
+        The controller exchanges data with a device under foreign control; inputs
+        are spoofed and outputs are not executed as commanded.
+    environment: {interface: local, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-d]
+    attack_ics: [T0849]
+    emb3d: [TID-406]
+    iec62443: [FR1]
+    measures: [fieldbus-topology-monitoring, tamper-evident-seals, physical-access-control, genuine-spare-parts]
+    sources: ["generic OT threat knowledge"]
+
+  - id: field-device-unlogged-change
+    rev: 1
+    stride: [R]
+    applies_to: [remote-io, drive, smart-field-device, process-device]
+    title:
+      de: Nicht nachvollziehbare Parameter- oder Firmwareänderung an {element}
+      en: Untraceable parameter or firmware change on {element}
+    scenario:
+      de: >-
+        Das Gerät protokolliert Änderungen an Parametern oder Firmware nicht oder
+        ohne Angabe von Zeitpunkt, Zugangsweg und Urheber. Ein Angreifer oder
+        unbefugter Dienstleister ändert das Gerät über Bus oder Service-Schnittstelle,
+        und die Änderung lässt sich später niemandem zuordnen.
+      en: >-
+        The device does not log changes to parameters or firmware, or logs them
+        without time, access path and originator. An attacker or unauthorised
+        service provider changes the device via bus or service interface, and the
+        change cannot later be attributed to anyone.
+    consequence:
+      de: >-
+        Manipulationen werden spät oder gar nicht erkannt, die Ursachenanalyse nach
+        einem Vorfall ist erschwert und Verantwortlichkeiten bleiben unklar.
+      en: >-
+        Manipulation is detected late or not at all, root cause analysis after an
+        incident is hampered and responsibilities remain unclear.
+    environment: {interface: local, access: restricted}
+    impact: 2
+    cra_refs: [AI-I-2-l]
+    attack_ics: [T0872]
+    iec62443: [FR6, FR2]
+    measures: [security-logging, config-integrity-check, time-synchronization, change-management]
+    sources: ["generic OT threat knowledge"]
+
+  - id: field-device-configuration-readout
+    rev: 1
+    stride: [I]
+    applies_to: [remote-io, drive, smart-field-device, process-device]
+    title:
+      de: Auslesen von Konfiguration und Prozess-Know-how aus {element}
+      en: Readout of configuration and process know-how from {element}
+    scenario:
+      de: >-
+        Über azyklische Feldbusdienste, die Service-Schnittstelle oder ein
+        Inbetriebnahme-Tool lassen sich sämtliche Geräteparameter ohne
+        Authentisierung auslesen, z. B. Reglereinstellungen, Prozessparameter oder
+        hinterlegte Kennlinien.
+      en: >-
+        Via acyclic fieldbus services, the service interface or a commissioning
+        tool, all device parameters can be read without authentication, e.g.
+        controller tuning, process parameters or stored characteristic curves.
+    consequence:
+      de: >-
+        Verfahrens-Know-how geht an Wettbewerber oder Angreifer verloren und
+        erleichtert gezielte Manipulationen.
+      en: >-
+        Process know-how is lost to competitors or attackers and facilitates
+        targeted manipulation.
+    environment: {interface: local, access: restricted}
+    impact: 2
+    cra_refs: [AI-I-2-e, AI-I-2-d]
+    attack_ics: [T0882, T0888]
+    emb3d: [TID-310]
+    iec62443: [FR4, FR2]
+    measures: [fieldbus-mailbox-restriction, role-based-access, debug-interfaces-disabled]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: field-device-service-port-access
+    rev: 1
+    stride: [E, T]
+    applies_to: [drive, smart-field-device, process-device, remote-io]
+    title:
+      de: Vollzugriff über die Service-Schnittstelle von {element}
+      en: Full access via the service interface of {element}
+    scenario:
+      de: >-
+        Das Gerät besitzt eine lokale Service-Schnittstelle (z. B. USB, serieller
+        Port, Bluetooth-Dongle), über die ohne Anmeldung alle Parameter, Firmware
+        und Diagnosefunktionen erreichbar sind. Wer Zugang zum Schaltschrank hat,
+        erhält damit mehr Rechte, als ihm der Betrieb über die Steuerung erlaubt.
+      en: >-
+        The device has a local service interface (e.g. USB, serial port,
+        Bluetooth dongle) that grants access to all parameters, firmware and
+        diagnostic functions without login. Anyone with access to the control
+        cabinet thus obtains more rights than operation via the controller permits.
+    consequence:
+      de: >-
+        Grenzwerte, Betriebsarten oder Firmware werden verändert, ohne dass die
+        Steuerung dies bemerkt; gefährliche Zustände sind möglich.
+      en: >-
+        Limits, operating modes or firmware are changed without the controller
+        noticing; hazardous states are possible.
+    environment: {interface: physical, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-j]
+    attack_ics: [T0836]
+    emb3d: [TID-224, TID-116]
+    iec62443: [FR1, FR2]
+    measures: [debug-interfaces-disabled, strong-authentication, physical-access-control, tamper-evident-seals]
+    sources: ["generic OT threat knowledge; MITRE EMB3D"]
+
+  - id: supplier-field-device-unvetted-firmware
+    rev: 1
+    stride: [T, E]
+    applies_to: [smart-field-device, drive, remote-io, process-device]
+    title:
+      de: Zugekauftes Feldgerät {element} mit ungeprüfter Firmware
+      en: Purchased field device {element} with unvetted firmware
+    scenario:
+      de: >-
+        Zugelieferte Feldgeräte bringen eigene Firmware mit, deren Inhalt,
+        Komponenten und Schwachstellen dem Maschinenhersteller unbekannt sind. Die
+        Firmware kann verwundbare Bibliotheken, undokumentierte Dienste, feste
+        Zugangsdaten oder in der Lieferkette eingeschleusten Code enthalten.
+      en: >-
+        Supplied field devices come with their own firmware whose content,
+        components and vulnerabilities are unknown to the machine manufacturer. The
+        firmware may contain vulnerable libraries, undocumented services, hard-coded
+        credentials or code injected in the supply chain.
+    consequence:
+      de: >-
+        Angreifer nutzen die Schwachstellen des Geräts als Einstieg in die Maschine;
+        der Hersteller kann Schwachstellen weder erkennen noch zeitnah beheben.
+      en: >-
+        Attackers use the device's vulnerabilities as entry into the machine; the
+        manufacturer can neither detect vulnerabilities nor fix them in time.
+    impact: 4
+    cra_refs: [AI-II-1, AI-I-2-a, AI-I-2-c]
+    attack_ics: [T0862]
+    emb3d: [TID-401, TID-328]
+    iec62443: [FR3]
+    measures: [supplier-security-requirements, third-party-firmware-review, component-inventory-sbom, supplier-vulnerability-monitoring]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- drives -------------------------------------------------------------------
+  - id: drive-parameter-manipulation
+    rev: 1
+    stride: [T]
+    applies_to: [drive]
+    title:
+      de: Manipulation von Drehzahl- und Drehmomentgrenzen in {element}
+      en: Manipulation of speed and torque limits in {element}
+    scenario:
+      de: >-
+        Ein Angreifer ändert über Feldbus, Service-Schnittstelle oder
+        Inbetriebnahme-Software die Parameter des Antriebsreglers, z. B.
+        Maximaldrehzahl, Drehmoment- und Stromgrenzen, Rampen, Software-Endlagen
+        oder die Reaktion auf Kommunikationsausfall. Ohne Prüfung der Parameter
+        durch die Steuerung bleibt die Änderung unbemerkt.
+      en: >-
+        An attacker changes the parameters of the drive controller via fieldbus,
+        service interface or commissioning software, e.g. maximum speed, torque and
+        current limits, ramps, software limit switches or the reaction to
+        communication loss. Without the controller checking the parameters the
+        change goes unnoticed.
+    consequence:
+      de: >-
+        Achsen fahren schneller oder mit mehr Kraft als vorgesehen, überfahren
+        Endlagen oder bleiben bei Störung nicht stehen; Personen und Maschine können
+        geschädigt werden, sofern keine sichere Überwachung greift.
+      en: >-
+        Axes move faster or with more force than intended, overrun end positions
+        or do not stop on faults; persons and machine can be harmed unless a safe
+        monitoring function intervenes.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    attack_ics: [T0836, T0831]
+    iec62443: [FR3, FR2]
+    measures: [safety-speed-monitoring, parameter-plausibility, config-integrity-check, fieldbus-mailbox-restriction]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: drive-brake-control-manipulation
+    rev: 1
+    stride: [T]
+    applies_to: [drive, safety-relevant-outputs]
+    title:
+      de: Haltebremse wird über Standardsoftware von {element} geöffnet
+      en: Holding brake is released via standard software of {element}
+    scenario:
+      de: >-
+        Die Haltebremse einer vertikalen oder schwerkraftbelasteten Achse wird über
+        einen Prozessdatenbefehl oder Parameter des Antriebs angesteuert, ohne
+        sichere Bremsenansteuerung. Ein Angreifer mit Buszugang oder Zugriff auf
+        die Steuerungslogik öffnet die Bremse bei abgeschaltetem Antrieb.
+      en: >-
+        The holding brake of a vertical or gravity-loaded axis is controlled via a
+        process data command or drive parameter without safe brake control. An
+        attacker with bus access or access to the control logic releases the brake
+        while the drive is disabled.
+    consequence:
+      de: >-
+        Die Last sackt ab oder fällt herunter; Personen im Gefahrenbereich können
+        schwer verletzt werden.
+      en: >-
+        The load sags or falls; persons in the danger zone can be seriously injured.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    attack_ics: [T0831, T0880]
+    iec62443: [FR3]
+    measures: [safety-separation, safe-communication-profile, fieldbus-physical-protection]
+    sources: ["generic OT threat knowledge"]
+
+  # --- process devices ------------------------------------------------------------
+  - id: process-device-parameter-manipulation
+    rev: 1
+    stride: [T]
+    applies_to: [process-device]
+    title:
+      de: Manipulation von Prozessparametern in {element}
+      en: Manipulation of process parameters in {element}
+    scenario:
+      de: >-
+        Das Prozessgerät übernimmt Sollwerte und Programmnummern (z. B. Strom,
+        Spannung, Temperatur, Zeiten) über Feldbus oder Netzwerk ohne Prüfung des
+        Absenders. Ein Angreifer mit Zugang zur Kommunikation verändert diese Werte
+        dauerhaft im Gerät oder während der Übertragung.
+      en: >-
+        The process device accepts set points and program numbers (e.g. current,
+        voltage, temperature, times) via fieldbus or network without checking the
+        sender. An attacker with access to the communication changes these values
+        permanently in the device or during transmission.
+    consequence:
+      de: >-
+        Es entstehen fehlerhafte Produkte, die unter Umständen erst beim Kunden
+        versagen; Überhitzung oder Prozessstörungen können Anlage und Personen
+        gefährden.
+      en: >-
+        Defective products are produced that may only fail at the customer;
+        overheating or process disturbances can endanger plant and persons.
+    environment: {interface: local, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    attack_ics: [T0836]
+    iec62443: [FR3, FR1]
+    measures: [parameter-plausibility, recipe-change-approval, config-integrity-check, security-logging]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: process-device-own-network-interface
+    rev: 1
+    stride: [S, E]
+    applies_to: [process-device]
+    title:
+      de: Eigene Netzwerkschnittstelle von {element} umgeht die Steuerung
+      en: Own network interface of {element} bypasses the controller
+    scenario:
+      de: >-
+        Das Prozessgerät hat neben dem Feldbus eine eigene Ethernet-Schnittstelle
+        mit Webserver oder Herstellerprotokoll, oft mit Standard-Passwort oder ganz
+        ohne Anmeldung. Ein Angreifer im Netz meldet sich mit bekannten Zugangsdaten
+        an und erhält Administratorrechte am Gerät.
+      en: >-
+        Besides the fieldbus, the process device has its own Ethernet interface
+        with a web server or vendor protocol, often with a default password or no
+        login at all. An attacker in the network logs in with known credentials and
+        gains administrator rights on the device.
+    consequence:
+      de: >-
+        Prozess, Firmware und Konfiguration des Geräts stehen unter fremder
+        Kontrolle, ohne dass die Maschinensteuerung beteiligt ist.
+      en: >-
+        Process, firmware and configuration of the device are under foreign
+        control without involvement of the machine controller.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    cra_refs: [AI-I-2-b, AI-I-2-d, AI-I-2-j]
+    attack_ics: [T1694, T0859]
+    emb3d: [TID-311, TID-310]
+    iec62443: [FR1, FR5]
+    measures: [no-default-passwords, unique-device-credentials, network-segmentation, least-privilege-services]
+    sources: ["generic OT threat knowledge; MITRE EMB3D"]
+
+  - id: field-device-firmware-via-usb
+    rev: 1
+    stride: [T]
+    applies_to: [process-device, drive]
+    title:
+      de: Unsignierte Firmware wird per USB auf {element} geladen
+      en: Unsigned firmware is loaded onto {element} via USB
+    scenario:
+      de: >-
+        Das Gerät nimmt Firmware-Updates von einem USB-Stick oder über die
+        Service-Schnittstelle an und prüft dabei weder Herkunft noch Integrität.
+        Ein Angreifer oder ein infizierter Service-Laptop spielt eine veränderte
+        Firmware ein.
+      en: >-
+        The device accepts firmware updates from a USB stick or via the service
+        interface without checking origin or integrity. An attacker or an infected
+        service laptop installs modified firmware.
+    consequence:
+      de: >-
+        Das Gerät führt fremden Code aus und kann dauerhaft manipuliert oder
+        unbrauchbar gemacht werden.
+      en: >-
+        The device executes foreign code and can be permanently manipulated or
+        rendered unusable.
+    environment: {interface: physical, access: restricted}
+    impact: 4
+    cra_refs: [AI-I-2-f, AI-II-7]
+    attack_ics: [T1693]
+    emb3d: [TID-211, TID-213]
+    iec62443: [FR3]
+    measures: [signed-firmware, secure-boot, usb-port-control, service-laptop-policy]
+    sources: ["generic OT threat knowledge; MITRE EMB3D"]
+
+  # --- controllers at the field level -----------------------------------------------
+  - id: controller-io-forcing
+    rev: 1
+    stride: [T]
+    applies_to: [plc, safety-relevant-outputs]
+    title:
+      de: Forcen von Ein- und Ausgängen über die Online-Funktion von {element}
+      en: Forcing inputs and outputs via the online function of {element}
+    scenario:
+      de: >-
+        Engineering-Werkzeuge erlauben, Ein- und Ausgänge im Prozessabbild der
+        Steuerung zu forcen, also unabhängig vom Programm fest auf einen Wert zu
+        setzen. Ein Angreifer mit Zugang zur Engineering-Schnittstelle setzt so
+        Freigaben, Ventile oder Rückmeldungen dauerhaft.
+      en: >-
+        Engineering tools allow inputs and outputs in the controller's process
+        image to be forced, i.e. set to a fixed value independent of the program.
+        An attacker with access to the engineering interface thereby permanently
+        sets enables, valves or feedback signals.
+    consequence:
+      de: >-
+        Die Steuerungslogik wird ausgehebelt, Verriegelungen greifen nicht mehr und
+        Aktoren schalten unabhängig vom Prozesszustand; Personen können gefährdet werden.
+      en: >-
+        The control logic is overridden, interlocks no longer work and actuators
+        switch independently of the process state; persons can be endangered.
+    environment: {interface: known_network, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T0835, T0831]
+    iec62443: [FR2, FR3]
+    measures: [role-based-access, strong-authentication, security-logging, safety-separation]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: controller-unattributed-change
+    rev: 1
+    stride: [R]
+    applies_to: [plc, safety-plc]
+    title:
+      de: Programm- oder Parameteränderung an {element} ohne Urheberzuordnung
+      en: Program or parameter change on {element} without attribution
+    scenario:
+      de: >-
+        Die Steuerung akzeptiert Programmdownloads und Online-Änderungen über ein
+        gemeinsam genutztes Konto oder ganz ohne Anmeldung und protokolliert nicht,
+        wer wann was geändert hat. Ein Angreifer oder Innentäter ändert Programm
+        oder Parameter, und die Änderung lässt sich niemandem zuordnen.
+      en: >-
+        The controller accepts program downloads and online changes via a shared
+        account or without login and does not log who changed what and when. An
+        attacker or insider changes program or parameters and the change cannot be
+        attributed to anyone.
+    consequence:
+      de: >-
+        Manipulationen bleiben unerkannt oder werden erst nach einem Vorfall
+        bemerkt; Ursache und Verantwortung lassen sich nicht klären.
+      en: >-
+        Manipulation remains undetected or is noticed only after an incident;
+        cause and responsibility cannot be determined.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-l, AI-I-2-d]
+    attack_ics: [T0872]
+    emb3d: [TID-225]
+    iec62443: [FR6, FR1]
+    measures: [security-logging, unique-device-credentials, log-protection, program-integrity-check]
+    sources: ["generic OT threat knowledge"]
+
+  - id: controller-program-upload
+    rev: 1
+    stride: [I]
+    applies_to: [plc, safety-plc]
+    title:
+      de: Auslesen von Programm und Parametern aus {element}
+      en: Readout of program and parameters from {element}
+    scenario:
+      de: >-
+        Programm, Projektdaten und Parameter lassen sich mit dem Engineering-Werkzeug
+        ohne Anmeldung aus der Steuerung hochladen, über das Netz, den Feldbus-Tunnel
+        oder die Service-Schnittstelle.
+      en: >-
+        Program, project data and parameters can be uploaded from the controller
+        with the engineering tool without login, via the network, the fieldbus
+        tunnel or the service interface.
+    consequence:
+      de: >-
+        Maschinen-Know-how geht verloren und der Angreifer kennt Verriegelungen und
+        Adressbelegung für gezielte Manipulation.
+      en: >-
+        Machine know-how is lost and the attacker learns interlocks and address
+        assignments for targeted manipulation.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-e, AI-I-2-d]
+    attack_ics: [T0845]
+    iec62443: [FR4, FR2]
+    measures: [engineering-project-protection, strong-authentication, role-based-access]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- safety controller ------------------------------------------------------------
+  - id: safety-plc-engineering-change
+    rev: 1
+    stride: [T, E]
+    applies_to: [safety-plc]
+    title:
+      de: Änderung von Sicherheitsprogramm oder -parametern in {element} über Engineering-Zugang
+      en: Change of safety program or parameters in {element} via engineering access
+    scenario:
+      de: >-
+        Ein Angreifer verschafft sich Zugang zur Engineering-Schnittstelle der
+        Sicherheitssteuerung, z. B. über eine kompromittierte Engineering-Workstation,
+        einen Service-Laptop oder Fernwartung, und lädt ein verändertes
+        Sicherheitsprogramm oder veränderte Sicherheitsparameter (Abschaltzeiten,
+        Grenzwerte, Muting-Bedingungen).
+      en: >-
+        An attacker gains access to the engineering interface of the safety
+        controller, e.g. via a compromised engineering workstation, a service laptop
+        or remote maintenance, and downloads a modified safety program or modified
+        safety parameters (switch-off times, limits, muting conditions).
+    consequence:
+      de: >-
+        Schutzfunktionen sind abgeschwächt oder unwirksam, ohne dass dies im Betrieb
+        sichtbar wird; Personen sind ungeschützt Gefahren ausgesetzt.
+      en: >-
+        Protective functions are weakened or ineffective without this being
+        visible during operation; persons are exposed to hazards unprotected.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T0843, T0889, T0880]
+    emb3d: [TID-303]
+    iec62443: [FR1, FR2, FR3]
+    measures: [strong-authentication, program-integrity-check, engineering-tool-integrity, change-management]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: safety-plc-weak-password
+    rev: 1
+    stride: [S]
+    applies_to: [safety-plc]
+    title:
+      de: Standard- oder Sammelpasswort der Sicherheitssteuerung {element}
+      en: Default or shared password of safety controller {element}
+    scenario:
+      de: >-
+        Das Passwort, das Änderungen am Sicherheitsprogramm schützt, ist ab Werk
+        gesetzt, für alle Maschinen gleich oder im Service-Team weit verbreitet.
+        Ein Angreifer kennt oder errät es und tritt gegenüber der Steuerung als
+        berechtigter Sicherheitsverantwortlicher auf.
+      en: >-
+        The password protecting changes to the safety program is set at the
+        factory, identical for all machines or widely shared in the service team.
+        An attacker knows or guesses it and acts towards the controller as an
+        authorised safety engineer.
+    consequence:
+      de: >-
+        Der wichtigste Schutz gegen Änderungen der Sicherheitsfunktionen ist
+        wirkungslos; Manipulationen sind keiner Person zuordenbar.
+      en: >-
+        The main protection against changes of safety functions is ineffective;
+        manipulations cannot be attributed to a person.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-b, AI-I-2-d]
+    attack_ics: [T1694, T0859]
+    emb3d: [TID-311, TID-314]
+    iec62443: [FR1]
+    measures: [unique-device-credentials, no-default-passwords, account-lockout, service-personnel-training]
+    sources: ["generic OT threat knowledge; MITRE EMB3D"]
+
+  - id: safety-telegram-forgery-black-channel
+    rev: 1
+    stride: [S, T]
+    applies_to: [safety-plc, fieldbus-ethercat, fieldbus-profinet]
+    title:
+      de: Gefälschte Sicherheitstelegramme über den Black Channel von {element}
+      en: Forged safety telegrams via the black channel of {element}
+    scenario:
+      de: >-
+        Sicherheitsprotokolle nach dem Black-Channel-Prinzip sichern Telegramme mit
+        CRC, Zähler und Adresse gegen zufällige Fehler, nicht gegen gezielte
+        Angriffe. Ein Angreifer, der Protokoll, Adressen und Parameter kennt,
+        erzeugt gültige Sicherheitstelegramme und meldet z. B. eine geschlossene
+        Schutztür oder einen nicht betätigten Not-Halt.
+      en: >-
+        Safety protocols based on the black channel principle protect telegrams
+        with CRC, counter and address against random errors, not against
+        deliberate attacks. An attacker knowing protocol, addresses and parameters
+        generates valid safety telegrams and reports e.g. a closed guard door or a
+        non-actuated emergency stop.
+    consequence:
+      de: >-
+        Die Sicherheitssteuerung hält eine Schutzfunktion für erfüllt, obwohl sie
+        angefordert ist; Personen sind ungeschützt.
+      en: >-
+        The safety controller considers a protective function satisfied although
+        it is demanded; persons are unprotected.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    attack_ics: [T1692, T0880]
+    emb3d: [TID-406, TID-407]
+    iec62443: [FR3, FR1]
+    measures: [fieldbus-physical-protection, fieldbus-topology-monitoring, safety-separation, protocol-security-extension]
+    sources: ["generic OT threat knowledge"]
+
+  - id: safety-plc-forced-safe-stop
+    rev: 1
+    stride: [D]
+    applies_to: [safety-plc, safety-relevant-outputs]
+    title:
+      de: Provozierte Sicherheitsabschaltungen durch {element}
+      en: Provoked safety shutdowns by {element}
+    scenario:
+      de: >-
+        Ein Angreifer stört gezielt die sichere Kommunikation, z. B. durch
+        ungültige oder verzögerte Sicherheitstelegramme, sodass Watchdogs der
+        Sicherheitssteuerung auslösen. Die Steuerung schaltet wiederholt in den
+        sicheren Zustand.
+      en: >-
+        An attacker deliberately disturbs safe communication, e.g. with invalid or
+        delayed safety telegrams, so that the safety controller's watchdogs trip.
+        The controller repeatedly switches to the safe state.
+    consequence:
+      de: >-
+        Die Maschine steht wiederholt still und muss quittiert werden; der
+        Produktionsdruck verleitet zum Umgehen von Schutzeinrichtungen.
+      en: >-
+        The machine stops repeatedly and must be acknowledged; production pressure
+        tempts staff to bypass protective devices.
+    environment: {interface: local, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h]
+    attack_ics: [T0814, T0813]
+    iec62443: [FR7]
+    measures: [fieldbus-physical-protection, network-monitoring-ids, dos-rate-limiting]
+    sources: ["generic OT threat knowledge"]
+
+  # --- outputs with safety effect ----------------------------------------------------
+  - id: safety-outputs-standard-technology
+    rev: 1
+    stride: [T, E]
+    applies_to: [safety-relevant-outputs, plc, remote-io]
+    title:
+      de: Ausgänge mit Sicherheitswirkung in Standardtechnik ({element})
+      en: Outputs with safety effect in standard technology ({element})
+    scenario:
+      de: >-
+        Freigaben, Überbrückungen von Schutzeinrichtungen oder die Betriebsartenwahl
+        werden über Standard-Ausgänge geschaltet, die von nicht sicherheitsgerichteter
+        Software gesetzt werden. Ein Angreifer, der Programm, Prozessdaten oder
+        Feldbus der Standardsteuerung manipuliert, setzt diese Ausgänge und hebelt
+        so die Sicherheitsfunktion aus, ohne die Sicherheitssteuerung anzugreifen.
+      en: >-
+        Enables, bypasses of protective devices or operating mode selection are
+        switched via standard outputs set by non-safety software. An attacker who
+        manipulates the program, process data or fieldbus of the standard controller
+        sets these outputs and thus defeats the safety function without attacking
+        the safety controller.
+    consequence:
+      de: >-
+        Schutzfunktionen werden überbrückt oder eine Betriebsart mit reduzierter
+        Schutzwirkung wird aktiv; Personen können schwer verletzt werden.
+      en: >-
+        Protective functions are bypassed or an operating mode with reduced
+        protection becomes active; persons can be seriously injured.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    attack_ics: [T0837, T0880, T0858, T0835]
+    iec62443: [FR3, FR5]
+    measures: [safety-separation, bypass-hardwired-key, mode-selection-safety-rated, safe-communication-profile]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: safety-mode-selection-forged
+    rev: 1
+    stride: [S, T]
+    applies_to: [safety-relevant-outputs, plc]
+    title:
+      de: Vorgetäuschte Betriebsartenwahl über {element}
+      en: Spoofed operating mode selection via {element}
+    scenario:
+      de: >-
+        Die Betriebsart (z. B. Einrichten, Automatik, Service) wird über eine
+        Variable oder ein Netzwerktelegramm vom Bediengerät an die Steuerung
+        übermittelt, ohne dass der Absender geprüft wird. Ein Angreifer sendet das
+        Telegramm selbst und gibt sich als berechtigtes Bediengerät aus.
+      en: >-
+        The operating mode (e.g. setup, automatic, service) is transmitted from the
+        operator panel to the controller via a variable or network telegram without
+        verifying the sender. An attacker sends the telegram and poses as an
+        authorised operator panel.
+    consequence:
+      de: >-
+        Die Maschine wechselt in eine Betriebsart mit anderen Schutzmaßnahmen,
+        während Personen sich auf den bisherigen Zustand verlassen.
+      en: >-
+        The machine changes to an operating mode with different protective measures
+        while persons rely on the previous state.
+    environment: {interface: known_network, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T0858, T1692]
+    iec62443: [FR1, FR3]
+    measures: [mode-selection-safety-rated, strong-authentication, local-control-priority]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: safety-bypass-unattributed
+    rev: 1
+    stride: [R]
+    applies_to: [safety-relevant-outputs]
+    title:
+      de: Aktivierung einer Überbrückung über {element} ist nicht nachweisbar
+      en: Activation of a bypass via {element} cannot be traced
+    scenario:
+      de: >-
+        Überbrückungen, Freigaben und Betriebsartenwechsel werden per Software
+        geschaltet, ohne dass Zeitpunkt, Auslöser und Zugangsweg festgehalten
+        werden. Ein Angreifer oder Innentäter aktiviert eine Überbrückung und
+        streitet dies nach einem Vorfall ab.
+      en: >-
+        Bypasses, enables and operating mode changes are switched by software
+        without recording time, trigger and access path. An attacker or insider
+        activates a bypass and denies it after an incident.
+    consequence:
+      de: >-
+        Nach einem Unfall lässt sich nicht klären, wer die Schutzfunktion außer Kraft
+        gesetzt hat; Wiederholungen werden nicht verhindert.
+      en: >-
+        After an accident it cannot be determined who disabled the protective
+        function; recurrence is not prevented.
+    environment: {interface: local, access: restricted}
+    impact: 3
+    safety_related: true
+    cra_refs: [AI-I-2-l]
+    attack_ics: [T0872]
+    iec62443: [FR6, FR2]
+    measures: [security-logging, log-protection, bypass-hardwired-key, time-synchronization]
+    sources: ["generic OT threat knowledge"]
+
+  - id: safety-output-mapping-disclosure
+    rev: 1
+    stride: [I]
+    applies_to: [safety-relevant-outputs, plc]
+    title:
+      de: Offenlegung der Belegung sicherheitswirksamer Ausgänge von {element}
+      en: Disclosure of the assignment of safety-effective outputs of {element}
+    scenario:
+      de: >-
+        Aus mitgeschnittenen Prozessdaten, ausgelesenen Projekten oder frei
+        zugänglichen Gerätebeschreibungen und Variablenlisten erkennt ein Angreifer,
+        welches Bit eine Überbrückung, Freigabe oder Betriebsart steuert.
+      en: >-
+        From recorded process data, uploaded projects or freely accessible device
+        descriptions and tag lists an attacker identifies which bit controls a
+        bypass, enable or operating mode.
+    consequence:
+      de: >-
+        Der Angreifer kann Schutzfunktionen gezielt und mit wenigen Telegrammen
+        aushebeln.
+      en: >-
+        The attacker can defeat protective functions selectively with few telegrams.
+    environment: {interface: local, access: restricted}
+    impact: 2
+    cra_refs: [AI-I-2-e]
+    attack_ics: [T0861]
+    iec62443: [FR4]
+    measures: [engineering-project-protection, data-minimisation, safety-separation]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: output-hold-last-value
+    rev: 1
+    stride: [D, T]
+    applies_to: [remote-io, safety-relevant-outputs, fieldbus-ethercat, fieldbus-profinet, fieldbus-canopen]
+    title:
+      de: Ausgänge von {element} behalten bei Kommunikationsausfall ihren Zustand
+      en: Outputs of {element} keep their state on communication loss
+    scenario:
+      de: >-
+        Das E/A-Modul ist so konfiguriert, dass Ausgänge bei Kommunikationsausfall
+        den letzten Wert halten, oder ein Angreifer stellt diese Fehlerreaktion
+        über Parameter um. Er setzt zuerst eine Freigabe oder Überbrückung und
+        unterbricht dann die Kommunikation, sodass die Steuerung den Ausgang nicht
+        mehr zurücknehmen kann.
+      en: >-
+        The I/O module is configured so that outputs hold their last value on
+        communication loss, or an attacker changes this fault reaction via
+        parameters. The attacker first sets an enable or bypass and then interrupts
+        communication, so the controller can no longer reset the output.
+    consequence:
+      de: >-
+        Eine Freigabe oder Überbrückung bleibt aktiv, obwohl die Steuerung keinen
+        Einfluss mehr hat; Personen können gefährdet werden.
+      en: >-
+        An enable or bypass remains active although the controller has lost
+        control; persons can be endangered.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-h, AI-I-2-f]
+    attack_ics: [T0813, T0837]
+    iec62443: [FR7, FR3]
+    measures: [watchdog-safe-state, config-integrity-check, safety-separation]
+    sources: ["generic OT threat knowledge"]
+
+  # --- protective devices ------------------------------------------------------------
+  - id: safety-device-signal-spoofed
+    rev: 1
+    stride: [S, T]
+    applies_to: [safety-devices, remote-io]
+    title:
+      de: Vorgetäuschter Zustand der Schutzeinrichtung {element}
+      en: Spoofed state of protective device {element}
+    scenario:
+      de: >-
+        Der Zustand einer Schutzeinrichtung (z. B. Schutztür, Lichtgitter) wird
+        zusätzlich oder ausschließlich über einen Standard-Eingang an die Steuerung
+        gemeldet und dort für Freigaben verwendet. Ein Angreifer täuscht den Zustand
+        über eingespeiste Telegramme oder ein manipuliertes E/A-Modul vor.
+      en: >-
+        The state of a protective device (e.g. guard door, light curtain) is
+        reported additionally or exclusively via a standard input to the controller
+        and used there for enables. An attacker spoofs the state via injected
+        telegrams or a manipulated I/O module.
+    consequence:
+      de: >-
+        Die Steuerung gibt gefahrbringende Bewegungen frei, obwohl die
+        Schutzeinrichtung offen ist; Personen können verletzt werden.
+      en: >-
+        The controller enables hazardous movements although the protective device
+        is open; persons can be injured.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    attack_ics: [T1692, T0880]
+    emb3d: [TID-406]
+    iec62443: [FR3, FR1]
+    measures: [safety-separation, safe-communication-profile, fieldbus-physical-protection]
+    sources: ["generic OT threat knowledge"]
+
+  - id: safety-reset-via-bus
+    rev: 1
+    stride: [S, R]
+    applies_to: [safety-devices, safety-plc]
+    title:
+      de: Gefälschter Rücksetzbefehl für {element} über den Bus
+      en: Forged reset command for {element} via the bus
+    scenario:
+      de: >-
+        Die Quittierung nach Not-Halt oder Öffnen einer Schutzeinrichtung wird als
+        Telegramm von einem Bediengerät oder einer Standardsteuerung übertragen.
+        Ein Angreifer sendet den Rücksetzbefehl selbst, ohne Sicht auf den
+        Gefahrenbereich, und der Befehl lässt sich keinem Bediener zuordnen.
+      en: >-
+        The acknowledgement after an emergency stop or opening of a protective
+        device is transmitted as a telegram from an operator panel or standard
+        controller. An attacker sends the reset command without view of the danger
+        zone, and the command cannot be attributed to any operator.
+    consequence:
+      de: >-
+        Die Maschine wird wieder anlauffähig, während sich eine Person im
+        Gefahrenbereich befindet; die Herkunft des Befehls bleibt unklar.
+      en: >-
+        The machine becomes ready to start again while a person is in the danger
+        zone; the origin of the command remains unclear.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-l]
+    attack_ics: [T1692, T0880]
+    iec62443: [FR1, FR6]
+    measures: [local-control-priority, safety-separation, security-logging]
+    sources: ["generic OT threat knowledge"]

@@ -1,0 +1,468 @@
+# Element types. kind = DFD category; "flow" entries are data flow types.
+# environment = suggestion only; asset_class values refer to TR-03183-1 Tables 1-3.
+elements:
+  # --- controllers -------------------------------------------------------------
+  - id: plc
+    name: {de: SPS, en: PLC}
+    kind: device
+    icon: plc
+    interfaces: [fieldbus, ethernet, usb, serial]
+    environment: {interface: known_network, access: restricted}
+    properties: {firmware: true, update_path: engineering-tool, authentication: optional, default_password: possible}
+    assets:
+      - title: {de: Steuerungsprogramm, en: Control program}
+        asset_class: BusinessData.Important
+        rationale: {de: Know-how und Funktion der Maschine, en: Know-how and function of the machine}
+      - title: {de: Steuerungsfunktion, en: Control function}
+        asset_class: Functions.Essential
+      - title: {de: Maschinenparameter, en: Machine parameters}
+        asset_class: Other.Configuration
+  - id: safety-plc
+    name: {de: Sicherheitssteuerung, en: Safety controller}
+    kind: device
+    icon: safety-plc
+    interfaces: [fieldbus, ethernet, usb]
+    environment: {interface: local, access: restricted}
+    properties: {firmware: true, update_path: engineering-tool, authentication: password, default_password: possible}
+    assets:
+      - title: {de: Sicherheitsfunktionen, en: Safety functions}
+        asset_class: Functions.Safety
+      - title: {de: Sicherheitsprogramm und -parameter, en: Safety program and parameters}
+        asset_class: Other.Configuration
+        rationale: {de: 'Integrität hochstufen, Manipulation wirkt auf Schutzfunktion', en: Raise integrity; manipulation affects protection}
+  - id: ipc-linux
+    name: {de: Steuerungsrechner Linux, en: Industrial PC Linux}
+    kind: device
+    icon: ipc
+    interfaces: [ethernet, fieldbus, usb, display]
+    environment: {interface: known_network, access: restricted}
+    properties: {firmware: true, update_path: package-or-image, authentication: os-accounts, default_password: possible}
+    assets:
+      - title: {de: Betriebssystem und Anwendungen, en: Operating system and applications}
+        asset_class: Functions.Essential
+      - title: {de: Prozess- und Produktionsdaten, en: Process and production data}
+        asset_class: BusinessData.Important
+      - title: {de: Systemkonfiguration, en: System configuration}
+        asset_class: Other.Configuration
+  - id: ipc-windows
+    name: {de: Steuerungsrechner Windows, en: Industrial PC Windows}
+    kind: device
+    icon: ipc
+    interfaces: [ethernet, fieldbus, usb, display]
+    environment: {interface: known_network, access: restricted}
+    properties: {firmware: true, update_path: windows-update-or-image, authentication: os-accounts, default_password: possible}
+    assets:
+      - title: {de: Betriebssystem und Anwendungen, en: Operating system and applications}
+        asset_class: Functions.Essential
+      - title: {de: Prozess- und Produktionsdaten, en: Process and production data}
+        asset_class: BusinessData.Important
+  - id: soft-plc
+    name: {de: Soft-SPS, en: Soft PLC}
+    kind: process
+    icon: soft-plc
+    interfaces: [ipc, fieldbus]
+    environment: {interface: local, access: restricted}
+    properties: {firmware: false, update_path: software-package, authentication: optional}
+    assets:
+      - title: {de: Steuerungsprogramm, en: Control program}
+        asset_class: BusinessData.Important
+      - title: {de: Echtzeit-Steuerungsfunktion, en: Real-time control function}
+        asset_class: Functions.Essential
+  - id: edge-device
+    name: {de: Edge-Gerät, en: Edge device}
+    kind: device
+    icon: edge
+    interfaces: [ethernet, wireless, usb]
+    environment: {interface: external_network, access: restricted}
+    properties: {firmware: true, update_path: remote, authentication: certificates, default_password: possible}
+    assets:
+      - title: {de: Maschinen- und Betriebsdaten, en: Machine and operating data}
+        asset_class: BusinessData.Generic
+      - title: {de: Zugangsdaten zu Cloud-Diensten, en: Cloud service credentials}
+        asset_class: Security.Secrets
+
+  # --- operation ---------------------------------------------------------------
+  - id: hmi
+    name: {de: HMI / Bedienpanel, en: HMI / operator panel}
+    kind: device
+    icon: hmi
+    interfaces: [ethernet, usb, touch]
+    environment: {interface: local, access: public_restricted, user: instructed}
+    properties: {firmware: true, update_path: usb-or-engineering-tool, authentication: user-levels, default_password: possible}
+    assets:
+      - title: {de: Bedien- und Beobachtungsfunktion, en: Operating and monitoring function}
+        asset_class: Functions.Essential
+      - title: {de: Benutzerkonten der Bediener, en: Operator accounts}
+        asset_class: PII.TechnicalNecessary
+      - title: {de: Rezepte und Sollwerte, en: Recipes and set points}
+        asset_class: BusinessData.Important
+  - id: engineering-workstation
+    name: {de: Engineering-Workstation, en: Engineering workstation}
+    kind: device
+    icon: workstation
+    interfaces: [ethernet, usb]
+    environment: {interface: known_network, access: restricted, user: skilled}
+    properties: {firmware: false, update_path: it-managed, authentication: os-accounts}
+    assets:
+      - title: {de: Projektdateien, en: Project files}
+        asset_class: BusinessData.Important
+      - title: {de: Zugangsdaten zu Steuerungen, en: Controller credentials}
+        asset_class: Security.Secrets
+  - id: service-laptop
+    name: {de: Service-Laptop, en: Service laptop}
+    kind: external
+    icon: laptop
+    interfaces: [ethernet, usb, wireless]
+    environment: {interface: local, access: movable, user: skilled}
+    properties: {update_path: it-managed, authentication: os-accounts}
+    assets:
+      - title: {de: Service-Werkzeuge und Projektstände, en: Service tools and project versions}
+        asset_class: BusinessData.Important
+  - id: mobile-panel
+    name: {de: Mobiles Bediengerät, en: Mobile operator panel}
+    kind: device
+    icon: tablet
+    interfaces: [wireless, cable, enabling-switch]
+    environment: {interface: dedicated_known_network, access: movable, user: instructed}
+    properties: {firmware: true, update_path: engineering-tool, authentication: optional, default_password: possible}
+    assets:
+      - title: {de: Bedienfunktion, en: Operating function}
+        asset_class: Functions.Essential
+      - title: {de: Zustimm- und Not-Halt-Funktion, en: Enabling and emergency stop function}
+        asset_class: Functions.Safety
+
+  # --- drives and field level -------------------------------------------------------
+  - id: drive
+    name: {de: Antriebsregler / Servoverstärker, en: Drive controller / servo amplifier}
+    kind: device
+    icon: drive
+    interfaces: [fieldbus, usb, service-port]
+    environment: {interface: local, access: restricted}
+    properties: {firmware: true, update_path: fieldbus-or-service-port, authentication: none-typical}
+    assets:
+      - title: {de: Antriebsparameter, en: Drive parameters}
+        asset_class: Other.Configuration
+        rationale: {de: 'Integrität hochstufen, wenn keine sichere Drehzahlüberwachung vorhanden ist', en: Raise integrity if no safe speed monitoring exists}
+      - title: {de: Antriebsfunktion, en: Drive function}
+        asset_class: Functions.Essential
+  - id: remote-io
+    name: {de: Remote-I/O / Buskoppler, en: Remote I/O / bus coupler}
+    kind: device
+    icon: io
+    interfaces: [fieldbus]
+    environment: {interface: local, access: public_restricted}
+    properties: {firmware: true, update_path: fieldbus, authentication: none-typical}
+    assets:
+      - title: {de: Ein- und Ausgangsdaten, en: Input and output data}
+        asset_class: Functions.CommunicationLocal
+  - id: smart-field-device
+    name: {de: Sensor/Aktor mit Firmware, en: Sensor/actuator with firmware}
+    kind: device
+    icon: sensor
+    interfaces: [fieldbus, io-link]
+    environment: {interface: local, access: public_restricted}
+    properties: {firmware: true, update_path: fieldbus-or-io-link, authentication: none-typical}
+    assets:
+      - title: {de: Messwerte und Stellgrößen, en: Measured values and manipulated variables}
+        asset_class: Functions.CommunicationLocal
+      - title: {de: Geräteparameter, en: Device parameters}
+        asset_class: Other.Configuration
+  - id: vision-system
+    name: {de: Kamera / Bildverarbeitung, en: Camera / vision system}
+    kind: device
+    icon: camera
+    interfaces: [ethernet, fieldbus]
+    environment: {interface: known_network, access: public_restricted}
+    properties: {firmware: true, update_path: web-or-tool, authentication: optional, default_password: possible}
+    assets:
+      - title: {de: Prüfergebnisse, en: Inspection results}
+        asset_class: BusinessData.Generic
+      - title: {de: Bilddaten, en: Image data}
+        asset_class: BusinessData.Generic
+        rationale: {de: 'Kann Personen abbilden, dann PII.Generic', en: 'May show persons, then PII.Generic'}
+  - id: process-device
+    name: {de: Prozessgerät (z. B. Schweißstromquelle), en: Process device (e.g. welding power source)}
+    kind: device
+    icon: process-device
+    interfaces: [fieldbus, ethernet, usb]
+    environment: {interface: local, access: restricted}
+    properties: {firmware: true, update_path: usb-or-network, authentication: optional}
+    assets:
+      - title: {de: Prozessparameter, en: Process parameters}
+        asset_class: BusinessData.Important
+      - title: {de: Prozessfunktion, en: Process function}
+        asset_class: Functions.Essential
+
+  # --- communication: flow types ---------------------------------------------------------
+  - id: fieldbus-ethercat
+    name: {de: EtherCAT, en: EtherCAT}
+    kind: flow
+    interfaces: [fieldbus]
+    environment: {interface: local, access: restricted}
+    properties: {authentication: none, encryption: none, mailbox_services: true, tunnel: EoE}
+    assets:
+      - title: {de: Prozessdaten, en: Process data}
+        asset_class: Functions.CommunicationLocal
+  - id: fieldbus-profinet
+    name: {de: PROFINET, en: PROFINET}
+    kind: flow
+    interfaces: [ethernet]
+    environment: {interface: dedicated_known_network, access: restricted}
+    properties: {authentication: optional-security-class, encryption: optional-security-class}
+    assets:
+      - title: {de: Zyklische Prozessdaten, en: Cyclic process data}
+        asset_class: Functions.CommunicationNetwork
+  - id: fieldbus-modbus-tcp
+    name: {de: Modbus TCP, en: Modbus TCP}
+    kind: flow
+    interfaces: [ethernet]
+    environment: {interface: known_network, access: restricted}
+    properties: {authentication: none, encryption: none}
+    assets:
+      - title: {de: Register und Steuerbefehle, en: Registers and commands}
+        asset_class: Functions.CommunicationNetwork
+  - id: fieldbus-modbus-rtu
+    name: {de: Modbus RTU, en: Modbus RTU}
+    kind: flow
+    interfaces: [serial]
+    environment: {interface: local, access: restricted}
+    properties: {authentication: none, encryption: none}
+    assets:
+      - title: {de: Register und Steuerbefehle, en: Registers and commands}
+        asset_class: Functions.CommunicationLocal
+  - id: fieldbus-canopen
+    name: {de: CAN / CANopen, en: CAN / CANopen}
+    kind: flow
+    interfaces: [can]
+    environment: {interface: local, access: restricted}
+    properties: {authentication: none, encryption: none}
+    assets:
+      - title: {de: Prozessdaten und SDO-Zugriffe, en: Process data and SDO access}
+        asset_class: Functions.CommunicationLocal
+  - id: io-link
+    name: {de: IO-Link, en: IO-Link}
+    kind: flow
+    interfaces: [io-link]
+    environment: {interface: local, access: public_restricted}
+    properties: {authentication: none, encryption: none}
+    assets:
+      - title: {de: Sensordaten und Geräteparameter, en: Sensor data and device parameters}
+        asset_class: Functions.CommunicationLocal
+  - id: ip-network
+    name: {de: Ethernet / IP-Verbindung, en: Ethernet / IP connection}
+    kind: flow
+    interfaces: [ethernet]
+    environment: {interface: known_network, access: restricted}
+    assets:
+      - title: {de: Übertragene Daten, en: Transmitted data}
+        asset_class: Functions.CommunicationNetwork
+  - id: vpn-tunnel
+    name: {de: VPN-Tunnel, en: VPN tunnel}
+    kind: flow
+    interfaces: [ethernet]
+    environment: {interface: external_network, access: non_restricted}
+    properties: {authentication: certificates, encryption: true}
+    assets:
+      - title: {de: Fernwartungsverbindung, en: Remote maintenance connection}
+        asset_class: Functions.CommunicationNetwork
+  - id: wireless-link
+    name: {de: 'Funkverbindung (WLAN, Bluetooth)', en: 'Wireless link (WLAN, Bluetooth)'}
+    kind: flow
+    interfaces: [wireless]
+    environment: {interface: dedicated_known_network, access: non_restricted}
+    assets:
+      - title: {de: Übertragene Daten, en: Transmitted data}
+        asset_class: Functions.CommunicationNetwork
+  - id: industrial-switch
+    name: {de: Industrie-Switch, en: Industrial switch}
+    kind: device
+    icon: switch
+    interfaces: [ethernet, web]
+    environment: {interface: known_network, access: restricted}
+    properties: {firmware: true, update_path: web-or-tool, authentication: password, default_password: possible}
+    assets:
+      - title: {de: Netzfunktion, en: Network function}
+        asset_class: Functions.CommunicationNetwork
+      - title: {de: 'Switch-Konfiguration (VLAN, Ports)', en: 'Switch configuration (VLAN, ports)'}
+        asset_class: Security.PublicConfiguration
+  - id: router-firewall
+    name: {de: Router / Firewall, en: Router / firewall}
+    kind: device
+    icon: firewall
+    interfaces: [ethernet, web]
+    environment: {interface: known_network, access: restricted}
+    properties: {firmware: true, update_path: web-or-tool, authentication: password, default_password: possible}
+    assets:
+      - title: {de: Filterregeln, en: Filter rules}
+        asset_class: Security.Mechanism
+      - title: {de: Weiterleitungsfunktion, en: Forwarding function}
+        asset_class: Functions.CommunicationNetwork
+  - id: wireless-module
+    name: {de: WLAN-Adapter / Funkmodul, en: WLAN adapter / radio module}
+    kind: device
+    icon: wireless
+    interfaces: [wireless, ethernet]
+    environment: {interface: dedicated_known_network, access: non_restricted}
+    properties: {firmware: true, authentication: psk-or-certificate, default_password: possible}
+    assets:
+      - title: {de: Funkschlüssel, en: Wireless keys}
+        asset_class: Security.Secrets
+  - id: opcua-server
+    name: {de: OPC-UA-Server, en: OPC UA server}
+    kind: process
+    icon: opcua
+    interfaces: [ethernet]
+    environment: {interface: known_network, access: restricted}
+    properties: {authentication: configurable, encryption: configurable, default_password: possible}
+    assets:
+      - title: {de: Informationsmodell und Prozesswerte, en: Information model and process values}
+        asset_class: BusinessData.Generic
+      - title: {de: Schreibbare Variablen und Methoden, en: Writable variables and methods}
+        asset_class: Functions.Essential
+      - title: {de: Server-Zertifikat und Schlüssel, en: Server certificate and key}
+        asset_class: Security.Secrets
+  - id: opcua-client
+    name: {de: OPC-UA-Client, en: OPC UA client}
+    kind: process
+    icon: opcua
+    interfaces: [ethernet]
+    environment: {interface: known_network, access: restricted}
+    properties: {authentication: configurable}
+    assets:
+      - title: {de: Client-Zertifikat und Zugangsdaten, en: Client certificate and credentials}
+        asset_class: Security.Secrets
+  - id: mqtt-broker
+    name: {de: MQTT-Broker, en: MQTT broker}
+    kind: process
+    icon: mqtt
+    interfaces: [ethernet]
+    environment: {interface: known_network, access: restricted}
+    properties: {authentication: optional, encryption: optional, default_password: possible}
+    assets:
+      - title: {de: Nachrichten und Topics, en: Messages and topics}
+        asset_class: BusinessData.Generic
+
+  # --- remote access and services ------------------------------------------------
+  - id: remote-access-gateway
+    name: {de: Fernwartungsgateway / VPN-Router, en: Remote maintenance gateway / VPN router}
+    kind: device
+    icon: gateway
+    interfaces: [ethernet, mobile, web]
+    environment: {interface: external_network, access: restricted}
+    properties: {firmware: true, update_path: remote, authentication: certificates, default_password: possible}
+    assets:
+      - title: {de: VPN-Schlüssel und Zertifikate, en: VPN keys and certificates}
+        asset_class: Security.Secrets
+      - title: {de: Zugangsfunktion zur Maschine, en: Access function to the machine}
+        asset_class: Security.Mechanism
+  - id: vendor-jumphost
+    name: {de: Zentraler Jumphost des Herstellers, en: Manufacturer central jump host}
+    kind: process
+    icon: server
+    description:
+      de: Zentrale Fernwartungsplattform (Datenfernverarbeitung) des Herstellers, über die viele Maschinen erreichbar sind.
+      en: Manufacturer's central remote maintenance platform (remote data processing) giving access to many machines.
+    interfaces: [internet]
+    environment: {interface: external_network, access: non_restricted}
+    properties: {update_path: it-managed, authentication: mfa-recommended}
+    assets:
+      - title: {de: Zugang zur gesamten Flotte, en: Access to the whole fleet}
+        asset_class: Security.Mechanism
+      - title: {de: Kundendaten und Verbindungsprotokolle, en: Customer data and connection logs}
+        asset_class: PII.Generic
+  - id: cloud-service
+    name: {de: Cloud-Dienst / Datenfernverarbeitung, en: Cloud service / remote data processing}
+    kind: process
+    icon: cloud
+    interfaces: [internet]
+    environment: {interface: external_network, access: non_restricted}
+    properties: {authentication: accounts, encryption: tls}
+    assets:
+      - title: {de: Maschinen- und Produktionsdaten, en: Machine and production data}
+        asset_class: BusinessData.Important
+      - title: {de: Benutzerkonten, en: User accounts}
+        asset_class: PII.Generic
+  - id: update-server
+    name: {de: Update-Server, en: Update server}
+    kind: process
+    icon: server
+    interfaces: [internet]
+    environment: {interface: external_network, access: non_restricted}
+    properties: {authentication: signing-key}
+    assets:
+      - title: {de: Update-Pakete, en: Update packages}
+        asset_class: Functions.Essential
+      - title: {de: Signaturschlüssel, en: Signing key}
+        asset_class: Security.Secrets
+  - id: license-server
+    name: {de: Lizenzserver / Dongle, en: License server / dongle}
+    kind: process
+    icon: key
+    interfaces: [ethernet, usb]
+    environment: {interface: known_network, access: restricted}
+    assets:
+      - title: {de: Lizenzfunktion, en: License function}
+        asset_class: Functions.Essential
+
+  # --- data -----------------------------------------------------------------------
+  - id: recipe-store
+    name: {de: Rezept- und Parameterspeicher, en: Recipe and parameter store}
+    kind: datastore
+    icon: database
+    assets:
+      - title: {de: Rezepte und Parameter, en: Recipes and parameters}
+        asset_class: BusinessData.Important
+  - id: log-store
+    name: {de: Protokolle / Logs, en: Logs}
+    kind: datastore
+    icon: log
+    assets:
+      - title: {de: Sicherheitsprotokolle, en: Security logs}
+        asset_class: Security.Logs
+  - id: key-store
+    name: {de: Zertifikats- und Schlüsselspeicher, en: Certificate and key store}
+    kind: datastore
+    icon: key
+    assets:
+      - title: {de: Private Schlüssel und Zertifikate, en: Private keys and certificates}
+        asset_class: Security.Secrets
+  - id: historian
+    name: {de: Historian / Prozessdatenarchiv, en: Historian / process data archive}
+    kind: datastore
+    icon: database
+    assets:
+      - title: {de: Prozessdatenhistorie, en: Process data history}
+        asset_class: BusinessData.Important
+
+  # --- safety interface ------------------------------------------------------------
+  - id: safety-relevant-outputs
+    name: {de: Ausgänge mit Sicherheitswirkung, en: Outputs with safety effect}
+    kind: process
+    icon: safety-output
+    description:
+      de: Freigaben, Überbrückungen und Betriebsartenwahl, die von Standardsoftware geschaltet werden.
+      en: Enables, bypasses and operating mode selection switched by standard software.
+    environment: {interface: local, access: restricted}
+    assets:
+      - title: {de: Wirksamkeit der Schutzfunktion, en: Effectiveness of the protective function}
+        asset_class: Functions.Safety
+  - id: safety-devices
+    name: {de: Not-Halt- und Schutzeinrichtungen, en: Emergency stop and protective devices}
+    kind: external
+    icon: estop
+    description:
+      de: Schutzeinrichtungen, auf die Feldbus-Ausgänge einwirken können.
+      en: Protective devices that fieldbus outputs can act upon.
+    assets:
+      - title: {de: Schutzfunktion, en: Protective function}
+        asset_class: Functions.Safety
+
+  # --- removable media ---------------------------------------------------------------
+  - id: removable-media
+    name: {de: Wechseldatenträger / USB, en: Removable media / USB}
+    kind: external
+    icon: usb
+    environment: {interface: local, access: public_restricted, user: instructed}
+    assets:
+      - title: {de: Übertragene Dateien, en: Transferred files}
+        asset_class: BusinessData.Generic

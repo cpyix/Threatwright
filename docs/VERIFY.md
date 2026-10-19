@@ -15,4 +15,15 @@ Values and interpretations that are not (or not unambiguously) backed by a prima
 | 9 | German labels of scales and indicators | `method.yaml` | own translation |
 | 10 | Table 1 lists `PII.Important` twice (p. 46 and 47) with identical values | `asset_classes` | no impact |
 
-Library references (MITRE ATT&CK for ICS, EMB3D, IEC 62443) will be added here from M2 on.
+## Library references
+
+External IDs in libraries are restricted to the catalogs in `src/threatwright/catalogs/` (integrity check):
+
+| Catalog | Verified against | Date |
+|---|---|---|
+| ATT&CK for ICS | attack.mitre.org/techniques/ics (v20) | 2026-10-19 |
+| EMB3D | emb3d.mitre.org/threats | 2026-10-19 |
+| CRA Annex I | BSI TR-03183-1 v1.0.0 Annex B, Tables 8–10 (p. 60–64); point (g) text not in the extracted table, ID confirmed by the list on p. 57 | 2026-10-19 |
+| IEC 62443 | only FR1–FR7; SR/CR numbers deliberately not used | — |
+
+Open: whether each library entry's ATT&CK/EMB3D mapping is the best fit is a domain judgement, not a fact; review welcome.

@@ -1,0 +1,1434 @@
+# Threat templates: network, remote access, cloud and updates.
+threats:
+  # --- remote access -----------------------------------------------------------
+  - id: remote-tunnel-always-on
+    rev: 1
+    stride: [S, E]
+    applies_to: [remote-access-gateway, vpn-tunnel, edge-device]
+    title:
+      de: Dauerhaft offener Fernwartungstunnel über {element} ohne Kontrolle des Betreibers
+      en: Permanently open remote maintenance tunnel via {element} without operator control
+    scenario:
+      de: >-
+        Das Fernwartungsgateway baut ab Werk einen ständig aktiven Rückkanal-VPN zum Hersteller auf,
+        damit der Service jederzeit zugreifen kann. Der Betreiber kann den Zugang weder freigeben
+        noch sperren und sieht nicht, wann jemand verbunden ist. Wer Zugriff auf die Herstellerseite
+        des Tunnels erlangt, erreicht die Maschine ohne weitere Hürde zu jeder Tageszeit.
+      en: >-
+        The remote maintenance gateway establishes an always-on reverse VPN to the manufacturer by
+        default so that service can connect at any time. The operator can neither enable nor block
+        access and cannot see when someone is connected. Anyone who gains access to the
+        manufacturer side of the tunnel reaches the machine without further barriers at any time.
+    consequence:
+      de: >-
+        Unbemerkter Fremdzugriff auf Steuerung und Bedienfunktionen, einschließlich Manipulation
+        von Programmen und Parametern bis hin zu gefährlichen Maschinenbewegungen.
+      en: >-
+        Unnoticed external access to control and operating functions, including manipulation of
+        programs and parameters up to hazardous machine movements.
+    environment:
+      interface: external_network
+      access: non_restricted
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-b, AI-I-2-d, AI-I-2-j]
+    attack_ics: [T0822, T0886]
+    iec62443: [FR1, FR2, FR5]
+    measures: [remote-access-on-demand, operator-confirmation-remote, remote-access-kill-switch, time-limited-service-access]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: jumphost-fleet-compromise
+    rev: 1
+    stride: [S, T, E]
+    applies_to: [vendor-jumphost, remote-access-gateway, vpn-tunnel]
+    title:
+      de: Kompromittierter Jumphost {element} öffnet den Weg zu allen Kundenmaschinen
+      en: Compromised jump host {element} opens the way to all customer machines
+    scenario:
+      de: >-
+        Ein Angreifer übernimmt die zentrale Fernwartungsplattform des Herstellers, etwa über eine
+        Schwachstelle, Phishing eines Administrators oder gestohlene Zugangsdaten. Da die Plattform
+        Verbindungen zu allen installierten Maschinen hält und Kunden nicht voneinander getrennt sind,
+        bewegt er sich von dort seitlich in die Maschinennetze vieler Betreiber gleichzeitig.
+      en: >-
+        An attacker takes over the manufacturer's central remote maintenance platform, for example via
+        a vulnerability, phishing of an administrator or stolen credentials. Because the platform holds
+        connections to all installed machines and customers are not separated from each other, the
+        attacker moves laterally into the machine networks of many operators at once.
+    consequence:
+      de: >-
+        Flottenweite Manipulation oder Sabotage von Maschinen bei vielen Kunden, mögliche Gefährdung
+        von Personen und erheblicher Vertrauens- und Haftungsschaden für den Hersteller.
+      en: >-
+        Fleet-wide manipulation or sabotage of machines at many customers, possible danger to persons
+        and considerable loss of trust and liability for the manufacturer.
+    environment:
+      interface: external_network
+      access: non_restricted
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-j, AI-I-2-k]
+    attack_ics: [T0822, T0886, T0859, T0862]
+    iec62443: [FR1, FR2, FR5]
+    measures: [jumphost-tenant-isolation, jumphost-hardening, mfa-remote-access, operator-confirmation-remote]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: remote-service-credentials-compromised
+    rev: 1
+    stride: [S, E]
+    applies_to: [remote-access-gateway, vendor-jumphost]
+    title:
+      de: Gestohlene Zugangsdaten eines Servicetechnikers für {element}
+      en: Stolen service technician credentials for {element}
+    scenario:
+      de: >-
+        Zugangsdaten eines Servicetechnikers für die Fernwartung werden durch Phishing, Schadsoftware
+        auf dem Service-Laptop oder Wiederverwendung eines geleakten Passworts erbeutet. Ohne zweiten
+        Faktor meldet sich der Angreifer als legitimer Techniker an und erhält dieselben Rechte an
+        den Maschinen. Gemeinsam genutzte Servicekonten verschärfen das Problem.
+      en: >-
+        A service technician's remote maintenance credentials are captured through phishing, malware
+        on the service laptop or reuse of a leaked password. Without a second factor the attacker logs
+        in as a legitimate technician and obtains the same rights on the machines. Shared service
+        accounts make the problem worse.
+    consequence:
+      de: >-
+        Unbefugter Fernzugriff mit Servicerechten, der in Protokollen wie normale Wartung aussieht.
+      en: >-
+        Unauthorised remote access with service rights that looks like normal maintenance in logs.
+    environment:
+      interface: external_network
+      access: non_restricted
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d]
+    attack_ics: [T0859, T0822]
+    iec62443: [FR1, FR2]
+    measures: [mfa-remote-access, role-based-access, service-personnel-training, time-limited-service-access]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: remote-motion-without-onsite-consent
+    rev: 1
+    stride: [T, E]
+    applies_to: [remote-access-gateway, vendor-jumphost, cloud-service]
+    title:
+      de: Fernbefehle über {element} lösen Bewegungen ohne Wissen des Personals vor Ort aus
+      en: Remote commands via {element} trigger movements without knowledge of on-site staff
+    scenario:
+      de: >-
+        Ein Angreifer mit Fernzugriff, etwa über eine übernommene Fernwartungssitzung, startet
+        Programme, verfährt Achsen oder ändert Betriebsarten. Die Maschine verlangt keine Bestätigung
+        vor Ort, und eine lokale Bedienung hat keinen Vorrang vor Fernbefehlen. Personen im
+        Arbeitsbereich rechnen nicht mit einer Bewegung.
+      en: >-
+        An attacker with remote access, for example via a hijacked remote maintenance session, starts
+        programs, moves axes or changes operating modes. The machine requires no on-site confirmation,
+        and local operation does not take precedence over remote commands. Persons in the working area
+        do not expect any movement.
+    consequence:
+      de: >-
+        Unerwarteter Anlauf oder Bewegung mit Verletzungsgefahr für Personen an der Maschine.
+      en: >-
+        Unexpected start-up or movement with risk of injury to persons at the machine.
+    environment:
+      interface: external_network
+      access: non_restricted
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T0886, T1692, T0831]
+    iec62443: [FR2, FR3]
+    measures: [operator-confirmation-remote, local-control-priority, safety-separation, role-based-access]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: remote-portal-session-hijacking
+    rev: 1
+    stride: [S, E]
+    applies_to: [vendor-jumphost, cloud-service, remote-access-gateway]
+    title:
+      de: Übernahme einer Web-Sitzung des Fernwartungs- oder Cloud-Portals {element}
+      en: Hijacking of a web session of the remote maintenance or cloud portal {element}
+    scenario:
+      de: >-
+        Das Web-Portal schützt Sitzungen unzureichend, etwa durch langlebige Sitzungs-Token, fehlende
+        Bindung an den Client oder fehlenden Schutz gegen Cross-Site Request Forgery. Ein Angreifer
+        stiehlt das Token eines angemeldeten Technikers oder lässt dessen Browser unbemerkt Aktionen
+        ausführen, etwa eine Verbindung zu einer Maschine aufbauen oder Berechtigungen ändern.
+      en: >-
+        The web portal protects sessions insufficiently, for example through long-lived session tokens,
+        missing binding to the client or missing protection against cross-site request forgery. An
+        attacker steals the token of a logged-in technician or makes their browser perform actions
+        unnoticed, such as connecting to a machine or changing permissions.
+    consequence:
+      de: >-
+        Handeln mit fremder Identität und deren Rechten, ohne dass ein Passwort oder zweiter Faktor
+        benötigt wird.
+      en: >-
+        Acting under someone else's identity and rights without needing a password or second factor.
+    environment:
+      interface: external_network
+      access: non_restricted
+    impact: 4
+    cra_refs: [AI-I-2-d, AI-I-2-k]
+    emb3d: [TID-321, TID-322]
+    iec62443: [FR1, FR2]
+    measures: [web-interface-hardening, session-timeout, security-testing]
+    sources: ["generic web application security knowledge; MITRE EMB3D"]
+
+  - id: remote-access-missing-session-logging
+    rev: 1
+    stride: [R]
+    applies_to: [remote-access-gateway, vendor-jumphost, cloud-service]
+    title:
+      de: Fehlende Sitzungsprotokollierung am {element} verschleiert, wer was getan hat
+      en: Missing session logging at {element} hides who did what
+    scenario:
+      de: >-
+        Fernzugriffe werden nicht oder nur ohne Benutzerbezug protokolliert, oft über ein gemeinsames
+        Servicekonto. Ein Angreifer oder ein Innentäter verändert über die Fernwartung Programme oder
+        Parameter. Im Nachhinein lässt sich nicht feststellen, wer wann verbunden war und welche
+        Aktionen ausgeführt wurden, und die Protokolle können auf demselben System gelöscht werden.
+      en: >-
+        Remote accesses are not logged or are logged without user reference, often via a shared
+        service account. An attacker or insider changes programs or parameters via remote maintenance.
+        Afterwards it cannot be determined who was connected when and which actions were performed,
+        and logs can be deleted on the same system.
+    consequence:
+      de: >-
+        Vorfälle sind nicht aufklärbar, Verantwortlichkeiten zwischen Hersteller und Betreiber sind
+        strittig, Meldepflichten können nicht sachgerecht erfüllt werden.
+      en: >-
+        Incidents cannot be investigated, responsibilities between manufacturer and operator are
+        disputed, reporting obligations cannot be met properly.
+    impact: 3
+    cra_refs: [AI-I-2-l, Art14]
+    attack_ics: [T0872]
+    emb3d: [TID-225]
+    iec62443: [FR2, FR6]
+    measures: [remote-access-session-logging, log-protection, time-synchronization, role-based-access]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: remote-service-internet-exposed
+    rev: 1
+    stride: [I, E]
+    applies_to: [remote-access-gateway, opcua-server, edge-device, router-firewall, mqtt-broker]
+    title:
+      de: Direkt aus dem Internet erreichbarer Dienst auf {element} wird gefunden und angegriffen
+      en: Service on {element} directly reachable from the internet is found and attacked
+    scenario:
+      de: >-
+        Das Web-Interface, der VPN-Endpunkt oder ein OPC-UA- oder MQTT-Dienst ist über eine öffentliche
+        IP-Adresse oder Portweiterleitung direkt aus dem Internet erreichbar. Internetweite Scanner
+        und Suchmaschinen für vernetzte Geräte indizieren den Dienst samt Version. Angreifer finden das
+        Gerät gezielt und testen Standardpasswörter oder bekannte Schwachstellen.
+      en: >-
+        The web interface, VPN endpoint or an OPC UA or MQTT service is directly reachable from the
+        internet via a public IP address or port forwarding. Internet-wide scanners and search engines
+        for connected devices index the service including its version. Attackers find the device in a
+        targeted way and try default passwords or known vulnerabilities.
+    consequence:
+      de: >-
+        Preisgabe von Geräte- und Versionsinformationen und hohe Wahrscheinlichkeit einer
+        Kompromittierung, oft automatisiert und innerhalb kurzer Zeit.
+      en: >-
+        Disclosure of device and version information and high likelihood of compromise, often
+        automated and within a short time.
+    environment:
+      interface: external_network
+      access: non_restricted
+    impact: 4
+    cra_refs: [AI-I-2-b, AI-I-2-j]
+    attack_ics: [T0883, T0819, T0846]
+    emb3d: [TID-310]
+    iec62443: [FR5, FR7]
+    measures: [firewall-allowlist, network-segmentation, secure-commissioning-guide, remote-access-on-demand]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: remote-gateway-vulnerability-exploited
+    rev: 1
+    stride: [T, E]
+    applies_to: [remote-access-gateway, router-firewall, edge-device, industrial-switch]
+    title:
+      de: Ausnutzung einer bekannten Schwachstelle in der Firmware von {element}
+      en: Exploitation of a known vulnerability in the firmware of {element}
+    scenario:
+      de: >-
+        Die Firmware des Netzwerk- oder Fernwartungsgeräts enthält eine öffentlich bekannte
+        Schwachstelle, etwa im VPN-Dienst, Web-Server oder Netzwerkstack. Updates werden nicht
+        bereitgestellt oder beim Betreiber nicht eingespielt. Ein Angreifer nutzt die Lücke über das
+        Netz aus und führt eigenen Code mit Systemrechten auf dem Gerät aus.
+      en: >-
+        The firmware of the network or remote maintenance device contains a publicly known
+        vulnerability, for example in the VPN service, web server or network stack. Updates are not
+        provided or not installed at the operator. An attacker exploits the flaw over the network and
+        executes own code with system privileges on the device.
+    consequence:
+      de: >-
+        Vollständige Kontrolle über das Gerät, Umgehung der Filterregeln und Brückenkopf in das
+        Maschinennetz.
+      en: >-
+        Full control over the device, bypass of filter rules and a foothold into the machine network.
+    impact: 5
+    cra_refs: [AI-I-2-a, AI-I-2-c, AI-I-2-k, AI-II-2]
+    attack_ics: [T0866, T0819]
+    emb3d: [TID-202]
+    iec62443: [FR3, FR5]
+    measures: [security-update-process, supplier-vulnerability-monitoring, component-inventory-sbom, exploit-mitigations]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: vpn-weak-cryptography
+    rev: 1
+    stride: [I, T]
+    applies_to: [vpn-tunnel, remote-access-gateway]
+    title:
+      de: Schwache Kryptografie oder fehlende Zertifikatsprüfung im {element}
+      en: Weak cryptography or missing certificate validation in {element}
+    scenario:
+      de: >-
+        Der VPN-Tunnel verwendet veraltete Protokolle oder Algorithmen, einen für alle Geräte
+        gleichen Pre-Shared Key oder prüft das Zertifikat der Gegenstelle nicht. Ein Angreifer im
+        Übertragungsweg, etwa im Mobilfunk- oder Kundennetz, gibt sich als Gegenstelle aus, liest den
+        Fernwartungsverkehr mit oder verändert ihn.
+      en: >-
+        The VPN tunnel uses outdated protocols or algorithms, a pre-shared key identical for all
+        devices, or does not validate the peer certificate. An attacker on the transmission path, for
+        example in the mobile or customer network, impersonates the peer, reads the remote maintenance
+        traffic or alters it.
+    consequence:
+      de: >-
+        Offenlegung von Zugangsdaten und Projektdaten sowie Einschleusen von Befehlen in die
+        Fernwartungssitzung.
+      en: >-
+        Disclosure of credentials and project data as well as injection of commands into the remote
+        maintenance session.
+    environment:
+      interface: external_network
+      access: non_restricted
+    impact: 4
+    cra_refs: [AI-I-2-e, AI-I-2-f]
+    attack_ics: [T0830]
+    emb3d: [TID-411, TID-316]
+    iec62443: [FR3, FR4]
+    measures: [vpn-hardening, certificate-management, unique-device-credentials]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: vpn-tunnel-network-bridge
+    rev: 1
+    stride: [T, E]
+    applies_to: [vpn-tunnel, remote-access-gateway]
+    title:
+      de: Der {element} verbindet Netze ungefiltert und dient als Brücke für Angreifer
+      en: The {element} connects networks unfiltered and serves as a bridge for attackers
+    scenario:
+      de: >-
+        Der Tunnel wird als Layer-2-Brücke oder mit offenen Routen auf ganze Netze konfiguriert,
+        statt nur einzelne Ziele freizugeben. Ein Angreifer im Netz einer Seite, etwa auf einem
+        infizierten Service-Laptop oder im Herstellernetz, erreicht über den Tunnel beliebige Geräte
+        auf der anderen Seite und nutzt das Gateway als Proxy für weitere Angriffe.
+      en: >-
+        The tunnel is configured as a layer 2 bridge or with open routes to entire networks instead of
+        allowing only individual targets. An attacker in the network on one side, for example on an
+        infected service laptop or in the manufacturer network, reaches arbitrary devices on the other
+        side through the tunnel and uses the gateway as a proxy for further attacks.
+    consequence:
+      de: >-
+        Ausbreitung von Angriffen und Schadsoftware zwischen Hersteller-, Kunden- und Maschinennetz.
+      en: >-
+        Spread of attacks and malware between manufacturer, customer and machine networks.
+    impact: 4
+    cra_refs: [AI-I-2-j, AI-I-2-k]
+    attack_ics: [T0884, T0886]
+    emb3d: [TID-412]
+    iec62443: [FR5]
+    measures: [firewall-allowlist, network-segmentation, vpn-hardening]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: remote-access-denial-of-service
+    rev: 1
+    stride: [D]
+    applies_to: [vpn-tunnel, remote-access-gateway]
+    title:
+      de: Überlastung oder Blockade des {element} verhindert Fernwartung
+      en: Overload or blocking of {element} prevents remote maintenance
+    scenario:
+      de: >-
+        Ein Angreifer überflutet den öffentlich erreichbaren VPN-Endpunkt mit Verbindungsversuchen,
+        provoziert Kontosperren durch Fehlanmeldungen oder stört die Mobilfunkverbindung des
+        Gateways. Der Tunnel bricht ab oder lässt sich nicht aufbauen, wenn der Service dringend
+        benötigt wird.
+      en: >-
+        An attacker floods the publicly reachable VPN endpoint with connection attempts, provokes
+        account lockouts through failed logins or disrupts the gateway's mobile connection. The tunnel
+        drops or cannot be established when service is urgently needed.
+    consequence:
+      de: >-
+        Längere Stillstände, weil Störungen nicht aus der Ferne behoben werden können.
+      en: >-
+        Longer downtimes because faults cannot be resolved remotely.
+    impact: 2
+    cra_refs: [AI-I-2-h]
+    attack_ics: [T0814]
+    emb3d: [TID-405]
+    iec62443: [FR7]
+    measures: [dos-rate-limiting, firewall-allowlist, user-security-documentation]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: jumphost-customer-data-leak
+    rev: 1
+    stride: [I]
+    applies_to: [vendor-jumphost]
+    title:
+      de: Abfluss von Kunden-, Maschinen- und Verbindungsdaten aus dem {element}
+      en: Leakage of customer, machine and connection data from {element}
+    scenario:
+      de: >-
+        Der zentrale Jumphost speichert Kundenlisten, Netzpläne, Zugangsdaten zu Maschinen und
+        Verbindungsprotokolle. Ein Angreifer mit Zugriff auf die Plattform oder deren Datensicherung
+        kopiert diese Daten. Sie liefern eine genaue Landkarte, welche Maschinen bei welchem Kunden
+        wie erreichbar sind.
+      en: >-
+        The central jump host stores customer lists, network plans, machine credentials and connection
+        logs. An attacker with access to the platform or its backup copies this data. It provides an
+        accurate map of which machines at which customer are reachable and how.
+    consequence:
+      de: >-
+        Verletzung der Vertraulichkeit von Kunden- und Personendaten und Vorbereitung gezielter
+        Angriffe auf die gesamte Flotte.
+      en: >-
+        Breach of confidentiality of customer and personal data and preparation of targeted attacks on
+        the whole fleet.
+    environment:
+      interface: external_network
+      access: non_restricted
+    impact: 4
+    cra_refs: [AI-I-2-e, AI-I-2-g]
+    attack_ics: [T0811, T0882]
+    iec62443: [FR4]
+    measures: [secrets-protected-storage, data-encryption-rest, data-minimisation, jumphost-hardening]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: jumphost-outage-fleet
+    rev: 1
+    stride: [D]
+    applies_to: [vendor-jumphost]
+    title:
+      de: Sabotage oder Verschlüsselung des {element} legt die Fernwartung der ganzen Flotte lahm
+      en: Sabotage or encryption of {element} disables remote maintenance for the whole fleet
+    scenario:
+      de: >-
+        Ein Angreifer verschlüsselt oder löscht die zentrale Fernwartungsplattform, etwa im Rahmen
+        eines Ransomware-Angriffs auf das Herstellernetz. Alle Kundenmaschinen verlieren gleichzeitig
+        den Fernservice, und hängen Funktionen wie Freischaltungen von der Plattform ab, fallen auch
+        diese aus.
+      en: >-
+        An attacker encrypts or deletes the central remote maintenance platform, for example as part
+        of a ransomware attack on the manufacturer network. All customer machines lose remote service
+        at the same time, and if functions such as activations depend on the platform, they fail too.
+    consequence:
+      de: >-
+        Flottenweit verlängerte Stillstände und Produktionsausfälle bei Kunden.
+      en: >-
+        Fleet-wide extended downtimes and production losses at customers.
+    impact: 3
+    cra_refs: [AI-I-2-h]
+    attack_ics: [T0826, T0828]
+    iec62443: [FR7]
+    measures: [backup-restore, jumphost-hardening, license-grace-operation, incident-reporting-process]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- updates -----------------------------------------------------------------
+  - id: update-package-manipulation
+    rev: 1
+    stride: [T, E]
+    applies_to: [update-server, edge-device, remote-access-gateway, industrial-switch, router-firewall, plc, ipc-linux, hmi]
+    title:
+      de: Manipuliertes Update-Paket für {element} über kompromittierten Server oder Übertragungsweg
+      en: Manipulated update package for {element} via compromised server or transport
+    scenario:
+      de: >-
+        Ein Angreifer übernimmt den Update-Server oder die Build- und Verteilkette des Herstellers
+        oder schaltet sich in die Übertragung ein. Er ersetzt ein Update-Paket durch eine Version mit
+        Hintertür. Das Gerät prüft Herkunft und Integrität nicht oder nur mit einer Prüfsumme aus
+        derselben Quelle und installiert das Paket.
+      en: >-
+        An attacker takes over the update server or the manufacturer's build and distribution chain,
+        or intercepts the transmission. They replace an update package with a backdoored version. The
+        device does not verify origin and integrity, or only with a checksum from the same source, and
+        installs the package.
+    consequence:
+      de: >-
+        Dauerhaft eingeschleuster Schadcode auf vielen Geräten gleichzeitig, mit voller Kontrolle über
+        Maschinenfunktionen bis hin zu gefährlichen Zuständen.
+      en: >-
+        Persistently injected malicious code on many devices at once, with full control over machine
+        functions up to hazardous states.
+    environment:
+      interface: external_network
+      access: non_restricted
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-II-7]
+    attack_ics: [T0862, T1693]
+    emb3d: [TID-213, TID-211]
+    iec62443: [FR3]
+    measures: [signed-updates, update-transport-protection, secure-boot, update-rollout-staged]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: update-firmware-downgrade
+    rev: 1
+    stride: [T]
+    applies_to: [update-server, edge-device, remote-access-gateway, industrial-switch, router-firewall, wireless-module, plc, ipc-linux, hmi]
+    title:
+      de: Rückstufung von {element} auf eine verwundbare Firmware-Version
+      en: Downgrade of {element} to a vulnerable firmware version
+    scenario:
+      de: >-
+        Ein Angreifer spielt eine ältere, korrekt signierte Firmware-Version ein, in der eine bekannte
+        Schwachstelle noch nicht behoben ist. Da das Gerät nur die Signatur, aber nicht die
+        Versionsnummer prüft, wird die alte Version akzeptiert. Anschließend nutzt der Angreifer die
+        wieder vorhandene Lücke aus.
+      en: >-
+        An attacker installs an older, correctly signed firmware version in which a known
+        vulnerability has not yet been fixed. Because the device checks only the signature but not the
+        version number, the old version is accepted. The attacker then exploits the reintroduced flaw.
+    consequence:
+      de: >-
+        Bereits behobene Schwachstellen werden wieder ausnutzbar, Sicherheitsupdates verlieren ihre
+        Wirkung.
+      en: >-
+        Already fixed vulnerabilities become exploitable again, security updates lose their effect.
+    impact: 4
+    cra_refs: [AI-I-2-c, AI-I-2-f]
+    attack_ics: [T1693]
+    emb3d: [TID-216]
+    iec62443: [FR3]
+    measures: [anti-rollback, signed-firmware, security-logging]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: update-signing-key-theft
+    rev: 1
+    stride: [S, T]
+    applies_to: [update-server]
+    title:
+      de: Diebstahl des Update-Signaturschlüssels vom {element}
+      en: Theft of the update signing key from {element}
+    scenario:
+      de: >-
+        Der private Signaturschlüssel liegt ungeschützt auf dem Build- oder Update-Server, auf
+        Entwicklerrechnern oder in einem Repository. Ein Angreifer kopiert ihn und signiert eigene
+        Firmware, die von allen Geräten als echtes Herstellerupdate akzeptiert wird. Ist derselbe
+        Schlüssel auch in Geräten hinterlegt, etwa als gemeinsames Geheimnis, kann er dort ausgelesen
+        werden.
+      en: >-
+        The private signing key is stored unprotected on the build or update server, on developer
+        machines or in a repository. An attacker copies it and signs own firmware, which all devices
+        accept as a genuine manufacturer update. If the same key is also stored in devices, for example
+        as a shared secret, it can be extracted there.
+    consequence:
+      de: >-
+        Der Integritätsschutz aller Geräte ist gebrochen, bis der Schlüssel in der gesamten Flotte
+        ausgetauscht ist, was oft nur vor Ort möglich ist.
+      en: >-
+        The integrity protection of all devices is broken until the key is replaced across the entire
+        fleet, which is often only possible on site.
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-II-7]
+    attack_ics: [T0862]
+    emb3d: [TID-212]
+    iec62443: [FR1, FR3]
+    measures: [update-signing-key-protection, secrets-protected-storage, certificate-management]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: update-release-not-traceable
+    rev: 1
+    stride: [R]
+    applies_to: [update-server]
+    title:
+      de: Nicht nachvollziehbare Freigabe und Verteilung von Updates über {element}
+      en: Untraceable release and distribution of updates via {element}
+    scenario:
+      de: >-
+        Wer ein Update gebaut, signiert, freigegeben und an welche Geräte verteilt hat, wird nicht
+        manipulationssicher protokolliert. Ein Angreifer oder Innentäter veröffentlicht ein
+        unautorisiertes Paket, und der Vorgang lässt sich später weder einer Person zuordnen noch
+        auf betroffene Geräte eingrenzen.
+      en: >-
+        Who built, signed, released and distributed an update to which devices is not logged in a
+        tamper-proof way. An attacker or insider publishes an unauthorised package, and afterwards the
+        process can neither be attributed to a person nor narrowed down to affected devices.
+    consequence:
+      de: >-
+        Keine gezielte Reaktion und keine belastbare Meldung möglich, betroffene Geräte bleiben
+        unerkannt.
+      en: >-
+        No targeted response and no reliable reporting possible, affected devices remain unidentified.
+    impact: 3
+    cra_refs: [AI-I-2-l, AI-II-7]
+    iec62443: [FR2, FR6]
+    measures: [security-logging, log-protection, change-management, security-update-process]
+    sources: ["generic OT threat knowledge"]
+
+  - id: update-package-information-leak
+    rev: 1
+    stride: [I]
+    applies_to: [update-server, vpn-tunnel, ip-network]
+    title:
+      de: Unverschlüsselte Update-Pakete über {element} verraten Know-how und Geheimnisse
+      en: Unencrypted update packages via {element} reveal know-how and secrets
+    scenario:
+      de: >-
+        Update-Pakete sind frei herunterladbar oder werden unverschlüsselt übertragen. Ein Angreifer
+        analysiert die Firmware in Ruhe, findet darin fest eingebaute Passwörter, Schlüssel oder
+        Schwachstellen und gewinnt Einblick in das Know-how des Herstellers.
+      en: >-
+        Update packages can be downloaded freely or are transmitted unencrypted. An attacker analyses
+        the firmware at leisure, finds hard-coded passwords, keys or vulnerabilities in it and gains
+        insight into the manufacturer's know-how.
+    consequence:
+      de: >-
+        Verlust von Know-how und Vorbereitung von Angriffen auf alle Geräte mit dieser Firmware.
+      en: >-
+        Loss of know-how and preparation of attacks on all devices running this firmware.
+    impact: 3
+    cra_refs: [AI-I-2-e]
+    emb3d: [TID-215, TID-328]
+    iec62443: [FR4]
+    measures: [update-transport-protection, data-encryption-transit, secrets-protected-storage]
+    sources: ["generic OT threat knowledge; MITRE EMB3D"]
+
+  - id: update-mass-rollout-dos
+    rev: 1
+    stride: [D]
+    applies_to: [update-server, edge-device, remote-access-gateway]
+    title:
+      de: Massenhaft ausgelöstes Update über {element} legt Geräte lahm
+      en: Mass-triggered update via {element} disables devices
+    scenario:
+      de: >-
+        Ein Angreifer mit Zugriff auf die Update-Verwaltung startet ein Update für die gesamte Flotte
+        zur Produktionszeit oder verteilt ein defektes, aber gültig signiertes Paket. Die Geräte
+        starten neu, bleiben im Update-Modus hängen oder lassen sich nicht mehr starten.
+      en: >-
+        An attacker with access to the update management starts an update for the entire fleet during
+        production time or distributes a defective but validly signed package. The devices restart,
+        hang in update mode or no longer boot.
+    consequence:
+      de: >-
+        Gleichzeitiger Ausfall vieler Maschinen, eventuell mit Vor-Ort-Einsatz zur Wiederherstellung.
+      en: >-
+        Simultaneous failure of many machines, possibly requiring on-site intervention to recover.
+    impact: 4
+    cra_refs: [AI-I-2-h, AI-II-7]
+    attack_ics: [T0800, T0816]
+    emb3d: [TID-217]
+    iec62443: [FR7]
+    measures: [update-rollout-staged, operator-confirmation-remote, backup-restore, role-based-access]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  # --- OPC UA ------------------------------------------------------------------
+  - id: opcua-insecure-security-settings
+    rev: 1
+    stride: [S, T, I]
+    applies_to: [opcua-server, opcua-client, ip-network]
+    title:
+      de: Unsichere Sicherheitseinstellungen bei {element}
+      en: Insecure security settings at {element}
+    scenario:
+      de: >-
+        Der OPC-UA-Server bietet die Security Policy None oder anonymen Zugriff an, oder Client und
+        Server akzeptieren jedes Zertifikat ohne Prüfung gegen eine Vertrauensliste. Ein Angreifer im
+        Netz verbindet sich ohne Anmeldung, gibt sich als Server oder Client aus oder schaltet sich als
+        Mittelsmann in die Verbindung und liest oder verändert die übertragenen Werte.
+      en: >-
+        The OPC UA server offers security policy None or anonymous access, or client and server accept
+        any certificate without checking it against a trust list. An attacker in the network connects
+        without logging in, impersonates server or client, or places themselves as man-in-the-middle
+        and reads or alters the transmitted values.
+    consequence:
+      de: >-
+        Offenlegung von Prozess- und Produktionsdaten und verfälschte Werte in übergeordneten Systemen
+        oder in der Maschine.
+      en: >-
+        Disclosure of process and production data and falsified values in higher-level systems or in
+        the machine.
+    impact: 4
+    cra_refs: [AI-I-2-b, AI-I-2-d, AI-I-2-e, AI-I-2-f]
+    attack_ics: [T0830, T0869]
+    emb3d: [TID-316, TID-310, TID-408]
+    iec62443: [FR1, FR3, FR4]
+    measures: [opcua-security-mode, certificate-management, mutual-tls, no-default-passwords]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: opcua-unauthorized-write
+    rev: 1
+    stride: [T, E]
+    applies_to: [opcua-server]
+    title:
+      de: Schreibzugriff auf Prozessvariablen und Methoden des {element} aus dem Kundennetz
+      en: Write access to process variables and methods of {element} from the customer network
+    scenario:
+      de: >-
+        Der OPC-UA-Server stellt beschreibbare Variablen und aufrufbare Methoden, etwa Start, Stopp,
+        Sollwerte oder Betriebsart, ohne feingranulare Rechte für alle angemeldeten Benutzer bereit.
+        Ein Angreifer im Kundennetz oder ein kompromittiertes MES-System schreibt Werte oder ruft
+        Methoden auf, die eigentlich nur der Bediener vor Ort auslösen soll.
+      en: >-
+        The OPC UA server exposes writable variables and callable methods, such as start, stop, set
+        points or operating mode, without fine-grained rights for all logged-in users. An attacker in
+        the customer network or a compromised MES system writes values or calls methods that should
+        only be triggered by the operator on site.
+    consequence:
+      de: >-
+        Unerwartete Maschinenbewegungen, falsche Prozessparameter und Ausschuss bis hin zur
+        Gefährdung von Personen.
+      en: >-
+        Unexpected machine movements, wrong process parameters and scrap up to danger to persons.
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T1692, T0836, T0831]
+    emb3d: [TID-406]
+    iec62443: [FR2, FR3]
+    measures: [role-based-access, parameter-plausibility, local-control-priority, operator-confirmation-remote]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: opcua-resource-exhaustion
+    rev: 1
+    stride: [D]
+    applies_to: [opcua-server, mqtt-broker]
+    title:
+      de: Erschöpfung der Ressourcen des {element} durch Sitzungen und Anfragen
+      en: Exhaustion of resources of {element} through sessions and requests
+    scenario:
+      de: >-
+        Ein Angreifer oder fehlerhafter Client öffnet sehr viele Sitzungen, Subscriptions oder
+        Verbindungen oder sendet große und fehlerhafte Nachrichten. Der Dienst hat keine Begrenzung
+        und verbraucht Speicher und Rechenzeit, die auch die Steuerungsaufgaben auf demselben Gerät
+        benötigen.
+      en: >-
+        An attacker or faulty client opens a large number of sessions, subscriptions or connections or
+        sends large and malformed messages. The service has no limits and consumes memory and CPU time
+        that the control tasks on the same device also need.
+    consequence:
+      de: >-
+        Ausfall der Datenschnittstelle und gegebenenfalls Beeinträchtigung der Maschinensteuerung.
+      en: >-
+        Failure of the data interface and possibly impairment of machine control.
+    impact: 3
+    cra_refs: [AI-I-2-h]
+    attack_ics: [T0814]
+    emb3d: [TID-404, TID-405]
+    iec62443: [FR7]
+    measures: [dos-rate-limiting, input-validation, firewall-allowlist]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: opcua-actions-not-attributable
+    rev: 1
+    stride: [R]
+    applies_to: [opcua-server, opcua-client, mqtt-broker]
+    title:
+      de: Schreibzugriffe und Befehle über {element} sind keinem Benutzer zuzuordnen
+      en: Writes and commands via {element} cannot be attributed to a user
+    scenario:
+      de: >-
+        Über die Schnittstelle schreiben mehrere Systeme mit einem gemeinsamen technischen Konto oder
+        anonym. Änderungen an Sollwerten, Methodenaufrufe oder veröffentlichte Befehle werden nicht
+        protokolliert. Ein Angreifer verändert Werte, und später ist nicht feststellbar, von welchem
+        System und Benutzer die Änderung kam.
+      en: >-
+        Several systems write via the interface using a shared technical account or anonymously.
+        Changes to set points, method calls or published commands are not logged. An attacker alters
+        values, and later it cannot be determined from which system and user the change came.
+    consequence:
+      de: >-
+        Manipulationen bleiben unentdeckt oder werden dem Bediener oder Hersteller zugeschrieben.
+      en: >-
+        Manipulations remain undetected or are attributed to the operator or manufacturer.
+    impact: 2
+    cra_refs: [AI-I-2-l]
+    iec62443: [FR1, FR6]
+    measures: [security-logging, unique-device-credentials, time-synchronization]
+    sources: ["generic OT threat knowledge"]
+
+  - id: opcua-client-malicious-server
+    rev: 1
+    stride: [D, E]
+    applies_to: [opcua-client]
+    title:
+      de: Präparierter Server greift {element} über manipulierte Antworten an
+      en: Prepared server attacks {element} through manipulated responses
+    scenario:
+      de: >-
+        Der Client verbindet sich mit einem Server, den ein Angreifer bereitstellt oder übernommen
+        hat, etwa nach Umleitung im Netz oder über eine konfigurierbare Endpunktadresse. Der Server
+        sendet übergroße oder fehlerhafte Antworten, die einen Fehler in der Client-Bibliothek
+        auslösen.
+      en: >-
+        The client connects to a server that an attacker provides or has taken over, for example after
+        redirection in the network or via a configurable endpoint address. The server sends oversized
+        or malformed responses that trigger a flaw in the client library.
+    consequence:
+      de: >-
+        Absturz des Clients mit Ausfall der Datenverbindung oder Ausführung von Schadcode auf dem
+        Gerät, auf dem der Client läuft.
+      en: >-
+        Crash of the client with loss of the data connection, or execution of malicious code on the
+        device running the client.
+    impact: 4
+    cra_refs: [AI-I-2-a, AI-I-2-k]
+    emb3d: [TID-327]
+    iec62443: [FR3, FR7]
+    measures: [input-validation, certificate-management, component-inventory-sbom, exploit-mitigations]
+    sources: ["generic OT threat knowledge; MITRE EMB3D"]
+
+  # --- MQTT --------------------------------------------------------------------
+  - id: mqtt-no-authentication-tls
+    rev: 1
+    stride: [S, T, I]
+    applies_to: [mqtt-broker, edge-device, ip-network]
+    title:
+      de: MQTT über {element} ohne Authentisierung und ohne TLS
+      en: MQTT via {element} without authentication and without TLS
+    scenario:
+      de: >-
+        Der Broker akzeptiert Verbindungen ohne Benutzername, Passwort oder Client-Zertifikat, und
+        der Verkehr läuft unverschlüsselt. Ein Angreifer im Netz abonniert alle Topics mit dem
+        Platzhalter und liest Maschinendaten mit oder veröffentlicht unter fremder Client-Kennung
+        falsche Messwerte und Statusmeldungen.
+      en: >-
+        The broker accepts connections without username, password or client certificate, and traffic
+        is unencrypted. An attacker in the network subscribes to all topics using the wildcard and
+        reads machine data, or publishes false measured values and status messages under another
+        client identifier.
+    consequence:
+      de: >-
+        Abfluss von Produktionsdaten und falsche Werte in Dashboards, Auswertungen oder
+        nachgelagerten Steuerungen.
+      en: >-
+        Leakage of production data and false values in dashboards, analyses or downstream controls.
+    impact: 4
+    cra_refs: [AI-I-2-b, AI-I-2-d, AI-I-2-e, AI-I-2-f]
+    attack_ics: [T0842, T0869, T1692]
+    emb3d: [TID-310, TID-408]
+    iec62443: [FR1, FR3, FR4]
+    measures: [mqtt-tls-acl, strong-authentication, no-default-passwords, data-encryption-transit]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: mqtt-missing-topic-acl
+    rev: 1
+    stride: [E, T]
+    applies_to: [mqtt-broker, edge-device]
+    title:
+      de: Fehlende Topic-Berechtigungen am {element} erlauben Steuerbefehle durch beliebige Clients
+      en: Missing topic permissions at {element} allow control commands by any client
+    scenario:
+      de: >-
+        Alle angemeldeten Clients dürfen auf alle Topics schreiben, auch auf Befehls-Topics, die die
+        Maschine auswertet. Ein Angreifer übernimmt einen wenig geschützten Client, etwa ein
+        Dashboard oder einen Sensor-Gateway, und veröffentlicht Befehle zum Starten, Stoppen oder
+        Umparametrieren.
+      en: >-
+        All authenticated clients may write to all topics, including command topics evaluated by the
+        machine. An attacker takes over a poorly protected client, such as a dashboard or sensor
+        gateway, and publishes commands to start, stop or reparameterise.
+    consequence:
+      de: >-
+        Unbefugte Steuerung der Maschine mit möglichen gefährlichen Bewegungen oder Prozesszuständen.
+      en: >-
+        Unauthorised control of the machine with possible hazardous movements or process states.
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T1692]
+    emb3d: [TID-406]
+    iec62443: [FR2]
+    measures: [mqtt-tls-acl, least-privilege-services, parameter-plausibility, local-control-priority]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  # --- network -----------------------------------------------------------------
+  - id: network-flat-it-machine
+    rev: 1
+    stride: [T, E]
+    applies_to: [ip-network, router-firewall, industrial-switch]
+    title:
+      de: Flaches Netz ohne Segmentierung zwischen Kunden-IT und Maschine über {element}
+      en: Flat network without segmentation between customer IT and machine via {element}
+    scenario:
+      de: >-
+        Das Maschinennetz ist direkt mit dem Büro- oder Produktionsnetz des Kunden verbunden, ohne
+        Firewall oder mit Regeln, die alles erlauben. Schadsoftware oder ein Angreifer auf einem
+        beliebigen IT-Rechner erreicht Steuerungen, HMI und Antriebe direkt und kann deren
+        ungeschützte Protokolle nutzen.
+      en: >-
+        The machine network is directly connected to the customer's office or production network,
+        without a firewall or with allow-all rules. Malware or an attacker on any IT computer reaches
+        controllers, HMIs and drives directly and can use their unprotected protocols.
+    consequence:
+      de: >-
+        Ein Vorfall in der IT greift auf die Maschine über, mit Manipulation oder Ausfall der
+        Steuerung bis hin zu gefährlichen Zuständen.
+      en: >-
+        An incident in IT spreads to the machine, with manipulation or failure of the control system
+        up to hazardous states.
+    environment:
+      interface: known_network
+      access: restricted
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-j, AI-I-2-k]
+    attack_ics: [T0886, T0846]
+    iec62443: [FR5]
+    measures: [network-segmentation, firewall-allowlist, secure-commissioning-guide, user-security-documentation]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: network-device-default-password
+    rev: 1
+    stride: [S, T, I, E]
+    applies_to: [industrial-switch, router-firewall, wireless-module, remote-access-gateway, edge-device]
+    title:
+      de: Manipulation der Konfiguration von {element} über Web-Interface mit Standardpasswort
+      en: Manipulation of the configuration of {element} via web interface with default password
+    scenario:
+      de: >-
+        Das Web-Interface des Netzwerkgeräts ist aus dem Kunden- oder Maschinennetz erreichbar und mit
+        dem Auslieferungspasswort geschützt, das in öffentlich verfügbaren Handbüchern steht. Ein
+        Angreifer meldet sich an, öffnet Filterregeln, ändert VLANs, aktiviert Port-Spiegelung zum
+        Mitlesen oder schaltet Ports ab.
+      en: >-
+        The network device's web interface is reachable from the customer or machine network and
+        protected by the factory password that is listed in publicly available manuals. An attacker
+        logs in, opens filter rules, changes VLANs, enables port mirroring to eavesdrop or disables
+        ports.
+    consequence:
+      de: >-
+        Aufhebung der Netztrennung, Mitlesen von Verkehr und Ausfall der Kommunikation in der Maschine.
+      en: >-
+        Removal of network separation, eavesdropping on traffic and loss of communication in the
+        machine.
+    impact: 4
+    cra_refs: [AI-I-2-b, AI-I-2-d]
+    attack_ics: [T0859]
+    emb3d: [TID-311, TID-314]
+    iec62443: [FR1, FR2, FR5]
+    measures: [no-default-passwords, unique-device-credentials, web-interface-hardening, account-lockout]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: network-config-change-not-traceable
+    rev: 1
+    stride: [R]
+    applies_to: [industrial-switch, router-firewall, wireless-module, edge-device]
+    title:
+      de: Konfigurationsänderungen an {element} sind nicht nachvollziehbar
+      en: Configuration changes on {element} are not traceable
+    scenario:
+      de: >-
+        Das Gerät protokolliert Anmeldungen und Konfigurationsänderungen nicht oder nur in einem
+        flüchtigen Speicher, und alle Administratoren nutzen dasselbe Konto. Ein Angreifer ändert
+        Regeln oder Einstellungen und setzt sie später zurück oder startet das Gerät neu, sodass keine
+        Spuren bleiben.
+      en: >-
+        The device does not log logins and configuration changes, or only in volatile memory, and all
+        administrators use the same account. An attacker changes rules or settings and later reverts
+        them or restarts the device so that no traces remain.
+    consequence:
+      de: >-
+        Manipulationen werden nicht erkannt und lassen sich keiner Person zuordnen.
+      en: >-
+        Manipulations are not detected and cannot be attributed to any person.
+    impact: 2
+    cra_refs: [AI-I-2-l]
+    attack_ics: [T0872]
+    emb3d: [TID-225]
+    iec62443: [FR2, FR6]
+    measures: [security-logging, log-protection, config-integrity-check, time-synchronization]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: network-rogue-device-open-port
+    rev: 1
+    stride: [S]
+    applies_to: [industrial-switch, ip-network]
+    title:
+      de: Fremdes Gerät an freiem Port von {element}
+      en: Foreign device on a free port of {element}
+    scenario:
+      de: >-
+        Freie Switch-Ports im Schaltschrank oder an der Maschine sind aktiv und keinem VLAN fest
+        zugeordnet. Eine Person mit Zugang steckt einen Laptop oder einen kleinen Netzwerkadapter mit
+        Mobilfunkmodem ein und erhält eine Adresse im Maschinennetz, oft mit der Identität eines
+        legitimen Geräts.
+      en: >-
+        Free switch ports in the control cabinet or on the machine are active and not bound to a
+        specific VLAN. A person with access plugs in a laptop or a small network adapter with a
+        mobile modem and obtains an address in the machine network, often with the identity of a
+        legitimate device.
+    consequence:
+      de: >-
+        Direkter Zugriff auf alle Geräte im Maschinennetz und gegebenenfalls ein dauerhafter
+        verdeckter Fernzugang.
+      en: >-
+        Direct access to all devices in the machine network and possibly a permanent covert remote
+        access.
+    environment:
+      interface: local
+      access: public_restricted
+    impact: 4
+    cra_refs: [AI-I-2-j]
+    emb3d: [TID-406]
+    iec62443: [FR1, FR5]
+    measures: [unused-ports-closed, physical-access-control, network-monitoring-ids]
+    sources: ["generic OT threat knowledge; MITRE EMB3D"]
+
+  - id: network-adversary-in-the-middle
+    rev: 1
+    stride: [T, I]
+    applies_to: [ip-network, industrial-switch]
+    title:
+      de: Umleitung und Manipulation von Verkehr auf {element}
+      en: Redirection and manipulation of traffic on {element}
+    scenario:
+      de: >-
+        Ein Angreifer im selben Netzsegment leitet Verkehr durch gefälschte ARP- oder DHCP-Antworten
+        über sein Gerät um. Unverschlüsselte und nicht authentisierte Verbindungen zwischen HMI,
+        Steuerung und übergeordneten Systemen kann er dabei mitlesen und Werte oder Befehle gezielt
+        verändern.
+      en: >-
+        An attacker in the same network segment redirects traffic through their device via spoofed ARP
+        or DHCP responses. They can read unencrypted and unauthenticated connections between HMI,
+        controller and higher-level systems and selectively alter values or commands.
+    consequence:
+      de: >-
+        Bediener sehen falsche Zustände und die Maschine erhält veränderte Befehle, mit möglicher
+        Gefährdung von Personen.
+      en: >-
+        Operators see false states and the machine receives altered commands, with possible danger to
+        persons.
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-e, AI-I-2-f]
+    attack_ics: [T0830, T0831]
+    emb3d: [TID-406]
+    iec62443: [FR3, FR4]
+    measures: [data-encryption-transit, mutual-tls, network-monitoring-ids, network-segmentation]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: network-cleartext-sniffing
+    rev: 1
+    stride: [I]
+    applies_to: [ip-network, vpn-tunnel]
+    title:
+      de: Mitlesen von Zugangsdaten und Prozessdaten auf {element}
+      en: Eavesdropping on credentials and process data on {element}
+    scenario:
+      de: >-
+        Dienste wie HTTP, FTP, Telnet oder unverschlüsselte Industrieprotokolle übertragen Passwörter,
+        Projektdaten und Rezepte im Klartext. Ein Angreifer mit Zugang zum Netz, etwa über einen
+        Spiegelport oder ein kompromittiertes Gerät, zeichnet den Verkehr auf und wertet ihn aus.
+      en: >-
+        Services such as HTTP, FTP, Telnet or unencrypted industrial protocols transmit passwords,
+        project data and recipes in clear text. An attacker with network access, for example via a
+        mirror port or a compromised device, records the traffic and analyses it.
+    consequence:
+      de: >-
+        Erbeutete Zugangsdaten ermöglichen weitere Angriffe, Rezepte und Prozesswissen fließen ab.
+      en: >-
+        Captured credentials enable further attacks, recipes and process know-how leak.
+    impact: 3
+    cra_refs: [AI-I-2-e]
+    attack_ics: [T0842, T0882]
+    emb3d: [TID-408]
+    iec62443: [FR4]
+    measures: [data-encryption-transit, unused-ports-closed, network-segmentation]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: network-storm-inbound-dos
+    rev: 1
+    stride: [D]
+    applies_to: [ip-network, industrial-switch, router-firewall, edge-device, plc]
+    title:
+      de: Netzlast aus dem Kundennetz überlastet {element}
+      en: Network load from the customer network overloads {element}
+    scenario:
+      de: >-
+        Ein Angreifer oder eine Schadsoftware im Kundennetz erzeugt einen Broadcast-Sturm, massenhafte
+        Scans oder gezielte Flutungen. Der Verkehr gelangt ungefiltert in das Maschinennetz, und
+        Steuerungen mit begrenztem Netzwerkstack verlieren zyklische Verbindungen oder hängen sich auf.
+      en: >-
+        An attacker or malware in the customer network generates a broadcast storm, mass scans or
+        targeted floods. The traffic enters the machine network unfiltered, and controllers with a
+        limited network stack lose cyclic connections or freeze.
+    consequence:
+      de: >-
+        Kommunikationsabbrüche und Stillstand der Maschine, im ungünstigen Fall undefinierte Zustände
+        bei Wiederanlauf.
+      en: >-
+        Communication losses and machine standstill, in the worst case undefined states on restart.
+    environment:
+      interface: known_network
+      access: restricted
+    impact: 3
+    cra_refs: [AI-I-2-h]
+    attack_ics: [T0814, T0813]
+    emb3d: [TID-404, TID-405]
+    iec62443: [FR5, FR7]
+    measures: [dos-rate-limiting, network-segmentation, watchdog-safe-state, security-testing]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: network-machine-floods-other-devices
+    rev: 1
+    stride: [D]
+    applies_to: [ip-network, edge-device, industrial-switch, router-firewall]
+    title:
+      de: Kompromittiertes {element} beeinträchtigt andere Geräte und Netze
+      en: Compromised {element} impairs other devices and networks
+    scenario:
+      de: >-
+        Ein Angreifer übernimmt ein vernetztes Gerät der Maschine und missbraucht es, um im
+        Kundennetz Scans, Flutungen oder Broadcast-Stürme zu erzeugen oder an externen
+        Überlastungsangriffen teilzunehmen. Fehlende Bandbreiten- und Verbindungsbegrenzungen auf der
+        Maschinenseite lassen dies zu.
+      en: >-
+        An attacker takes over a networked device of the machine and misuses it to generate scans,
+        floods or broadcast storms in the customer network or to take part in external overload
+        attacks. Missing bandwidth and connection limits on the machine side allow this.
+    consequence:
+      de: >-
+        Störung anderer Maschinen und IT-Systeme des Betreibers oder Dritter, die der Maschine
+        zugerechnet wird.
+      en: >-
+        Disruption of other machines and IT systems of the operator or third parties that is attributed
+        to the machine.
+    impact: 3
+    cra_refs: [AI-I-2-i]
+    attack_ics: [T0814]
+    iec62443: [FR5, FR7]
+    measures: [firewall-allowlist, dos-rate-limiting, network-monitoring-ids]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- wireless ----------------------------------------------------------------
+  - id: wireless-eavesdropping
+    rev: 1
+    stride: [I]
+    applies_to: [wireless-link, wireless-module]
+    title:
+      de: Abhören der {element}
+      en: Eavesdropping on {element}
+    scenario:
+      de: >-
+        Die Funkverbindung ist offen, mit veralteter Verschlüsselung oder mit einem schwachen, leicht
+        zu erratenden Schlüssel geschützt. Ein Angreifer in Funkreichweite, auch außerhalb des
+        Werksgeländes mit Richtantenne, zeichnet den Verkehr auf und entschlüsselt ihn.
+      en: >-
+        The wireless link is open, protected by outdated encryption or by a weak, easily guessed key.
+        An attacker within radio range, even outside the factory premises using a directional antenna,
+        records the traffic and decrypts it.
+    consequence:
+      de: >-
+        Offenlegung von Zugangsdaten, Bedienvorgängen und Prozessdaten.
+      en: >-
+        Disclosure of credentials, operating actions and process data.
+    environment:
+      interface: dedicated_known_network
+      access: non_restricted
+    impact: 3
+    cra_refs: [AI-I-2-e]
+    attack_ics: [T0887]
+    emb3d: [TID-408, TID-411]
+    iec62443: [FR4]
+    measures: [wireless-strong-encryption, data-encryption-transit]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: wireless-rogue-access-point
+    rev: 1
+    stride: [S, T]
+    applies_to: [wireless-link, wireless-module]
+    title:
+      de: Gefälschter Zugangspunkt für {element}
+      en: Rogue access point for {element}
+    scenario:
+      de: >-
+        Ein Angreifer betreibt einen Zugangspunkt mit demselben Netznamen und stärkerem Signal. Das
+        Funkmodul oder das mobile Bediengerät verbindet sich mit ihm, weil es die Gegenstelle nicht
+        über Zertifikate prüft. Der Angreifer leitet den Verkehr weiter, liest ihn mit und verändert
+        Befehle oder Anzeigen.
+      en: >-
+        An attacker operates an access point with the same network name and a stronger signal. The
+        radio module or mobile operator panel connects to it because it does not verify the peer using
+        certificates. The attacker forwards the traffic, reads it and alters commands or displays.
+    consequence:
+      de: >-
+        Verfälschte Befehle und Anzeigen bei Fernbedienung über Funk mit möglicher Gefährdung von
+        Personen.
+      en: >-
+        Falsified commands and displays during wireless operation with possible danger to persons.
+    environment:
+      interface: dedicated_known_network
+      access: non_restricted
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T0860, T0830]
+    emb3d: [TID-316]
+    iec62443: [FR1, FR3]
+    measures: [wireless-strong-encryption, certificate-management, safe-communication-profile]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: wireless-jamming-deauthentication
+    rev: 1
+    stride: [D]
+    applies_to: [wireless-link, wireless-module, mobile-panel]
+    title:
+      de: Störsender oder Deauthentisierung unterbricht {element}
+      en: Jamming or deauthentication interrupts {element}
+    scenario:
+      de: >-
+        Ein Angreifer sendet gezielt Störsignale auf dem genutzten Frequenzband oder verschickt
+        gefälschte Abmeldenachrichten, die bei ungeschützten Management-Frames akzeptiert werden. Die
+        Funkverbindung bricht wiederholt ab, und mobile Bediengeräte verlieren die Verbindung zur
+        Maschine.
+      en: >-
+        An attacker deliberately transmits interference on the frequency band in use or sends spoofed
+        deauthentication messages, which are accepted when management frames are unprotected. The
+        wireless link drops repeatedly, and mobile operator panels lose the connection to the machine.
+    consequence:
+      de: >-
+        Ausfall der mobilen Bedienung und wiederholte Maschinenstopps. Bei fehlender Überwachung der
+        Verbindung ist nicht sichergestellt, dass ein sicherer Zustand eingenommen wird.
+      en: >-
+        Loss of mobile operation and repeated machine stops. Without connection monitoring it is not
+        ensured that a safe state is reached.
+    environment:
+      interface: dedicated_known_network
+      access: non_restricted
+    impact: 3
+    cra_refs: [AI-I-2-h]
+    attack_ics: [T0814, T1695]
+    iec62443: [FR7]
+    measures: [watchdog-safe-state, wireless-strong-encryption, safe-communication-profile]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: wireless-shared-fleet-key
+    rev: 1
+    stride: [S, I]
+    applies_to: [wireless-module, wireless-link]
+    title:
+      de: Gleicher Funkschlüssel in allen Maschinen bei {element}
+      en: Same wireless key in all machines at {element}
+    scenario:
+      de: >-
+        Alle ausgelieferten Maschinen nutzen denselben WLAN-Schlüssel oder dieselbe
+        Bluetooth-PIN, fest in der Firmware oder in der Dokumentation hinterlegt. Ein Angreifer liest
+        den Schlüssel einmal aus einem Gerät, einem Update oder einem Handbuch aus und kann sich
+        anschließend mit jeder Maschine verbinden und deren Verkehr entschlüsseln.
+      en: >-
+        All delivered machines use the same WLAN key or Bluetooth PIN, hard-coded in the firmware or
+        stated in the documentation. An attacker extracts the key once from a device, an update or a
+        manual and can then connect to any machine and decrypt its traffic.
+    consequence:
+      de: >-
+        Flottenweiter unbefugter Funkzugang und Offenlegung der Kommunikation.
+      en: >-
+        Fleet-wide unauthorised wireless access and disclosure of communication.
+    environment:
+      interface: dedicated_known_network
+      access: non_restricted
+    impact: 4
+    cra_refs: [AI-I-2-b, AI-I-2-d, AI-I-2-e]
+    attack_ics: [T0860]
+    emb3d: [TID-328]
+    iec62443: [FR1, FR4]
+    measures: [unique-device-credentials, wireless-strong-encryption, bluetooth-secure-pairing]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: wireless-bypasses-segmentation
+    rev: 1
+    stride: [E]
+    applies_to: [wireless-module, edge-device]
+    title:
+      de: Integrierter Funkzugang über {element} umgeht die Netztrennung
+      en: Integrated wireless access via {element} bypasses network separation
+    scenario:
+      de: >-
+        Das Funkmodul ist als Zugangspunkt aktiv und mit dem Maschinennetz verbunden, etwa für die
+        Inbetriebnahme, und bleibt im Betrieb eingeschaltet. Ein Angreifer in Funkreichweite verbindet
+        sich und gelangt direkt in das Maschinennetz, vorbei an Firewall und Segmentierung des
+        Betreibers.
+      en: >-
+        The radio module is active as an access point and connected to the machine network, for
+        example for commissioning, and remains switched on during operation. An attacker within radio
+        range connects and gets directly into the machine network, bypassing the operator's firewall
+        and segmentation.
+    consequence:
+      de: >-
+        Unkontrollierter Zugang zu Steuerungen und Antrieben aus der Umgebung der Maschine.
+      en: >-
+        Uncontrolled access to controllers and drives from the surroundings of the machine.
+    environment:
+      interface: dedicated_known_network
+      access: non_restricted
+    impact: 4
+    cra_refs: [AI-I-2-b, AI-I-2-j]
+    attack_ics: [T0860]
+    emb3d: [TID-412]
+    iec62443: [FR5]
+    measures: [unused-ports-closed, firewall-allowlist, wireless-strong-encryption, secure-commissioning-guide]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  # --- cloud -------------------------------------------------------------------
+  - id: cloud-account-takeover
+    rev: 1
+    stride: [S, I, E]
+    applies_to: [cloud-service]
+    title:
+      de: Übernahme eines Kontos beim {element}
+      en: Takeover of an account at {element}
+    scenario:
+      de: >-
+        Ein Angreifer übernimmt ein Benutzer- oder Administratorkonto des Cloud-Portals durch
+        Phishing, Passwortwiederverwendung oder fehlenden zweiten Faktor. Er sieht alle Maschinen und
+        Produktionsdaten des Kunden oder als Administrator sogar aller Kunden, lädt Daten herunter und
+        ändert Berechtigungen.
+      en: >-
+        An attacker takes over a user or administrator account of the cloud portal through phishing,
+        password reuse or a missing second factor. They see all machines and production data of the
+        customer, or as administrator even of all customers, download data and change permissions.
+    consequence:
+      de: >-
+        Abfluss von Produktionsdaten und Know-how sowie Missbrauch der Cloud-Funktionen gegenüber den
+        Maschinen.
+      en: >-
+        Leakage of production data and know-how as well as misuse of the cloud functions towards the
+        machines.
+    environment:
+      interface: external_network
+      access: non_restricted
+    impact: 4
+    cra_refs: [AI-I-2-d, AI-I-2-e]
+    attack_ics: [T0859, T0882]
+    iec62443: [FR1, FR2, FR4]
+    measures: [mfa-remote-access, strong-authentication, role-based-access, cloud-security-baseline]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: cloud-production-data-leakage
+    rev: 1
+    stride: [I]
+    applies_to: [cloud-service]
+    title:
+      de: Abfluss von Produktionsdaten aus dem {element} durch Fehlkonfiguration oder fehlende Mandantentrennung
+      en: Leakage of production data from {element} through misconfiguration or missing tenant separation
+    scenario:
+      de: >-
+        Speicherbereiche, Schnittstellen oder Datensicherungen des Cloud-Dienstes sind öffentlich
+        erreichbar oder die Mandantentrennung ist fehlerhaft. Ein Angreifer oder ein anderer Kunde ruft
+        über manipulierte Kennungen in API-Aufrufen Daten fremder Maschinen ab.
+      en: >-
+        Storage areas, interfaces or backups of the cloud service are publicly reachable, or tenant
+        separation is flawed. An attacker or another customer retrieves data of other machines by
+        manipulating identifiers in API calls.
+    consequence:
+      de: >-
+        Verletzung der Vertraulichkeit von Produktionsdaten vieler Kunden und mögliche
+        Datenschutzverstöße.
+      en: >-
+        Breach of confidentiality of production data of many customers and possible data protection
+        violations.
+    environment:
+      interface: external_network
+      access: non_restricted
+    impact: 4
+    cra_refs: [AI-I-2-e, AI-I-2-g]
+    attack_ics: [T0882]
+    iec62443: [FR4, FR5]
+    measures: [cloud-security-baseline, data-encryption-rest, data-minimisation, security-testing]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: cloud-outage-dependency
+    rev: 1
+    stride: [D]
+    applies_to: [cloud-service, edge-device]
+    title:
+      de: Ausfall oder Sabotage des {element} legt Maschinenfunktionen lahm
+      en: Outage or sabotage of {element} disables machine functions
+    scenario:
+      de: >-
+        Die Maschine benötigt für den Betrieb eine ständige Verbindung zum Cloud-Dienst, etwa für
+        Lizenzprüfung, Auftragsdaten oder Freigaben. Ein Angreifer legt den Dienst durch einen
+        Überlastungs- oder Ransomware-Angriff lahm oder unterbricht die Internetverbindung des
+        Standorts.
+      en: >-
+        The machine needs a permanent connection to the cloud service for operation, for example for
+        license checks, order data or enables. An attacker takes the service down through an overload
+        or ransomware attack, or interrupts the site's internet connection.
+    consequence:
+      de: >-
+        Maschinen in vielen Werken stehen still, obwohl sie technisch funktionsfähig sind.
+      en: >-
+        Machines in many plants stand still although they are technically operational.
+    impact: 4
+    cra_refs: [AI-I-2-h]
+    attack_ics: [T0826, T0828]
+    iec62443: [FR7]
+    measures: [license-grace-operation, local-control-priority, cloud-security-baseline]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: cloud-manipulated-commands
+    rev: 1
+    stride: [T]
+    applies_to: [cloud-service, edge-device]
+    title:
+      de: Manipulierte Parameter und Befehle aus dem {element} an die Maschinen
+      en: Manipulated parameters and commands from {element} to the machines
+    scenario:
+      de: >-
+        Der Cloud-Dienst kann Rezepte, Parameter oder Befehle an die Maschinen übertragen. Ein
+        Angreifer, der das Backend oder die Schnittstelle kompromittiert hat, verteilt veränderte
+        Werte an viele Maschinen gleichzeitig. Das Edge-Gerät übernimmt sie ohne Plausibilitätsprüfung
+        und ohne Bestätigung vor Ort.
+      en: >-
+        The cloud service can send recipes, parameters or commands to the machines. An attacker who has
+        compromised the backend or the interface distributes altered values to many machines at once.
+        The edge device applies them without plausibility check and without on-site confirmation.
+    consequence:
+      de: >-
+        Fehlproduktion, Maschinenschäden und mögliche Gefährdung von Personen bei vielen Kunden
+        gleichzeitig.
+      en: >-
+        Faulty production, machine damage and possible danger to persons at many customers at once.
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-f]
+    attack_ics: [T0836, T1692]
+    iec62443: [FR3]
+    measures: [parameter-plausibility, operator-confirmation-remote, recipe-change-approval, local-control-priority]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: edge-cloud-credentials-extraction
+    rev: 1
+    stride: [I, S]
+    applies_to: [edge-device, cloud-service]
+    title:
+      de: Auslesen der Cloud-Zugangsdaten aus {element}
+      en: Extraction of cloud credentials from {element}
+    scenario:
+      de: >-
+        Das Edge-Gerät speichert Zugangsdaten oder Schlüssel für den Cloud-Dienst unverschlüsselt im
+        Dateisystem oder nutzt für alle Geräte dieselben Zugangsdaten. Ein Angreifer mit Zugriff auf
+        das Gerät oder ein Firmware-Abbild liest sie aus und meldet sich damit selbst beim
+        Cloud-Dienst an.
+      en: >-
+        The edge device stores credentials or keys for the cloud service unencrypted in the file system
+        or uses the same credentials for all devices. An attacker with access to the device or a
+        firmware image extracts them and uses them to log in to the cloud service.
+    consequence:
+      de: >-
+        Einspeisen falscher Daten im Namen der Maschine und, bei gemeinsamen Zugangsdaten, Zugriff auf
+        die Daten der gesamten Flotte.
+      en: >-
+        Injection of false data on behalf of the machine and, with shared credentials, access to the
+        data of the entire fleet.
+    impact: 4
+    cra_refs: [AI-I-2-d, AI-I-2-e]
+    emb3d: [TID-328]
+    iec62443: [FR1, FR4]
+    measures: [secrets-protected-storage, unique-device-credentials, certificate-management]
+    sources: ["generic OT threat knowledge; MITRE EMB3D"]

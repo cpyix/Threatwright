@@ -1,0 +1,468 @@
+measures:
+  - id: unique-device-credentials
+    rev: 1
+    title:
+      de: Gerätespezifische Zugangsdaten
+      en: Device-specific credentials
+    description:
+      de: >-
+        Jede Maschine bzw. jedes Gerät erhält bei der Fertigung individuelle Passwörter,
+        Schlüssel und Zertifikate, die nicht aus der Seriennummer oder anderen öffentlichen
+        Daten ableitbar sind. Gemeinsame Zugangsdaten für die gesamte Baureihe sind nicht
+        zulässig. Die Erstzugangsdaten werden dem Betreiber auf sicherem Weg übergeben.
+      en: >-
+        Each machine or device receives individual passwords, keys and certificates during
+        production that cannot be derived from the serial number or other public data.
+        Shared credentials across a product series are not permitted. Initial credentials
+        are handed over to the operator through a secure channel.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Fertigungsanweisung zur Erzeugung der Zugangsdaten, Stichprobenprüfung zweier
+        Geräte mit unterschiedlichen Zugangsdaten.
+      en: >-
+        Production instruction for generating credentials, sample check of two devices with
+        different credentials.
+    cra_refs: [AI-I-2-b, AI-I-2-d]
+    iec62443: [FR1]
+    sources: ["generic OT security practice"]
+
+  - id: no-default-passwords
+    rev: 1
+    title:
+      de: Keine Standardpasswörter
+      en: No default passwords
+    description:
+      de: >-
+        Die Maschine wird ohne bekannte Standardpasswörter ausgeliefert. Wo Komponenten mit
+        Werkspasswort verbaut sind, werden diese bei der Inbetriebnahme geändert oder das
+        System erzwingt bei der ersten Anmeldung eine Änderung. Eine Prüfliste stellt sicher,
+        dass alle Komponenten (Steuerung, Bediengerät, Switch, Router, Antriebe) erfasst sind.
+      en: >-
+        The machine is shipped without known default passwords. Where components with a
+        factory password are installed, these are changed during commissioning or the system
+        enforces a change at first login. A checklist ensures that all components
+        (controller, HMI, switch, router, drives) are covered.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Inbetriebnahme-Checkliste mit abgehakten Komponenten, Prüfprotokoll eines
+        fehlgeschlagenen Logins mit Werkspasswort.
+      en: >-
+        Commissioning checklist with all components ticked, test report of a failed login
+        with the factory password.
+    cra_refs: [AI-I-2-b, AI-I-2-d]
+    iec62443: [FR1]
+    sources: ["generic OT security practice"]
+
+  - id: strong-authentication
+    rev: 1
+    title:
+      de: Starke Authentisierung
+      en: Strong authentication
+    description:
+      de: >-
+        Alle Zugänge zu Steuerung, Bediengerät, Webinterface und Engineering-Schnittstelle
+        verlangen eine Authentisierung mit ausreichend starken Passwörtern, PIN plus Token
+        oder Zertifikaten. Mindestlänge und Komplexität werden technisch durchgesetzt.
+        Unauthentisierte Zugänge, auch für Lesezugriffe auf Diagnosedaten, werden
+        vermieden oder bewusst begründet.
+      en: >-
+        All access to controller, HMI, web interface and engineering interface requires
+        authentication with sufficiently strong passwords, PIN plus token or certificates.
+        Minimum length and complexity are enforced technically. Unauthenticated access, even
+        read access to diagnostic data, is avoided or explicitly justified.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Konfigurationsexport der Passwortrichtlinie, Liste aller Zugänge mit
+        Authentisierungsart, Testprotokoll.
+      en: >-
+        Configuration export of the password policy, list of all access points with
+        authentication method, test report.
+    cra_refs: [AI-I-2-d]
+    iec62443: [FR1]
+    sources: ["generic OT security practice"]
+
+  - id: mfa-remote-access
+    rev: 1
+    title:
+      de: Mehrfaktor-Authentisierung für Fernzugriff
+      en: Multi-factor authentication for remote access
+    description:
+      de: >-
+        Fernzugriff auf die Maschine (Fernwartungsportal, VPN, Cloud-Zugang) erfordert neben
+        dem Passwort einen zweiten Faktor, z. B. Einmalcode-App oder Hardware-Token. Der
+        zweite Faktor ist personengebunden; Sammelkonten für Servicetechniker sind nicht
+        zulässig.
+      en: >-
+        Remote access to the machine (remote maintenance portal, VPN, cloud access) requires a
+        second factor in addition to the password, e.g. an authenticator app or hardware
+        token. The second factor is personal; shared accounts for service technicians are
+        not permitted.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Konfigurationsexport des Fernwartungszugangs mit aktivierter MFA,
+        Benutzerliste ohne Sammelkonten.
+      en: >-
+        Configuration export of the remote access with MFA enabled, user list without shared
+        accounts.
+    cra_refs: [AI-I-2-d]
+    iec62443: [FR1]
+    sources: ["generic OT security practice"]
+
+  - id: role-based-access
+    rev: 1
+    title:
+      de: Rollenbasierte Zugriffsrechte
+      en: Role-based access control
+    description:
+      de: >-
+        Für Bedienung, Einrichtung, Instandhaltung, Service und Administration werden
+        getrennte Rollen mit festgelegten Rechten angelegt. Kritische Funktionen wie
+        Programmänderung, Parameteränderung, Benutzerverwaltung oder Aktivierung des
+        Fernzugriffs sind nur bestimmten Rollen erlaubt. Die Rechtematrix ist Teil der
+        Maschinendokumentation.
+      en: >-
+        Separate roles with defined rights are set up for operation, setup, maintenance,
+        service and administration. Critical functions such as program change, parameter
+        change, user management or enabling remote access are permitted only to specific
+        roles. The rights matrix is part of the machine documentation.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Rollen- und Rechtematrix, Konfigurationsexport der Benutzerverwaltung,
+        Testprotokoll mit verweigertem Zugriff für eine niedrigere Rolle.
+      en: >-
+        Role and rights matrix, configuration export of user management, test report with
+        access denied for a lower role.
+    cra_refs: [AI-I-2-d]
+    iec62443: [FR2]
+    sources: ["generic OT security practice"]
+
+  - id: least-privilege-services
+    rev: 1
+    title:
+      de: Minimale Rechte für Dienste
+      en: Least privilege for services
+    description:
+      de: >-
+        Dienste und Anwendungen auf Bedien-PC, Edge-Gerät und Steuerung laufen mit den
+        geringstmöglichen Rechten, nicht als Administrator oder root. Dateisystem- und
+        Netzwerkzugriffe sind auf das Notwendige beschränkt. Wird ein Dienst kompromittiert,
+        bleibt der Schaden dadurch begrenzt.
+      en: >-
+        Services and applications on HMI PC, edge device and controller run with the least
+        possible privileges, not as administrator or root. File system and network access is
+        limited to what is necessary. If a service is compromised, the damage remains
+        contained.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Liste der Dienste mit Ausführungskonto und Rechten, Konfigurationsexport bzw.
+        Auszug der Prozessliste.
+      en: >-
+        List of services with execution account and privileges, configuration export or
+        process list extract.
+    cra_refs: [AI-I-2-d, AI-I-2-k]
+    iec62443: [FR2]
+    sources: ["generic OT security practice"]
+
+  - id: account-lockout
+    rev: 1
+    title:
+      de: Schutz gegen Passwortraten
+      en: Protection against password guessing
+    description:
+      de: >-
+        Nach mehreren fehlgeschlagenen Anmeldeversuchen wird das Konto vorübergehend
+        gesperrt oder die Wartezeit bis zum nächsten Versuch steigt an. Die Sperre darf die
+        Bedienung im Notfall nicht verhindern, z. B. durch eine lokale Notbedienung ohne
+        Anmeldung für sicherheitsrelevante Funktionen. Fehlversuche werden protokolliert.
+      en: >-
+        After several failed login attempts, the account is temporarily locked or the delay
+        before the next attempt increases. The lockout must not prevent operation in an
+        emergency, e.g. through local emergency operation without login for safety-relevant
+        functions. Failed attempts are logged.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Konfigurationsexport der Sperrparameter, Testprotokoll mit wiederholten
+        Fehlversuchen und Logauszug.
+      en: >-
+        Configuration export of lockout parameters, test report with repeated failed
+        attempts and log extract.
+    cra_refs: [AI-I-2-d, AI-I-2-l]
+    iec62443: [FR1]
+    sources: ["generic OT security practice"]
+
+  - id: session-timeout
+    rev: 1
+    title:
+      de: Automatische Abmeldung
+      en: Automatic session timeout
+    description:
+      de: >-
+        Angemeldete Sitzungen an Bediengerät, Webinterface und Engineering-Zugang werden nach
+        einer festgelegten Zeit ohne Aktivität automatisch beendet oder auf die niedrigste
+        Rolle zurückgesetzt. Die Zeit wird je Rolle festgelegt, für Administrations- und
+        Servicerollen kürzer als für die Bedienung.
+      en: >-
+        Logged-in sessions on HMI, web interface and engineering access are automatically
+        terminated or reset to the lowest role after a defined period of inactivity. The
+        period is set per role, shorter for administration and service roles than for
+        operation.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Konfigurationsexport der Timeout-Werte, Testprotokoll mit automatischer Abmeldung.
+      en: >-
+        Configuration export of timeout values, test report showing automatic logout.
+    cra_refs: [AI-I-2-d]
+    iec62443: [FR2]
+    sources: ["generic OT security practice"]
+
+  - id: secrets-protected-storage
+    rev: 1
+    title:
+      de: Geschützte Speicherung von Geheimnissen
+      en: Protected storage of secrets
+    description:
+      de: >-
+        Passwörter werden nur als gesalzene Hashwerte gespeichert; private Schlüssel und
+        Zugangsdaten für Fernzugriff oder Cloud liegen in einem sicheren Speicher (Secure
+        Element, TPM oder verschlüsselter Bereich). Geheimnisse stehen nicht im Klartext in
+        Steuerungsprojekt, Konfigurationsdatei, Firmware-Image oder Quellcode.
+      en: >-
+        Passwords are stored only as salted hashes; private keys and credentials for remote
+        or cloud access reside in secure storage (secure element, TPM or encrypted area).
+        Secrets are not stored in plain text in the controller project, configuration file,
+        firmware image or source code.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Designbeschreibung der Schlüsselspeicherung, Prüfbericht einer Suche nach
+        Klartextgeheimnissen in Firmware und Projektdateien.
+      en: >-
+        Design description of key storage, test report of a search for plain-text secrets in
+        firmware and project files.
+    cra_refs: [AI-I-2-e, AI-I-2-d]
+    iec62443: [FR4, FR1]
+    sources: ["generic OT security practice"]
+
+  - id: certificate-management
+    rev: 1
+    title:
+      de: Zertifikatsverwaltung
+      en: Certificate management
+    description:
+      de: >-
+        Für Geräte- und Dienstzertifikate ist festgelegt, wer sie ausstellt, wie lange sie
+        gelten, wie sie erneuert und wie kompromittierte Zertifikate gesperrt werden. Die
+        Maschine prüft Gültigkeit und Vertrauenskette der Gegenstelle. Der Betreiber kann
+        eigene Zertifikate seiner PKI einspielen.
+      en: >-
+        For device and service certificates it is defined who issues them, how long they are
+        valid, how they are renewed and how compromised certificates are revoked. The machine
+        checks validity and chain of trust of the peer. The operator can install certificates
+        from their own PKI.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Zertifikatskonzept (Aussteller, Laufzeit, Erneuerung, Sperrung), Testprotokoll
+        einer abgelehnten Verbindung mit abgelaufenem Zertifikat.
+      en: >-
+        Certificate concept (issuer, lifetime, renewal, revocation), test report of a rejected
+        connection with an expired certificate.
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    iec62443: [FR1]
+    sources: ["generic OT security practice"]
+
+  - id: mutual-tls
+    rev: 1
+    title:
+      de: Gegenseitig authentisiertes TLS
+      en: Mutually authenticated TLS
+    description:
+      de: >-
+        Verbindungen zwischen Maschine und übergeordneten Systemen (MES, Leitsystem,
+        Cloud, Edge) verwenden TLS in aktueller Version, bei dem sich beide Seiten mit
+        Zertifikat ausweisen. Unsichere Protokollversionen und Cipher Suites sind deaktiviert.
+        Verbindungen mit unbekannten Gegenstellen werden abgelehnt.
+      en: >-
+        Connections between the machine and higher-level systems (MES, control system, cloud,
+        edge) use TLS in a current version where both sides authenticate with a certificate.
+        Insecure protocol versions and cipher suites are disabled. Connections from unknown
+        peers are rejected.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        TLS-Konfigurationsexport, Prüfbericht eines TLS-Scanners, Testprotokoll einer
+        abgelehnten Verbindung ohne Client-Zertifikat.
+      en: >-
+        TLS configuration export, TLS scanner report, test report of a rejected connection
+        without client certificate.
+    cra_refs: [AI-I-2-d, AI-I-2-e, AI-I-2-f]
+    iec62443: [FR1, FR3, FR4]
+    sources: ["generic OT security practice"]
+
+  - id: opcua-security-mode
+    rev: 1
+    title:
+      de: OPC UA mit Sign and Encrypt
+      en: OPC UA with Sign and Encrypt
+    description:
+      de: >-
+        Der OPC UA Server der Maschine bietet nur Endpunkte mit Security Mode
+        SignAndEncrypt und einer aktuellen Security Policy an; die Policy None und anonyme
+        Anmeldung sind deaktiviert. Client-Zertifikate werden nur nach expliziter Freigabe
+        vertraut (kein automatisches Akzeptieren). Schreibrechte auf Knoten werden je Benutzer
+        oder Rolle vergeben.
+      en: >-
+        The machine's OPC UA server offers only endpoints with security mode SignAndEncrypt
+        and a current security policy; policy None and anonymous login are disabled. Client
+        certificates are trusted only after explicit approval (no automatic acceptance).
+        Write rights on nodes are granted per user or role.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Konfigurationsexport des OPC UA Servers mit Endpunktliste, Testprotokoll einer
+        abgelehnten anonymen Verbindung.
+      en: >-
+        OPC UA server configuration export with endpoint list, test report of a rejected
+        anonymous connection.
+    cra_refs: [AI-I-2-d, AI-I-2-e, AI-I-2-f]
+    iec62443: [FR1, FR2, FR4]
+    sources: ["generic OT security practice"]
+
+  - id: mqtt-tls-acl
+    rev: 1
+    title:
+      de: MQTT mit TLS und Zugriffslisten
+      en: MQTT with TLS and access control lists
+    description:
+      de: >-
+        MQTT-Verbindungen der Maschine laufen über TLS mit Authentisierung des Clients
+        (Zertifikat oder individuelle Zugangsdaten). Am Broker regeln Zugriffslisten, welcher
+        Client welche Topics lesen und schreiben darf; Wildcard-Abonnements und anonyme
+        Clients sind gesperrt. Steuerbefehle per MQTT werden nur von definierten Absendern
+        angenommen.
+      en: >-
+        MQTT connections of the machine run over TLS with client authentication (certificate
+        or individual credentials). At the broker, access control lists define which client
+        may read and write which topics; wildcard subscriptions and anonymous clients are
+        blocked. Control commands via MQTT are accepted only from defined senders.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Broker-Konfigurationsexport mit Zugriffslisten, Testprotokoll eines abgewiesenen
+        Publish auf ein fremdes Topic.
+      en: >-
+        Broker configuration export with ACLs, test report of a rejected publish to a foreign
+        topic.
+    cra_refs: [AI-I-2-d, AI-I-2-e, AI-I-2-f]
+    iec62443: [FR1, FR2, FR4]
+    sources: ["generic OT security practice"]
+
+  - id: wireless-strong-encryption
+    rev: 1
+    title:
+      de: Starke Verschlüsselung für Funkverbindungen
+      en: Strong encryption for wireless links
+    description:
+      de: >-
+        WLAN- und andere Funkverbindungen der Maschine (z. B. mobile Bediengeräte,
+        fahrerlose Transportsysteme) verwenden WPA3 oder WPA2-Enterprise mit individuellen
+        Zugangsdaten. Offene Netze, WEP und WPS sind deaktiviert. Die Sendeleistung wird
+        auf den benötigten Bereich begrenzt und die SSID trägt keine Rückschlüsse auf die
+        Anlage.
+      en: >-
+        WLAN and other wireless links of the machine (e.g. mobile HMIs, automated guided
+        vehicles) use WPA3 or WPA2-Enterprise with individual credentials. Open networks, WEP
+        and WPS are disabled. Transmit power is limited to the required range and the SSID
+        does not reveal details about the plant.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Konfigurationsexport von Access Point bzw. Funkmodul, Prüfbericht eines
+        WLAN-Scans.
+      en: >-
+        Configuration export of access point or radio module, WLAN scan report.
+    cra_refs: [AI-I-2-d, AI-I-2-e]
+    iec62443: [FR1, FR4]
+    sources: ["generic OT security practice"]
+
+  - id: bluetooth-secure-pairing
+    rev: 1
+    title:
+      de: Sichere Bluetooth-Kopplung
+      en: Secure Bluetooth pairing
+    description:
+      de: >-
+        Bluetooth-Schnittstellen (z. B. für Inbetriebnahme-Apps an Sensoren oder Antrieben)
+        verwenden Secure Connections mit authentisierter Kopplung (Numeric Comparison oder
+        Passkey); Just Works ist nicht zulässig. Die Sichtbarkeit wird nur auf
+        Bedienhandlung vor Ort aktiviert und automatisch wieder beendet. Die Schnittstelle
+        lässt sich vom Betreiber vollständig abschalten.
+      en: >-
+        Bluetooth interfaces (e.g. for commissioning apps on sensors or drives) use Secure
+        Connections with authenticated pairing (numeric comparison or passkey); Just Works is
+        not permitted. Discoverability is enabled only by a local user action and ends
+        automatically. The operator can switch the interface off completely.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Konfigurationsbeschreibung des Kopplungsverfahrens, Testprotokoll eines
+        abgewiesenen Kopplungsversuchs ohne Bestätigung vor Ort.
+      en: >-
+        Configuration description of the pairing method, test report of a rejected pairing
+        attempt without local confirmation.
+    cra_refs: [AI-I-2-d, AI-I-2-j]
+    iec62443: [FR1, FR5]
+    sources: ["generic OT security practice"]
+
+  - id: time-limited-service-access
+    rev: 1
+    title:
+      de: Zeitlich begrenzter Servicezugang
+      en: Time-limited service access
+    description:
+      de: >-
+        Servicezugänge mit erweiterten Rechten (Servicekonto, Herstellerpasswort,
+        Diagnoseschnittstelle) werden nur für einen konkreten Einsatz und für eine begrenzte
+        Zeit freigeschaltet, z. B. über ein tagesgültiges Einmalpasswort oder eine Freigabe
+        durch den Betreiber. Nach Ablauf wird der Zugang automatisch gesperrt. Es gibt
+        kein dauerhaft gültiges Generalpasswort.
+      en: >-
+        Service access with extended rights (service account, manufacturer password,
+        diagnostic interface) is enabled only for a specific job and a limited time, e.g. via
+        a one-time password valid for one day or an approval by the operator. After expiry,
+        access is locked automatically. There is no permanently valid master password.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Beschreibung des Freischaltverfahrens, Testprotokoll mit abgelaufenem
+        Zugang, Logauszug der Freischaltungen.
+      en: >-
+        Description of the enabling procedure, test report with expired access, log extract
+        of enablements.
+    cra_refs: [AI-I-2-d]
+    iec62443: [FR1, FR2]
+    sources: ["generic OT security practice"]

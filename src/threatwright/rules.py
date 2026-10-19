@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
 
+from threatwright.library import check_library_refs, load_catalog, load_libraries
 from threatwright.method import Method, MethodError, evaluate, load_method
 from threatwright.model.objects import (
     Asset,
@@ -57,10 +58,26 @@ def validate(project: Project) -> list[Issue]:
         method = load_method(project.root, project.config)
     except MethodError as exc:
         issues.append(Issue(project.root, "method", str(exc), "method-invalid"))
+    libs = load_libraries(project.config.libraries, project.root)
+    issues += libs.issues
+    issues += check_library_refs(project, libs)[0]
+    cra = set(load_catalog("cra").entries)
     uuids: dict[str, str] = {}
     for sub in project.models.values():
         ctx = _Ctx(project, sub, method, uuids)
         _check_model(ctx)
+        for coll, objects in sub.objects.items():
+            for obj in objects.values():
+                for ref in getattr(obj, "cra_refs", []):
+                    if ref not in cra:
+                        ctx.add(
+                            "warning",
+                            "unknown-cra-ref",
+                            coll,
+                            obj,
+                            "cra_refs",
+                            f"'{ref}' is not in the CRA catalog",
+                        )
         issues += ctx.issues
     return issues
 

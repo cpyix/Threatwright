@@ -1,0 +1,167 @@
+measures:
+  - id: supplier-security-requirements
+    rev: 1
+    title:
+      de: Sicherheitsanforderungen an Lieferanten
+      en: Security requirements for suppliers
+    description:
+      de: >-
+        Bei der Beschaffung von Steuerungen, Antrieben, Bediengeräten, Netzwerkkomponenten und
+        Software werden Sicherheitsanforderungen vertraglich festgelegt: Unterstützungszeitraum,
+        Bereitstellung von Sicherheitsupdates, Meldung von Schwachstellen, Lieferung einer
+        Komponentenliste (SBOM) und sichere Grundeinstellungen. Die Erfüllung wird bei der
+        Lieferantenauswahl bewertet.
+      en: >-
+        When procuring controllers, drives, HMIs, network components and software, security
+        requirements are contractually defined: support period, provision of security updates,
+        notification of vulnerabilities, delivery of a component list (SBOM) and secure default
+        settings. Fulfilment is assessed during supplier selection.
+    kind: supply_chain
+    compensating: false
+    evidence:
+      de: >-
+        Anforderungskatalog bzw. Vertragsklauseln, Lieferantenbewertung.
+      en: >-
+        Requirements catalogue or contract clauses, supplier assessment.
+    cra_refs: [Art13, AI-II-1]
+    sources: ["generic OT security practice"]
+
+  - id: genuine-spare-parts
+    rev: 1
+    title:
+      de: Originalersatzteile aus sicherer Bezugsquelle
+      en: Genuine spare parts from trusted sources
+    description:
+      de: >-
+        Ersatzteile für Steuerung, Antriebe und Elektronik werden nur über den Hersteller
+        oder autorisierte Händler bezogen. Beim Wareneingang werden Verpackung, Kennzeichnung
+        und Firmware-Stand geprüft; vor dem Einbau wird die Firmware auf einen freigegebenen
+        Stand gebracht. Die Betriebsanleitung weist den Betreiber auf diese Bezugsquellen hin.
+      en: >-
+        Spare parts for controller, drives and electronics are sourced only from the
+        manufacturer or authorised distributors. At goods receipt, packaging, labelling and
+        firmware version are checked; before installation the firmware is brought to an
+        approved version. The operating manual points the operator to these sources.
+    kind: supply_chain
+    compensating: false
+    evidence:
+      de: >-
+        Liste autorisierter Bezugsquellen, Wareneingangsprüfanweisung, Hinweis in der
+        Betriebsanleitung.
+      en: >-
+        List of authorised sources, goods receipt inspection instruction, note in the
+        operating manual.
+    cra_refs: [AI-I-2-f]
+    iec62443: [FR3]
+    sources: ["generic OT security practice"]
+
+  - id: component-inventory-sbom
+    rev: 1
+    title:
+      de: Komponenteninventar und SBOM
+      en: Component inventory and SBOM
+    description:
+      de: >-
+        Für jede Maschine wird eine Liste aller Hard- und Softwarekomponenten mit Hersteller,
+        Typ und Firmware- bzw. Softwareversion geführt, für eigene Software zusätzlich eine
+        maschinenlesbare SBOM (z. B. CycloneDX oder SPDX). Die Liste wird bei jeder Änderung
+        und jedem Update aktualisiert und ist Grundlage der Schwachstellenüberwachung.
+      en: >-
+        For each machine, a list of all hardware and software components with manufacturer,
+        type and firmware or software version is maintained, and for own software additionally
+        a machine-readable SBOM (e.g. CycloneDX or SPDX). The list is updated with every change
+        and update and forms the basis of vulnerability monitoring.
+    kind: supply_chain
+    compensating: false
+    evidence:
+      de: >-
+        Komponentenliste je Maschine, SBOM-Datei, Nachweis der Aktualisierung im
+        Änderungsprozess.
+      en: >-
+        Component list per machine, SBOM file, proof of update in the change process.
+    cra_refs: [AI-II-1]
+    sources: ["generic OT security practice"]
+
+  - id: supplier-vulnerability-monitoring
+    rev: 1
+    title:
+      de: Überwachung von Schwachstellen in Zukaufkomponenten
+      en: Vulnerability monitoring for purchased components
+    description:
+      de: >-
+        Sicherheitshinweise der Lieferanten und öffentliche Schwachstellendatenbanken werden
+        regelmäßig, möglichst automatisiert anhand der SBOM, auf betroffene Komponenten
+        geprüft. Treffer werden bewertet und in den Prozess für Sicherheitsupdates
+        übernommen. Für jede Komponente ist eine Quelle für Sicherheitshinweise bekannt.
+      en: >-
+        Supplier security advisories and public vulnerability databases are regularly checked
+        for affected components, ideally automated based on the SBOM. Matches are assessed and
+        fed into the security update process. A source of security advisories is known for
+        each component.
+    kind: supply_chain
+    compensating: false
+    evidence:
+      de: >-
+        Verfahrensanweisung, Liste der Informationsquellen, Bewertungsprotokolle.
+      en: >-
+        Procedure document, list of information sources, assessment records.
+    cra_refs: [AI-II-1, AI-II-2, AI-I-2-a]
+    sources: ["generic OT security practice"]
+
+  - id: third-party-firmware-review
+    rev: 1
+    title:
+      de: Sicherheitsprüfung zugekaufter Firmware und Software
+      en: Security review of third-party firmware and software
+    description:
+      de: >-
+        Zugekaufte Firmware, Bibliotheken und Softwaremodule werden vor der Freigabe auf
+        bekannte Schwachstellen, Standardzugänge, offene Dienste und unerwünschte Funktionen
+        geprüft (Versionsabgleich, Portscan, Binäranalyse). Erkenntnisse werden an den
+        Lieferanten gemeldet und Abweichungen dokumentiert.
+      en: >-
+        Purchased firmware, libraries and software modules are checked before release for
+        known vulnerabilities, default accounts, open services and unwanted functions (version
+        check, port scan, binary analysis). Findings are reported to the supplier and
+        deviations documented.
+    kind: supply_chain
+    compensating: false
+    evidence:
+      de: >-
+        Prüfbericht je Komponente, Freigabeprotokoll.
+      en: >-
+        Test report per component, release record.
+    cra_refs: [AI-I-2-a, AI-II-3]
+    iec62443: [FR3]
+    sources: ["generic OT security practice"]
+
+  - id: engineering-tool-integrity
+    rev: 1
+    title:
+      de: Integrität der Engineering-Werkzeuge
+      en: Integrity of engineering tools
+    description:
+      de: >-
+        Engineering- und Programmierwerkzeuge werden nur aus offiziellen Quellen bezogen, ihre
+        Installationsdateien werden per Signatur oder Prüfsumme verifiziert und auf aktuellem
+        Stand gehalten. Engineering-Rechner sind dedizierte, gehärtete Geräte ohne Nutzung für
+        E-Mail und allgemeines Surfen. So wird verhindert, dass ein manipuliertes Werkzeug
+        Schadcode in Steuerungsprojekte einschleust.
+      en: >-
+        Engineering and programming tools are obtained only from official sources, their
+        installation files are verified by signature or checksum and kept up to date.
+        Engineering computers are dedicated, hardened devices not used for e-mail or general
+        browsing. This prevents a manipulated tool from injecting malicious code into control
+        projects.
+    kind: supply_chain
+    compensating: false
+    evidence:
+      de: >-
+        Liste der freigegebenen Werkzeugversionen mit Prüfsummen, Härtungsvorgabe für
+        Engineering-Rechner.
+      en: >-
+        List of approved tool versions with checksums, hardening baseline for engineering
+        computers.
+    cra_refs: [AI-I-2-f]
+    iec62443: [FR3]
+    sources: ["generic OT security practice"]

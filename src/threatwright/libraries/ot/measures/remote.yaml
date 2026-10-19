@@ -1,0 +1,281 @@
+measures:
+  - id: remote-access-on-demand
+    rev: 1
+    title:
+      de: Fernzugriff nur auf Anforderung
+      en: Remote access on demand only
+    description:
+      de: >-
+        Der Fernwartungszugang ist standardmäßig getrennt und wird nur für einen konkreten
+        Serviceeinsatz vom Betreiber vor Ort aktiviert, z. B. per Schlüsselschalter,
+        digitalem Eingang oder Bestätigung am Bediengerät. Nach Ende der Sitzung oder nach
+        Ablauf einer festgelegten Zeit wird die Verbindung automatisch getrennt.
+      en: >-
+        The remote maintenance connection is disconnected by default and is activated by the
+        operator on site only for a specific service job, e.g. via key switch, digital input
+        or confirmation on the HMI. After the session ends or after a defined time, the
+        connection is closed automatically.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Elektroplan bzw. Konfiguration der Aktivierung, Testprotokoll mit automatischer
+        Trennung, Logauszug.
+      en: >-
+        Electrical drawing or configuration of activation, test report with automatic
+        disconnection, log extract.
+    cra_refs: [AI-I-2-d, AI-I-2-j]
+    iec62443: [FR2, FR5]
+    sources: ["generic OT security practice"]
+
+  - id: remote-access-session-logging
+    rev: 1
+    title:
+      de: Protokollierung von Fernwartungssitzungen
+      en: Logging of remote maintenance sessions
+    description:
+      de: >-
+        Jede Fernwartungssitzung wird mit Person, Beginn, Ende, Zielgerät und durchgeführten
+        Änderungen protokolliert, bei Bedarf auch per Bildschirmaufzeichnung. Der Betreiber
+        kann die Protokolle einsehen. Die Aufbewahrungsdauer ist festgelegt und mit dem
+        Betreiber abgestimmt.
+      en: >-
+        Each remote maintenance session is logged with person, start, end, target device and
+        changes made, and if needed by screen recording. The operator can view the logs. The
+        retention period is defined and agreed with the operator.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Beispielauszug eines Sitzungsprotokolls, Konfiguration der Aufbewahrung.
+      en: >-
+        Sample extract of a session log, retention configuration.
+    cra_refs: [AI-I-2-l]
+    iec62443: [FR6, FR2]
+    sources: ["generic OT security practice"]
+
+  - id: jumphost-hardening
+    rev: 1
+    title:
+      de: Härtung des Fernwartungs-Jumphosts
+      en: Hardening of the remote maintenance jump host
+    description:
+      de: >-
+        Der zentrale Zugangsserver bzw. das Fernwartungsportal des Herstellers wird gehärtet
+        betrieben: aktuelle Patches, nur benötigte Dienste, Mehrfaktor-Anmeldung, getrennte
+        Administrationszugänge und Überwachung. Servicetechniker erreichen die Maschinen nur
+        über diesen Weg, nicht direkt von ihren Laptops.
+      en: >-
+        The manufacturer's central access server or remote maintenance portal is operated in
+        a hardened state: current patches, only required services, multi-factor login,
+        separate administration access and monitoring. Service technicians reach machines only
+        through this path, not directly from their laptops.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Härtungsvorgabe, Schwachstellenscan-Bericht, Konfigurationsexport der Zugangsregeln.
+      en: >-
+        Hardening baseline, vulnerability scan report, configuration export of access rules.
+    cra_refs: [AI-I-2-d, AI-I-2-j, AI-I-2-a]
+    iec62443: [FR1, FR5]
+    sources: ["generic OT security practice"]
+
+  - id: jumphost-tenant-isolation
+    rev: 1
+    title:
+      de: Mandantentrennung im Fernwartungssystem
+      en: Tenant isolation in the remote maintenance system
+    description:
+      de: >-
+        Im Fernwartungsportal sind die Maschinen verschiedener Betreiber strikt voneinander
+        getrennt. Ein Techniker sieht und erreicht nur die Maschinen, für die er einen
+        aktuellen Auftrag hat. Verbindungen zwischen Kundennetzen über das Portal sind
+        technisch ausgeschlossen.
+      en: >-
+        In the remote maintenance portal, the machines of different operators are strictly
+        separated. A technician sees and reaches only the machines for which they have a
+        current job. Connections between customer networks via the portal are technically
+        impossible.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Berechtigungskonzept des Portals, Testprotokoll eines verweigerten Zugriffs auf einen
+        fremden Mandanten.
+      en: >-
+        Authorisation concept of the portal, test report of denied access to another tenant.
+    cra_refs: [AI-I-2-d, AI-I-2-i]
+    iec62443: [FR2, FR5]
+    sources: ["generic OT security practice"]
+
+  - id: remote-access-kill-switch
+    rev: 1
+    title:
+      de: Lokale Trennung des Fernzugriffs
+      en: Local remote access kill switch
+    description:
+      de: >-
+        Der Betreiber kann jede Fernverbindung jederzeit vor Ort unterbrechen, z. B. über
+        einen gut erreichbaren Schalter, der das Fernwartungsmodul stromlos schaltet oder den
+        Uplink trennt. Die Trennung wirkt unabhängig von Software und wird am Bediengerät
+        angezeigt.
+      en: >-
+        The operator can interrupt any remote connection on site at any time, e.g. via an
+        easily accessible switch that de-energises the remote maintenance module or
+        disconnects the uplink. Disconnection works independently of software and is shown on
+        the HMI.
+    kind: design
+    compensating: false
+    evidence:
+      de: >-
+        Elektroplan mit Trennschalter, Testprotokoll der Trennung während einer Sitzung.
+      en: >-
+        Electrical drawing with disconnect switch, test report of disconnection during a
+        session.
+    cra_refs: [AI-I-2-d, AI-I-2-k]
+    iec62443: [FR5, FR2]
+    sources: ["generic OT security practice"]
+
+  - id: vpn-hardening
+    rev: 1
+    title:
+      de: Härtung der VPN-Verbindung
+      en: VPN hardening
+    description:
+      de: >-
+        VPN-Verbindungen für Fernwartung oder Standortkopplung verwenden aktuelle Protokolle
+        und Verschlüsselungsverfahren mit Zertifikats- oder Mehrfaktor-Authentisierung.
+        Die VPN-Komponente wird zeitnah gepatcht, ihre Verwaltungsoberfläche ist nicht aus
+        dem Internet erreichbar. Über das VPN sind nur die benötigten Ziele und Ports
+        freigegeben.
+      en: >-
+        VPN connections for remote maintenance or site coupling use current protocols and
+        encryption with certificate or multi-factor authentication. The VPN component is
+        patched promptly and its management interface is not reachable from the internet.
+        Only the required destinations and ports are permitted over the VPN.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        VPN-Konfigurationsexport, Schwachstellenscan der VPN-Komponente, Regelwerk der
+        erlaubten Ziele.
+      en: >-
+        VPN configuration export, vulnerability scan of the VPN component, rule set of
+        permitted destinations.
+    cra_refs: [AI-I-2-d, AI-I-2-e, AI-I-2-j]
+    iec62443: [FR1, FR4, FR5]
+    sources: ["generic OT security practice"]
+
+  - id: cloud-security-baseline
+    rev: 1
+    title:
+      de: Sicherheitsgrundlage für Cloud-Dienste
+      en: Security baseline for cloud services
+    description:
+      de: >-
+        Cloud-Dienste, die zur Maschine gehören (Datenauswertung, Fernüberwachung,
+        Update-Verteilung), werden nach einer dokumentierten Sicherheitsvorgabe betrieben:
+        Mehrfaktor-Anmeldung für Administratoren, Mandantentrennung, Verschlüsselung,
+        Protokollierung, regelmäßige Sicherheitsprüfung. Die Maschine bleibt auch ohne
+        Cloud-Verbindung sicher betreibbar.
+      en: >-
+        Cloud services belonging to the machine (data analytics, remote monitoring, update
+        distribution) are operated according to a documented security baseline: multi-factor
+        login for administrators, tenant isolation, encryption, logging, regular security
+        review. The machine remains safely operable without cloud connection.
+    kind: organizational
+    compensating: false
+    evidence:
+      de: >-
+        Sicherheitsvorgabe für den Cloud-Betrieb, Auditbericht oder Prüfbericht des
+        Cloud-Anbieters, Testprotokoll des Betriebs ohne Cloud-Verbindung.
+      en: >-
+        Security baseline for cloud operation, audit or test report of the cloud provider,
+        test report of operation without cloud connection.
+    cra_refs: [AI-I-2-d, AI-I-2-e, AI-I-2-h]
+    iec62443: [FR1, FR4]
+    sources: ["generic OT security practice"]
+
+  - id: operator-confirmation-remote
+    rev: 1
+    title:
+      de: Bestätigung vor Ort für Fernbefehle
+      en: Local confirmation of remote commands
+    description:
+      de: >-
+        Fernbefehle, die eine Bewegung auslösen, die Betriebsart ändern oder Programme bzw.
+        sicherheitsrelevante Parameter verändern, werden erst nach Bestätigung durch eine
+        Person an der Maschine ausgeführt. Die Person kann den Gefahrenbereich einsehen und
+        die Ausführung ablehnen. Reine Diagnose ist ohne Bestätigung möglich.
+      en: >-
+        Remote commands that trigger motion, change the operating mode or modify programs or
+        safety-relevant parameters are executed only after confirmation by a person at the
+        machine. The person can see the hazard zone and can reject execution. Pure diagnostics
+        are possible without confirmation.
+    kind: design
+    compensating: false
+    evidence:
+      de: >-
+        Funktionsbeschreibung, Testprotokoll eines Fernbefehls ohne bzw. mit Bestätigung.
+      en: >-
+        Functional description, test report of a remote command without and with
+        confirmation.
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    iec62443: [FR2]
+    sources: ["generic OT security practice"]
+
+  - id: local-control-priority
+    rev: 1
+    title:
+      de: Vorrang der Vor-Ort-Bedienung
+      en: Priority of local control
+    description:
+      de: >-
+        Die Bedienung an der Maschine hat stets Vorrang vor Befehlen aus Leitsystem, Cloud
+        oder Fernzugriff. Halt- und Not-Halt-Funktionen vor Ort wirken unabhängig von
+        Netzwerkverbindungen. Bei aktiver lokaler Bedienung werden Fernbefehle, die eine
+        Bewegung auslösen, gesperrt.
+      en: >-
+        Operation at the machine always takes precedence over commands from control system,
+        cloud or remote access. Local stop and emergency stop functions work independently of
+        network connections. While local operation is active, remote commands that trigger
+        motion are blocked.
+    kind: design
+    compensating: false
+    evidence:
+      de: >-
+        Funktionsbeschreibung der Bedienhoheit, Testprotokoll mit konkurrierenden Befehlen.
+      en: >-
+        Functional description of control authority, test report with competing commands.
+    cra_refs: [AI-I-2-h, AI-I-2-k]
+    iec62443: [FR2, FR7]
+    sources: ["generic OT security practice"]
+
+  - id: license-grace-operation
+    rev: 1
+    title:
+      de: Weiterbetrieb bei Lizenz- oder Cloud-Ausfall
+      en: Continued operation on licence or cloud failure
+    description:
+      de: >-
+        Ist der Lizenzserver oder die Cloud nicht erreichbar oder wird eine Lizenzprüfung
+        manipuliert, läuft die Maschine für einen festgelegten Zeitraum normal weiter und
+        meldet den Zustand. Eine Lizenzabschaltung darf nie zu einem ungeplanten Stopp mitten
+        im Prozess oder zu einem unsicheren Zustand führen.
+      en: >-
+        If the licence server or cloud is unreachable or a licence check is manipulated, the
+        machine continues to run normally for a defined period and reports the state. A
+        licence shutdown must never lead to an unplanned stop in the middle of a process or to
+        an unsafe state.
+    kind: design
+    compensating: false
+    evidence:
+      de: >-
+        Funktionsbeschreibung der Karenzzeit, Testprotokoll mit getrennter Lizenzverbindung.
+      en: >-
+        Functional description of the grace period, test report with disconnected licence
+        connection.
+    cra_refs: [AI-I-2-h]
+    iec62443: [FR7]
+    sources: ["generic OT security practice"]

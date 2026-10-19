@@ -1,0 +1,148 @@
+measures:
+  - id: safety-separation
+    rev: 1
+    title:
+      de: Trennung von Sicherheits- und Standardsteuerung
+      en: Separation of safety and standard control
+    description:
+      de: >-
+        Sicherheitsfunktionen (Not-Halt, Schutztürüberwachung, sicher reduzierte
+        Geschwindigkeit) werden in einer eigenen Sicherheitssteuerung oder fest verdrahtet
+        realisiert, nicht in der Standardsteuerung oder auf einem PC. Die Standardsteuerung
+        kann Sicherheitsfunktionen weder abschalten noch deren Parameter ändern. So bleibt
+        der Personenschutz auch bei einer kompromittierten Standardsteuerung erhalten.
+      en: >-
+        Safety functions (emergency stop, guard door monitoring, safely limited speed) are
+        implemented in a dedicated safety controller or hardwired, not in the standard
+        controller or on a PC. The standard controller can neither switch off safety functions
+        nor change their parameters. Personal protection is thus maintained even if the
+        standard controller is compromised.
+    kind: design
+    compensating: false
+    evidence:
+      de: >-
+        Sicherheitskonzept bzw. Elektroplan mit getrennter Sicherheitssteuerung,
+        Validierungsbericht der Sicherheitsfunktionen.
+      en: >-
+        Safety concept or electrical drawing with separate safety controller, validation
+        report of the safety functions.
+    cra_refs: [AI-I-2-k, AI-I-2-f]
+    iec62443: [FR5, FR3]
+    sources: ["generic OT security practice; functional safety design principle"]
+
+  - id: safe-communication-profile
+    rev: 1
+    title:
+      de: Sicheres Kommunikationsprofil für Sicherheitsdaten
+      en: Safety communication profile for safety data
+    description:
+      de: >-
+        Sicherheitsrelevante Daten werden über ein anerkanntes Sicherheitsprotokoll (z. B.
+        FSoE, PROFIsafe, CIP Safety) mit eindeutiger Adressierung, Zähler, Prüfsumme und
+        Zeitüberwachung übertragen. Damit erkennen die Teilnehmer Verfälschung, Wiederholung,
+        Vertauschung und Verzögerung von Telegrammen und schalten sicher ab. Gegen gezielte
+        Fälschung durch einen Angreifer schützt das nur begrenzt; es wird daher mit
+        Netzwerkmaßnahmen kombiniert.
+      en: >-
+        Safety-relevant data is transmitted via a recognised safety protocol (e.g. FSoE,
+        PROFIsafe, CIP Safety) with unique addressing, counter, checksum and timeout
+        monitoring. Devices thus detect corruption, repetition, mix-up and delay of telegrams
+        and shut down safely. This offers only limited protection against deliberate forgery
+        by an attacker and is therefore combined with network measures.
+    kind: design
+    compensating: false
+    evidence:
+      de: >-
+        Sicherheitskonzept mit Kommunikationsprofil, Parametrierung der Sicherheitsadressen
+        und Überwachungszeiten, Validierungsbericht.
+      en: >-
+        Safety concept with communication profile, parameterisation of safety addresses and
+        watchdog times, validation report.
+    cra_refs: [AI-I-2-f]
+    iec62443: [FR3]
+    sources: ["generic OT security practice; functional safety design principle"]
+
+  - id: bypass-hardwired-key
+    rev: 1
+    title:
+      de: Überbrückung nur per Schlüsselschalter
+      en: Bypass only via hardwired key switch
+    description:
+      de: >-
+        Das Überbrücken oder Muting von Sicherheitsfunktionen, etwa für Einrichtarbeiten, ist
+        nur über einen fest verdrahteten Schlüsselschalter vor Ort möglich, nicht über
+        Bediengerät, Netzwerk oder Fernzugriff. Der Überbrückungszustand wird angezeigt und
+        protokolliert und ist mit zusätzlichen Schutzmaßnahmen wie reduzierter Geschwindigkeit
+        verknüpft.
+      en: >-
+        Bypassing or muting safety functions, e.g. for setup work, is only possible via a
+        hardwired key switch on site, not via HMI, network or remote access. The bypass state
+        is displayed and logged and is linked to additional protective measures such as
+        reduced speed.
+    kind: design
+    compensating: false
+    evidence:
+      de: >-
+        Elektroplan mit Schlüsselschalter, Sicherheitskonzept, Testprotokoll eines
+        abgewiesenen Überbrückungsversuchs per Software.
+      en: >-
+        Electrical drawing with key switch, safety concept, test report of a rejected bypass
+        attempt via software.
+    cra_refs: [AI-I-2-d, AI-I-2-k]
+    iec62443: [FR2]
+    sources: ["generic OT security practice; functional safety design principle"]
+
+  - id: mode-selection-safety-rated
+    rev: 1
+    title:
+      de: Sicherheitsgerichtete Betriebsartenwahl
+      en: Safety-rated operating mode selection
+    description:
+      de: >-
+        Die Betriebsart (Automatik, Einrichten, Service) wird über einen sicherheitsgerichteten
+        Betriebsartenwahlschalter mit Schlüssel gewählt und von der Sicherheitssteuerung
+        ausgewertet. Ein Wechsel der Betriebsart per Netzwerk oder Bediengerät allein ist nicht
+        möglich. So kann ein Angreifer die Maschine nicht unbemerkt in eine Betriebsart mit
+        reduzierten Schutzmaßnahmen versetzen.
+      en: >-
+        The operating mode (automatic, setup, service) is selected via a safety-rated mode
+        selector with key and evaluated by the safety controller. Changing the mode via the
+        network or HMI alone is not possible. An attacker thus cannot unnoticed switch the
+        machine into a mode with reduced protective measures.
+    kind: design
+    compensating: false
+    evidence:
+      de: >-
+        Elektroplan mit Betriebsartenwahlschalter, Sicherheitskonzept, Validierungsbericht.
+      en: >-
+        Electrical drawing with mode selector, safety concept, validation report.
+    cra_refs: [AI-I-2-d, AI-I-2-k]
+    iec62443: [FR2]
+    sources: ["generic OT security practice; functional safety design principle"]
+
+  - id: safety-speed-monitoring
+    rev: 1
+    title:
+      de: Sichere Geschwindigkeits- und Positionsüberwachung
+      en: Safe speed and position monitoring
+    description:
+      de: >-
+        Antriebe mit gefährlichen Bewegungen werden von sicheren Antriebsfunktionen oder der
+        Sicherheitssteuerung auf Geschwindigkeit, Position und Stillstand überwacht (z. B. SLS,
+        SLP, SOS). Werden durch manipulierte Sollwerte oder Parameter Grenzen überschritten,
+        schaltet die Sicherheitsfunktion unabhängig von der Standardsteuerung ab.
+      en: >-
+        Drives with hazardous motion are monitored for speed, position and standstill by safe
+        drive functions or the safety controller (e.g. SLS, SLP, SOS). If limits are exceeded
+        due to manipulated setpoints or parameters, the safety function switches off
+        independently of the standard controller.
+    kind: design
+    compensating: false
+    evidence:
+      de: >-
+        Sicherheitskonzept, Parametrierung der Grenzwerte mit Prüfsumme, Validierungsbericht.
+      en: >-
+        Safety concept, parameterisation of limits with checksum, validation report.
+    cra_refs: [AI-I-2-k]
+    iec62443: [FR3]
+    sources: ["generic OT security practice; functional safety design principle"]

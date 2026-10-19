@@ -1,0 +1,107 @@
+# CRA (Regulation (EU) 2024/2847) references for threats and measures.
+# Short titles are own wording. Source for Annex I: reproduced in
+# BSI TR-03183-1 v1.0.0, Annex B, Tables 8-10, p. 60-64 (tr_id = TR requirement ID).
+# Projects may add entries in custom-fields or own catalogs.
+schema_version: 1
+id: cra
+title: Cyber Resilience Act, Regulation (EU) 2024/2847
+version: OJ L 2024/2847
+source: BSI TR-03183-1 v1.0.0 Annex B; Regulation (EU) 2024/2847
+entries:
+  AI-I-1:
+    tr_id: ER.0
+    de: Angemessenes Cybersicherheitsniveau auf Basis der Risiken
+    en: Appropriate level of cybersecurity based on the risks
+  AI-I-2-a:
+    tr_id: ER.1
+    de: Keine bekannten ausnutzbaren Schwachstellen
+    en: No known exploitable vulnerabilities
+  AI-I-2-b:
+    tr_id: ER.2, ER.3a
+    de: Sichere Standardkonfiguration, Zurücksetzen auf Auslieferungszustand
+    en: Secure by default configuration, reset to original state
+  AI-I-2-c:
+    tr_id: ER.4-ER.4d
+    de: Behebung von Schwachstellen durch Sicherheitsupdates
+    en: Vulnerabilities addressed through security updates
+  AI-I-2-d:
+    tr_id: ER.5-ER.5b
+    de: Schutz vor unbefugtem Zugriff (Authentisierung, Identitäts- und Zugriffsverwaltung)
+    en: Protection from unauthorised access (authentication, identity, access management)
+  AI-I-2-e:
+    tr_id: ER.6
+    de: Vertraulichkeit gespeicherter, übertragener und verarbeiteter Daten
+    en: Confidentiality of stored, transmitted and processed data
+  AI-I-2-f:
+    tr_id: ER.7
+    de: Integrität von Daten, Befehlen, Programmen und Konfiguration, Meldung von Verfälschungen
+    en: Integrity of data, commands, programs and configuration, reporting of corruption
+  AI-I-2-g:
+    tr_id: ER.8
+    de: Datenminimierung
+    en: Data minimisation
+  AI-I-2-h:
+    tr_id: ER.9, ER.9a
+    de: Verfügbarkeit wesentlicher Funktionen, Resilienz gegen Denial-of-Service
+    en: Availability of essential functions, resilience against denial of service
+  AI-I-2-i:
+    tr_id: ER.10
+    de: Geringe Auswirkung auf die Verfügbarkeit anderer Geräte und Netze
+    en: Minimise negative impact on availability of other devices and networks
+  AI-I-2-j:
+    tr_id: ER.11, ER.11a
+    de: Begrenzung der Angriffsfläche einschließlich externer Schnittstellen
+    en: Limit attack surfaces including external interfaces
+  AI-I-2-k:
+    tr_id: ER.12
+    de: Verringerung der Auswirkung von Vorfällen durch Mechanismen gegen Ausnutzung
+    en: Reduce impact of incidents through exploitation mitigation mechanisms
+  AI-I-2-l:
+    tr_id: ER.13-ER.13b
+    de: Protokollierung und Überwachung sicherheitsrelevanter interner Aktivitäten
+    en: Recording and monitoring of security-relevant internal activity
+  AI-I-2-m:
+    tr_id: ER.14
+    de: Sicheres und dauerhaftes Löschen aller Daten und Einstellungen durch den Nutzer
+    en: Secure and permanent removal of all data and settings by the user
+  AI-II-1:
+    tr_id: VH.1, VH.1a
+    de: Schwachstellen und Komponenten erfassen und dokumentieren, SBOM
+    en: Identify and document vulnerabilities and components, SBOM
+  AI-II-2:
+    tr_id: VH.2a
+    de: Schwachstellen unverzüglich beheben, Sicherheitsupdates getrennt bereitstellen
+    en: Remediate vulnerabilities without delay, separate security updates
+  AI-II-3:
+    tr_id: VH.3
+    de: Wirksame und regelmäßige Sicherheitstests und -prüfungen
+    en: Effective and regular security tests and reviews
+  AI-II-4:
+    tr_id: VH.4
+    de: Informationen zu behobenen Schwachstellen veröffentlichen
+    en: Publicly disclose information about fixed vulnerabilities
+  AI-II-5:
+    tr_id: VH.5
+    de: Richtlinie zur koordinierten Offenlegung von Schwachstellen
+    en: Coordinated vulnerability disclosure policy
+  AI-II-6:
+    tr_id: VH.6, VH.6a
+    de: Austausch von Schwachstelleninformationen erleichtern, Kontaktadresse
+    en: Facilitate sharing of vulnerability information, contact address
+  AI-II-7:
+    tr_id: VH.7, VH.7a
+    de: Mechanismen zur sicheren Verteilung von Updates
+    en: Mechanisms to securely distribute updates
+  AI-II-8:
+    tr_id: VH.8, VH.8a
+    de: Sicherheitsupdates unverzüglich und kostenlos mit Hinweisen verbreiten
+    en: Disseminate security updates without delay, free of charge, with advisories
+  Art13:
+    de: Art. 13 Pflichten der Hersteller
+    en: Art. 13 Obligations of manufacturers
+  Art14:
+    de: Art. 14 Meldepflichten der Hersteller
+    en: Art. 14 Reporting obligations of manufacturers
+  AII:
+    de: Anhang II Informationen und Anleitungen für Nutzer
+    en: Annex II Information and instructions to the user

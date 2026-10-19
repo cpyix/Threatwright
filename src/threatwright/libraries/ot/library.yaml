@@ -1,0 +1,19 @@
+schema_version: 1
+id: ot
+version: 0.1.0
+title:
+  de: OT-Bibliothek für Maschinen und Anlagen
+  en: OT library for machines and plants
+license: CC-BY-4.0
+description:
+  de: >-
+    Generische Element-, Bedrohungs- und Maßnahmenvorlagen für Produkte mit
+    digitalen Elementen im Maschinen- und Anlagenbau. Vorschläge, keine
+    vollständige Analyse; jede Übernahme ist im Produktkontext zu prüfen.
+  en: >-
+    Generic element, threat and measure templates for products with digital
+    elements in machine and plant engineering. Suggestions, not a complete
+    analysis; review every entry in the context of your product.
+attribution:
+  - MITRE ATT&CK for ICS and MITRE EMB3D identifiers (c) The MITRE Corporation, used with permission.
+  - CRA requirement mapping after BSI TR-03183-1 v1.0.0, Annex B.

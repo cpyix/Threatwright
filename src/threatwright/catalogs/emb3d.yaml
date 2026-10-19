@@ -1,0 +1,90 @@
+# MITRE EMB3D threat IDs, used to validate library references.
+# (c) The MITRE Corporation, https://emb3d.mitre.org/ (see its terms of use).
+schema_version: 1
+id: emb3d
+title: MITRE EMB3D
+version: threats list
+retrieved: '2026-10-19'
+source: https://emb3d.mitre.org/threats/
+entries:
+  TID-101: Power Consumption Analysis Side Channel
+  TID-102: Electromagnetic Analysis Side Channel
+  TID-103: Microarchitectural Side Channels
+  TID-105: Hardware Fault Injection - Control Flow Modification
+  TID-106: Data Bus Interception
+  TID-107: Unauthorized Direct Memory Access (DMA)
+  TID-108: ROM/NVRAM Data Extraction or Modification
+  TID-109: RAM Chip Contents Readout
+  TID-110: Hardware Fault Injection - Data Manipulation
+  TID-111: Untrusted External Storage
+  TID-113: Unverified Peripheral Firmware Loaded
+  TID-114: Peripheral Data Bus Interception
+  TID-115: Firmware/Data Extraction via Hardware Interface
+  TID-116: Latent Privileged Access Port
+  TID-118: Weak Peripheral Port Electrical Damage Protection
+  TID-119: Latent Hardware Debug Port Allows Memory/Code Manipulation
+  TID-201: Inadequate Bootloader Protection and Verification
+  TID-202: Exploitable System Network Stack Component
+  TID-203: Malicious OS Kernel Driver/Module Installable
+  TID-204: Untrusted Programs Can Access Privileged OS Functions
+  TID-205: Existing OS Tools Maliciously Used for Device Manipulation
+  TID-206: Memory Management Protections Subverted
+  TID-207: Container Escape
+  TID-208: Virtual Machine Escape
+  TID-209: Host Can Manipulate Guest Virtual Machines
+  TID-210: Device Vulnerabilities Unpatchable
+  TID-211: Device Allows Unauthenticated Firmware Installation
+  TID-212: FW/SW Update Integrity Shared Secrets Extraction
+  TID-213: Faulty FW/SW Update Integrity Verification
+  TID-214: Secrets Extracted from Device Root of Trust
+  TID-215: Unencrypted SW/FW Updates
+  TID-216: Firmware Update Rollbacks Allowed
+  TID-217: Remotely Initiated Updates Can Cause DoS
+  TID-218: Operating System Susceptible to Rootkit
+  TID-219: OS/Kernel Privilege Escalation
+  TID-220: Unpatchable Hardware Root of Trust
+  TID-221: Authentication Bypass By Message Replay
+  TID-222: Critical System Service May Be Disabled
+  TID-223: System Susceptible to RAM Scraping
+  TID-224: Excessive Access via Software Diagnostic Features
+  TID-225: Logs can be manipulated on the device
+  TID-226: Device leaks security information in logs
+  TID-301: Applications Binaries Modified
+  TID-302: Install Untrusted Application
+  TID-303: Excessive Trust in Offboard Management/IDE Software
+  TID-304: Manipulate Runtime Environment
+  TID-305: Program Executes Dangerous System Calls
+  TID-306: Sandboxed Environments Escaped
+  TID-307: Device Code Representations Inconsistent
+  TID-308: Code Overwritten to Avoid Detection
+  TID-309: Device Exploits Engineering Workstation
+  TID-310: Remotely Accessible Unauthenticated Services
+  TID-311: Default Credentials
+  TID-312: Credential Change Mechanism Can Be Abused
+  TID-313: Unauthenticated Session Changes Credential
+  TID-314: Passwords Can Be Guessed Using Brute-Force Attempts
+  TID-315: Password Retrieval Mechanism Abused
+  TID-316: Incorrect Certificate Verification Allows Authentication Bypass
+  TID-317: Predictable Cryptographic Key
+  TID-318: Insecure Cryptographic Implementation
+  TID-319: Cross Site Scripting (XSS)
+  TID-320: SQL Injection
+  TID-321: HTTP Application Session Hijacking
+  TID-322: Cross Site Request Forgery (CSRF)
+  TID-323: Path Traversal
+  TID-324: HTTP Direct Object Reference
+  TID-325: HTTP Injection/Response Splitting
+  TID-326: Insecure Deserialization
+  TID-327: Out of Bounds Memory Access
+  TID-328: Hardcoded Credentials
+  TID-329: Improper Password Storage
+  TID-330: Cryptographic Timing Side-Channel
+  TID-401: Undocumented Protocol Features
+  TID-404: Remotely Triggerable Deadlock/DoS
+  TID-405: Network Stack Resource Exhaustion
+  TID-406: Unauthorized Messages or Connections
+  TID-407: Missing Message Replay Protection
+  TID-408: Unencrypted Sensitive Data Communication
+  TID-410: Cryptographic Protocol Side Channel
+  TID-411: Weak/Insecure Cryptographic Protocol
+  TID-412: Network Routing Capability Abuse

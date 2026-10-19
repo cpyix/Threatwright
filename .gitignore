@@ -48,6 +48,7 @@ htmlcov/
 node_modules/
 .svelte-kit/
 app/dist/
+src/threatwright/web/
 
 # --- Build artefacts ---------------------------------------------------------
 build/

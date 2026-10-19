@@ -1,0 +1,694 @@
+measures:
+  - id: signed-firmware
+    rev: 1
+    title:
+      de: Signierte Firmware
+      en: Signed firmware
+    description:
+      de: >-
+        Firmware für Steuerung, Antriebe, Bediengeräte und eigene Elektronik wird vom
+        Hersteller kryptografisch signiert. Das Gerät prüft die Signatur vor dem Speichern
+        bzw. Aktivieren und verwirft unsignierte oder veränderte Images. Bei Zukaufkomponenten
+        wird diese Fähigkeit bei der Auswahl gefordert.
+      en: >-
+        Firmware for controller, drives, HMIs and own electronics is cryptographically signed
+        by the manufacturer. The device verifies the signature before storing or activating
+        it and discards unsigned or modified images. For purchased components this capability
+        is required at selection.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Designbeschreibung der Signaturprüfung, Testprotokoll mit manipuliertem
+        Firmware-Image, das abgewiesen wird.
+      en: >-
+        Design description of signature verification, test report with a tampered firmware
+        image being rejected.
+    cra_refs: [AI-I-2-f]
+    iec62443: [FR3]
+    sources: ["generic OT security practice"]
+
+  - id: secure-boot
+    rev: 1
+    title:
+      de: Sicherer Systemstart
+      en: Secure boot
+    description:
+      de: >-
+        Beim Einschalten prüft ein unveränderlicher Bootloader die Signatur des nächsten
+        Ladeschritts, dieser wiederum Betriebssystem und Anwendung (Vertrauenskette). Schlägt
+        eine Prüfung fehl, startet das Gerät nicht in den Betrieb, sondern meldet den Fehler
+        und bleibt in einem sicheren Zustand.
+      en: >-
+        At power-on, an immutable boot loader verifies the signature of the next boot stage,
+        which in turn verifies operating system and application (chain of trust). If a check
+        fails, the device does not start operation but reports the error and remains in a
+        safe state.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Beschreibung der Vertrauenskette, Testprotokoll eines Starts mit verändertem Image.
+      en: >-
+        Description of the chain of trust, test report of a boot with a modified image.
+    cra_refs: [AI-I-2-f, AI-I-2-k]
+    iec62443: [FR3]
+    sources: ["generic OT security practice"]
+
+  - id: anti-rollback
+    rev: 1
+    title:
+      de: Schutz gegen Rückspielen alter Firmware
+      en: Anti-rollback protection
+    description:
+      de: >-
+        Das Gerät lehnt Firmware ab, deren Sicherheitsversion älter ist als die installierte,
+        z. B. über einen monotonen Zähler im geschützten Speicher. So können Angreifer keine
+        ältere, signierte Version mit bekannter Schwachstelle einspielen. Ein bewusstes
+        Zurückgehen ist nur über einen dokumentierten Serviceprozess möglich.
+      en: >-
+        The device rejects firmware whose security version is older than the installed one,
+        e.g. via a monotonic counter in protected storage. This prevents attackers from
+        installing an older, signed version with a known vulnerability. An intentional
+        downgrade is only possible through a documented service process.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Designbeschreibung des Versionszählers, Testprotokoll eines abgewiesenen Downgrades.
+      en: >-
+        Design description of the version counter, test report of a rejected downgrade.
+    cra_refs: [AI-I-2-f, AI-I-2-c]
+    iec62443: [FR3]
+    sources: ["generic OT security practice"]
+
+  - id: signed-updates
+    rev: 1
+    title:
+      de: Signierte Update-Pakete
+      en: Signed update packages
+    description:
+      de: >-
+        Software-, Projekt- und Konfigurations-Updates werden als signierte Pakete
+        ausgeliefert. Die Maschine bzw. das Update-Werkzeug prüft vor der Installation
+        Signatur, Herkunft und Zielgerät. Updates ohne gültige Signatur werden nicht
+        installiert und der Versuch wird protokolliert.
+      en: >-
+        Software, project and configuration updates are delivered as signed packages. Before
+        installation, the machine or update tool verifies signature, origin and target device.
+        Updates without a valid signature are not installed and the attempt is logged.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Beschreibung des Update-Formats, Testprotokoll mit verändertem Paket, Logauszug.
+      en: >-
+        Description of the update format, test report with modified package, log extract.
+    cra_refs: [AI-I-2-f, AI-II-7]
+    iec62443: [FR3]
+    sources: ["generic OT security practice"]
+
+  - id: update-transport-protection
+    rev: 1
+    title:
+      de: Geschützter Update-Transportweg
+      en: Protected update delivery channel
+    description:
+      de: >-
+        Updates werden über einen authentisierten und verschlüsselten Kanal bereitgestellt
+        (z. B. HTTPS-Downloadportal mit Anmeldung, Update-Server mit TLS). Prüfsummen und
+        Signaturen werden getrennt veröffentlicht. Werden Updates per Datenträger
+        ausgeliefert, ist das Paket selbst signiert.
+      en: >-
+        Updates are provided through an authenticated and encrypted channel (e.g. HTTPS
+        download portal with login, update server with TLS). Checksums and signatures are
+        published separately. Where updates are delivered on media, the package itself is
+        signed.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Beschreibung des Verteilungswegs, TLS-Prüfbericht des Update-Servers.
+      en: >-
+        Description of the distribution channel, TLS test report of the update server.
+    cra_refs: [AI-II-7, AI-I-2-e]
+    iec62443: [FR3, FR4]
+    sources: ["generic OT security practice"]
+
+  - id: update-signing-key-protection
+    rev: 1
+    title:
+      de: Schutz der Signaturschlüssel
+      en: Protection of signing keys
+    description:
+      de: >-
+        Private Schlüssel zum Signieren von Firmware und Updates liegen in einem
+        Hardware-Sicherheitsmodul oder einem gleichwertig geschützten, vom Entwicklernetz
+        getrennten System. Das Signieren erfordert Vier-Augen-Freigabe und wird protokolliert.
+        Für den Verlust oder die Kompromittierung eines Schlüssels gibt es einen
+        dokumentierten Notfallplan.
+      en: >-
+        Private keys for signing firmware and updates are kept in a hardware security module
+        or an equivalently protected system separate from the development network. Signing
+        requires four-eyes approval and is logged. A documented contingency plan exists for
+        loss or compromise of a key.
+    kind: organizational
+    compensating: false
+    evidence:
+      de: >-
+        Schlüsselverwaltungskonzept, Signaturprotokoll, Notfallplan für Schlüsselverlust.
+      en: >-
+        Key management concept, signing log, contingency plan for key loss.
+    cra_refs: [AI-II-7, AI-I-2-f]
+    iec62443: [FR3]
+    sources: ["generic OT security practice"]
+
+  - id: update-rollout-staged
+    rev: 1
+    title:
+      de: Gestufte Update-Einführung
+      en: Staged update rollout
+    description:
+      de: >-
+        Updates werden zuerst an einer Test- oder Referenzmaschine geprüft und dann
+        schrittweise eingeführt. Vor der Installation wird eine Sicherung erstellt und ein
+        Rückfallweg festgelegt. Updates werden nur in einem mit dem Betreiber abgestimmten
+        Zeitfenster und bei stillstehender Maschine installiert.
+      en: >-
+        Updates are first tested on a test or reference machine and then introduced step by
+        step. A backup is taken and a fallback path is defined before installation. Updates
+        are installed only in a time window agreed with the operator and with the machine at
+        standstill.
+    kind: organizational
+    compensating: false
+    evidence:
+      de: >-
+        Update-Verfahrensanweisung, Testbericht der Referenzmaschine, Freigabeprotokoll.
+      en: >-
+        Update procedure document, test report of the reference machine, release record.
+    cra_refs: [AI-I-2-c, AI-I-2-h]
+    iec62443: [FR7]
+    sources: ["generic OT security practice"]
+
+  - id: security-update-process
+    rev: 1
+    title:
+      de: Prozess für Sicherheitsupdates
+      en: Security update process
+    description:
+      de: >-
+        Für den gesamten Unterstützungszeitraum ist festgelegt, wie Schwachstellen in
+        eigener und zugekaufter Software bewertet, behoben und als Sicherheitsupdate
+        bereitgestellt werden. Sicherheitsupdates werden, wo möglich, getrennt von
+        Funktionsupdates und kostenlos mit Hinweisen für den Betreiber verteilt. Der
+        Unterstützungszeitraum ist dem Betreiber bekannt.
+      en: >-
+        For the entire support period it is defined how vulnerabilities in own and purchased
+        software are assessed, fixed and provided as security updates. Security updates are,
+        where possible, distributed separately from functional updates and free of charge with
+        advisories for the operator. The support period is communicated to the operator.
+    kind: organizational
+    compensating: false
+    evidence:
+      de: >-
+        Verfahrensanweisung zum Update-Prozess, festgelegter Unterstützungszeitraum,
+        Beispiel eines veröffentlichten Sicherheitshinweises.
+      en: >-
+        Procedure document for the update process, defined support period, example of a
+        published security advisory.
+    cra_refs: [AI-I-2-c, AI-II-2, AI-II-8]
+    iec62443: [FR3]
+    sources: ["generic OT security practice"]
+
+  - id: program-integrity-check
+    rev: 1
+    title:
+      de: Integritätsprüfung des Steuerungsprogramms
+      en: Integrity check of the control program
+    description:
+      de: >-
+        Das freigegebene Steuerungsprogramm wird mit einer Prüfsumme bzw. Projektkennung
+        dokumentiert. Die Steuerung oder ein übergeordnetes System vergleicht diese im
+        Betrieb zyklisch mit dem Ist-Stand und meldet Abweichungen. Online-Änderungen und
+        Programm-Downloads werden protokolliert.
+      en: >-
+        The released control program is documented with a checksum or project identifier.
+        The controller or a higher-level system compares it cyclically with the actual state
+        during operation and reports deviations. Online changes and program downloads are
+        logged.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Freigabedokument mit Prüfsumme, Testprotokoll einer erkannten Programmänderung.
+      en: >-
+        Release document with checksum, test report of a detected program change.
+    cra_refs: [AI-I-2-f, AI-I-2-l]
+    iec62443: [FR3]
+    sources: ["generic OT security practice"]
+
+  - id: config-integrity-check
+    rev: 1
+    title:
+      de: Integritätsprüfung der Konfiguration
+      en: Integrity check of the configuration
+    description:
+      de: >-
+        Konfigurationsdaten von Antrieben, Sicherheitssteuerung, Netzwerkgeräten und
+        Bediengerät werden nach der Inbetriebnahme gesichert und mit Prüfsumme dokumentiert.
+        Abweichungen vom freigegebenen Stand werden beim Hochlauf oder zyklisch erkannt und
+        gemeldet.
+      en: >-
+        Configuration data of drives, safety controller, network devices and HMI are backed up
+        after commissioning and documented with a checksum. Deviations from the released state
+        are detected at startup or cyclically and reported.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Gesicherte Referenzkonfiguration mit Prüfsumme, Testprotokoll einer erkannten
+        Konfigurationsänderung.
+      en: >-
+        Backed-up reference configuration with checksum, test report of a detected
+        configuration change.
+    cra_refs: [AI-I-2-f, AI-I-2-l]
+    iec62443: [FR3]
+    sources: ["generic OT security practice"]
+
+  - id: parameter-plausibility
+    rev: 1
+    title:
+      de: Plausibilitätsprüfung von Parametern und Sollwerten
+      en: Plausibility check of parameters and setpoints
+    description:
+      de: >-
+        Die Steuerung prüft eingehende Sollwerte, Rezeptparameter und Befehle gegen
+        festgelegte Grenzen, Wertebereiche und den aktuellen Maschinenzustand. Unzulässige
+        Werte werden abgelehnt oder begrenzt und gemeldet, unabhängig davon, ob sie vom
+        Bediengerät, vom Leitsystem oder per Fernzugriff kommen.
+      en: >-
+        The controller checks incoming setpoints, recipe parameters and commands against
+        defined limits, value ranges and the current machine state. Invalid values are
+        rejected or limited and reported, regardless of whether they come from the HMI, the
+        control system or remote access.
+    kind: design
+    compensating: false
+    evidence:
+      de: >-
+        Liste der Grenzwerte je Parameter, Testprotokoll mit unzulässigen Werten.
+      en: >-
+        List of limits per parameter, test report with invalid values.
+    cra_refs: [AI-I-2-f, AI-I-2-k]
+    iec62443: [FR3]
+    sources: ["generic OT security practice"]
+
+  - id: write-protection-switch
+    rev: 1
+    title:
+      de: Hardware-Schreibschutz
+      en: Hardware write protection
+    description:
+      de: >-
+        Programm- und Konfigurationsänderungen an Steuerung oder Sicherheitssteuerung sind
+        nur möglich, wenn ein Schlüsselschalter, Betriebsartenwahlschalter oder eine
+        Steckbrücke vor Ort den Schreibzugriff freigibt. Im Normalbetrieb ist der Schalter
+        in Stellung RUN bzw. gesperrt und der Schlüssel abgezogen.
+      en: >-
+        Program and configuration changes on controller or safety controller are only
+        possible when a key switch, mode selector or jumper on site enables write access. In
+        normal operation the switch is in RUN or locked position and the key is removed.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Elektroplan mit Schalter, Betriebsanleitung, Testprotokoll eines abgewiesenen
+        Downloads in Stellung RUN.
+      en: >-
+        Electrical drawing with switch, operating manual, test report of a rejected download
+        in RUN position.
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    iec62443: [FR2, FR3]
+    sources: ["generic OT security practice"]
+
+  - id: application-allowlisting
+    rev: 1
+    title:
+      de: Anwendungs-Allowlisting
+      en: Application allowlisting
+    description:
+      de: >-
+        Auf Bedien-PC, Industrie-PC und Edge-Gerät dürfen nur freigegebene Programme und
+        Skripte ausgeführt werden; alles andere wird vom Betriebssystem blockiert. Die Liste
+        wird bei jeder Softwareänderung aktualisiert. Das ist auf festen Maschinen-PCs
+        meist wirksamer und wartungsärmer als Virenschutz.
+      en: >-
+        On HMI PC, industrial PC and edge device, only approved programs and scripts may run;
+        everything else is blocked by the operating system. The list is updated on every
+        software change. On fixed-function machine PCs this is usually more effective and
+        less maintenance-intensive than antivirus.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Exportierte Allowlist-Richtlinie, Testprotokoll eines blockierten fremden Programms.
+      en: >-
+        Exported allowlist policy, test report of a blocked foreign program.
+    cra_refs: [AI-I-2-k, AI-I-2-f]
+    iec62443: [FR3]
+    sources: ["generic OT security practice"]
+
+  - id: os-hardening
+    rev: 1
+    title:
+      de: Härtung des Betriebssystems
+      en: Operating system hardening
+    description:
+      de: >-
+        Betriebssysteme von Bedien-PC, Industrie-PC und Edge-Gerät werden nach einer
+        dokumentierten Härtungsvorgabe eingerichtet: nicht benötigte Dienste, Konten,
+        Freigaben und Komponenten entfernt, lokale Firewall aktiv, Administratorrechte nur
+        für Wartung. Die Härtung wird bei jeder Image-Version erneut geprüft.
+      en: >-
+        Operating systems of HMI PC, industrial PC and edge device are set up according to a
+        documented hardening baseline: unneeded services, accounts, shares and components
+        removed, local firewall active, administrator rights only for maintenance. Hardening
+        is re-checked with every image version.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Härtungsvorgabe, Prüfbericht eines Konfigurationsscanners gegen die Vorgabe.
+      en: >-
+        Hardening baseline, report of a configuration scanner against the baseline.
+    cra_refs: [AI-I-2-j, AI-I-2-b]
+    iec62443: [FR7, FR2]
+    sources: ["generic OT security practice"]
+
+  - id: kiosk-mode
+    rev: 1
+    title:
+      de: Kiosk-Modus für Bediengeräte
+      en: Kiosk mode for HMIs
+    description:
+      de: >-
+        Das Bediengerät startet direkt in die Bedienoberfläche; Desktop, Taskleiste,
+        Dateiexplorer, Tastenkombinationen und Browser-Navigation sind gesperrt. Das
+        Verlassen des Kiosk-Modus erfordert eine Anmeldung mit Administrationsrolle. So
+        gelangen Bediener nicht an das darunterliegende Betriebssystem.
+      en: >-
+        The HMI boots directly into the operator interface; desktop, taskbar, file explorer,
+        key combinations and browser navigation are blocked. Leaving kiosk mode requires login
+        with an administration role. This prevents operators from reaching the underlying
+        operating system.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Konfigurationsbeschreibung, Testprotokoll mit Ausbruchsversuchen (Tastenkombinationen,
+        Dateidialoge).
+      en: >-
+        Configuration description, test report with escape attempts (key combinations, file
+        dialogs).
+    cra_refs: [AI-I-2-j, AI-I-2-d]
+    iec62443: [FR2]
+    sources: ["generic OT security practice"]
+
+  - id: usb-port-control
+    rev: 1
+    title:
+      de: Kontrolle der USB-Schnittstellen
+      en: USB port control
+    description:
+      de: >-
+        Von außen zugängliche USB-Schnittstellen an Bediengerät und Schaltschrank werden
+        abgeschaltet, mechanisch verschlossen oder per Richtlinie auf freigegebene
+        Geräteklassen bzw. registrierte Datenträger beschränkt. Wird ein USB-Anschluss für
+        Datenaustausch benötigt, liegt er hinter einer abschließbaren Klappe.
+      en: >-
+        Externally accessible USB ports on HMI and control cabinet are disabled, closed
+        mechanically or restricted by policy to approved device classes or registered media.
+        Where a USB port is needed for data exchange, it is placed behind a lockable cover.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Konfigurationsexport der Geräterichtlinie, Fotos der verschlossenen Anschlüsse,
+        Testprotokoll mit nicht freigegebenem USB-Gerät.
+      en: >-
+        Configuration export of the device policy, photos of closed ports, test report with an
+        unapproved USB device.
+    cra_refs: [AI-I-2-j]
+    iec62443: [FR2, FR5]
+    sources: ["generic OT security practice"]
+
+  - id: media-scanning-station
+    rev: 1
+    title:
+      de: Prüfstation für Wechseldatenträger
+      en: Scanning station for removable media
+    description:
+      de: >-
+        Wechseldatenträger (USB-Sticks, Speicherkarten) werden vor der Nutzung an der Maschine
+        an einer separaten Prüfstation auf Schadsoftware untersucht. Die Betriebsanleitung
+        beschreibt dieses Vorgehen; der Betreiber stellt die Station bereit oder der Hersteller
+        empfiehlt eine Lösung.
+      en: >-
+        Removable media (USB sticks, memory cards) are scanned for malware at a separate
+        scanning station before use at the machine. The operating manual describes this
+        procedure; the operator provides the station or the manufacturer recommends a solution.
+    kind: organizational
+    compensating: false
+    evidence:
+      de: >-
+        Abschnitt in der Betriebsanleitung bzw. Verfahrensanweisung, Prüfprotokolle der
+        Station.
+      en: >-
+        Section in the operating manual or procedure document, scan records of the station.
+    cra_refs: [AI-I-2-k]
+    iec62443: [FR3]
+    sources: ["generic OT security practice"]
+
+  - id: autorun-disabled
+    rev: 1
+    title:
+      de: Autostart von Datenträgern deaktiviert
+      en: Autorun from media disabled
+    description:
+      de: >-
+        Automatisches Ausführen von Inhalten auf eingesteckten Datenträgern (Autorun,
+        Autoplay) ist auf allen Maschinen-PCs und Bediengeräten deaktiviert. Ebenso startet
+        die Maschinensoftware keine Skripte oder Updates automatisch von einem Datenträger
+        ohne Benutzeraktion und Prüfung.
+      en: >-
+        Automatic execution of content on inserted media (autorun, autoplay) is disabled on
+        all machine PCs and HMIs. Likewise, the machine software does not automatically start
+        scripts or updates from a medium without user action and verification.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Konfigurationsexport der Richtlinie, Testprotokoll mit präpariertem Datenträger.
+      en: >-
+        Configuration export of the policy, test report with a prepared medium.
+    cra_refs: [AI-I-2-b, AI-I-2-k]
+    iec62443: [FR3]
+    sources: ["generic OT security practice"]
+
+  - id: malware-protection
+    rev: 1
+    title:
+      de: Schutz vor Schadsoftware
+      en: Malware protection
+    description:
+      de: >-
+        Auf Windows- oder Linux-basierten Maschinen-PCs wird ein Schutz vor Schadsoftware
+        eingesetzt, der mit der Maschinensoftware verträglich ist und vom Hersteller
+        freigegeben wurde. Signaturaktualisierung erfolgt über einen definierten Weg ohne
+        direkte Internetverbindung der Maschine. Wo das nicht möglich ist, wird
+        Anwendungs-Allowlisting eingesetzt.
+      en: >-
+        On Windows- or Linux-based machine PCs, malware protection is used that is compatible
+        with the machine software and approved by the manufacturer. Signature updates follow a
+        defined path without direct internet connection of the machine. Where this is not
+        possible, application allowlisting is used instead.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Freigabeliste der verträglichen Schutzsoftware, Konfigurationsexport, Testprotokoll mit
+        Testdatei.
+      en: >-
+        Approval list of compatible protection software, configuration export, test report
+        with a test file.
+    cra_refs: [AI-I-2-k]
+    iec62443: [FR3]
+    sources: ["generic OT security practice"]
+
+  - id: patch-management-os
+    rev: 1
+    title:
+      de: Patchmanagement für Betriebssysteme
+      en: Patch management for operating systems
+    description:
+      de: >-
+        Der Hersteller prüft regelmäßig die Sicherheitsupdates von Betriebssystemen und
+        Drittsoftware auf Maschinen-PCs auf Verträglichkeit und gibt sie für den Betreiber frei.
+        Es ist dokumentiert, welche Patches freigegeben sind und wie sie installiert werden.
+        Die Wahl einer Betriebssystemversion mit langer Unterstützungsdauer gehört dazu.
+      en: >-
+        The manufacturer regularly checks security updates of operating systems and
+        third-party software on machine PCs for compatibility and approves them for the
+        operator. It is documented which patches are approved and how they are installed.
+        Choosing an operating system version with long-term support is part of this.
+    kind: organizational
+    compensating: false
+    evidence:
+      de: >-
+        Liste freigegebener Patches mit Datum, Verfahrensanweisung, Testberichte.
+      en: >-
+        List of approved patches with dates, procedure document, test reports.
+    cra_refs: [AI-I-2-c, AI-II-2]
+    iec62443: [FR3]
+    sources: ["generic OT security practice"]
+
+  - id: exploit-mitigations
+    rev: 1
+    title:
+      de: Schutzmechanismen gegen Ausnutzung
+      en: Exploit mitigations
+    description:
+      de: >-
+        Eigene Software wird mit den Schutzfunktionen von Compiler und Betriebssystem
+        gebaut und betrieben: Stack-Schutz, nicht ausführbarer Speicher, Adressrandomisierung,
+        Compiler-Warnungen als Fehler. Speicherunsichere Funktionen werden vermieden. Diese
+        Einstellungen werden im Build-System festgeschrieben und geprüft.
+      en: >-
+        Own software is built and run with the protection features of compiler and operating
+        system: stack protection, non-executable memory, address space randomisation, compiler
+        warnings as errors. Memory-unsafe functions are avoided. These settings are fixed in
+        the build system and checked.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Build-Konfiguration, Bericht eines Binäranalyse-Werkzeugs zu aktivierten
+        Schutzfunktionen.
+      en: >-
+        Build configuration, report of a binary analysis tool on enabled protections.
+    cra_refs: [AI-I-2-k]
+    iec62443: [FR3]
+    sources: ["generic OT security practice"]
+
+  - id: input-validation
+    rev: 1
+    title:
+      de: Prüfung aller Eingaben
+      en: Validation of all inputs
+    description:
+      de: >-
+        Alle Daten, die über Schnittstellen in die Software gelangen (Netzwerktelegramme,
+        Dateien, Rezepte, Webformulare, Barcodes), werden auf Format, Länge und Wertebereich
+        geprüft, bevor sie verarbeitet werden. Fehlerhafte Eingaben führen zu einer
+        definierten Fehlermeldung, nicht zum Absturz. Parser für Protokolle und Dateien
+        werden mit Fuzzing getestet.
+      en: >-
+        All data entering the software through interfaces (network telegrams, files, recipes,
+        web forms, barcodes) is checked for format, length and value range before
+        processing. Malformed input leads to a defined error message, not a crash. Parsers
+        for protocols and files are tested with fuzzing.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Entwicklungsrichtlinie, Fuzzing-Testbericht, Code-Review-Protokoll.
+      en: >-
+        Development guideline, fuzzing test report, code review record.
+    cra_refs: [AI-I-2-f, AI-I-2-h, AI-I-2-k]
+    iec62443: [FR3]
+    sources: ["generic OT security practice"]
+
+  - id: web-interface-hardening
+    rev: 1
+    title:
+      de: Härtung der Weboberfläche
+      en: Web interface hardening
+    description:
+      de: >-
+        Die Weboberfläche von Steuerung, Bediengerät oder Edge-Gerät ist nur über HTTPS
+        erreichbar und schützt sich gegen die typischen Webangriffe (Cross-Site-Scripting,
+        Cross-Site-Request-Forgery, Injection, Pfadmanipulation). Sicherheitsrelevante
+        HTTP-Header sind gesetzt, Fehlermeldungen geben keine internen Details preis. Die
+        Oberfläche wird regelmäßig einem Web-Sicherheitstest unterzogen.
+      en: >-
+        The web interface of controller, HMI or edge device is accessible only via HTTPS and
+        protects against typical web attacks (cross-site scripting, cross-site request
+        forgery, injection, path manipulation). Security-relevant HTTP headers are set and
+        error messages do not reveal internal details. The interface undergoes regular web
+        security testing.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Bericht eines Web-Sicherheitstests, Konfigurationsexport des Webservers.
+      en: >-
+        Web security test report, web server configuration export.
+    cra_refs: [AI-I-2-d, AI-I-2-f, AI-I-2-a]
+    iec62443: [FR1, FR3]
+    sources: ["generic OT security practice"]
+
+  - id: debug-interfaces-disabled
+    rev: 1
+    title:
+      de: Debug-Schnittstellen deaktiviert
+      en: Debug interfaces disabled
+    description:
+      de: >-
+        Debug- und Testschnittstellen auf eigener Elektronik (JTAG, SWD, serielle Konsole,
+        Testpunkte) werden in der Serienfertigung deaktiviert oder per Fuse bzw. Passwort
+        gesperrt. Software-Debugzugänge, Testkonten und Entwicklerfunktionen sind in
+        Serien-Firmware nicht enthalten.
+      en: >-
+        Debug and test interfaces on own electronics (JTAG, SWD, serial console, test points)
+        are disabled in series production or locked by fuse or password. Software debug
+        access, test accounts and developer features are not included in series firmware.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Fertigungsanweisung zum Sperren, Testprotokoll eines fehlgeschlagenen
+        Debug-Verbindungsversuchs an einem Seriengerät.
+      en: >-
+        Production instruction for locking, test report of a failed debug connection attempt
+        on a series device.
+    cra_refs: [AI-I-2-j]
+    iec62443: [FR2, FR5]
+    sources: ["generic OT security practice"]
+
+  - id: recipe-change-approval
+    rev: 1
+    title:
+      de: Freigabe von Rezeptänderungen
+      en: Approval of recipe changes
+    description:
+      de: >-
+        Rezepte und Produktionsparameter werden nach Änderung erst nach Freigabe durch eine
+        berechtigte Rolle wirksam (Vier-Augen-Prinzip bei kritischen Werten). Jede Version
+        ist mit Autor, Zeitpunkt und Prüfsumme gespeichert; geladen werden nur freigegebene
+        Versionen. Änderungen per Leitsystem oder Fernzugriff durchlaufen dieselbe Freigabe.
+      en: >-
+        After modification, recipes and production parameters take effect only after approval
+        by an authorised role (four-eyes principle for critical values). Each version is
+        stored with author, timestamp and checksum; only approved versions are loaded. Changes
+        via control system or remote access go through the same approval.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Beschreibung des Freigabeablaufs, Logauszug der Rezeptversionen, Testprotokoll
+        einer abgewiesenen nicht freigegebenen Version.
+      en: >-
+        Description of the approval workflow, log extract of recipe versions, test report of
+        a rejected unapproved version.
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    iec62443: [FR2, FR3]
+    sources: ["generic OT security practice"]

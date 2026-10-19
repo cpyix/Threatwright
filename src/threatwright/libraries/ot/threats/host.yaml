@@ -1,0 +1,1568 @@
+# Threat templates for controller hosts, operation, data and lifecycle.
+threats:
+  # --- firmware, software and supply chain ---------------------------------------
+  - id: firmware-no-signature-check
+    rev: 1
+    stride: [T, E]
+    applies_to: [ipc-linux, ipc-windows, hmi, mobile-panel, vision-system, plc, drive, remote-io, smart-field-device]
+    title:
+      de: Manipulierte Firmware oder Software wird auf {element} installiert
+      en: Manipulated firmware or software is installed on {element}
+    scenario:
+      de: >-
+        {element} prüft beim Update und beim Start keine digitale Signatur der
+        Firmware oder Software. Ein Angreifer mit Zugang zum Update-Weg (USB,
+        Engineering-Tool, Netzwerk) spielt ein verändertes Image ein, das eine
+        Hintertür oder geänderte Steuerungslogik enthält. Das Gerät akzeptiert
+        das Image, weil es nur Format und Prüfsumme kontrolliert.
+      en: >-
+        {element} does not verify a digital signature of its firmware or
+        software during update and boot. An attacker with access to the update
+        path (USB, engineering tool, network) installs a modified image that
+        contains a backdoor or altered control logic. The device accepts the
+        image because it only checks format and checksum.
+    consequence:
+      de: >-
+        Der Angreifer kontrolliert das Gerät dauerhaft, auch nach Neustart und
+        Neuladen des Anwenderprogramms. Fehlfunktionen können Maschinenbewegungen
+        auslösen und Personen gefährden.
+      en: >-
+        The attacker gains persistent control of the device, surviving restarts
+        and reloading of the user program. Malfunctions can trigger machine
+        movements and endanger persons.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-II-7]
+    attack_ics: [T1693]
+    emb3d: [TID-211, TID-213, TID-201]
+    iec62443: [FR3]
+    measures: [signed-firmware, secure-boot, signed-updates]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: firmware-rollback
+    rev: 1
+    stride: [T]
+    applies_to: [ipc-linux, hmi, vision-system, mobile-panel, plc, drive]
+    title:
+      de: Rückspielen einer alten, verwundbaren Firmware auf {element}
+      en: Downgrade of {element} to an old, vulnerable firmware
+    scenario:
+      de: >-
+        {element} akzeptiert auch ältere, korrekt signierte Firmware-Stände. Ein
+        Angreifer spielt gezielt eine Version mit bekannter, bereits behobener
+        Schwachstelle ein und nutzt diese anschließend aus.
+      en: >-
+        {element} also accepts older, correctly signed firmware versions. An
+        attacker deliberately installs a version with a known, already fixed
+        vulnerability and then exploits it.
+    consequence:
+      de: >-
+        Bereits verteilte Sicherheitsupdates werden wirkungslos, der Angreifer
+        erlangt über die alte Schwachstelle die Kontrolle über das Gerät.
+      en: >-
+        Security updates already rolled out become ineffective; the attacker
+        gains control of the device through the old vulnerability.
+    environment: {interface: local, access: restricted}
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-I-2-c, AI-I-2-f]
+    attack_ics: [T1693]
+    emb3d: [TID-216]
+    iec62443: [FR3]
+    measures: [anti-rollback, signed-firmware]
+    sources: ["generic OT threat knowledge; MITRE EMB3D"]
+
+  - id: counterfeit-spare-parts
+    rev: 1
+    stride: [S, T]
+    applies_to: [plc, drive, remote-io, smart-field-device, ipc-linux, ipc-windows, hmi, mobile-panel, vision-system]
+    title:
+      de: Gefälschtes oder manipuliertes Ersatzteil als {element} eingebaut
+      en: Counterfeit or manipulated spare part installed as {element}
+    scenario:
+      de: >-
+        Bei einer Reparatur wird ein Ersatzgerät aus einer nicht autorisierten
+        Bezugsquelle eingebaut, etwa einem Online-Marktplatz. Das Gerät gibt sich
+        als Originalteil aus, enthält aber veränderte Firmware oder zusätzliche
+        Hardware. Die Maschine erkennt den Tausch nicht und vertraut dem Gerät
+        wie dem Original.
+      en: >-
+        During a repair, a replacement device from an unauthorised source, for
+        example an online marketplace, is installed. The device poses as a
+        genuine part but contains modified firmware or additional hardware. The
+        machine does not detect the exchange and trusts the device like the
+        original.
+    consequence:
+      de: >-
+        Verdeckte Fehlfunktion, Datenabfluss oder ein dauerhafter Zugang für
+        Dritte. Fehlerhafte Ansteuerung kann Personen gefährden.
+      en: >-
+        Hidden malfunction, data leakage or a persistent access for third
+        parties. Faulty control can endanger persons.
+    environment: {interface: physical, access: restricted, user: skilled}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-II-1]
+    attack_ics: [T0862]
+    iec62443: [FR3]
+    measures: [genuine-spare-parts, supplier-security-requirements, tamper-evident-seals, service-personnel-training]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: supplier-component-firmware
+    rev: 1
+    stride: [T, E]
+    applies_to: [ipc-linux, ipc-windows, hmi, mobile-panel, vision-system, plc, drive, remote-io, smart-field-device]
+    title:
+      de: Zulieferkomponente mit eigener, ungeprüfter Firmware in {element}
+      en: Supplier component with its own unreviewed firmware in {element}
+    scenario:
+      de: >-
+        {element} enthält zugekaufte Baugruppen mit eigener Firmware, etwa ein
+        Funkmodul, einen Kamerasensor, einen Feldbus-Controller oder ein
+        Mainboard mit BIOS. Diese Firmware ist nicht in der Komponentenliste
+        erfasst, wird nicht aktualisiert und enthält bekannte Schwachstellen
+        oder undokumentierte Servicezugänge. Ein Angreifer nutzt diese
+        Schwachstellen, um unterhalb der Kontrolle des Herstellers Code
+        auszuführen.
+      en: >-
+        {element} contains purchased modules with their own firmware, such as a
+        radio module, a camera sensor, a fieldbus controller or a mainboard with
+        BIOS. This firmware is not recorded in the component inventory, is not
+        updated and contains known vulnerabilities or undocumented service
+        access. An attacker exploits these weaknesses to run code below the
+        manufacturer's control.
+    consequence:
+      de: >-
+        Schwachstellen bleiben unbemerkt und unbehoben. Der Angreifer kann das
+        Gerät verdeckt manipulieren, auch wenn die eigene Software des
+        Herstellers abgesichert ist.
+      en: >-
+        Vulnerabilities remain unnoticed and unfixed. The attacker can manipulate
+        the device covertly even if the manufacturer's own software is
+        hardened.
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-II-1, AI-I-2-a, AI-I-2-c]
+    attack_ics: [T0862]
+    emb3d: [TID-113]
+    iec62443: [FR3]
+    measures: [component-inventory-sbom, third-party-firmware-review, supplier-vulnerability-monitoring, supplier-security-requirements]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: debug-interface-open
+    rev: 1
+    stride: [T, I, E]
+    applies_to: [ipc-linux, hmi, vision-system, mobile-panel, plc]
+    title:
+      de: Offene Debug- oder Konsolenschnittstelle an {element}
+      en: Open debug or console interface on {element}
+    scenario:
+      de: >-
+        Auf der Platine oder am Gehäuse von {element} ist eine Debug-Schnittstelle
+        (JTAG, serielle Konsole, Bootloader-Menü) zugänglich und im Feld nicht
+        deaktiviert. Eine Person mit kurzem physischem Zugang schließt einen
+        Adapter an, erhält eine Root-Konsole oder liest den Speicher aus und
+        verändert Firmware oder Konfiguration.
+      en: >-
+        A debug interface (JTAG, serial console, bootloader menu) on the board
+        or housing of {element} is accessible and not disabled in the field. A
+        person with brief physical access connects an adapter, obtains a root
+        console or reads out the memory and alters firmware or configuration.
+    consequence:
+      de: >-
+        Vollständige Kontrolle über das Gerät, Abfluss von Schlüsseln und
+        Programm-Know-how sowie Umgehung aller Software-Schutzmaßnahmen.
+      en: >-
+        Full control of the device, leakage of keys and program know-how, and
+        bypass of all software protection.
+    environment: {interface: physical, access: public_restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-j, AI-I-2-d]
+    emb3d: [TID-119, TID-115]
+    iec62443: [FR1, FR3]
+    measures: [debug-interfaces-disabled, physical-access-control, tamper-evident-seals, tamper-alarm]
+    sources: ["generic OT threat knowledge; MITRE EMB3D"]
+
+  # --- credentials and access --------------------------------------------------------
+  - id: default-credentials-fleet
+    rev: 1
+    stride: [S, E]
+    applies_to: [ipc-linux, ipc-windows, soft-plc, hmi, mobile-panel, vision-system, engineering-workstation, plc]
+    title:
+      de: Standardpasswort oder flottenweit identische Zugangsdaten an {element}
+      en: Default password or fleet-wide identical credentials on {element}
+    scenario:
+      de: >-
+        {element} wird mit einem Standardpasswort ausgeliefert, oder alle
+        Maschinen einer Baureihe verwenden dieselben Zugangsdaten für Service-
+        und Administratorkonten. Die Daten stehen in Handbüchern, sind in der
+        Software fest hinterlegt oder unter Servicetechnikern bekannt. Ein
+        Angreifer meldet sich damit als berechtigter Benutzer an.
+      en: >-
+        {element} ships with a default password, or all machines of a series
+        use the same credentials for service and administrator accounts. The
+        credentials are printed in manuals, hard-coded in the software or known
+        among service technicians. An attacker logs in as an authorised user.
+    consequence:
+      de: >-
+        Administrativer Zugriff auf eine einzelne Maschine bedeutet Zugriff auf
+        die gesamte Flotte. Der Angreifer kann Programme, Parameter und
+        Sicherheitseinstellungen ändern und damit Personen gefährden.
+      en: >-
+        Administrative access to one machine means access to the whole fleet.
+        The attacker can change programs, parameters and security settings and
+        thereby endanger persons.
+    environment: {interface: known_network, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-b, AI-I-2-d]
+    attack_ics: [T1694, T0859]
+    emb3d: [TID-311, TID-328]
+    iec62443: [FR1]
+    measures: [unique-device-credentials, no-default-passwords, strong-authentication]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: secrets-cleartext
+    rev: 1
+    stride: [I, S]
+    applies_to: [ipc-linux, ipc-windows, soft-plc, hmi, mobile-panel, vision-system, engineering-workstation, key-store, license-server]
+    title:
+      de: Passwörter und Schlüssel im Klartext auf {element}
+      en: Passwords and keys stored in clear text on {element}
+    scenario:
+      de: >-
+        {element} speichert Passwörter, private Schlüssel oder Zugangsdaten für
+        Steuerungen, Datenbanken und Cloud-Dienste unverschlüsselt in
+        Konfigurationsdateien, Projektdateien oder im Dateisystem. Ein Angreifer
+        mit Lesezugriff, etwa über eine Sicherungskopie, einen ausgebauten
+        Datenträger oder eine Schwachstelle, liest die Geheimnisse aus.
+      en: >-
+        {element} stores passwords, private keys or credentials for controllers,
+        databases and cloud services unencrypted in configuration files, project
+        files or the file system. An attacker with read access, for example via
+        a backup, a removed storage medium or a vulnerability, reads the
+        secrets.
+    consequence:
+      de: >-
+        Der Angreifer meldet sich mit den erbeuteten Daten an weiteren Systemen
+        an und gibt sich als legitimer Benutzer oder Dienst aus.
+      en: >-
+        The attacker uses the captured secrets to log in to further systems and
+        impersonates a legitimate user or service.
+    environment: {interface: local, access: restricted}
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-I-2-e, AI-I-2-d]
+    attack_ics: [T0859]
+    emb3d: [TID-329, TID-328]
+    iec62443: [FR1, FR4]
+    measures: [secrets-protected-storage, data-encryption-rest, role-based-access]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: ews-stored-credentials-reuse
+    rev: 1
+    stride: [S]
+    applies_to: [engineering-workstation, service-laptop]
+    title:
+      de: Gespeicherte Steuerungszugänge auf {element} werden missbraucht
+      en: Controller credentials stored on {element} are misused
+    scenario:
+      de: >-
+        Das Engineering-Tool auf {element} merkt sich Passwörter und Zertifikate
+        für alle betreuten Steuerungen. Ein Angreifer, der den Rechner etwa über
+        einen präparierten E-Mail-Anhang übernommen hat, nutzt diese Zugänge
+        und meldet sich als Inbetriebnehmer an den Steuerungen an.
+      en: >-
+        The engineering tool on {element} remembers passwords and certificates
+        for all controllers it serves. An attacker who has taken over the
+        computer, for example through a crafted e-mail attachment, uses these
+        credentials and logs in to the controllers as the commissioning
+        engineer.
+    consequence:
+      de: >-
+        Die Steuerungen können legitime von missbräuchlichen Zugriffen nicht
+        unterscheiden. Programme und Parameter lassen sich unbemerkt ändern.
+      en: >-
+        The controllers cannot distinguish legitimate from malicious access.
+        Programs and parameters can be changed unnoticed.
+    environment: {interface: known_network, access: restricted, user: skilled}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-e]
+    attack_ics: [T0859]
+    iec62443: [FR1]
+    measures: [secrets-protected-storage, strong-authentication, role-based-access]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: shared-service-accounts
+    rev: 1
+    stride: [R]
+    applies_to: [service-laptop, engineering-workstation, hmi, ipc-linux, ipc-windows]
+    title:
+      de: Gemeinsame Servicekonten machen Eingriffe über {element} unzurechenbar
+      en: Shared service accounts make interventions via {element} unattributable
+    scenario:
+      de: >-
+        Alle Servicetechniker und Inbetriebnehmer verwenden dasselbe Konto, um
+        über {element} Änderungen an Maschinen vorzunehmen. Ein Innentäter oder
+        ein Angreifer mit diesen Zugangsdaten nimmt eine schädliche Änderung
+        vor und bestreitet anschließend, beteiligt gewesen zu sein.
+      en: >-
+        All service technicians and commissioning engineers use the same account
+        to change machines via {element}. An insider or an attacker with these
+        credentials makes a harmful change and then denies involvement.
+    consequence:
+      de: >-
+        Änderungen lassen sich keiner Person zuordnen. Ursachenanalyse,
+        Haftungsklärung und Meldung eines Vorfalls werden erheblich erschwert.
+      en: >-
+        Changes cannot be attributed to a person. Root cause analysis,
+        clarification of liability and incident reporting become considerably
+        harder.
+    impact: 3
+    safety_related: false
+    cra_refs: [AI-I-2-d, AI-I-2-l]
+    attack_ics: [T0859]
+    iec62443: [FR1, FR2]
+    measures: [role-based-access, strong-authentication, security-logging]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: privilege-escalation-linux
+    rev: 1
+    stride: [E]
+    applies_to: [ipc-linux, soft-plc]
+    title:
+      de: Rechteausweitung zu Root auf dem Linux-Steuerungsrechner {element}
+      en: Privilege escalation to root on the Linux industrial PC {element}
+    scenario:
+      de: >-
+        Ein Angreifer verfügt über ein Benutzerkonto mit geringen Rechten, etwa
+        über einen Webdienst oder ein Bedienerkonto. Er nutzt eine
+        Kernel-Schwachstelle, ein falsch gesetztes sudo- oder SUID-Recht oder
+        einen Dienst, der unnötig als root läuft, und erlangt
+        Administratorrechte. Häufig läuft auch die Echtzeit-Laufzeitumgebung
+        mit root-Rechten.
+      en: >-
+        An attacker holds a low-privileged account, for example through a web
+        service or an operator account. He exploits a kernel vulnerability, a
+        misconfigured sudo or SUID permission or a service unnecessarily running
+        as root and gains administrator rights. The real-time runtime often also
+        runs as root.
+    consequence:
+      de: >-
+        Volle Kontrolle über Betriebssystem, Steuerungsprogramm und
+        Feldbusanbindung, einschließlich direkter Ansteuerung von Aktoren.
+      en: >-
+        Full control of the operating system, the control program and the
+        fieldbus connection, including direct control of actuators.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-k]
+    attack_ics: [T0890]
+    emb3d: [TID-219, TID-204]
+    iec62443: [FR2, FR3]
+    measures: [least-privilege-services, os-hardening, patch-management-os, exploit-mitigations]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: privilege-escalation-windows
+    rev: 1
+    stride: [E]
+    applies_to: [ipc-windows, hmi, engineering-workstation]
+    title:
+      de: Rechteausweitung zu Administrator oder SYSTEM auf {element}
+      en: Privilege escalation to administrator or SYSTEM on {element}
+    scenario:
+      de: >-
+        Auf {element} arbeitet der Bediener mit einem eingeschränkten
+        Windows-Konto. Ein Angreifer nutzt eine ungepatchte Schwachstelle, einen
+        Dienst mit schwachen Dateirechten oder eine automatisch angemeldete
+        Administrator-Sitzung, um SYSTEM-Rechte zu erlangen.
+      en: >-
+        On {element} the operator works with a restricted Windows account. An
+        attacker exploits an unpatched vulnerability, a service with weak file
+        permissions or an automatically logged-on administrator session to gain
+        SYSTEM rights.
+    consequence:
+      de: >-
+        Der Angreifer kann Schutzsoftware abschalten, Visualisierung und
+        Steuerungssoftware verändern und sich im Netz weiter ausbreiten.
+      en: >-
+        The attacker can disable protective software, alter visualisation and
+        control software and spread further in the network.
+    environment: {interface: local, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-k]
+    attack_ics: [T0890]
+    emb3d: [TID-219]
+    iec62443: [FR2, FR3]
+    measures: [least-privilege-services, os-hardening, patch-management-os, application-allowlisting]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: unpatched-os-vulnerability
+    rev: 1
+    stride: [T, D, E]
+    applies_to: [ipc-linux, ipc-windows, hmi, engineering-workstation, vision-system, historian]
+    title:
+      de: Ausnutzung bekannter Schwachstellen im ungepatchten Betriebssystem von {element}
+      en: Exploitation of known vulnerabilities in the unpatched operating system of {element}
+    scenario:
+      de: >-
+        Das Betriebssystem von {element} wird seit Auslieferung nicht
+        aktualisiert, weil Updates die Freigabe der Maschine gefährden könnten.
+        Ein Angreifer im Anlagennetz nutzt eine öffentlich bekannte
+        Schwachstelle in einem Netzwerkdienst oder einer Bibliothek aus und
+        führt eigenen Code aus.
+      en: >-
+        The operating system of {element} has not been updated since delivery
+        because updates might jeopardise the machine's approval. An attacker in
+        the plant network exploits a publicly known vulnerability in a network
+        service or library and executes his own code.
+    consequence:
+      de: >-
+        Übernahme oder Absturz des Systems, Ausfall der Produktion und
+        Ausbreitung von Schadsoftware auf weitere Systeme.
+      en: >-
+        Takeover or crash of the system, loss of production and spread of
+        malware to further systems.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-I-2-a, AI-I-2-c, AI-II-2]
+    attack_ics: [T0866]
+    emb3d: [TID-202]
+    iec62443: [FR3, FR7]
+    measures: [patch-management-os, security-update-process, network-segmentation, component-inventory-sbom]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  # --- operation: HMI, panels, vision --------------------------------------------------
+  - id: hmi-kiosk-escape
+    rev: 1
+    stride: [E, T]
+    applies_to: [hmi, ipc-windows, ipc-linux, mobile-panel]
+    title:
+      de: Ausbruch aus der Bedienoberfläche von {element} ins Betriebssystem
+      en: Escape from the operator interface of {element} to the operating system
+    scenario:
+      de: >-
+        Die Visualisierung auf {element} läuft ohne Kiosk-Modus. Über
+        Tastenkombinationen, Datei-Dialoge, Hilfefenster, Druckdialoge oder
+        eine Bildschirmtastatur gelangt ein Bediener oder Besucher auf den
+        Desktop und startet beliebige Programme.
+      en: >-
+        The visualisation on {element} runs without kiosk mode. Through key
+        combinations, file dialogs, help windows, print dialogs or an on-screen
+        keyboard an operator or visitor reaches the desktop and starts arbitrary
+        programs.
+    consequence:
+      de: >-
+        Zugriff auf Betriebssystem, Projektdateien und Netzwerk. Steuerungswerte
+        und Programme lassen sich am Rechteschema vorbei verändern, was
+        Personen gefährden kann.
+      en: >-
+        Access to the operating system, project files and network. Control
+        values and programs can be changed bypassing the permission scheme,
+        which can endanger persons.
+    environment: {interface: local, access: public_restricted, user: instructed}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-j]
+    attack_ics: [T0823]
+    iec62443: [FR2]
+    measures: [kiosk-mode, os-hardening, application-allowlisting, usb-port-control]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: hmi-operator-impersonation
+    rev: 1
+    stride: [S]
+    applies_to: [hmi, mobile-panel, ipc-windows]
+    title:
+      de: Bedienung unter fremder Benutzerkennung an {element}
+      en: Operation under another user's identity on {element}
+    scenario:
+      de: >-
+        An {element} bleibt eine Sitzung mit erhöhter Berechtigung, etwa
+        Einrichter oder Instandhaltung, dauerhaft angemeldet, oder alle Bediener
+        teilen sich eine PIN. Eine nicht berechtigte Person nutzt diese
+        Sitzung, um Funktionen auszuführen, die ihr nicht zustehen.
+      en: >-
+        A session with elevated permission, such as setter or maintenance,
+        remains logged in on {element}, or all operators share one PIN. An
+        unauthorised person uses this session to execute functions he is not
+        entitled to.
+    consequence:
+      de: >-
+        Unzulässige Eingriffe wie geänderte Sollwerte oder Sonderbetriebsarten
+        werden unter fremdem Namen ausgeführt und können Personen gefährden.
+      en: >-
+        Inadmissible interventions such as changed set points or special
+        operating modes are performed under another name and can endanger
+        persons.
+    environment: {interface: local, access: public_restricted, user: instructed}
+    impact: 3
+    safety_related: true
+    cra_refs: [AI-I-2-d]
+    attack_ics: [T0859]
+    iec62443: [FR1, FR2]
+    measures: [session-timeout, role-based-access, strong-authentication]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: hmi-false-display
+    rev: 1
+    stride: [T]
+    applies_to: [hmi, mobile-panel, ipc-windows, ipc-linux]
+    title:
+      de: Manipulierte Visualisierung auf {element} zeigt falschen Anlagenzustand
+      en: Manipulated visualisation on {element} shows a false machine state
+    scenario:
+      de: >-
+        Ein Angreifer verändert das Visualisierungsprojekt oder die
+        Variablenzuordnung auf {element}, etwa über eine kompromittierte
+        Engineering-Station oder einen Dateizugriff. Die Anzeige zeigt
+        Normalzustand, während die Maschine tatsächlich gestört ist, oder
+        Alarme werden unterdrückt.
+      en: >-
+        An attacker alters the visualisation project or the tag mapping on
+        {element}, for example via a compromised engineering workstation or file
+        access. The display shows normal state while the machine is actually
+        faulty, or alarms are suppressed.
+    consequence:
+      de: >-
+        Bediener treffen Entscheidungen auf Basis falscher Informationen und
+        betreten zum Beispiel einen vermeintlich sicheren Bereich. Personen- und
+        Sachschäden sind möglich.
+      en: >-
+        Operators decide based on false information and, for example, enter a
+        supposedly safe area. Injuries and property damage are possible.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-f]
+    attack_ics: [T0832, T0838]
+    iec62443: [FR3]
+    measures: [program-integrity-check, engineering-tool-integrity, role-based-access]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: hmi-denial-of-view
+    rev: 1
+    stride: [D]
+    applies_to: [hmi, mobile-panel, vision-system, ipc-windows, ipc-linux]
+    title:
+      de: Angriff legt die Bedien- oder Prüffunktion von {element} lahm
+      en: Attack disables the operating or inspection function of {element}
+    scenario:
+      de: >-
+        Ein Angreifer im Anlagennetz überflutet {element} mit Anfragen oder
+        sendet fehlerhafte Pakete an den Webserver oder den
+        Kommunikationsdienst. Das Gerät reagiert nicht mehr oder startet
+        ständig neu.
+      en: >-
+        An attacker in the plant network floods {element} with requests or
+        sends malformed packets to its web server or communication service. The
+        device stops responding or keeps restarting.
+    consequence:
+      de: >-
+        Die Maschine ist nicht mehr bedienbar oder beobachtbar, Prüfergebnisse
+        fehlen und die Produktion steht still.
+      en: >-
+        The machine can no longer be operated or monitored, inspection results
+        are missing and production stops.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    safety_related: false
+    cra_refs: [AI-I-2-h, AI-I-2-i]
+    attack_ics: [T0815, T0816]
+    emb3d: [TID-202]
+    iec62443: [FR7]
+    measures: [dos-rate-limiting, network-segmentation, watchdog-safe-state]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: mobile-panel-rogue-connection
+    rev: 1
+    stride: [S, T]
+    applies_to: [mobile-panel]
+    title:
+      de: Fremdes oder falsch zugeordnetes Bediengerät steuert die Maschine über {element}
+      en: Foreign or wrongly assigned panel controls the machine via {element}
+    scenario:
+      de: >-
+        Die Anmeldung von {element} an der Maschine erfolgt ohne
+        Authentisierung des Geräts. Ein Angreifer verbindet ein eigenes Gerät
+        oder ein Bediengerät einer anderen Maschine und sendet Fahrbefehle. Der
+        Bediener vor Ort sieht nicht, dass die Maschine von anderer Stelle
+        bewegt wird.
+      en: >-
+        {element} connects to the machine without device authentication. An
+        attacker connects his own device or a panel belonging to another
+        machine and sends motion commands. The operator on site does not notice
+        that the machine is being moved from elsewhere.
+    consequence:
+      de: >-
+        Unerwartete Maschinenbewegungen mit unmittelbarer Gefahr für Personen im
+        Arbeitsbereich.
+      en: >-
+        Unexpected machine movements with immediate danger to persons in the
+        working area.
+    environment: {interface: dedicated_known_network, access: movable, user: instructed}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d]
+    attack_ics: [T0849]
+    iec62443: [FR1, FR2]
+    measures: [strong-authentication, wireless-strong-encryption, safety-separation, mode-selection-safety-rated]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: vision-inspection-manipulation
+    rev: 1
+    stride: [T]
+    applies_to: [vision-system]
+    title:
+      de: Manipulierte Prüfparameter von {element} lassen Fehlteile passieren
+      en: Manipulated inspection parameters of {element} let defective parts pass
+    scenario:
+      de: >-
+        Die Konfiguration von {element} ist über eine Weboberfläche oder ein
+        Einrichtwerkzeug ohne ausreichende Zugriffskontrolle änderbar. Ein
+        Angreifer weitet Toleranzen aus, tauscht Referenzbilder oder
+        deaktiviert Prüfschritte.
+      en: >-
+        The configuration of {element} can be changed via a web interface or a
+        setup tool without sufficient access control. An attacker widens
+        tolerances, replaces reference images or disables inspection steps.
+    consequence:
+      de: >-
+        Fehlerhafte Teile werden als gut bewertet und ausgeliefert. Rückrufe
+        und Folgeschäden beim Kunden sind möglich.
+      en: >-
+        Defective parts are rated good and shipped. Recalls and consequential
+        damage at the customer are possible.
+    environment: {interface: known_network, access: public_restricted}
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    attack_ics: [T0836]
+    iec62443: [FR2, FR3]
+    measures: [role-based-access, config-integrity-check, parameter-plausibility, web-interface-hardening]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: vision-image-data-leak
+    rev: 1
+    stride: [I]
+    applies_to: [vision-system]
+    title:
+      de: Bilddaten von {element} werden unbefugt abgerufen
+      en: Image data of {element} is retrieved without authorisation
+    scenario:
+      de: >-
+        {element} stellt Live-Bilder und gespeicherte Prüfbilder über einen
+        ungeschützten Web- oder Streamdienst bereit. Ein Angreifer im Netz ruft
+        die Bilder ab, die Produkte, Fertigungsdetails oder Personen am
+        Arbeitsplatz zeigen.
+      en: >-
+        {element} provides live images and stored inspection images via an
+        unprotected web or streaming service. An attacker in the network
+        retrieves the images, which show products, manufacturing details or
+        persons at the workplace.
+    consequence:
+      de: >-
+        Abfluss von Produkt-Know-how und personenbezogenen Daten mit möglichen
+        Datenschutzfolgen.
+      en: >-
+        Leakage of product know-how and personal data with possible data
+        protection consequences.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    safety_related: false
+    cra_refs: [AI-I-2-e, AI-I-2-g]
+    attack_ics: [T0882]
+    emb3d: [TID-310]
+    iec62443: [FR4]
+    measures: [strong-authentication, data-encryption-transit, data-minimisation]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  # --- removable media and service laptop ------------------------------------------------
+  - id: usb-malware-autorun
+    rev: 1
+    stride: [T, E]
+    applies_to: [removable-media, ipc-windows, ipc-linux, hmi, engineering-workstation]
+    title:
+      de: Schadsoftware gelangt per USB-Datenträger auf {element}
+      en: Malware reaches {element} via USB storage
+    scenario:
+      de: >-
+        Ein Servicetechniker oder Bediener steckt einen infizierten
+        USB-Datenträger an, etwa für ein Backup, ein Update oder einen
+        Datenexport. Schadsoftware startet über Autorun, präparierte
+        Verknüpfungen oder ausführbare Dateien und kopiert sich auf das System
+        und weitere Datenträger.
+      en: >-
+        A service technician or operator plugs in an infected USB stick, for
+        example for a backup, an update or a data export. Malware starts via
+        autorun, crafted shortcuts or executable files and copies itself to the
+        system and further media.
+    consequence:
+      de: >-
+        Kompromittierung des Steuerungsrechners trotz fehlender Netzverbindung
+        nach außen und Weiterverbreitung auf andere Anlagen.
+      en: >-
+        Compromise of the controller host despite having no external network
+        connection, and further spread to other plants.
+    environment: {interface: local, access: public_restricted, user: instructed}
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-I-2-j, AI-I-2-k]
+    attack_ics: [T0847, T0895]
+    iec62443: [FR3]
+    measures: [usb-port-control, autorun-disabled, media-scanning-station, malware-protection]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: usb-badusb-keyboard
+    rev: 1
+    stride: [S, E]
+    applies_to: [removable-media, hmi, ipc-windows, ipc-linux, engineering-workstation]
+    title:
+      de: USB-Gerät gibt sich als Tastatur aus und steuert {element}
+      en: USB device poses as a keyboard and controls {element}
+    scenario:
+      de: >-
+        Ein präparierter USB-Stick oder ein unscheinbares Kabel meldet sich am
+        Gerät nicht als Speicher, sondern als Tastatur oder Netzwerkkarte an.
+        Innerhalb von Sekunden tippt es Befehle ein, öffnet eine Konsole oder
+        leitet den Netzverkehr um.
+      en: >-
+        A crafted USB stick or an inconspicuous cable registers with the device
+        not as storage but as a keyboard or network adapter. Within seconds it
+        types commands, opens a console or redirects network traffic.
+    consequence:
+      de: >-
+        Der Angreifer führt Befehle mit den Rechten der angemeldeten Sitzung
+        aus, ohne dass ein Passwort abgefragt wird.
+      en: >-
+        The attacker executes commands with the rights of the logged-in session
+        without being asked for a password.
+    environment: {interface: physical, access: public_restricted}
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-I-2-j, AI-I-2-d]
+    attack_ics: [T0847]
+    iec62443: [FR2]
+    measures: [usb-port-control, kiosk-mode, physical-access-control]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: usb-manipulated-file-import
+    rev: 1
+    stride: [S, T]
+    applies_to: [removable-media, hmi, ipc-windows, ipc-linux, recipe-store]
+    title:
+      de: Manipulierte Rezept- oder Projektdatei wird per USB in {element} geladen
+      en: Manipulated recipe or project file is loaded into {element} via USB
+    scenario:
+      de: >-
+        Rezepte, Parameter oder Projektdateien werden per USB-Datenträger
+        eingespielt. Das Gerät prüft weder Herkunft noch Integrität der Datei.
+        Ein Angreifer legt eine Datei bereit, die wie eine freigegebene Datei
+        aussieht, aber veränderte Werte oder präparierte Inhalte enthält, die
+        beim Einlesen einen Fehler im Parser ausnutzen.
+      en: >-
+        Recipes, parameters or project files are imported via USB storage. The
+        device checks neither origin nor integrity of the file. An attacker
+        provides a file that looks like an approved file but contains altered
+        values or crafted content that exploits a flaw in the parser on import.
+    consequence:
+      de: >-
+        Falsche Prozesswerte führen zu Ausschuss oder Maschinenschäden, ein
+        Parserfehler kann zur Codeausführung auf dem Gerät führen.
+      en: >-
+        Wrong process values lead to scrap or machine damage; a parser flaw can
+        lead to code execution on the device.
+    environment: {interface: local, access: public_restricted, user: instructed}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-f]
+    attack_ics: [T0847, T0836]
+    emb3d: [TID-111]
+    iec62443: [FR3]
+    measures: [config-integrity-check, input-validation, recipe-change-approval, media-scanning-station]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: removable-media-untraceable
+    rev: 1
+    stride: [R]
+    applies_to: [removable-media, hmi, ipc-windows, ipc-linux]
+    title:
+      de: Nicht nachvollziehbar, welche Dateien per {element} übertragen wurden
+      en: Untraceable which files were transferred via {element}
+    scenario:
+      de: >-
+        Das System protokolliert nicht, wann welcher Datenträger angesteckt und
+        welche Dateien importiert oder exportiert wurden. Eine Person spielt
+        eine schädliche Datei ein oder kopiert vertrauliche Daten und bestreitet
+        dies später.
+      en: >-
+        The system does not record when which storage medium was plugged in and
+        which files were imported or exported. A person loads a harmful file or
+        copies confidential data and later denies it.
+    consequence:
+      de: >-
+        Infektionsweg und Datenabfluss lassen sich nicht aufklären, die
+        Bereinigung und die Meldung eines Vorfalls verzögern sich.
+      en: >-
+        Infection path and data leakage cannot be clarified; clean-up and
+        incident reporting are delayed.
+    impact: 2
+    safety_related: false
+    cra_refs: [AI-I-2-l]
+    iec62443: [FR6]
+    measures: [security-logging, usb-port-control, media-scanning-station]
+    sources: ["generic OT threat knowledge"]
+
+  - id: service-laptop-carrier
+    rev: 1
+    stride: [S, T]
+    applies_to: [service-laptop, engineering-workstation]
+    title:
+      de: Infizierter {element} trägt Schadsoftware von Kunde zu Kunde
+      en: Infected {element} carries malware from customer to customer
+    scenario:
+      de: >-
+        Der Service-Laptop wird nacheinander an Maschinen verschiedener Kunden
+        und im Büronetz betrieben. Er wird an einem Standort infiziert und beim
+        nächsten Einsatz als vertrauenswürdiges Servicegerät direkt in das
+        Maschinennetz gesteckt, an Firewalls und Netztrennung vorbei.
+      en: >-
+        The service laptop is used successively at machines of different
+        customers and in the office network. It becomes infected at one site
+        and, at the next assignment, is plugged directly into the machine
+        network as a trusted service device, bypassing firewalls and
+        segmentation.
+    consequence:
+      de: >-
+        Schadsoftware verbreitet sich über viele Anlagen und Kunden. Der
+        Hersteller wird selbst zum Verbreitungsweg.
+      en: >-
+        Malware spreads across many plants and customers. The manufacturer
+        itself becomes the distribution channel.
+    environment: {interface: local, access: movable, user: skilled}
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-I-2-j, AI-I-2-i]
+    attack_ics: [T0864]
+    iec62443: [FR3, FR5]
+    measures: [service-laptop-policy, malware-protection, network-segmentation, service-personnel-training]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: service-laptop-loss
+    rev: 1
+    stride: [I]
+    applies_to: [service-laptop, engineering-workstation]
+    title:
+      de: Verlust oder Diebstahl von {element} mit Kundendaten
+      en: Loss or theft of {element} with customer data
+    scenario:
+      de: >-
+        Auf {element} liegen Projektstände, Zugangsdaten und Netzpläne vieler
+        Kunden unverschlüsselt. Das Gerät wird im Fahrzeug, am Flughafen oder
+        beim Kunden gestohlen oder geht verloren.
+      en: >-
+        Project versions, credentials and network plans of many customers are
+        stored unencrypted on {element}. The device is stolen or lost in a
+        vehicle, at an airport or at a customer site.
+    consequence:
+      de: >-
+        Der Finder erhält Know-how und Zugänge zu zahlreichen Maschinen und kann
+        diese gezielt angreifen.
+      en: >-
+        The finder obtains know-how and access to numerous machines and can
+        attack them in a targeted way.
+    environment: {interface: physical, access: movable}
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-I-2-e]
+    iec62443: [FR4]
+    measures: [data-encryption-rest, secrets-protected-storage, service-laptop-policy]
+    sources: ["generic OT threat knowledge"]
+
+  # --- engineering and program ------------------------------------------------------
+  - id: ews-project-file-infection
+    rev: 1
+    stride: [T]
+    applies_to: [engineering-workstation, soft-plc, plc, safety-plc, ipc-linux, ipc-windows]
+    title:
+      de: Kompromittierte Engineering-Station lädt manipuliertes Programm auf {element}
+      en: Compromised engineering workstation downloads a manipulated program to {element}
+    scenario:
+      de: >-
+        Schadsoftware auf der Engineering-Station verändert Projektdateien oder
+        hängt sich in das Engineering-Tool ein. Beim nächsten regulären
+        Programmdownload wird zusätzlicher oder geänderter Code in die
+        Steuerung übertragen, während das Tool dem Anwender den unveränderten
+        Stand anzeigt.
+      en: >-
+        Malware on the engineering workstation alters project files or hooks
+        into the engineering tool. With the next regular program download,
+        additional or altered code is transferred to the controller while the
+        tool shows the user the unchanged version.
+    consequence:
+      de: >-
+        Die Steuerung arbeitet mit verdeckt manipulierter Logik. Maschinenschäden
+        und Gefährdung von Personen sind möglich, die Ursache bleibt lange
+        unentdeckt.
+      en: >-
+        The controller runs covertly manipulated logic. Machine damage and
+        danger to persons are possible; the cause stays undetected for a long
+        time.
+    environment: {interface: known_network, access: restricted, user: skilled}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-f]
+    attack_ics: [T0873, T0843, T0889]
+    emb3d: [TID-303]
+    iec62443: [FR3]
+    measures: [engineering-tool-integrity, program-integrity-check, application-allowlisting, engineering-project-protection]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: unauthenticated-program-download
+    rev: 1
+    stride: [S, T]
+    applies_to: [soft-plc, ipc-linux, ipc-windows]
+    title:
+      de: Programmdownload auf {element} ohne Authentisierung des Engineering-Zugriffs
+      en: Program download to {element} without authentication of engineering access
+    scenario:
+      de: >-
+        Die Laufzeitumgebung auf {element} nimmt Programme und Online-Änderungen
+        von jedem Engineering-Tool im Netz an. Ein Angreifer mit eigener
+        Engineering-Software gibt sich als berechtigte Engineering-Station aus
+        und lädt ein eigenes Programm oder stoppt die Steuerung.
+      en: >-
+        The runtime on {element} accepts programs and online changes from any
+        engineering tool in the network. An attacker with his own engineering
+        software poses as an authorised engineering workstation and downloads
+        his own program or stops the controller.
+    consequence:
+      de: >-
+        Fremde Steuerungslogik steuert Aktoren an, Personen können gefährdet
+        werden, die Produktion fällt aus.
+      en: >-
+        Foreign control logic drives actuators; persons may be endangered and
+        production fails.
+    environment: {interface: known_network, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T0843, T0849]
+    emb3d: [TID-310]
+    iec62443: [FR1, FR2]
+    measures: [strong-authentication, role-based-access, network-segmentation, program-integrity-check]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: know-how-theft-program-upload
+    rev: 1
+    stride: [I]
+    applies_to: [soft-plc, plc, engineering-workstation, ipc-linux, ipc-windows, removable-media]
+    title:
+      de: Diebstahl von Know-how durch Programm-Upload oder Kopie der Projektdateien von {element}
+      en: Theft of know-how by program upload or copy of project files from {element}
+    scenario:
+      de: >-
+        Ein Wettbewerber, ehemaliger Mitarbeiter oder Angreifer liest das
+        Steuerungsprogramm per Upload aus der Steuerung aus oder kopiert
+        Projektdateien von Rechner oder Datenträger. Ein Know-how-Schutz fehlt
+        oder ist nur durch ein schwaches Passwort gesichert.
+      en: >-
+        A competitor, former employee or attacker reads the control program
+        from the controller via upload or copies project files from a computer
+        or storage medium. Know-how protection is missing or only secured by a
+        weak password.
+    consequence:
+      de: >-
+        Verlust von Prozess- und Maschinen-Know-how, Nachbau der Maschine und
+        Grundlage für gezielte Folgeangriffe.
+      en: >-
+        Loss of process and machine know-how, replication of the machine and a
+        basis for targeted follow-up attacks.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-I-2-e, AI-I-2-d]
+    attack_ics: [T0845, T0882]
+    iec62443: [FR4, FR2]
+    measures: [engineering-project-protection, role-based-access, data-encryption-rest]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: soft-plc-runtime-interference
+    rev: 1
+    stride: [T, D]
+    applies_to: [soft-plc, ipc-linux, ipc-windows]
+    title:
+      de: Andere Prozesse auf dem Rechner stören oder verändern die Soft-SPS {element}
+      en: Other processes on the host disturb or alter the soft PLC {element}
+    scenario:
+      de: >-
+        Die Soft-SPS teilt sich den Rechner mit Visualisierung, Fernwartung und
+        weiteren Anwendungen. Ein Angreifer, der eine dieser Anwendungen
+        übernommen hat, verändert Laufzeitumgebung, Prozessabbild oder
+        Echtzeit-Prioritäten oder belegt CPU und Speicher vollständig.
+      en: >-
+        The soft PLC shares the host with visualisation, remote maintenance and
+        other applications. An attacker who has taken over one of these
+        applications alters the runtime environment, process image or real-time
+        priorities, or fully occupies CPU and memory.
+    consequence:
+      de: >-
+        Zykluszeitverletzungen, Fehlansteuerung oder Stillstand der Maschine.
+        Unkontrollierte Bewegungen können Personen gefährden.
+      en: >-
+        Cycle time violations, faulty control or standstill of the machine.
+        Uncontrolled movements can endanger persons.
+    environment: {interface: local, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-h, AI-I-2-k]
+    attack_ics: [T0835, T0813]
+    emb3d: [TID-304]
+    iec62443: [FR3, FR7]
+    measures: [least-privilege-services, os-hardening, watchdog-safe-state, safety-separation]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: ransomware-windows-ipc
+    rev: 1
+    stride: [D, T]
+    applies_to: [ipc-windows, hmi, engineering-workstation, historian]
+    title:
+      de: Ransomware verschlüsselt den Windows-Rechner {element}
+      en: Ransomware encrypts the Windows host {element}
+    scenario:
+      de: >-
+        Ransomware gelangt über das Büronetz, einen USB-Datenträger oder einen
+        Fernwartungszugang auf {element}. Sie verschlüsselt Visualisierung,
+        Projektdateien, Rezepte und Datenbanken und breitet sich über
+        Netzfreigaben auf weitere Rechner der Anlage aus.
+      en: >-
+        Ransomware reaches {element} via the office network, a USB stick or a
+        remote maintenance access. It encrypts visualisation, project files,
+        recipes and databases and spreads to further hosts of the plant via
+        network shares.
+    consequence:
+      de: >-
+        Die Maschine ist nicht mehr bedienbar, die Produktion steht tage- oder
+        wochenlang still, wenn keine wiederherstellbare Sicherung vorhanden ist.
+      en: >-
+        The machine can no longer be operated; production stops for days or
+        weeks if no restorable backup exists.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-I-2-h, AI-I-2-k]
+    attack_ics: [T0809, T0828, T0826]
+    iec62443: [FR7, FR3]
+    measures: [backup-restore, application-allowlisting, network-segmentation, malware-protection]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- logging --------------------------------------------------------------------
+  - id: security-logging-missing
+    rev: 1
+    stride: [R]
+    applies_to: [ipc-linux, ipc-windows, soft-plc, hmi, mobile-panel, vision-system, engineering-workstation, license-server, log-store, key-store, historian]
+    title:
+      de: Fehlende Sicherheitsprotokollierung lässt Angriffe auf {element} unentdeckt
+      en: Missing security logging leaves attacks on {element} undetected
+    scenario:
+      de: >-
+        {element} protokolliert Anmeldungen, fehlgeschlagene Zugriffe,
+        Programm- und Parameteränderungen, Schlüsselverwendung sowie Updates
+        nicht oder ohne verlässlichen Zeitstempel. Ein Angreifer verändert das
+        System und kann später bestreiten, dass ein Eingriff stattgefunden hat.
+      en: >-
+        {element} does not record logins, failed access attempts, program and
+        parameter changes, key usage and updates, or records them without a
+        reliable time stamp. An attacker alters the system and can later deny
+        that any intervention took place.
+    consequence:
+      de: >-
+        Angriffe werden nicht oder zu spät erkannt, Vorfälle lassen sich weder
+        aufklären noch fristgerecht melden.
+      en: >-
+        Attacks are detected late or not at all; incidents can neither be
+        investigated nor reported in time.
+    impact: 3
+    safety_related: false
+    cra_refs: [AI-I-2-l, Art14]
+    iec62443: [FR6, FR2]
+    measures: [security-logging, time-synchronization, log-protection]
+    sources: ["generic OT threat knowledge"]
+
+  - id: log-tampering
+    rev: 1
+    stride: [T, R]
+    applies_to: [log-store, ipc-linux, ipc-windows, hmi]
+    title:
+      de: Angreifer löscht oder verfälscht Einträge in {element}
+      en: Attacker deletes or falsifies entries in {element}
+    scenario:
+      de: >-
+        Die Protokolle liegen lokal und sind mit denselben Rechten änderbar,
+        mit denen der Angreifer bereits auf das System gelangt ist. Er löscht
+        Einträge zu seinen Anmeldungen und Änderungen oder fügt falsche
+        Einträge ein, um den Verdacht auf andere zu lenken.
+      en: >-
+        The logs are stored locally and can be modified with the same rights
+        the attacker already obtained. He deletes entries about his logins and
+        changes, or inserts false entries to divert suspicion to others.
+    consequence:
+      de: >-
+        Spuren des Angriffs sind beseitigt, die forensische Analyse liefert
+        falsche Ergebnisse und Verantwortliche lassen sich nicht ermitteln.
+      en: >-
+        Traces of the attack are removed; forensic analysis delivers wrong
+        results and responsible persons cannot be identified.
+    environment: {interface: local, access: restricted}
+    impact: 3
+    safety_related: false
+    cra_refs: [AI-I-2-l, AI-I-2-f]
+    attack_ics: [T0872]
+    emb3d: [TID-225]
+    iec62443: [FR6, FR3]
+    measures: [log-protection, security-logging, role-based-access]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: log-sensitive-data-leak
+    rev: 1
+    stride: [I]
+    applies_to: [log-store, ipc-linux, ipc-windows, hmi]
+    title:
+      de: Protokolle in {element} enthalten Passwörter oder personenbezogene Daten
+      en: Logs in {element} contain passwords or personal data
+    scenario:
+      de: >-
+        Anwendungen schreiben Zugangsdaten, Sitzungsschlüssel, vollständige
+        Anfragen oder Namen von Bedienern in die Protokolle. Protokolle werden
+        für Supportfälle exportiert, per E-Mail versendet oder sind über eine
+        Diagnoseseite lesbar, wodurch Unbefugte die Inhalte erhalten.
+      en: >-
+        Applications write credentials, session keys, full requests or operator
+        names into the logs. Logs are exported for support cases, sent by
+        e-mail or readable via a diagnostics page, so unauthorised persons
+        obtain the contents.
+    consequence:
+      de: >-
+        Erbeutete Zugangsdaten ermöglichen weitere Angriffe, personenbezogene
+        Daten werden offengelegt.
+      en: >-
+        Captured credentials enable further attacks; personal data is
+        disclosed.
+    impact: 3
+    safety_related: false
+    cra_refs: [AI-I-2-e, AI-I-2-g]
+    emb3d: [TID-226]
+    iec62443: [FR4]
+    measures: [data-minimisation, role-based-access, log-protection]
+    sources: ["generic OT threat knowledge; MITRE EMB3D"]
+
+  - id: log-flooding
+    rev: 1
+    stride: [D, R]
+    applies_to: [log-store, historian, ipc-linux, ipc-windows]
+    title:
+      de: Gezielte Überflutung füllt {element} und verdrängt Einträge
+      en: Deliberate flooding fills {element} and displaces entries
+    scenario:
+      de: >-
+        Ein Angreifer erzeugt massenhaft Ereignisse, etwa fehlgeschlagene
+        Anmeldungen oder fehlerhafte Anfragen. Der Speicher läuft voll, ältere
+        Einträge werden überschrieben, oder das Dateisystem ist voll und
+        Anwendungen auf dem Rechner versagen.
+      en: >-
+        An attacker generates masses of events, such as failed logins or
+        malformed requests. The storage fills up, older entries are overwritten,
+        or the file system becomes full and applications on the host fail.
+    consequence:
+      de: >-
+        Beweise für den eigentlichen Angriff gehen verloren, im schlimmsten
+        Fall fällt die Steuerungs- oder Bedienfunktion aus.
+      en: >-
+        Evidence of the actual attack is lost; in the worst case the control or
+        operating function fails.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    safety_related: false
+    cra_refs: [AI-I-2-h, AI-I-2-l]
+    attack_ics: [T0872]
+    iec62443: [FR6, FR7]
+    measures: [dos-rate-limiting, log-protection, security-logging]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- data stores ----------------------------------------------------------------
+  - id: recipe-manipulation
+    rev: 1
+    stride: [T]
+    applies_to: [recipe-store, hmi, ipc-windows, ipc-linux]
+    title:
+      de: Manipulation von Rezepten und Parametern in {element}
+      en: Manipulation of recipes and parameters in {element}
+    scenario:
+      de: >-
+        Rezepte und Prozessparameter sind ohne Zugriffsschutz und
+        Integritätsprüfung gespeichert. Ein Angreifer oder unberechtigter
+        Mitarbeiter ändert Temperaturen, Drücke, Geschwindigkeiten oder
+        Dosiermengen. Die Maschine übernimmt die Werte ohne Plausibilitätsprüfung.
+      en: >-
+        Recipes and process parameters are stored without access protection and
+        integrity check. An attacker or unauthorised employee changes
+        temperatures, pressures, speeds or dosing quantities. The machine
+        applies the values without plausibility check.
+    consequence:
+      de: >-
+        Ausschuss, Qualitätsmängel beim Kunden und Schäden an Werkzeug oder
+        Maschine. Extreme Werte können Personen gefährden.
+      en: >-
+        Scrap, quality defects at the customer and damage to tooling or machine.
+        Extreme values can endanger persons.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    attack_ics: [T0836, T0879]
+    iec62443: [FR3, FR2]
+    measures: [recipe-change-approval, parameter-plausibility, config-integrity-check, role-based-access]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: recipe-changes-untraceable
+    rev: 1
+    stride: [R]
+    applies_to: [recipe-store, hmi]
+    title:
+      de: Änderungen an Rezepten in {element} sind nicht nachvollziehbar
+      en: Changes to recipes in {element} are not traceable
+    scenario:
+      de: >-
+        Es gibt keinen Änderungsverlauf für Rezepte und Parameter. Eine Person
+        ändert einen Wert, der später zu Ausschuss oder einem Schaden führt,
+        und kann bestreiten, die Änderung vorgenommen zu haben.
+      en: >-
+        There is no change history for recipes and parameters. A person
+        changes a value that later leads to scrap or damage and can deny having
+        made the change.
+    consequence:
+      de: >-
+        Qualitäts- und Haftungsfragen bleiben ungeklärt, ein Angriff wird nicht
+        als solcher erkannt.
+      en: >-
+        Quality and liability questions remain unresolved; an attack is not
+        recognised as such.
+    impact: 3
+    safety_related: false
+    cra_refs: [AI-I-2-l]
+    iec62443: [FR6, FR2]
+    measures: [security-logging, role-based-access, recipe-change-approval]
+    sources: ["generic OT threat knowledge"]
+
+  - id: recipe-know-how-exfiltration
+    rev: 1
+    stride: [I]
+    applies_to: [recipe-store, historian]
+    title:
+      de: Rezepte und Prozess-Know-how aus {element} werden ausgeleitet
+      en: Recipes and process know-how are exfiltrated from {element}
+    scenario:
+      de: >-
+        {element} ist über Netzfreigaben, Datenbankzugänge oder Exportfunktionen
+        ohne Berechtigungsprüfung lesbar. Ein Angreifer oder Innentäter kopiert
+        Rezepturen und Prozessparameter, die das Ergebnis jahrelanger
+        Optimierung sind.
+      en: >-
+        {element} is readable via network shares, database access or export
+        functions without permission checks. An attacker or insider copies
+        formulations and process parameters that are the result of years of
+        optimisation.
+    consequence:
+      de: >-
+        Verlust von Betriebsgeheimnissen und Wettbewerbsvorteil des Betreibers.
+      en: >-
+        Loss of trade secrets and of the operator's competitive advantage.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-I-2-e, AI-I-2-d]
+    attack_ics: [T0882, T0811]
+    iec62443: [FR4, FR2]
+    measures: [role-based-access, data-encryption-rest, data-minimisation]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: data-store-destruction
+    rev: 1
+    stride: [D]
+    applies_to: [recipe-store, historian, key-store]
+    title:
+      de: Angreifer löscht oder verschlüsselt den Datenbestand in {element}
+      en: Attacker deletes or encrypts the data in {element}
+    scenario:
+      de: >-
+        Ein Angreifer mit Schreibzugriff löscht, überschreibt oder verschlüsselt
+        den Inhalt von {element}, etwa Rezepte, Prozesshistorie oder
+        Zertifikate. Eine getrennt aufbewahrte, getestete Sicherung existiert
+        nicht.
+      en: >-
+        An attacker with write access deletes, overwrites or encrypts the
+        content of {element}, such as recipes, process history or certificates.
+        No separately stored, tested backup exists.
+    consequence:
+      de: >-
+        Die Produktion kann nicht fortgesetzt werden, Nachweise gehen verloren
+        und die Wiederherstellung dauert lange.
+      en: >-
+        Production cannot continue, records are lost and recovery takes a long
+        time.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-I-2-h]
+    attack_ics: [T0809]
+    iec62443: [FR7, FR2]
+    measures: [backup-restore, role-based-access]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: historian-data-falsification
+    rev: 1
+    stride: [T]
+    applies_to: [historian]
+    title:
+      de: Verfälschung der Prozessdatenhistorie in {element}
+      en: Falsification of process data history in {element}
+    scenario:
+      de: >-
+        Ein Angreifer oder Innentäter ändert nachträglich Messwerte,
+        Chargendaten oder Alarmverläufe im Archiv, etwa um eine Störung zu
+        verschleiern oder Qualitätsnachweise zu fälschen. Das Archiv erkennt
+        Änderungen an bereits gespeicherten Daten nicht.
+      en: >-
+        An attacker or insider subsequently alters measured values, batch data
+        or alarm histories in the archive, for example to conceal a fault or to
+        forge quality records. The archive does not detect changes to data
+        already stored.
+    consequence:
+      de: >-
+        Qualitäts- und Rückverfolgbarkeitsnachweise sind wertlos, Analysen und
+        Optimierungen beruhen auf falschen Daten.
+      en: >-
+        Quality and traceability records become worthless; analyses and
+        optimisations rely on false data.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    safety_related: false
+    cra_refs: [AI-I-2-f]
+    attack_ics: [T0836]
+    iec62443: [FR3]
+    measures: [role-based-access, config-integrity-check, security-logging, backup-restore]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: historian-data-theft
+    rev: 1
+    stride: [I]
+    applies_to: [historian]
+    title:
+      de: Unbefugter Abruf von Produktionsdaten aus {element}
+      en: Unauthorised retrieval of production data from {element}
+    scenario:
+      de: >-
+        Der Historian ist für Auswertungen aus dem Büronetz erreichbar und
+        verwendet ein gemeinsames Lesekonto oder unverschlüsselte
+        Verbindungen. Ein Angreifer liest Auslastung, Stückzahlen und
+        Prozessverläufe aus und erhält damit Einblick in die Produktion.
+      en: >-
+        The historian is reachable from the office network for analyses and
+        uses a shared read account or unencrypted connections. An attacker reads
+        utilisation, quantities and process histories and thereby gains insight
+        into production.
+    consequence:
+      de: >-
+        Abfluss vertraulicher Betriebsdaten und Vorbereitung gezielter Angriffe
+        auf die Anlage.
+      en: >-
+        Leakage of confidential operating data and preparation of targeted
+        attacks on the plant.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    safety_related: false
+    cra_refs: [AI-I-2-e]
+    attack_ics: [T0811, T0882]
+    iec62443: [FR4]
+    measures: [role-based-access, data-encryption-transit, network-segmentation]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: trust-store-manipulation
+    rev: 1
+    stride: [T, S]
+    applies_to: [key-store, ipc-linux, ipc-windows]
+    title:
+      de: Fremde Zertifikate werden in {element} als vertrauenswürdig eingetragen
+      en: Foreign certificates are added to {element} as trusted
+    scenario:
+      de: >-
+        Der Speicher für vertrauenswürdige Zertifikate ist für Anwendungen oder
+        Bediener ohne besondere Berechtigung beschreibbar. Ein Angreifer trägt
+        ein eigenes Zertifikat ein oder ersetzt einen Schlüssel. Danach
+        akzeptiert das Gerät seine Server, Clients oder signierten Pakete als
+        echt.
+      en: >-
+        The store of trusted certificates is writable by applications or
+        operators without special permission. An attacker adds his own
+        certificate or replaces a key. Afterwards the device accepts his
+        servers, clients or signed packages as genuine.
+    consequence:
+      de: >-
+        Verschlüsselung und Authentisierung werden unbemerkt ausgehebelt, der
+        Angreifer kann Verbindungen mitlesen und Daten einschleusen.
+      en: >-
+        Encryption and authentication are silently undermined; the attacker can
+        read connections and inject data.
+    environment: {interface: local, access: restricted}
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    iec62443: [FR3, FR1]
+    measures: [certificate-management, secrets-protected-storage, config-integrity-check]
+    sources: ["generic OT threat knowledge"]
+
+  # --- license ------------------------------------------------------------------
+  - id: license-failure-production-stop
+    rev: 1
+    stride: [D, T]
+    applies_to: [license-server, ipc-windows, soft-plc, hmi, engineering-workstation]
+    title:
+      de: Ausfall oder Manipulation von {element} stoppt die Produktion
+      en: Failure or manipulation of {element} stops production
+    scenario:
+      de: >-
+        Steuerungs- oder Visualisierungssoftware prüft ihre Lizenz laufend bei
+        einem Lizenzserver oder Dongle. Ein Angreifer blockiert die
+        Netzverbindung zum Lizenzserver, verändert die Lizenzdatei, entfernt
+        den Dongle oder setzt die Systemzeit vor, sodass Lizenzen als
+        abgelaufen gelten.
+      en: >-
+        Control or visualisation software continuously checks its licence with
+        a license server or dongle. An attacker blocks the network connection
+        to the license server, alters the licence file, removes the dongle or
+        sets the system time forward so that licences appear expired.
+    consequence:
+      de: >-
+        Software startet nicht mehr oder schaltet in einen Demo-Modus, die
+        Maschine steht still und es entstehen Produktionsausfälle.
+      en: >-
+        Software no longer starts or switches to a demo mode; the machine stops
+        and production is lost.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    safety_related: false
+    cra_refs: [AI-I-2-h]
+    attack_ics: [T0828, T0826]
+    iec62443: [FR7]
+    measures: [license-grace-operation, time-synchronization, network-segmentation, physical-access-control]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: license-server-spoofing
+    rev: 1
+    stride: [S]
+    applies_to: [license-server]
+    title:
+      de: Gefälschter Lizenzserver oder Dongle-Emulator ersetzt {element}
+      en: Fake license server or dongle emulator replaces {element}
+    scenario:
+      de: >-
+        Die Software prüft nicht, ob sie mit dem echten Lizenzserver oder Dongle
+        kommuniziert. Ein Angreifer stellt einen eigenen Lizenzdienst oder einen
+        Dongle-Emulator bereit, häufig in Form eines aus dem Internet geladenen
+        Hilfsprogramms, das zusätzlich Schadcode enthält, und gibt Lizenzen
+        frei oder entzieht sie gezielt.
+      en: >-
+        The software does not verify that it communicates with the genuine
+        license server or dongle. An attacker provides his own licence service
+        or a dongle emulator, often as a tool downloaded from the internet that
+        also contains malicious code, and grants or selectively revokes
+        licences.
+    consequence:
+      de: >-
+        Schadcode gelangt mit hohen Rechten auf den Rechner, und der Angreifer
+        kann die Produktion durch Entzug der Lizenzen jederzeit stoppen.
+      en: >-
+        Malicious code reaches the host with high privileges, and the attacker
+        can stop production at any time by revoking licences.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    safety_related: false
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T0849]
+    iec62443: [FR1]
+    measures: [mutual-tls, certificate-management, application-allowlisting]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: license-service-exploit
+    rev: 1
+    stride: [I, E]
+    applies_to: [license-server]
+    title:
+      de: Netzwerkdienst des {element} als Einfallstor mit hohen Rechten
+      en: Network service of {element} as an entry point with high privileges
+    scenario:
+      de: >-
+        Der Lizenzdienst lauscht im Netz, läuft mit Administrator- oder
+        SYSTEM-Rechten und wird selten aktualisiert. Ein Angreifer nutzt eine
+        Schwachstelle im Dienst, um Code auszuführen oder Informationen über
+        installierte Software, Rechner und Lizenzen abzufragen.
+      en: >-
+        The licence service listens on the network, runs with administrator or
+        SYSTEM rights and is rarely updated. An attacker exploits a
+        vulnerability in the service to execute code or to query information
+        about installed software, hosts and licences.
+    consequence:
+      de: >-
+        Übernahme des Rechners mit höchsten Rechten und Ausgangspunkt für
+        weitere Angriffe auf die Anlage.
+      en: >-
+        Takeover of the host with highest privileges and a starting point for
+        further attacks on the plant.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-I-2-a, AI-I-2-j]
+    attack_ics: [T0866, T0890]
+    iec62443: [FR3, FR5]
+    measures: [patch-management-os, least-privilege-services, firewall-allowlist, supplier-vulnerability-monitoring]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- lifecycle ------------------------------------------------------------------
+  - id: decommissioning-data-remains
+    rev: 1
+    stride: [I]
+    applies_to: [ipc-linux, ipc-windows, hmi, mobile-panel, vision-system, engineering-workstation, plc, key-store, recipe-store, historian]
+    title:
+      de: Daten und Zugangsdaten bleiben bei Außerbetriebnahme oder Weiterverkauf auf {element}
+      en: Data and credentials remain on {element} after decommissioning or resale
+    scenario:
+      de: >-
+        {element} wird ausgetauscht, verschrottet, zur Reparatur eingeschickt
+        oder mit der Maschine weiterverkauft, ohne dass Programme, Rezepte,
+        Protokolle, Zertifikate und Passwörter sicher gelöscht werden. Der neue
+        Besitzer oder ein Dritter liest den Speicher aus.
+      en: >-
+        {element} is replaced, scrapped, sent in for repair or resold with the
+        machine without programs, recipes, logs, certificates and passwords
+        being securely erased. The new owner or a third party reads the
+        memory.
+    consequence:
+      de: >-
+        Abfluss von Know-how und Zugangsdaten, mit denen sich noch laufende
+        Anlagen oder Fernwartungszugänge angreifen lassen.
+      en: >-
+        Leakage of know-how and credentials that can be used to attack plants
+        still in operation or remote maintenance accesses.
+    environment: {interface: physical, access: movable}
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-I-2-m, AI-I-2-e]
+    iec62443: [FR4]
+    measures: [secure-decommissioning, factory-reset, data-encryption-rest, user-security-documentation]
+    sources: ["generic OT threat knowledge"]

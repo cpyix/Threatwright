@@ -1,0 +1,361 @@
+measures:
+  - id: network-segmentation
+    rev: 1
+    title:
+      de: Netzwerksegmentierung der Maschine
+      en: Network segmentation of the machine
+    description:
+      de: >-
+        Das Maschinennetz wird als eigene Zone ausgeführt und vom Produktions- bzw.
+        Büronetz des Betreibers durch einen Router oder eine Firewall getrennt.
+        Feldbusse, Sicherheitssteuerung und Bedien-/Serviceebene liegen in getrennten
+        Segmenten (eigene Subnetze oder VLANs); Übergänge gibt es nur an definierten
+        Stellen. So erreichen ungeschützte Steuerungsprotokolle das übergeordnete Netz nicht.
+      en: >-
+        The machine network is designed as a separate zone, separated from the operator's
+        production or office network by a router or firewall. Fieldbuses, safety controller
+        and HMI/service level reside in separate segments (own subnets or VLANs) with
+        transitions only at defined points. This keeps unprotected control protocols out of
+        the higher-level network.
+    kind: technical
+    compensating: true
+    evidence:
+      de: >-
+        Netzwerkplan mit Zonen und Übergängen (Zones-and-Conduits-Zeichnung),
+        Konfigurationsexport von Router/Switch, Prüfprotokoll der Erreichbarkeit aus dem
+        Betreibernetz.
+      en: >-
+        Network drawing with zones and transitions (zones and conduits diagram),
+        configuration export of router/switch, test report on reachability from the
+        operator network.
+    cra_refs: [AI-I-2-j, AI-I-2-i]
+    iec62443: [FR5]
+    sources: ["generic OT security practice; IEC 62443-3-2 zones and conduits concept"]
+
+  - id: firewall-allowlist
+    rev: 1
+    title:
+      de: Firewall mit Allowlist-Regelwerk
+      en: Firewall with allowlist rule set
+    description:
+      de: >-
+        Am Übergang zwischen Maschinennetz und Betreibernetz wird eine Firewall eingesetzt,
+        deren Regelwerk standardmäßig alles verbietet und nur die benötigten Verbindungen
+        (Quelle, Ziel, Port, Richtung) erlaubt. Jede Regel ist mit ihrem Zweck dokumentiert.
+        Feldbus- und Programmierprotokolle werden nicht nach außen freigegeben.
+      en: >-
+        A firewall is placed at the transition between machine network and operator
+        network; its rule set denies everything by default and only permits the required
+        connections (source, destination, port, direction). Each rule is documented with its
+        purpose. Fieldbus and programming protocols are not exposed to the outside.
+    kind: technical
+    compensating: true
+    evidence:
+      de: >-
+        Exportiertes Firewall-Regelwerk mit Begründung je Regel, Portscan-Bericht von
+        der Betreiberseite.
+      en: >-
+        Exported firewall rule set with justification per rule, port scan report from the
+        operator side.
+    cra_refs: [AI-I-2-j, AI-I-2-d]
+    iec62443: [FR5]
+    sources: ["generic OT security practice"]
+
+  - id: fieldbus-physical-protection
+    rev: 1
+    title:
+      de: Physischer Schutz des Feldbusses
+      en: Physical protection of the fieldbus
+    description:
+      de: >-
+        Feldbusleitungen, Abzweige und Steckverbinder werden innerhalb abschließbarer
+        Schaltschränke, Kabelkanäle oder geschützter Maschinenbereiche verlegt. Freie
+        Ports an Feldbusteilnehmern und Verteilern werden mit Blindstopfen oder
+        verriegelbaren Abdeckungen verschlossen. So kann niemand ohne Werkzeug und
+        Schlüssel ein Fremdgerät an den Bus anschließen.
+      en: >-
+        Fieldbus cables, branches and connectors are routed inside lockable control
+        cabinets, cable ducts or protected machine areas. Free ports on fieldbus devices and
+        junctions are closed with blanking plugs or lockable covers. This prevents anyone
+        from connecting a foreign device to the bus without tools and keys.
+    kind: technical
+    compensating: true
+    evidence:
+      de: >-
+        Elektroplan bzw. Aufbauplan mit Leitungsführung, Fotodokumentation der
+        verschlossenen Ports, Abnahmecheckliste.
+      en: >-
+        Electrical or layout drawing with cable routing, photo documentation of closed
+        ports, acceptance checklist.
+    cra_refs: [AI-I-2-j]
+    iec62443: [FR5]
+    sources: ["generic OT security practice; CRA protocols without security mechanisms"]
+
+  - id: unused-ports-closed
+    rev: 1
+    title:
+      de: Ungenutzte Ports und Dienste deaktiviert
+      en: Unused ports and services disabled
+    description:
+      de: >-
+        Nicht benötigte Switch-Ports, Netzwerkschnittstellen und Netzwerkdienste (z. B.
+        Webserver, FTP, Telnet, SNMP) werden in Steuerung, Bediengerät und Switch
+        deaktiviert. Ungenutzte physische Buchsen werden zusätzlich mechanisch verschlossen.
+        Die Liste der offenen Ports wird je Gerät dokumentiert und bei jeder Änderung geprüft.
+      en: >-
+        Unneeded switch ports, network interfaces and network services (e.g. web server,
+        FTP, Telnet, SNMP) are disabled on controller, HMI and switch. Unused physical
+        sockets are additionally closed mechanically. The list of open ports is documented
+        per device and reviewed on every change.
+    kind: technical
+    compensating: true
+    evidence:
+      de: >-
+        Portscan-Bericht je Gerät, Konfigurationsexport der Switches mit deaktivierten
+        Ports, Fotos der verschlossenen Buchsen.
+      en: >-
+        Port scan report per device, switch configuration export with disabled ports,
+        photos of closed sockets.
+    cra_refs: [AI-I-2-j, AI-I-2-b]
+    iec62443: [FR7, FR5]
+    sources: ["generic OT security practice"]
+
+  - id: fieldbus-topology-monitoring
+    rev: 1
+    title:
+      de: Überwachung der Feldbustopologie
+      en: Fieldbus topology monitoring
+    description:
+      de: >-
+        Die Steuerung vergleicht beim Hochlauf und zyklisch die tatsächlich gefundenen
+        Teilnehmer (Anzahl, Adresse, Hersteller-/Produktkennung, Seriennummer, wo verfügbar)
+        mit der projektierten Soll-Topologie. Bei Abweichung, z. B. einem zusätzlichen
+        oder ausgetauschten Teilnehmer, wird der Betrieb nicht freigegeben oder die Maschine
+        in einen sicheren Zustand gebracht und eine Meldung ausgegeben.
+      en: >-
+        At startup and cyclically, the controller compares the devices actually found
+        (count, address, vendor/product code, serial number where available) with the
+        configured target topology. On deviation, e.g. an additional or replaced device,
+        operation is not enabled or the machine is brought into a safe state and an alarm
+        is raised.
+    kind: technical
+    compensating: true
+    evidence:
+      de: >-
+        Auszug der Soll-Topologie aus dem Steuerungsprojekt, Testprotokoll mit
+        eingefügtem bzw. getauschtem Teilnehmer und beobachteter Reaktion.
+      en: >-
+        Extract of the target topology from the controller project, test report with an
+        inserted or replaced device and the observed reaction.
+    cra_refs: [AI-I-2-f, AI-I-2-l]
+    iec62443: [FR3, FR6]
+    sources: ["generic OT security practice; CRA protocols without security mechanisms"]
+
+  - id: fieldbus-tunnel-disabled
+    rev: 1
+    title:
+      de: Feldbus-Tunnelung deaktiviert
+      en: Fieldbus tunnelling disabled
+    description:
+      de: >-
+        Funktionen, die Ethernet- oder IP-Verkehr über den Feldbus tunneln (z. B.
+        Ethernet-over-EtherCAT, IP-Routing über Buskoppler), werden abgeschaltet, sofern sie
+        im Betrieb nicht benötigt werden. Wo sie für die Diagnose nötig sind, wird der Zugang
+        nur zeitlich begrenzt und auf definierte Teilnehmer freigegeben. So wird der Feldbus
+        nicht zur Brücke ins Maschinen- oder Betreibernetz.
+      en: >-
+        Functions that tunnel Ethernet or IP traffic over the fieldbus (e.g.
+        Ethernet-over-EtherCAT, IP routing via bus couplers) are switched off unless needed
+        in operation. Where they are needed for diagnostics, access is enabled only
+        temporarily and for defined devices. This prevents the fieldbus from becoming a
+        bridge into the machine or operator network.
+    kind: technical
+    compensating: true
+    evidence:
+      de: >-
+        Konfigurationsexport des Feldbus-Masters mit deaktivierter Tunnelfunktion,
+        Prüfprotokoll eines fehlgeschlagenen Verbindungsversuchs.
+      en: >-
+        Configuration export of the fieldbus master with tunnelling disabled, test report of
+        a failed connection attempt.
+    cra_refs: [AI-I-2-j]
+    iec62443: [FR5]
+    sources: ["generic OT security practice"]
+
+  - id: fieldbus-mailbox-restriction
+    rev: 1
+    title:
+      de: Einschränkung azyklischer Feldbusdienste
+      en: Restriction of acyclic fieldbus services
+    description:
+      de: >-
+        Azyklische Dienste wie Mailbox-, SDO- oder Record-Zugriffe, über die Parameter und
+        Konfiguration von Antrieben und E/A-Modulen geändert werden können, werden auf die
+        benötigten Objekte beschränkt oder im Betrieb gesperrt. Schreibzugriffe auf
+        sicherheits- oder prozesskritische Parameter sind nur im Einrichtbetrieb möglich.
+      en: >-
+        Acyclic services such as mailbox, SDO or record access, through which parameters and
+        configuration of drives and I/O modules can be changed, are restricted to the required
+        objects or blocked during operation. Write access to safety- or process-critical
+        parameters is only possible in setup mode.
+    kind: technical
+    compensating: true
+    evidence:
+      de: >-
+        Liste der freigegebenen Objekte je Teilnehmer, Konfigurationsexport, Testprotokoll
+        eines abgewiesenen Schreibzugriffs im Automatikbetrieb.
+      en: >-
+        List of permitted objects per device, configuration export, test report of a
+        rejected write access in automatic mode.
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    iec62443: [FR2, FR3]
+    sources: ["generic OT security practice"]
+
+  - id: fieldbus-firmware-download-lock
+    rev: 1
+    title:
+      de: Sperre für Firmware-Download über den Feldbus
+      en: Lock for firmware download via fieldbus
+    description:
+      de: >-
+        Das Laden von Firmware in Feldbusteilnehmer (z. B. über File-over-Fieldbus oder
+        Bootloader-Zustände) wird im Normalbetrieb gesperrt und nur in einem eigens
+        aktivierten Wartungsmodus zugelassen. Wo möglich, akzeptieren die Teilnehmer nur
+        signierte Firmware. Die Freigabe des Wartungsmodus wird protokolliert.
+      en: >-
+        Loading firmware into fieldbus devices (e.g. via file-over-fieldbus or bootloader
+        states) is blocked in normal operation and only allowed in a specifically activated
+        maintenance mode. Where possible, devices only accept signed firmware. Activation of
+        the maintenance mode is logged.
+    kind: technical
+    compensating: true
+    evidence:
+      de: >-
+        Testprotokoll eines abgewiesenen Firmware-Downloads im Normalbetrieb,
+        Wartungsanweisung, Logauszug zur Aktivierung des Wartungsmodus.
+      en: >-
+        Test report of a rejected firmware download in normal operation, maintenance
+        instruction, log extract of maintenance mode activation.
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    iec62443: [FR3]
+    sources: ["generic OT security practice"]
+
+  - id: protocol-security-extension
+    rev: 1
+    title:
+      de: Sicherheitserweiterung des Protokolls nutzen
+      en: Use protocol security extension
+    description:
+      de: >-
+        Wo das eingesetzte Protokoll eine Sicherheitserweiterung bietet (z. B. Security-Profil
+        für PROFINET, Modbus/TCP Security, CIP Security), wird diese aktiviert und
+        konfiguriert, sofern alle beteiligten Geräte sie unterstützen. Bei der
+        Komponentenauswahl wird die Unterstützung solcher Erweiterungen als Kriterium
+        berücksichtigt.
+      en: >-
+        Where the protocol in use offers a security extension (e.g. security profile for
+        PROFINET, Modbus/TCP Security, CIP Security), it is activated and configured,
+        provided all involved devices support it. Support for such extensions is used as a
+        criterion when selecting components.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Konfigurationsexport mit aktivierter Sicherheitserweiterung, Mitschnitt bzw.
+        Testprotokoll, das authentisierte oder verschlüsselte Kommunikation zeigt.
+      en: >-
+        Configuration export with security extension enabled, capture or test report
+        showing authenticated or encrypted communication.
+    cra_refs: [AI-I-2-d, AI-I-2-e, AI-I-2-f]
+    iec62443: [FR1, FR3, FR4]
+    sources: ["generic OT security practice"]
+
+  - id: dos-rate-limiting
+    rev: 1
+    title:
+      de: Lastbegrenzung gegen Überflutung
+      en: Rate limiting against flooding
+    description:
+      de: >-
+        Switches und Netzwerkschnittstellen der Steuerung begrenzen Broadcast-, Multicast-
+        und Unicast-Last (Storm Control, Rate Limiting, Priorisierung des
+        Echtzeitverkehrs). Die Steuerung wird gegen Lasttests geprüft, sodass die zyklische
+        Kommunikation und die Sicherheitsfunktionen auch bei Überflutung der
+        Netzwerkschnittstelle erhalten bleiben.
+      en: >-
+        Switches and controller network interfaces limit broadcast, multicast and unicast
+        load (storm control, rate limiting, prioritisation of real-time traffic). The
+        controller is tested under load so that cyclic communication and safety functions
+        are maintained even when the network interface is flooded.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Switch-Konfigurationsexport (Storm Control, QoS), Lasttestbericht mit
+        beobachtetem Verhalten der Steuerung.
+      en: >-
+        Switch configuration export (storm control, QoS), load test report with the
+        observed behaviour of the controller.
+    cra_refs: [AI-I-2-h, AI-I-2-i]
+    iec62443: [FR7]
+    sources: ["generic OT security practice"]
+
+  - id: watchdog-safe-state
+    rev: 1
+    title:
+      de: Kommunikationsüberwachung mit sicherem Zustand
+      en: Communication watchdog with safe state
+    description:
+      de: >-
+        Steuerung, Antriebe und E/A-Module überwachen den zyklischen Datenaustausch mit
+        einem Watchdog. Fällt die Kommunikation aus oder kommen Daten verspätet oder
+        unplausibel an, gehen die Ausgänge in einen definierten, gefahrlosen Zustand. Die
+        Ersatzwerte und Reaktionszeiten werden je Teilnehmer festgelegt und getestet.
+      en: >-
+        Controller, drives and I/O modules monitor the cyclic data exchange with a watchdog.
+        If communication fails or data arrives late or implausible, outputs go to a defined,
+        non-hazardous state. Substitute values and reaction times are defined and tested per
+        device.
+    kind: design
+    compensating: false
+    evidence:
+      de: >-
+        Parametrierung der Watchdog-Zeiten und Ersatzwerte, Testprotokoll mit
+        unterbrochener Kommunikation.
+      en: >-
+        Parameterisation of watchdog times and substitute values, test report with
+        interrupted communication.
+    cra_refs: [AI-I-2-h, AI-I-2-k]
+    iec62443: [FR7]
+    sources: ["generic OT security practice"]
+
+  - id: network-monitoring-ids
+    rev: 1
+    title:
+      de: Netzwerküberwachung und Angriffserkennung
+      en: Network monitoring and intrusion detection
+    description:
+      de: >-
+        Der Verkehr im Maschinennetz wird passiv mitgelesen (Spiegelport oder TAP) und gegen
+        eine erlernte oder projektierte Kommunikationsbasis verglichen. Neue Teilnehmer,
+        unbekannte Verbindungen, Programmier- oder Schreibbefehle außerhalb von Wartungsfenstern
+        lösen eine Meldung aus. Die Meldungen werden an das Leitsystem oder das
+        Sicherheitsmonitoring des Betreibers weitergegeben.
+      en: >-
+        Traffic in the machine network is captured passively (mirror port or TAP) and
+        compared against a learned or configured communication baseline. New devices,
+        unknown connections, and programming or write commands outside maintenance windows
+        raise an alert. Alerts are forwarded to the control system or the operator's
+        security monitoring.
+    kind: technical
+    compensating: true
+    evidence:
+      de: >-
+        Netzwerkplan mit Messpunkt, Konfiguration der Erkennungsregeln, Testprotokoll einer
+        ausgelösten Meldung.
+      en: >-
+        Network drawing with capture point, configuration of detection rules, test report
+        of a triggered alert.
+    cra_refs: [AI-I-2-l]
+    iec62443: [FR6]
+    sources: ["generic OT security practice"]

@@ -1,0 +1,16 @@
+# IEC 62443 foundational requirements (FR). Only the seven FR identifiers are
+# listed; specific SR/CR numbers are not included because the standard text
+# is not freely available for verification (see docs/VERIFY.md).
+schema_version: 1
+id: iec62443
+title: IEC 62443-3-3 / 62443-4-2 foundational requirements
+version: FR 1-7
+source: IEC 62443-1-1, IEC 62443-3-3, IEC 62443-4-2
+entries:
+  FR1: Identification and authentication control (IAC)
+  FR2: Use control (UC)
+  FR3: System integrity (SI)
+  FR4: Data confidentiality (DC)
+  FR5: Restricted data flow (RDF)
+  FR6: Timely response to events (TRE)
+  FR7: Resource availability (RA)

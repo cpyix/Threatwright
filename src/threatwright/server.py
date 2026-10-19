@@ -1,0 +1,455 @@
+"""Local web server for the GUI (ADR-0003, ADR-0007).
+
+Binds to 127.0.0.1 only, requires a per-start session token on every API
+call, rejects foreign Host headers (DNS rebinding) and sends a strict CSP.
+The server holds exactly one open project in memory; files are written only
+on an explicit save.
+"""
+
+import json
+import os
+import re
+import secrets
+import threading
+from pathlib import Path
+from typing import Any
+
+from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.responses import FileResponse, JSONResponse
+from pydantic import ValidationError
+
+from threatwright import __version__
+from threatwright.branding import PRODUCT_NAME, PROJECT_FILE
+from threatwright.library import Libraries, load_libraries
+from threatwright.method import (
+    Method,
+    MethodError,
+    asset_impact,
+    evaluate,
+    load_method,
+    suggest_impact,
+)
+from threatwright.model.objects import COLLECTIONS, Asset, ModelMeta, ModelObject, Threat, new_uuid
+from threatwright.model.store import LoadError, Project, SubModel
+from threatwright.rules import relative, validate
+
+WEB_DIR = Path(__file__).parent / "web"
+TOKEN_HEADER = "X-Threatwright-Token"  # noqa: S105 - header name, not a secret
+MODEL_NAME = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
+MAX_BODY = 1 << 20
+CSP = (
+    "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
+    "font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; "
+    "form-action 'none'; frame-ancestors 'none'"
+)
+
+
+def _snapshot(root: Path) -> dict[str, tuple[int, int]]:
+    """mtime and size of every YAML file, to detect changes from outside."""
+    out = {}
+    for path in root.rglob("*.yaml"):
+        if "build" in path.relative_to(root).parts:
+            continue
+        st = path.stat()
+        out[path.relative_to(root).as_posix()] = (st.st_mtime_ns, st.st_size)
+    return out
+
+
+class Session:
+    """The one project open in this server, plus undo history."""
+
+    def __init__(self) -> None:
+        self.lock = threading.RLock()
+        self.project: Project | None = None
+        self.method: Method | None = None
+        self.libs: Libraries | None = None
+        self.files: dict[str, tuple[int, int]] = {}
+        self.undo: list[dict[str, SubModel]] = []
+        self.redo: list[dict[str, SubModel]] = []
+        self.dirty = False
+
+    def open(self, root: Path) -> None:
+        project = Project.load(root)
+        self.project = project
+        try:
+            self.method = load_method(project.root, project.config)
+        except MethodError:
+            self.method = None  # reported by validate()
+        self.libs = load_libraries(project.config.libraries, project.root)
+        self.files = _snapshot(project.root)
+        self.undo.clear()
+        self.redo.clear()
+        self.dirty = False
+
+    def require(self) -> Project:
+        if self.project is None:
+            raise HTTPException(409, "no project open")
+        return self.project
+
+    def model(self, name: str) -> SubModel:
+        sub = self.require().models.get(name)
+        if sub is None:
+            raise HTTPException(404, f"model '{name}' not found")
+        return sub
+
+    def checkpoint(self) -> None:
+        """Remember the state before a change (undo/redo within the session)."""
+        project = self.require()
+        self.undo.append({k: _copy_model(v) for k, v in project.models.items()})
+        del self.undo[:-100]
+        self.redo.clear()
+        self.dirty = True
+
+    def save(self) -> list[str]:
+        project = self.require()
+        written = project.save()
+        self.files = _snapshot(project.root)
+        self.dirty = False
+        return [p.relative_to(project.root).as_posix() for p in written]
+
+
+def _copy_model(sub: SubModel) -> SubModel:
+    return SubModel(
+        sub.name,
+        sub.meta.model_copy(deep=True),
+        sub.layout.model_copy(deep=True),
+        {
+            c: {i: o.model_copy(deep=True) for i, o in objs.items()}
+            for c, objs in sub.objects.items()
+        },
+    )
+
+
+def _collection(name: str) -> type[ModelObject]:
+    cls = COLLECTIONS.get(name)
+    if cls is None:
+        raise HTTPException(404, f"unknown collection '{name}'")
+    return cls
+
+
+def _parse[T: ModelObject](cls: type[T], data: Any) -> T:
+    try:
+        return cls.model_validate(data)
+    except ValidationError as exc:
+        raise HTTPException(422, json.loads(exc.json(include_url=False))) from exc
+
+
+def recent_file() -> Path:
+    """Per-user list of recently opened projects (not model data)."""
+    override = os.environ.get("THREATWRIGHT_CONFIG_DIR")
+    if override:
+        return Path(override) / "recent.json"
+    base = os.environ.get("APPDATA") or os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config"
+    return Path(base) / PRODUCT_NAME.lower() / "recent.json"
+
+
+def _recent(add: Path | None = None) -> list[str]:
+    path = recent_file()
+    try:
+        items: list[str] = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        items = []
+    if add is not None:
+        items = [str(add.resolve())] + [i for i in items if i != str(add.resolve())]
+        items = items[:10]
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(items, indent=2), encoding="utf-8")
+        except OSError:
+            pass  # recent list is a convenience only
+    return [i for i in items if (Path(i) / PROJECT_FILE).exists()]
+
+
+def create_app(token: str, port: int | None = None, project: Path | None = None) -> FastAPI:
+    app = FastAPI(title=PRODUCT_NAME, docs_url=None, redoc_url=None, openapi_url=None)
+    session = Session()
+    app.state.session = session
+    if project is not None:
+        try:
+            session.open(project)
+            _recent(project)
+        except LoadError as exc:
+            print(f"warning: {exc}")  # GUI starts on the start page instead
+
+    @app.middleware("http")
+    async def guard(request: Request, call_next: Any) -> Response:
+        host = request.headers.get("host", "")
+        allowed = (
+            {"127.0.0.1", "localhost"}
+            if port is None
+            else {f"127.0.0.1:{port}", f"localhost:{port}"}
+        )
+        if port is None:
+            host = host.split(":")[0]
+        if host not in allowed:
+            return JSONResponse({"detail": "forbidden host"}, status_code=403)
+        if request.url.path.startswith("/api/"):
+            sent = request.headers.get(TOKEN_HEADER, "")
+            if not secrets.compare_digest(sent, token):
+                return JSONResponse({"detail": "invalid session token"}, status_code=401)
+            if int(request.headers.get("content-length") or 0) > MAX_BODY:
+                return JSONResponse({"detail": "request too large"}, status_code=413)
+        response: Response = await call_next(request)
+        response.headers["Content-Security-Policy"] = CSP
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["Cache-Control"] = "no-store"
+        return response
+
+    # --- app and project --------------------------------------------------------
+
+    @app.get("/api/app")
+    def app_info() -> dict[str, Any]:
+        return {"product": PRODUCT_NAME, "version": __version__, "recent": _recent()}
+
+    @app.post("/api/project/open")
+    def open_project(body: dict[str, str]) -> dict[str, Any]:
+        path = Path(body.get("path", ""))
+        with session.lock:
+            try:
+                session.open(path)
+            except (LoadError, OSError) as exc:
+                raise HTTPException(400, str(exc)) from exc
+            _recent(path)
+            return project_info()
+
+    @app.get("/api/project")
+    def project_info() -> dict[str, Any]:
+        with session.lock:
+            project = session.require()
+            return {
+                "root": str(project.root.resolve()),
+                "config": project.config.model_dump(mode="json"),
+                "custom_fields": project.custom_fields.model_dump(mode="json"),
+                "models": {
+                    name: {
+                        "title": sub.meta.title,
+                        "counts": {c: len(o) for c, o in sub.objects.items()},
+                    }
+                    for name, sub in project.models.items()
+                },
+                "dirty": session.dirty,
+                "can_undo": bool(session.undo),
+                "can_redo": bool(session.redo),
+            }
+
+    @app.get("/api/method")
+    def method_info() -> dict[str, Any]:
+        with session.lock:
+            session.require()
+            if session.method is None:
+                raise HTTPException(409, "method invalid, see validation")
+            return session.method.model_dump(mode="json")
+
+    @app.post("/api/models")
+    def create_model(body: dict[str, str]) -> dict[str, Any]:
+        name = body.get("name", "")
+        if not MODEL_NAME.match(name):
+            raise HTTPException(422, "model name: lowercase letters, digits, - and _")
+        with session.lock:
+            project = session.require()
+            if name in project.models:
+                raise HTTPException(409, f"model '{name}' exists")
+            session.checkpoint()
+            project.models[name] = SubModel(name, ModelMeta(title=body.get("title") or name))
+            return project_info()
+
+    # --- model content ------------------------------------------------------------
+
+    def model_payload(sub: SubModel) -> dict[str, Any]:
+        project = session.require()
+        threats = {i: t for i, t in sub.objects["threats"].items() if isinstance(t, Threat)}
+        assets = {i: a for i, a in sub.objects["assets"].items() if isinstance(a, Asset)}
+        evaluations: dict[str, Any] = {}
+        if session.method is not None:
+            for tid, t in threats.items():
+                evaluations[tid] = _evaluation(session.method, t, assets, project)
+        return {
+            "name": sub.name,
+            "meta": sub.meta.model_dump(mode="json"),
+            "layout": sub.layout.model_dump(mode="json"),
+            "objects": {
+                c: [o.model_dump(mode="json") for o in objs.values()]
+                for c, objs in sub.objects.items()
+            },
+            "evaluations": evaluations,
+            "asset_impacts": {aid: asset_impact(session.method, assets, aid) for aid in assets}
+            if session.method
+            else {},
+        }
+
+    @app.get("/api/models/{name}")
+    def get_model(name: str) -> dict[str, Any]:
+        with session.lock:
+            return model_payload(session.model(name))
+
+    @app.put("/api/models/{name}/meta")
+    def put_meta(name: str, body: dict[str, Any]) -> dict[str, Any]:
+        with session.lock:
+            sub = session.model(name)
+            try:
+                meta = ModelMeta.model_validate(body)
+            except ValidationError as exc:
+                raise HTTPException(422, json.loads(exc.json(include_url=False))) from exc
+            session.checkpoint()
+            sub.meta = meta
+            return model_payload(sub)
+
+    @app.post("/api/models/{name}/evaluate")
+    def evaluate_draft(name: str, body: dict[str, Any]) -> dict[str, Any]:
+        """Live assessment of an unsaved threat form."""
+        with session.lock:
+            sub = session.model(name)
+            if session.method is None:
+                raise HTTPException(409, "method invalid, see validation")
+            draft = _parse(Threat, {**body, "id": body.get("id") or "T-0000"})
+            assets = {i: a for i, a in sub.objects["assets"].items() if isinstance(a, Asset)}
+            return _evaluation(session.method, draft, assets, session.require())
+
+    @app.post("/api/models/{name}/{collection}")
+    def create_object(name: str, collection: str, body: dict[str, Any]) -> dict[str, Any]:
+        cls = _collection(collection)
+        with session.lock:
+            sub = session.model(name)
+            data = {**body, "id": sub.next_id(collection), "uuid": str(new_uuid())}
+            obj = _parse(cls, data)
+            session.checkpoint()
+            sub.objects[collection][obj.id] = obj
+            return {"object": obj.model_dump(mode="json"), "model": model_payload(sub)}
+
+    @app.put("/api/models/{name}/{collection}/{obj_id}")
+    def put_object(name: str, collection: str, obj_id: str, body: dict[str, Any]) -> dict[str, Any]:
+        cls = _collection(collection)
+        with session.lock:
+            sub = session.model(name)
+            current = sub.objects[collection].get(obj_id)
+            if current is None:
+                raise HTTPException(404, f"{obj_id} not found")
+            obj = _parse(cls, {**body, "id": obj_id, "uuid": str(current.uuid)})
+            if obj != current:
+                session.checkpoint()
+                sub.objects[collection][obj_id] = obj
+            return {"object": obj.model_dump(mode="json"), "model": model_payload(sub)}
+
+    @app.delete("/api/models/{name}/{collection}/{obj_id}")
+    def delete_object(name: str, collection: str, obj_id: str) -> dict[str, Any]:
+        _collection(collection)
+        with session.lock:
+            sub = session.model(name)
+            if obj_id not in sub.objects[collection]:
+                raise HTTPException(404, f"{obj_id} not found")
+            session.checkpoint()
+            del sub.objects[collection][obj_id]
+            return model_payload(sub)
+
+    # --- session actions ------------------------------------------------------------
+
+    @app.post("/api/save")
+    def save() -> dict[str, Any]:
+        with session.lock:
+            return {"written": session.save()}
+
+    @app.post("/api/undo")
+    def undo() -> dict[str, Any]:
+        return _step(session, session.undo, session.redo)
+
+    @app.post("/api/redo")
+    def redo() -> dict[str, Any]:
+        return _step(session, session.redo, session.undo)
+
+    @app.get("/api/validate")
+    def run_validation() -> list[dict[str, Any]]:
+        with session.lock:
+            project = session.require()
+            return [
+                {
+                    "severity": i.severity,
+                    "code": i.code,
+                    "file": relative(i, project.root),
+                    "model": i.model,
+                    "object": i.object_id,
+                    "location": i.location,
+                    "message": i.message,
+                }
+                for i in validate(project)
+            ]
+
+    @app.get("/api/changes")
+    def external_changes() -> dict[str, Any]:
+        with session.lock:
+            project = session.require()
+            now = _snapshot(project.root)
+            changed = sorted(
+                p for p in set(now) | set(session.files) if now.get(p) != session.files.get(p)
+            )
+            return {"changed": changed, "dirty": session.dirty}
+
+    @app.post("/api/reload")
+    def reload() -> dict[str, Any]:
+        with session.lock:
+            session.open(session.require().root)
+            return project_info()
+
+    # --- frontend ---------------------------------------------------------------------
+
+    @app.get("/{path:path}", include_in_schema=False)
+    def frontend(path: str) -> Response:
+        if path.startswith("api/"):
+            raise HTTPException(404)
+        target = (WEB_DIR / path).resolve()
+        if path and target.is_file() and target.is_relative_to(WEB_DIR.resolve()):
+            return FileResponse(target)
+        index = WEB_DIR / "index.html"
+        if not index.exists():
+            return Response("frontend not built: run `npm run build` in app/", status_code=503)
+        return FileResponse(index)
+
+    return app
+
+
+def _evaluation(
+    method: Method, t: Threat, assets: dict[str, Asset], project: Project
+) -> dict[str, Any]:
+    ev = evaluate(method, t, project.config)
+    res = evaluate(method, t, project.config, residual=True) if t.residual else None
+    sug = suggest_impact(method, t, assets)
+    return {
+        "assessment": ev.__dict__,
+        "residual": res.__dict__ if res else None,
+        "suggestion": sug.__dict__ if sug else None,
+    }
+
+
+def _step(
+    session: Session, source: list[dict[str, SubModel]], target: list[dict[str, SubModel]]
+) -> dict[str, Any]:
+    with session.lock:
+        project = session.require()
+        if not source:
+            raise HTTPException(409, "nothing to undo/redo")
+        target.append({k: _copy_model(v) for k, v in project.models.items()})
+        project.models = source.pop()
+        session.dirty = True
+        return {"ok": True}
+
+
+def serve(project: Path | None, open_browser: bool = True) -> None:
+    """Start the GUI server on a random free localhost port."""
+    import socket
+    import webbrowser
+
+    import uvicorn
+
+    token = secrets.token_urlsafe(32)
+    sock = socket.socket()
+    sock.bind(("127.0.0.1", 0))
+    port = sock.getsockname()[1]
+    app = create_app(token, port, project)
+    url = f"http://127.0.0.1:{port}/#token={token}"
+    print(f"{PRODUCT_NAME} {__version__} running at http://127.0.0.1:{port}/ (Ctrl+C to stop)")
+    if open_browser:
+        threading.Timer(0.8, webbrowser.open, args=(url,)).start()
+    else:
+        print(f"open: {url}")
+    config = uvicorn.Config(app, log_level="warning", server_header=False)
+    uvicorn.Server(config).run(sockets=[sock])

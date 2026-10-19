@@ -1,0 +1,328 @@
+measures:
+  - id: user-security-documentation
+    rev: 1
+    title:
+      de: Sicherheitsinformationen für den Betreiber
+      en: Security information for the operator
+    description:
+      de: >-
+        Die Betriebsanleitung enthält ein Kapitel zur Cybersicherheit: vorgesehene
+        Einsatzumgebung, Netzwerkschnittstellen und benötigte Ports, Annahmen an das
+        Betreibernetz, Restrisiken, sichere Konfiguration, Update-Weg, Unterstützungszeitraum
+        und Kontaktstelle für Sicherheitsmeldungen. Die Angaben sind für Betreiberpersonal ohne
+        Sicherheitsspezialwissen verständlich.
+      en: >-
+        The operating manual contains a cybersecurity chapter: intended operating
+        environment, network interfaces and required ports, assumptions about the operator
+        network, residual risks, secure configuration, update path, support period and contact
+        point for security reports. The information is understandable for operator staff
+        without specialist security knowledge.
+    kind: user_information
+    compensating: false
+    evidence:
+      de: >-
+        Kapitel Cybersicherheit der Betriebsanleitung, Abgleich mit den Anforderungen aus
+        Anhang II CRA.
+      en: >-
+        Cybersecurity chapter of the operating manual, cross-check against CRA Annex II
+        requirements.
+    cra_refs: [AII]
+    sources: ["generic OT security practice; CRA Annex II"]
+
+  - id: secure-commissioning-guide
+    rev: 1
+    title:
+      de: Anleitung zur sicheren Inbetriebnahme
+      en: Secure commissioning guide
+    description:
+      de: >-
+        Eine Checkliste für Inbetriebnahme und Übergabe führt durch alle sicherheitsrelevanten
+        Schritte: Passwörter ändern, nicht benötigte Dienste abschalten, Netzwerkanbindung
+        gemäß Plan, Fernzugriff konfigurieren, Konfiguration sichern und Prüfsummen
+        dokumentieren. Die ausgefüllte Checkliste wird dem Betreiber übergeben.
+      en: >-
+        A checklist for commissioning and handover guides through all security-relevant
+        steps: changing passwords, disabling unneeded services, network connection according
+        to plan, configuring remote access, backing up the configuration and documenting
+        checksums. The completed checklist is handed over to the operator.
+    kind: user_information
+    compensating: false
+    evidence:
+      de: >-
+        Inbetriebnahme-Checkliste, ausgefülltes Exemplar im Übergabeprotokoll.
+      en: >-
+        Commissioning checklist, completed copy in the handover record.
+    cra_refs: [AII, AI-I-2-b]
+    sources: ["generic OT security practice"]
+
+  - id: service-personnel-training
+    rev: 1
+    title:
+      de: Schulung des Servicepersonals
+      en: Training of service personnel
+    description:
+      de: >-
+        Inbetriebnehmer, Servicetechniker und Programmierer werden regelmäßig zu Cybersicherheit
+        geschult: Umgang mit Zugangsdaten, Datenträgern und Fernzugriff, Erkennen von
+        Phishing und Social Engineering, Meldung von Auffälligkeiten. Die Teilnahme wird
+        dokumentiert.
+      en: >-
+        Commissioning engineers, service technicians and programmers are trained regularly on
+        cybersecurity: handling of credentials, media and remote access, recognising phishing
+        and social engineering, reporting anomalies. Participation is documented.
+    kind: organizational
+    compensating: false
+    evidence:
+      de: >-
+        Schulungsunterlagen, Teilnehmerlisten.
+      en: >-
+        Training material, attendance lists.
+    sources: ["generic OT security practice"]
+
+  - id: service-laptop-policy
+    rev: 1
+    title:
+      de: Richtlinie für Service-Laptops
+      en: Service laptop policy
+    description:
+      de: >-
+        Laptops, die an Maschinen angeschlossen werden, sind verwaltete, gehärtete und
+        verschlüsselte Geräte mit aktuellem Patchstand und Schutz vor Schadsoftware. Private
+        Geräte sind nicht zulässig. Vor dem Anschluss an ein Kundennetz wird der Zustand
+        geprüft; zwischen Kundennetzen wird nicht gleichzeitig verbunden.
+      en: >-
+        Laptops connected to machines are managed, hardened and encrypted devices with current
+        patches and malware protection. Private devices are not permitted. Their state is
+        checked before connecting to a customer network; no simultaneous connection to several
+        customer networks.
+    kind: organizational
+    compensating: false
+    evidence:
+      de: >-
+        Richtliniendokument, Nachweis aus dem Geräteverwaltungssystem (Patch- und
+        Verschlüsselungsstatus).
+      en: >-
+        Policy document, report from the device management system (patch and encryption
+        status).
+    iec62443: [FR3]
+    sources: ["generic OT security practice"]
+
+  - id: cvd-policy
+    rev: 1
+    title:
+      de: Richtlinie zur koordinierten Offenlegung von Schwachstellen
+      en: Coordinated vulnerability disclosure policy
+    description:
+      de: >-
+        Der Hersteller veröffentlicht, wie Sicherheitsforscher und Kunden Schwachstellen
+        melden können (Kontaktadresse, z. B. security.txt, verschlüsselter Kanal), welche
+        Reaktionszeiten gelten und wie die Veröffentlichung abgestimmt wird. Meldende werden
+        über den Bearbeitungsstand informiert.
+      en: >-
+        The manufacturer publishes how security researchers and customers can report
+        vulnerabilities (contact address, e.g. security.txt, encrypted channel), which response
+        times apply and how publication is coordinated. Reporters are informed about the
+        processing status.
+    kind: organizational
+    compensating: false
+    evidence:
+      de: >-
+        Veröffentlichte Richtlinie, erreichbare Kontaktadresse.
+      en: >-
+        Published policy, reachable contact address.
+    cra_refs: [AI-II-5, AI-II-6]
+    sources: ["generic OT security practice"]
+
+  - id: vulnerability-handling-process
+    rev: 1
+    title:
+      de: Prozess zur Behandlung von Schwachstellen
+      en: Vulnerability handling process
+    description:
+      de: >-
+        Eingehende und selbst gefundene Schwachstellen werden erfasst, nach Auswirkung auf
+        Sicherheit und Verfügbarkeit bewertet, mit Fristen behoben und mit einem
+        Sicherheitshinweis an die Betreiber veröffentlicht. Zuständigkeiten, Eskalation und
+        Fristen sind festgelegt. Behobene Schwachstellen werden öffentlich beschrieben.
+      en: >-
+        Incoming and self-found vulnerabilities are recorded, assessed for impact on security
+        and availability, fixed within deadlines and published to operators with a security
+        advisory. Responsibilities, escalation and deadlines are defined. Fixed
+        vulnerabilities are publicly described.
+    kind: organizational
+    compensating: false
+    evidence:
+      de: >-
+        Verfahrensanweisung, Schwachstellenregister, Beispiel eines Sicherheitshinweises.
+      en: >-
+        Procedure document, vulnerability register, example of a security advisory.
+    cra_refs: [AI-II-2, AI-II-4, AI-II-8, AI-I-2-a]
+    sources: ["generic OT security practice"]
+
+  - id: security-testing
+    rev: 1
+    title:
+      de: Sicherheitstests
+      en: Security testing
+    description:
+      de: >-
+        Vor jeder Freigabe einer Maschinen- oder Softwareversion werden Sicherheitstests
+        durchgeführt: Schwachstellenscan, Portscan, Prüfung der Zugangsdaten und Härtung,
+        bei relevanten Änderungen auch Penetrationstest und Fuzzing der Schnittstellen.
+        Befunde werden vor Auslieferung behoben oder als Restrisiko bewertet.
+      en: >-
+        Before each release of a machine or software version, security tests are performed:
+        vulnerability scan, port scan, check of credentials and hardening, and for relevant
+        changes also penetration testing and fuzzing of interfaces. Findings are fixed before
+        delivery or assessed as residual risk.
+    kind: organizational
+    compensating: false
+    evidence:
+      de: >-
+        Testplan, Testberichte je Version, Liste der Befunde mit Bewertung.
+      en: >-
+        Test plan, test reports per version, list of findings with assessment.
+    cra_refs: [AI-II-3, AI-I-2-a]
+    iec62443: [FR3]
+    sources: ["generic OT security practice"]
+
+  - id: incident-reporting-process
+    rev: 1
+    title:
+      de: Meldeprozess für Sicherheitsvorfälle
+      en: Incident reporting process
+    description:
+      de: >-
+        Es ist festgelegt, wie Sicherheitsvorfälle und aktiv ausgenutzte Schwachstellen intern
+        eskaliert, fristgerecht an die zuständigen Stellen gemeldet und betroffene Betreiber
+        informiert werden. Betreiber erhalten eine Kontaktstelle, über die sie Vorfälle an der
+        Maschine melden können. Der Prozess wird regelmäßig geübt.
+      en: >-
+        It is defined how security incidents and actively exploited vulnerabilities are
+        escalated internally, reported to the competent authorities within deadlines and how
+        affected operators are informed. Operators receive a contact point to report incidents
+        on the machine. The process is practised regularly.
+    kind: organizational
+    compensating: false
+    evidence:
+      de: >-
+        Verfahrensanweisung mit Fristen und Zuständigkeiten, Protokoll einer Übung.
+      en: >-
+        Procedure document with deadlines and responsibilities, exercise record.
+    cra_refs: [Art14]
+    iec62443: [FR6]
+    sources: ["generic OT security practice"]
+
+  - id: change-management
+    rev: 1
+    title:
+      de: Änderungsmanagement
+      en: Change management
+    description:
+      de: >-
+        Änderungen an Steuerungsprogramm, Konfiguration, Netzwerk und Software der Maschine
+        werden beantragt, auf Sicherheitsauswirkungen bewertet, freigegeben, dokumentiert und
+        nach Umsetzung geprüft. Die Bedrohungsanalyse wird bei wesentlichen Änderungen
+        aktualisiert. Sicherungen und Komponentenliste werden nachgezogen.
+      en: >-
+        Changes to control program, configuration, network and software of the machine are
+        requested, assessed for security impact, approved, documented and verified after
+        implementation. The threat analysis is updated for significant changes. Backups and
+        component list are updated accordingly.
+    kind: organizational
+    compensating: false
+    evidence:
+      de: >-
+        Verfahrensanweisung, Änderungsprotokolle mit Freigabe.
+      en: >-
+        Procedure document, change records with approval.
+    cra_refs: [AI-I-2-f]
+    iec62443: [FR3]
+    sources: ["generic OT security practice"]
+
+  - id: physical-access-control
+    rev: 1
+    title:
+      de: Zutrittsschutz zu Schaltschrank und Maschine
+      en: Physical access control to control cabinet and machine
+    description:
+      de: >-
+        Schaltschränke, Netzwerkverteiler und Steuerungskomponenten sind abgeschlossen; die
+        Schlüssel werden nur an berechtigtes Personal ausgegeben. Programmier- und
+        Netzwerkschnittstellen liegen innerhalb des abgeschlossenen Bereichs. Die
+        Betriebsanleitung beschreibt, welche Zutrittsbeschränkung der Betreiber am Aufstellort
+        sicherstellen muss.
+      en: >-
+        Control cabinets, network distributors and control components are locked; keys are
+        issued only to authorised personnel. Programming and network interfaces are located
+        inside the locked area. The operating manual describes which access restriction the
+        operator must ensure at the installation site.
+    kind: technical
+    compensating: true
+    evidence:
+      de: >-
+        Aufbauplan mit Schließsystem, Schlüsselverwaltungsliste, Abschnitt in der
+        Betriebsanleitung.
+      en: >-
+        Layout drawing with locking system, key management list, section in the operating
+        manual.
+    cra_refs: [AI-I-2-j, AI-I-2-d]
+    iec62443: [FR2]
+    sources: ["generic OT security practice"]
+
+  - id: tamper-evident-seals
+    rev: 1
+    title:
+      de: Manipulationssichere Siegel
+      en: Tamper-evident seals
+    description:
+      de: >-
+        Gehäuse von Steuerung, Sicherheitssteuerung und Kommunikationsmodulen sowie
+        ungenutzte Schnittstellen werden mit nummerierten Sicherheitssiegeln versehen. Bei
+        Wartung und regelmäßigen Kontrollen wird der Zustand der Siegel geprüft und
+        dokumentiert; ein beschädigtes Siegel löst eine Untersuchung aus.
+      en: >-
+        Housings of controller, safety controller and communication modules as well as unused
+        interfaces are fitted with numbered security seals. During maintenance and regular
+        inspections, the condition of the seals is checked and documented; a broken seal
+        triggers an investigation.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Siegelliste mit Nummern und Positionen, Fotodokumentation, Prüfprotokolle.
+      en: >-
+        Seal list with numbers and positions, photo documentation, inspection records.
+    cra_refs: [AI-I-2-f]
+    iec62443: [FR3]
+    sources: ["generic OT security practice"]
+
+  - id: engineering-project-protection
+    rev: 1
+    title:
+      de: Schutz der Engineering-Projekte
+      en: Protection of engineering projects
+    description:
+      de: >-
+        Steuerungsprojekte, Quellcode und Konfigurationsdateien werden in einer
+        Versionsverwaltung mit Zugriffsrechten gespeichert; Änderungen sind nachvollziehbar.
+        Projektdateien werden mit Passwortschutz bzw. Know-how-Schutz des Engineering-Systems
+        versehen und nur verschlüsselt weitergegeben. Auf Maschinen-PCs beim Betreiber liegen
+        nur die Projektdateien, die dort benötigt werden.
+      en: >-
+        Control projects, source code and configuration files are stored in a version control
+        system with access rights; changes are traceable. Project files are protected with
+        the password or know-how protection of the engineering system and shared only in
+        encrypted form. Machine PCs at the operator only hold the project files needed there.
+    kind: organizational
+    compensating: false
+    evidence:
+      de: >-
+        Berechtigungskonzept der Versionsverwaltung, Änderungshistorie, Nachweis des
+        Projektschutzes.
+      en: >-
+        Authorisation concept of the version control system, change history, proof of project
+        protection.
+    cra_refs: [AI-I-2-e, AI-I-2-f]
+    iec62443: [FR2, FR4]
+    sources: ["generic OT security practice"]

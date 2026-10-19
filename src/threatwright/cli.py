@@ -18,6 +18,8 @@ from threatwright.interop import (
 from threatwright.library import check_library_refs, load_libraries
 from threatwright.method import Method, MethodError, load_method
 from threatwright.model.store import LoadError, Project
+from threatwright.oscal import OSCAL_VERSION, OscalError, validate_oscal
+from threatwright.oscal.project import import_into_project
 from threatwright.report import as_json, as_junit, as_sarif, as_text
 from threatwright.rules import has_errors, validate
 from threatwright.scaffold import ProjectExists, create_project
@@ -204,6 +206,49 @@ def import_cmd(
     typer.echo(f"imported into model '{result.model}': {counts}")
     for warning in result.warnings:
         typer.echo(f"warning: {warning}")
+
+
+oscal_app = typer.Typer(
+    help="OSCAL import and validation (import only, ADR-0006).", no_args_is_help=True
+)
+app.add_typer(oscal_app, name="oscal")
+
+
+class OscalKind(StrEnum):
+    catalog = "catalog"
+    profile = "profile"
+    component = "component"
+
+
+@oscal_app.command("validate")
+def oscal_validate_cmd(file: Annotated[Path, typer.Argument(help="OSCAL JSON file.")]) -> None:
+    """Validate an OSCAL document against the bundled NIST schemas."""
+    issues = validate_oscal(file)
+    for issue in issues:
+        typer.echo(str(issue))
+    typer.echo(f"OSCAL {OSCAL_VERSION}: {len(issues)} issue(s)")
+    raise typer.Exit(1 if any(i.severity == "error" for i in issues) else 0)
+
+
+@oscal_app.command("import")
+def oscal_import_cmd(
+    file: Annotated[Path, typer.Argument(help="OSCAL JSON file.")],
+    kind: Annotated[OscalKind, typer.Option("--as", help="Document type.")],
+    path: Annotated[Path, typer.Option("--path", help="Project folder.")] = Path("."),
+) -> None:
+    """Import an OSCAL catalog, profile or component definition into the project."""
+    _load(path)
+    try:
+        written = import_into_project(path, file, kind.value)
+    except OscalError as exc:
+        for issue in exc.issues:
+            typer.echo(str(issue), err=True)
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(1) from exc
+    except ValueError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(1) from exc
+    typer.echo(f"imported into {written}")
 
 
 class CiKind(StrEnum):

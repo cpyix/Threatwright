@@ -1,0 +1,423 @@
+{
+  "catalog": {
+    "uuid": "edc3977f-5d5b-4b9c-aa9b-ac7a676844ac",
+    "metadata": {
+      "title": "BSI Methodik Grundschutz++",
+      "published": "2026-09-23T12:03:12.007945+00:00",
+      "last-modified": "2026-09-23T12:03:12.007945+00:00",
+      "version": "2026-09-23T12:03:11.892969+00:00",
+      "oscal-version": "1.1.3",
+      "document-ids": [
+        {
+          "identifier": "404ee889-3bab-43f7-a9b9-860b88d3ac87",
+          "scheme": "https://www.ietf.org/rfc/rfc9562"
+        }
+      ],
+      "roles": [
+        {
+          "id": "publisher",
+          "title": "Publisher"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "1215dc5a-e841-447f-b0e8-cade9ebe891a",
+          "type": "organization",
+          "name": "Bundesamt für Sicherheit in der Informationstechnik, Referat IT-Grundschutz",
+          "email-addresses": [
+            "it-grundschutz@bsi.bund.de"
+          ]
+        }
+      ],
+      "responsible-parties": [
+        {
+          "role-id": "publisher",
+          "party-uuids": [
+            "1215dc5a-e841-447f-b0e8-cade9ebe891a"
+          ]
+        }
+      ],
+      "remarks": "Dieser Katalog enthält die Methodik-Grundschutz++, d.h. das Verfahren zum Aufbau eines ISMS nach Grundschutz++."
+    },
+    "groups": [
+      {
+        "id": "GC",
+        "title": "Governance und Compliance",
+        "props": [
+          {
+            "name": "label",
+            "value": "GC",
+            "remarks": "Die Praktik Governance und Compliance stellt sicher, dass Informationssicherheitsstrategien mit den übergeordneten Zielen der Institution und regulatorischen Anforderungen im Einklang stehen. Sie vereint die strategische Steuerung der Informationssicherheit mit der systematischen Identifikation und Integration externer sowie interner Anforderungen. Diese Praktik definiert den strategischen Rahmen für die Informationssicherheit und beantwortet die Fragen nach dem \"Was\" und \"Warum\" von Anforderungen und Sicherheitsmaßnahmen. Sie gewährleistet die Einbindung der obersten Führungsebene in wichtige Entscheidungen zur Informationssicherheit und stellt sicher, dass alle relevanten gesetzlichen, regulatorischen und vertraglichen Vorgaben identifiziert und berücksichtigt werden. Während Governance und Compliance die strategische Ausrichtung und die Anforderungen definiert, übernehmen die operativen Praktiken wie Strukturmodellierung und Umsetzung die konkrete Ausgestaltung."
+          },
+          {
+            "name": "alt-identifier",
+            "value": "b843af63-e2a3-4dcd-ab8e-fe66dde9b138"
+          }
+        ],
+        "groups": [
+          {
+            "id": "GC.1",
+            "title": "Grundlagen",
+            "props": [
+              {
+                "name": "label",
+                "value": "1"
+              },
+              {
+                "name": "alt-identifier",
+                "value": "94bfadab-43f6-48d7-ac5e-49b8fbcf2794"
+              }
+            ],
+            "controls": [
+              {
+                "id": "GC.1.1",
+                "title": "Errichtung und Aufrechterhaltung eines ISMS",
+                "class": "BSI-Methodik-Grundschutz-plus-plus",
+                "props": [
+                  {
+                    "name": "alt-identifier",
+                    "value": "80351189-6ffc-495e-a995-6219b9704724"
+                  },
+                  {
+                    "name": "sec_level",
+                    "value": "normal-SdT",
+                    "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/security_level.csv"
+                  },
+                  {
+                    "name": "effort_level",
+                    "value": "0",
+                    "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/effort_level.csv"
+                  }
+                ],
+                "params": [
+                  {
+                    "id": "gc.1.1-prm1",
+                    "label": "einem anerkannten Standard",
+                    "props": [
+                      {
+                        "name": "alt-identifier",
+                        "value": "1334b334-6fad-4595-97eb-3bb27c13e64b"
+                      }
+                    ]
+                  }
+                ],
+                "parts": [
+                  {
+                    "id": "GC.1.1_stm",
+                    "name": "statement",
+                    "props": [
+                      {
+                        "name": "documentation",
+                        "value": "ISMS-Regelwerk",
+                        "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/documentation_guidelines.csv"
+                      },
+                      {
+                        "name": "result",
+                        "value": "Verfahren und Regelungen zur Errichtung und Aufrechterhaltung eines ISMS",
+                        "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/result.csv"
+                      },
+                      {
+                        "name": "result_specification",
+                        "value": "nach {{einem anerkannten Standard}}",
+                        "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/result.csv"
+                      },
+                      {
+                        "name": "action_word",
+                        "value": "verankern",
+                        "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/action_words.csv"
+                      },
+                      {
+                        "name": "modal_verb",
+                        "value": "MUSS",
+                        "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/modal_verbs.csv"
+                      }
+                    ],
+                    "prose": "Governance und Compliance MUSS Verfahren und Regelungen zur Errichtung und Aufrechterhaltung eines ISMS nach {{ insert: param, gc.1.1-prm1 }} verankern."
+                  },
+                  {
+                    "id": "GC.1.1_gdn",
+                    "name": "guidance",
+                    "prose": "Diese Anforderung ist der Ausgangs- und Endpunkt für ein Informationssicherheitsmanagementsystem (ISMS). Ein ISMS besteht aus Verfahren (d.h. bestimmten Abläufen, die mit Zuständigkeiten und Ressourcen versehen sind) und Regelungen (also festgelegten Regeln, die von allen Mitarbeitenden und sonstigen Verpflichteten einzuhalten oder technisch umgesetzt sind). Die Anforderung ist erst dann als erfüllt anzusehen, wenn die komplette Vorgehensweise mindestens einmal vollständig durchlaufen wurde. Unter „etabliert“ bzw. „errichtet“ ist hier zu verstehen, dass die Anforderungen an das ISMS standardkonform umgesetzt wurden. Unter \"aufrechterhalten\" ist hier zu verstehen, dass die Einhaltung der Anforderungen kontinuierlich überprüft wird und bei Bedarf Gegenmaßnahmen eingeleitet werden. Die bei der Festlegung der Verfahren und Regelungen im Einzelnen zu berücksichtigenden Inhalte ergeben sich aus den weiteren Anforderungen dieses Anwenderkataloges."
+                  }
+                ]
+              },
+              {
+                "id": "GC.1.2",
+                "title": "Freigabe des ISMS",
+                "class": "BSI-Methodik-Grundschutz-plus-plus",
+                "props": [
+                  {
+                    "name": "alt-identifier",
+                    "value": "d6d44aa6-9010-40f0-9c3b-cc568b951410"
+                  },
+                  {
+                    "name": "sec_level",
+                    "value": "normal-SdT",
+                    "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/security_level.csv"
+                  },
+                  {
+                    "name": "effort_level",
+                    "value": "0",
+                    "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/effort_level.csv"
+                  }
+                ],
+                "parts": [
+                  {
+                    "id": "GC.1.2_stm",
+                    "name": "statement",
+                    "props": [
+                      {
+                        "name": "documentation",
+                        "value": "Managementbericht",
+                        "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/documentation_guidelines.csv"
+                      },
+                      {
+                        "name": "result",
+                        "value": "alle festgelegten Verfahren für das ISMS",
+                        "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/result.csv"
+                      },
+                      {
+                        "name": "result_specification",
+                        "value": "durch die Institutionsleitung",
+                        "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/result.csv"
+                      },
+                      {
+                        "name": "action_word",
+                        "value": "autorisieren",
+                        "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/action_words.csv"
+                      },
+                      {
+                        "name": "modal_verb",
+                        "value": "MUSS",
+                        "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/modal_verbs.csv"
+                      }
+                    ],
+                    "prose": "Governance und Compliance MUSS alle festgelegten Verfahren für das ISMS durch die Institutionsleitung autorisieren."
+                  },
+                  {
+                    "id": "GC.1.2_gdn",
+                    "name": "guidance",
+                    "prose": "Die Freigabe des Prozesses der ISMS-Verfahren erfolgt durch die Institutionsleitung. Diese Freigabe sollte dokumentiert werden, um Verbindlichkeit und Nachvollziehbarkeit sicherzustellen. Beispielsweise kann diese Freigabe durch die Vorlage eines Managementberichts eingeholt werden."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "GC.3",
+            "title": "Compliance-Management",
+            "props": [
+              {
+                "name": "label",
+                "value": "3"
+              },
+              {
+                "name": "alt-identifier",
+                "value": "2889d7fd-4859-4352-9037-3d6a9ace7aa4"
+              }
+            ],
+            "controls": [
+              {
+                "id": "GC.3.1",
+                "title": "Verfahren und Regelungen",
+                "class": "BSI-Methodik-Grundschutz-plus-plus",
+                "props": [
+                  {
+                    "name": "alt-identifier",
+                    "value": "de07bcb3-2a0b-44d4-bd3f-eca08ce44992"
+                  },
+                  {
+                    "name": "sec_level",
+                    "value": "normal-SdT",
+                    "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/security_level.csv"
+                  },
+                  {
+                    "name": "effort_level",
+                    "value": "0",
+                    "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/effort_level.csv"
+                  },
+                  {
+                    "name": "tags",
+                    "value": "Compliance-Management",
+                    "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/tags.csv"
+                  }
+                ],
+                "parts": [
+                  {
+                    "id": "GC.3.1_stm",
+                    "name": "statement",
+                    "props": [
+                      {
+                        "name": "documentation",
+                        "value": "Compliance-Verpflichtungen",
+                        "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/documentation_guidelines.csv"
+                      },
+                      {
+                        "name": "result",
+                        "value": "ein Verfahren zur systematischen Erfassung und Verwaltung von Compliance-Verpflichtungen",
+                        "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/result.csv"
+                      },
+                      {
+                        "name": "result_specification",
+                        "value": "unter Einbezug der jeweiligen Priorität für das ISMS",
+                        "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/result.csv"
+                      },
+                      {
+                        "name": "action_word",
+                        "value": "verankern",
+                        "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/action_words.csv"
+                      },
+                      {
+                        "name": "modal_verb",
+                        "value": "MUSS",
+                        "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/modal_verbs.csv"
+                      }
+                    ],
+                    "prose": "Governance und Compliance MUSS ein Verfahren zur systematischen Erfassung und Verwaltung von Compliance-Verpflichtungen unter Einbezug der jeweiligen Priorität für das ISMS verankern."
+                  },
+                  {
+                    "id": "GC.3.1_gdn",
+                    "name": "guidance",
+                    "prose": "Die systematische Erfassung der informationssicherheitsrelevanten Compliance-Anforderungen ist Grundlage für eine wirksame Umsetzung. Das Compliance Management stellt sicher, dass alle gesetzlichen, regulatorischen und vertraglichen Verpflichtungen im Bereich der Informationssicherheit eingehalten werden. Aufgrund der hohen Komplexität des modernen Rechts ist für die Rechtspflege eine eigene Rechtsabteilung oder die Beauftragung von Mitgliedern der rechtsberatenden Berufe zweckmäßig. Die bei der Festlegung des Verfahrens im Einzelnen zu berücksichtigenden Inhalte ergeben sich aus den Anforderungen dieser Praktik. Die systematische Erfassung und Verwaltung von Compliance-Verpflichtungen für Informationssicherheit bilden die Grundlage für deren wirksame Umsetzung und kontinuierliche Überwachung."
+                  }
+                ],
+                "controls": [
+                  {
+                    "id": "GC.3.1.1",
+                    "title": "Gesetzliche Verpflichtungen",
+                    "class": "BSI-Methodik-Grundschutz-plus-plus",
+                    "props": [
+                      {
+                        "name": "alt-identifier",
+                        "value": "02747a0f-cd38-4815-9eec-351ae89dbdfe"
+                      },
+                      {
+                        "name": "sec_level",
+                        "value": "normal-SdT",
+                        "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/security_level.csv"
+                      },
+                      {
+                        "name": "effort_level",
+                        "value": "0",
+                        "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/effort_level.csv"
+                      },
+                      {
+                        "name": "tags",
+                        "value": "Compliance-Management, Inventories",
+                        "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/tags.csv"
+                      }
+                    ],
+                    "parts": [
+                      {
+                        "id": "GC.3.1.1_stm",
+                        "name": "statement",
+                        "props": [
+                          {
+                            "name": "documentation",
+                            "value": "Compliance-Verpflichtungen",
+                            "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/documentation_guidelines.csv"
+                          },
+                          {
+                            "name": "result",
+                            "value": "gesetzliche Verpflichtungen, welche die Verarbeitung von Informationen durch die Institution betreffen,",
+                            "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/result.csv"
+                          },
+                          {
+                            "name": "action_word",
+                            "value": "analysieren",
+                            "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/action_words.csv"
+                          },
+                          {
+                            "name": "modal_verb",
+                            "value": "MUSS",
+                            "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/modal_verbs.csv"
+                          }
+                        ],
+                        "prose": "Governance und Compliance MUSS gesetzliche Verpflichtungen, welche die Verarbeitung von Informationen durch die Institution betreffen, analysieren."
+                      },
+                      {
+                        "id": "GC.3.1.1_gdn",
+                        "name": "guidance",
+                        "prose": "Gesetzliche Verpflichtungen, welche die Verarbeitung von Informationen durch die Institution betreffen, sind dokumentiert. Gesetzliche Verpflichtungen meint alle Pflichten, die sich unmittelbar aus dem Recht ergeben, inklusive des Verfassungsrechts, Europarechts und Verordnungen. Relevante gesetzliche Verpflichtungen können sich je nach Institution z. B. aus Grundrechten, Cyber Resilience Act, Data Act, Digital Markets Act, NIS, DSGVO, BDSG, TKG, TDDDG oder GeschGehG ergeben. Hierbei werden Verpflichtungen, die sich mittelbar auswirken wie die Arbeitsstättenverordnung oder allgemeine Regelungen zur Fürsorgepflicht, auch beachtet."
+                      }
+                    ]
+                  },
+                  {
+                    "id": "GC.3.1.2",
+                    "title": "Anhörung zuständiger Stellen",
+                    "class": "BSI-Methodik-Grundschutz-plus-plus",
+                    "props": [
+                      {
+                        "name": "alt-identifier",
+                        "value": "3d677306-5748-405a-b5f3-cdc2939e7d14"
+                      },
+                      {
+                        "name": "sec_level",
+                        "value": "normal-SdT",
+                        "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/security_level.csv"
+                      },
+                      {
+                        "name": "effort_level",
+                        "value": "3",
+                        "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/effort_level.csv"
+                      },
+                      {
+                        "name": "tags",
+                        "value": "Compliance-Management",
+                        "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/tags.csv"
+                      }
+                    ],
+                    "parts": [
+                      {
+                        "id": "GC.3.1.2_stm",
+                        "name": "statement",
+                        "props": [
+                          {
+                            "name": "documentation",
+                            "value": "Compliance-Verpflichtungen",
+                            "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/documentation_guidelines.csv"
+                          },
+                          {
+                            "name": "result",
+                            "value": "für die Einhaltung gesetzlicher Verpflichtungen in der Informationsverarbeitung zuständige Stellen in der Institution",
+                            "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/result.csv"
+                          },
+                          {
+                            "name": "action_word",
+                            "value": "anhören",
+                            "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/action_words.csv"
+                          },
+                          {
+                            "name": "modal_verb",
+                            "value": "SOLLTE",
+                            "ns": "https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/tree/main/documentation/namespaces/modal_verbs.csv"
+                          }
+                        ],
+                        "prose": "Governance und Compliance SOLLTE für die Einhaltung gesetzlicher Verpflichtungen in der Informationsverarbeitung zuständige Stellen in der Institution anhören."
+                      },
+                      {
+                        "id": "GC.3.1.2_gdn",
+                        "name": "guidance",
+                        "prose": "Für die Einhaltung gesetzlicher Verpflichtungen in der Informationsverarbeitung zuständige Stellen in der Institution wurden bei der Dokumentation der Compliance-Verpflichtungen angehört. Hierunter können z. B. Rechtsabteilung, Datenschutzbeauftragte, Brandschutzbeauftragte oder Fachverantwortliche bei branchenspezifischen Vorschriften fallen."
+                      }
+                    ]
+                  }
+                ],
+                "links": [
+                  {
+                    "rel": "related",
+                    "href": "#PERF.2.1"
+                  },
+                  {
+                    "rel": "related",
+                    "href": "#UMS.7.1"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

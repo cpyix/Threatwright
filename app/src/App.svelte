@@ -3,6 +3,7 @@
   import { PRODUCT_NAME } from './branding'
   import { tr, type Key } from './i18n'
   import Assistant from './lib/Assistant.svelte'
+  import Controls from './lib/Controls.svelte'
   import Coverage from './lib/Coverage.svelte'
   import CyberCauseDialog from './lib/CyberCauseDialog.svelte'
   import Diagram from './lib/diagram/Diagram.svelte'
@@ -108,6 +109,7 @@
       <button class:active={app.view.kind === 'validation'} onclick={() => (app.view = { kind: 'validation' })} data-testid="nav-validation">
         {tr(lang, 'validation')} {#if errors}<span class="count error">{errors}</span>{/if}
       </button>
+      <button class:active={app.view.kind === 'controls'} onclick={() => (app.view = { kind: 'controls' })} data-testid="nav-controls">{tr(lang, 'controls')}</button>
       <button class:active={app.view.kind === 'settings'} onclick={() => (app.view = { kind: 'settings' })} data-testid="nav-settings">{tr(lang, 'settings')}</button>
     {/if}
   </nav>
@@ -129,6 +131,8 @@
       <Coverage />
     {:else if app.view.kind === 'settings'}
       <Settings />
+    {:else if app.view.kind === 'controls'}
+      <Controls />
     {:else if app.view.kind === 'objects'}
       <Objects collection={app.view.collection} selected={app.view.selected} />
     {/if}

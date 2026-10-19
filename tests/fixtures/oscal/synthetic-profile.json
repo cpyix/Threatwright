@@ -1,0 +1,38 @@
+{
+  "profile": {
+    "uuid": "2b3c4d5e-6f70-4812-9a3b-4c5d6e7f8091",
+    "metadata": {
+      "title": "Synthetic field profile",
+      "last-modified": "2026-10-19T00:00:00Z",
+      "version": "1.0",
+      "oscal-version": "1.2.3"
+    },
+    "imports": [
+      {
+        "href": "#9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+        "include-controls": [
+          {"with-ids": ["ARC-1", "ARC-9"], "with-child-controls": "yes"}
+        ],
+        "exclude-controls": [
+          {"with-ids": ["ARC-1.1"]}
+        ]
+      }
+    ],
+    "merge": {"as-is": true},
+    "modify": {
+      "set-parameters": [
+        {"param-id": "arc-1_prm1", "values": ["12 hours"]}
+      ]
+    },
+    "back-matter": {
+      "resources": [
+        {
+          "uuid": "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+          "rlinks": [
+            {"href": "../catalogs/synthetic-arc-catalog.json"}
+          ]
+        }
+      ]
+    }
+  }
+}

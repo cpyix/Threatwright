@@ -1,0 +1,51 @@
+{
+  "component-definition": {
+    "uuid": "3c4d5e6f-7081-4923-8b4c-5d6e7f809102",
+    "metadata": {
+      "title": "Synthetic components",
+      "last-modified": "2026-10-19T00:00:00Z",
+      "version": "1.0",
+      "oscal-version": "1.2.3"
+    },
+    "components": [
+      {
+        "uuid": "4d5e6f70-8192-4a34-9c5d-6e7f80910213",
+        "type": "hardware",
+        "title": "Remote I/O module",
+        "description": "Generic field device with digital inputs and outputs.",
+        "props": [{"name": "version", "value": "2"}],
+        "control-implementations": [
+          {
+            "uuid": "5e6f7081-92a3-4b45-8d6e-7f8091021324",
+            "source": "#9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+            "description": "Field interface controls.",
+            "implemented-requirements": [
+              {
+                "uuid": "6f708192-a3b4-4c56-9e7f-809102132435",
+                "control-id": "ARC-1",
+                "description": "Unused ports are disabled in firmware."
+              },
+              {
+                "uuid": "708192a3-b4c5-4d67-8f80-910213243546",
+                "control-id": "ARC-4",
+                "description": "Delivered with secure defaults."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "uuid": "8192a3b4-c5d6-4e78-9091-021324354657",
+        "type": "software",
+        "title": "Engineering tool",
+        "description": "Generic configuration software."
+      },
+      {
+        "uuid": "92a3b4c5-d6e7-4f89-8102-132435465768",
+        "type": "policy",
+        "title": "Update policy",
+        "description": "Generic organisational policy."
+      }
+    ]
+  }
+}

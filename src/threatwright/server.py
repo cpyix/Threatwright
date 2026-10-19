@@ -20,6 +20,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import ValidationError
 
 from threatwright import __version__, assistant
+from threatwright.arc import ArcOverride, applicability, set_override
 from threatwright.branding import PRODUCT_NAME, PROJECT_FILE
 from threatwright.ci import render_ci
 from threatwright.ci import target_path as ci_target_path
@@ -43,6 +44,8 @@ from threatwright.model.objects import (
     new_uuid,
 )
 from threatwright.model.store import LoadError, Project, SubModel
+from threatwright.oscal import OscalError, imported_libraries
+from threatwright.oscal.project import import_into_project
 from threatwright.rules import relative, validate
 from threatwright.scaffold import ProjectExists, create_project
 from threatwright.vcs import VcsError, changed_objects, release_tags
@@ -506,6 +509,69 @@ def create_app(token: str, port: int | None = None, project: Path | None = None)
             "models": {m: sorted(ids) for m, ids in changed.items()},
             "tags": tags,
         }
+
+    # --- OSCAL import and ARC applicability (M6) ------------------------------------
+
+    @app.get("/api/oscal/imported")
+    def oscal_imported() -> list[dict[str, Any]]:
+        with session.lock:
+            root = session.require().root
+            origin = session.libs.origin if session.libs else {}
+            counts: dict[str, int] = {}
+            for (_, _), lib in origin.items():
+                counts[lib] = counts.get(lib, 0) + 1
+        return [
+            {
+                "library": item["name"],
+                "title": item.get("title", ""),
+                "version": item.get("version", ""),
+                "source": item.get("source", ""),
+                "entries": counts.get(item["name"], 0),
+            }
+            for item in imported_libraries(root)
+        ]
+
+    @app.post("/api/oscal/import")
+    def oscal_import(body: dict[str, str]) -> dict[str, Any]:
+        kind = body.get("as", "catalog")
+        if kind not in ("catalog", "profile", "component"):
+            raise HTTPException(422, "as: catalog|profile|component")
+        with session.lock:
+            root = session.require().root
+            if session.dirty:
+                raise HTTPException(409, "save your changes before importing")
+            try:
+                written = import_into_project(root, Path(body.get("path", "")), kind)  # type: ignore[arg-type]
+            except OscalError as exc:
+                raise HTTPException(422, "\n".join(str(i) for i in exc.issues) or str(exc)) from exc
+            except (ValueError, OSError) as exc:
+                raise HTTPException(400, str(exc)) from exc
+            session.open(root)
+            return {"written": str(written)}
+
+    @app.get("/api/models/{name}/controls")
+    def controls(name: str) -> list[dict[str, Any]]:
+        with session.lock:
+            project = session.require()
+            session.model(name)
+            try:
+                result = applicability(project, name, libs())
+            except MethodError as exc:
+                raise HTTPException(409, str(exc)) from exc
+            return [asdict(c) for c in result]
+
+    @app.put("/api/arc/{name}/{measure_id}")
+    def control_override(name: str, measure_id: str, body: dict[str, Any] | None = None) -> Any:
+        """Manual ARC decision with rationale; empty body removes the override."""
+        with session.lock:
+            root = session.require().root
+            session.model(name)
+            try:
+                override = ArcOverride.model_validate(body) if body else None
+            except ValidationError as exc:
+                raise HTTPException(422, json.loads(exc.json(include_url=False))) from exc
+            set_override(root, name, measure_id, override)
+            return controls(name)
 
     # --- CI templates (ADR-0009) ----------------------------------------------------
 

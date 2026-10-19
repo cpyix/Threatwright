@@ -1,0 +1,29 @@
+grundschutz-excerpt.json
+========================
+
+Source:   BSI-Bund/Stand-der-Technik-Bibliothek, file
+          control_layer/Grundschutz++/sources/catalogs/Methodik-Grundschutz++/BSI-Methodik-Grundschutz++-catalog.json
+          https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek
+          commit a12831136f4122a4c43854622180a24f2576a41e (branch main), retrieved 2026-10-19
+Author:   Bundesamt fuer Sicherheit in der Informationstechnik (BSI)
+License:  Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+          https://creativecommons.org/licenses/by-sa/4.0/
+          (license stated in the repository's README.md and LICENSE file)
+
+Modifications (2026-10-19, Threatwright test fixture):
+- Excerpt only: of group "GC" the subgroup "GC.1" with its first two controls
+  (GC.1.1, GC.1.2) and the subgroup "GC.3" with its first control (GC.3.1) and
+  the first two of its nested controls were kept; all other groups and
+  controls were removed.
+- Content of the kept objects (uuid, metadata, props, params, parts, links) is
+  unchanged; JSON was re-serialised with two-space indentation.
+
+This excerpt is distributed under CC BY-SA 4.0 as well. It is test data only and
+not part of the Threatwright software license (AGPL-3.0-only).
+
+synthetic-*.json
+================
+
+Synthetic, abstract test content written for Threatwright (CC0-1.0). The
+"risk-scenario" parts follow the encoding assumed in docs/adr/0012; they are
+not taken from any BSI publication.

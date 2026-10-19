@@ -9,6 +9,7 @@ export type View =
   | { kind: 'assistant'; target: string | null }
   | { kind: 'coverage' }
   | { kind: 'settings' }
+  | { kind: 'controls' }
   | { kind: 'documents' }
   | { kind: 'objects'; collection: Collection; selected: string | null }
 

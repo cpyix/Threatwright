@@ -1,0 +1,173 @@
+{
+  "catalog": {
+    "uuid": "6f1c2a3b-0d4e-4f5a-8b6c-7d8e9f0a1b2c",
+    "metadata": {
+      "title": "Synthetic ARC catalog",
+      "last-modified": "2026-10-19T00:00:00Z",
+      "version": "1.0",
+      "oscal-version": "1.2.3",
+      "props": [
+        {"name": "license", "value": "CC0-1.0"}
+      ],
+      "remarks": "Abstract test content; not taken from any real catalog."
+    },
+    "groups": [
+      {
+        "id": "ARC",
+        "title": "Synthetic risk-based controls",
+        "groups": [
+          {
+            "id": "ARC.FLD",
+            "title": "Field",
+            "controls": [
+              {
+                "id": "ARC-1",
+                "class": "requirement",
+                "title": "Protect field interfaces",
+                "params": [
+                  {"id": "arc-1_prm1", "label": "interval", "values": ["24 hours"]}
+                ],
+                "props": [
+                  {"name": "label", "value": "ARC-1"}
+                ],
+                "links": [
+                  {"href": "#ARC-2", "rel": "related"}
+                ],
+                "parts": [
+                  {
+                    "id": "ARC-1_smt",
+                    "name": "statement",
+                    "prose": "The PwDE MUST check field interfaces every {{ insert: param, arc-1_prm1 }}.",
+                    "parts": [
+                      {
+                        "id": "ARC-1_smt.a",
+                        "name": "item",
+                        "props": [{"name": "label", "value": "a."}],
+                        "prose": "Unused interfaces MUST be disabled."
+                      }
+                    ]
+                  },
+                  {
+                    "id": "ARC-1_gdn",
+                    "name": "guidance",
+                    "prose": "Field interfaces are reachable by persons with access to the installation site."
+                  },
+                  {
+                    "id": "ARC-1_rs1",
+                    "name": "risk-scenario",
+                    "prose": "Persons in publicly supervised areas manipulate local process data.",
+                    "props": [
+                      {"name": "asset-impact", "value": "I(2)"},
+                      {"name": "access-restriction", "value": "Public restricted"},
+                      {"name": "interface-restriction", "value": "*"},
+                      {"name": "user-capability", "value": "*"}
+                    ]
+                  }
+                ],
+                "controls": [
+                  {
+                    "id": "ARC-1.1",
+                    "title": "Log interface changes",
+                    "parts": [
+                      {
+                        "id": "ARC-1.1_smt",
+                        "name": "statement",
+                        "prose": "Changes of the interface state SHOULD be logged."
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "ARC.UPD",
+            "title": "Updates",
+            "controls": [
+              {
+                "id": "ARC-2",
+                "title": "Automatic update mechanism",
+                "params": [
+                  {"id": "arc-2_prm1", "select": {"choice": ["daily", "weekly"]}}
+                ],
+                "parts": [
+                  {
+                    "id": "ARC-2_smt",
+                    "name": "statement",
+                    "prose": "The PwDE MUST check for updates {{ insert: param, arc-2_prm1 }}."
+                  },
+                  {
+                    "id": "ARC-2_rs1",
+                    "name": "risk-scenario",
+                    "prose": "A layman does not install updates, leaving the PwDE vulnerable via external networks.",
+                    "props": [
+                      {"name": "asset-impact", "value": "C(3)"},
+                      {"name": "asset-impact", "value": "I(3)"},
+                      {"name": "asset-impact", "value": "A(3)"},
+                      {"name": "access-restriction", "value": "*"},
+                      {"name": "interface-restriction", "value": "External network"},
+                      {"name": "user-capability", "value": "Layman"}
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "ARC-3",
+                "title": "Protect safety function availability",
+                "params": [
+                  {"id": "arc-3_prm1", "label": "recovery time"}
+                ],
+                "parts": [
+                  {
+                    "id": "ARC-3_smt",
+                    "name": "statement",
+                    "prose": "Safety functions MUST recover within {{ insert: param, arc-3_prm1 }}."
+                  },
+                  {
+                    "id": "ARC-3_rs1",
+                    "name": "risk-scenario",
+                    "prose": "Loss of availability of a safety function via a local interface.",
+                    "props": [
+                      {"name": "asset-impact", "value": "A(5)"},
+                      {"name": "interface-restriction", "value": "Local"}
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "ARC-4",
+                "title": "Secure defaults without user interaction",
+                "parts": [
+                  {
+                    "id": "ARC-4_smt",
+                    "name": "statement",
+                    "prose": "The PwDE MUST be delivered with a secure default configuration."
+                  },
+                  {
+                    "id": "ARC-4_rs1",
+                    "name": "risk-scenario",
+                    "prose": "Devices operated without user interaction keep insecure defaults.",
+                    "props": [
+                      {"name": "user-capability", "value": "Non-user-related"}
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "ARC-5",
+                "title": "Document the update policy",
+                "parts": [
+                  {
+                    "id": "ARC-5_smt",
+                    "name": "statement",
+                    "prose": "The manufacturer MUST document its update policy."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

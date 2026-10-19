@@ -25,7 +25,7 @@
     try {
       const r = await api<{ written: string; issues: string[] }>('POST', '/oscal/import', { path, as: kind })
       note = `${tr(lang, 'imported')}: ${r.written}`
-      await app.loadProject(await api('POST', '/reload'))
+      await app.loadProject(await api('GET', '/project'))
       await load()
     } catch (e) {
       note = e instanceof ApiError ? e.message : String(e)

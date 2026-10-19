@@ -26,4 +26,13 @@ External IDs in libraries are restricted to the catalogs in `src/threatwright/ca
 | CRA Annex I | BSI TR-03183-1 v1.0.0 Annex B, Tables 8–10 (p. 60–64); point (g) text not in the extracted table, ID confirmed by the list on p. 57 | 2026-10-19 |
 | IEC 62443 | only FR1–FR7; SR/CR numbers deliberately not used | — |
 
+## OSCAL and ARC (see ADR-0012)
+
+| # | Item | Status |
+|---|------|--------|
+| 11 | OSCAL pinned to 1.2.3; NIST schema regex `\p{L}`/`\p{N}` translated for Python | implementation detail, tested |
+| 12 | Encoding of ARC risk scenarios in OSCAL (part `risk-scenario`, props `asset-impact`, `interface-restriction`, ...) | assumption: the BSI format for TR-03183-1 controls is not public; confirm with tr-03183@bsi.bund.de |
+| 13 | ARC applicability rule (TR §6.2, p. 54) and combined profiles (§6.3) | own reading of the TR text |
+| 14 | Grundschutz++ excerpt (CC BY-SA 4.0) used as test fixture with NOTICE | licence checked |
+
 Open: whether each library entry's ATT&CK/EMB3D mapping is the best fit is a domain judgement, not a fact; review welcome.

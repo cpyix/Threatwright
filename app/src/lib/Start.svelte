@@ -23,6 +23,21 @@
     }
   }
 
+  // Native folder dialog, shown by the local server process; null when cancelled.
+  async function browse(initial: string): Promise<string | null> {
+    error = ''
+    try {
+      const r = await api<{ path: string | null }>('POST', '/pick-folder', {
+        title: tr(lang, 'pick_folder'),
+        initial,
+      })
+      return r.path
+    } catch (e) {
+      error = e instanceof ApiError ? e.message : String(e)
+      return null
+    }
+  }
+
   const open = (path: string) => run(() => api<ProjectInfo>('POST', '/project/open', { path }))
   const create = () =>
     run(() =>
@@ -53,6 +68,17 @@
     <label for="open-path">{tr(lang, 'path')}</label>
     <div class="row">
       <input id="open-path" bind:value={openPath} required data-testid="open-path" />
+      <button
+        type="button"
+        data-testid="browse-open"
+        onclick={async () => {
+          const path = await browse(openPath)
+          if (path) {
+            openPath = path
+            open(path)
+          }
+        }}>{tr(lang, 'browse')}</button
+      >
       <button class="primary" type="submit">{tr(lang, 'open')}</button>
     </div>
   </form>
@@ -60,7 +86,16 @@
   <form onsubmit={(e) => { e.preventDefault(); create() }}>
     <h2>{tr(lang, 'new_project')}</h2>
     <label for="new-path">{tr(lang, 'path')}</label>
-    <input id="new-path" bind:value={newPath} required data-testid="new-path" />
+    <div class="row">
+      <input id="new-path" bind:value={newPath} required data-testid="new-path" />
+      <button
+        type="button"
+        data-testid="browse-new"
+        onclick={async () => {
+          newPath = (await browse(newPath)) ?? newPath
+        }}>{tr(lang, 'browse')}</button
+      >
+    </div>
     <label for="new-name">{tr(lang, 'name')}</label>
     <input id="new-name" bind:value={newName} data-testid="new-name" />
     <label for="new-template">{tr(lang, 'template')}</label>
@@ -96,6 +131,10 @@
   }
   .row button {
     margin: 0;
+  }
+  .row input {
+    flex: 1;
+    min-width: 0;
   }
   h2 {
     font-size: 1.05rem;

@@ -2,6 +2,7 @@
   import { tr } from '../i18n'
   import { app } from '../state.svelte'
   import { COLLECTIONS } from '../types'
+  import ModelMeta from './ModelMeta.svelte'
   import RiskBadge from './RiskBadge.svelte'
 
   const lang = $derived(app.lang)
@@ -80,6 +81,8 @@
     {/each}
     <li><span class={openQuestions ? 'warning' : 'ok'}>{openQuestions ? '•' : '✓'}</span> {openQuestions} {tr(lang, 'open_questions')}</li>
   </ul>
+
+  <ModelMeta />
 </section>
 
 <style>

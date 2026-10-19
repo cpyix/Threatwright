@@ -14,7 +14,7 @@ from typing import Any, Literal
 
 from pydantic import Field, ValidationError
 
-from threatwright.model.objects import Environment, MeasureKind, Strict, Stride
+from threatwright.model.objects import Environment, MeasureKind, OscalRef, Strict, Stride
 from threatwright.model.store import Issue, LoadError, Project, read_yaml, to_plain
 
 BUILTIN_LIBRARIES = Path(__file__).parent / "libraries"
@@ -38,6 +38,11 @@ class BaseEntry(Strict):
     id: str = EntryId
     rev: int = Field(default=1, ge=1)
     sources: list[str] = []
+    # Provenance for entries imported from OSCAL (ADR-0006); oscal_extra keeps
+    # content the library format cannot represent, so re-imports lose nothing.
+    oscal_ref: OscalRef | None = None
+    oscal_extra: dict[str, Any] = {}
+    category: str | None = None
 
 
 class LibAsset(Strict):

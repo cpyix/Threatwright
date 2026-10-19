@@ -11,9 +11,13 @@ Architecture decisions: [`docs/adr/`](docs/adr/). Methodik: [`docs/methodik.md`]
 
 ```
 uv sync
+(cd app && npm ci && npm run build)    # frontend bundle, once
 uv run threatwright init mein-produkt
+uv run threatwright --project mein-produkt   # GUI in the default browser
 uv run threatwright validate mein-produkt
 ```
+
+The GUI runs on `127.0.0.1` only, on a random port, protected by a per-start token.
 
 ## Planned repository layout
 

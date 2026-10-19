@@ -1,0 +1,151 @@
+/* Design tokens. Contrast of text on surfaces >= 4.5:1 (WCAG 2.1 AA) in both themes. */
+:root {
+  color-scheme: light dark;
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #eef0f3;
+  --text: #1b1f24;
+  --muted: #555e69;
+  --border: #c9ced5;
+  --accent: #0b5cad;
+  --accent-text: #ffffff;
+  --focus: #0b5cad;
+  --error: #a4161a;
+  --warning: #7a4d00;
+  --ok: #1d6b35;
+  --risk-1: #d7f0dc;
+  --risk-2: #e9f3c7;
+  --risk-3: #fbe7b5;
+  --risk-4: #f8cdb0;
+  --risk-5: #f3b6b6;
+  --risk-text: #1b1f24;
+  --radius: 6px;
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14171b;
+    --surface: #1c2026;
+    --surface-2: #252a31;
+    --text: #e8eaed;
+    --muted: #a7b0ba;
+    --border: #3a414b;
+    --accent: #6cb2f5;
+    --accent-text: #0b1520;
+    --focus: #8cc4f8;
+    --error: #ff8a8a;
+    --warning: #f2c46b;
+    --ok: #79d18f;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.45 var(--font);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+input,
+select,
+textarea {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 0.35rem 0.5rem;
+  width: 100%;
+}
+
+fieldset {
+  min-inline-size: 0; /* browsers default to min-content, which breaks grid columns */
+}
+
+textarea {
+  min-height: 4.5rem;
+  resize: vertical;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+th {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.risk {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0 0.6rem;
+  color: var(--risk-text);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.risk-1 { background: var(--risk-1); }
+.risk-2 { background: var(--risk-2); }
+.risk-3 { background: var(--risk-3); }
+.risk-4 { background: var(--risk-4); }
+.risk-5 { background: var(--risk-5); }
+
+.error { color: var(--error); }
+.warning { color: var(--warning); }
+.ok { color: var(--ok); }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}

@@ -20,7 +20,7 @@ from pydantic import ValidationError
 
 from threatwright import __version__
 from threatwright.branding import PRODUCT_NAME, PROJECT_FILE
-from threatwright.library import Libraries, load_libraries
+from threatwright.library import Libraries, load_catalog, load_libraries
 from threatwright.method import (
     Method,
     MethodError,
@@ -32,6 +32,7 @@ from threatwright.method import (
 from threatwright.model.objects import COLLECTIONS, Asset, ModelMeta, ModelObject, Threat, new_uuid
 from threatwright.model.store import LoadError, Project, SubModel
 from threatwright.rules import relative, validate
+from threatwright.scaffold import ProjectExists, create_project
 
 WEB_DIR = Path(__file__).parent / "web"
 TOKEN_HEADER = "X-Threatwright-Token"  # noqa: S105 - header name, not a secret
@@ -212,6 +213,28 @@ def create_app(token: str, port: int | None = None, project: Path | None = None)
                 raise HTTPException(400, str(exc)) from exc
             _recent(path)
             return project_info()
+
+    @app.post("/api/project/new")
+    def new_project(body: dict[str, str]) -> dict[str, Any]:
+        template = body.get("template", "tr")
+        language = body.get("language", "de")
+        if template not in ("tr", "empty") or language not in ("de", "en"):
+            raise HTTPException(422, "template: tr|empty, language: de|en")
+        path = Path(body.get("path", ""))
+        with session.lock:
+            try:
+                create_project(path, template, body.get("name") or None, language)  # type: ignore[arg-type]
+                session.open(path)
+            except (ProjectExists, LoadError, OSError) as exc:
+                raise HTTPException(400, str(exc)) from exc
+            _recent(path)
+            return project_info()
+
+    @app.get("/api/catalog/{name}")
+    def catalog(name: str) -> dict[str, Any]:
+        if name not in ("cra", "attack-ics", "emb3d", "iec62443"):
+            raise HTTPException(404, "unknown catalog")
+        return load_catalog(name).model_dump(mode="json")
 
     @app.get("/api/project")
     def project_info() -> dict[str, Any]:

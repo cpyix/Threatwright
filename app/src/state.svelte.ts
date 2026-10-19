@@ -1,0 +1,107 @@
+import { api } from './api'
+import type { Collection, I18n, Issue, Lang, Method, ModelPayload, Obj, ProjectInfo } from './types'
+
+export type View =
+  | { kind: 'start' }
+  | { kind: 'overview' }
+  | { kind: 'validation' }
+  | { kind: 'objects'; collection: Collection; selected: string | null }
+
+class AppState {
+  lang = $state<Lang>('de')
+  version = $state('')
+  recent = $state<string[]>([])
+  project = $state<ProjectInfo | null>(null)
+  method = $state<Method | null>(null)
+  cra = $state<Record<string, I18n>>({})
+  modelName = $state<string | null>(null)
+  model = $state<ModelPayload | null>(null)
+  issues = $state<Issue[]>([])
+  view = $state<View>({ kind: 'start' })
+  message = $state('')
+  externalChange = $state(false)
+
+  async init(): Promise<void> {
+    const info = await api<{ version: string; recent: string[] }>('GET', '/app')
+    this.version = info.version
+    this.recent = info.recent
+    try {
+      await this.loadProject(await api<ProjectInfo>('GET', '/project'))
+    } catch {
+      this.view = { kind: 'start' }
+    }
+  }
+
+  async loadProject(info: ProjectInfo): Promise<void> {
+    this.project = info
+    this.lang = info.config.language
+    this.method = await api<Method>('GET', '/method').catch(() => null)
+    const cra = await api<{ entries: Record<string, I18n> }>('GET', '/catalog/cra')
+    this.cra = cra.entries
+    const names = Object.keys(info.models)
+    if (!this.modelName || !names.includes(this.modelName)) this.modelName = names[0] ?? null
+    await this.refreshModel()
+    if (this.view.kind === 'start') this.view = { kind: 'overview' }
+  }
+
+  async refreshProject(): Promise<void> {
+    this.project = await api<ProjectInfo>('GET', '/project')
+  }
+
+  async refreshModel(): Promise<void> {
+    this.model = this.modelName
+      ? await api<ModelPayload>('GET', `/models/${this.modelName}`)
+      : null
+    this.issues = await api<Issue[]>('GET', '/validate')
+  }
+
+  async afterChange(model?: ModelPayload): Promise<void> {
+    if (model) this.model = model
+    await this.refreshProject()
+    this.issues = await api<Issue[]>('GET', '/validate')
+  }
+
+  async save(): Promise<void> {
+    if (!this.project) return
+    await api('POST', '/save')
+    this.externalChange = false
+    await this.refreshProject()
+    this.flash('saved')
+  }
+
+  async undoRedo(which: 'undo' | 'redo'): Promise<void> {
+    await api('POST', `/${which}`)
+    await this.refreshModel()
+    await this.refreshProject()
+  }
+
+  async reload(): Promise<void> {
+    await this.loadProject(await api<ProjectInfo>('POST', '/reload'))
+    this.externalChange = false
+  }
+
+  async pollChanges(): Promise<void> {
+    if (!this.project) return
+    const r = await api<{ changed: string[]; dirty: boolean }>('GET', '/changes')
+    if (r.changed.length === 0) return
+    if (r.dirty) {
+      this.externalChange = true
+    } else {
+      await this.reload()
+      this.flash('reloaded')
+    }
+  }
+
+  objects(collection: Collection): Obj[] {
+    return this.model?.objects[collection] ?? []
+  }
+
+  flash(key: string): void {
+    this.message = key
+    setTimeout(() => {
+      if (this.message === key) this.message = ''
+    }, 2500)
+  }
+}
+
+export const app = new AppState()

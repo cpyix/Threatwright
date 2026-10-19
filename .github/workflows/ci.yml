@@ -24,10 +24,22 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      - name: Frontend check and build
+        working-directory: app
+        run: |
+          npm ci --no-audit --no-fund
+          npm run check
+          npm run build
+
       - run: uv sync --locked
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run mypy
+      - run: uv run playwright install --with-deps chromium
       - run: uv run pytest -q
       - run: uv run threatwright validate tests/fixtures/project
 

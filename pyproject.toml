@@ -23,7 +23,12 @@ dev = [
     "ruff>=0.6",
     "mypy>=1.11",
     "httpx2>=2.14.0",
+    "pytest-playwright>=0.10.0",
 ]
+
+[tool.hatch.build]
+# The frontend bundle is built by `npm run build` (app/) and is git-ignored.
+artifacts = ["src/threatwright/web/**"]
 
 [build-system]
 requires = ["hatchling>=1.26"]

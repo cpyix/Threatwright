@@ -74,6 +74,24 @@
       "default": null,
       "title": "Short Name"
     },
+    "stride_not_relevant": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "default": {},
+      "propertyNames": {
+        "enum": [
+          "S",
+          "T",
+          "R",
+          "I",
+          "D",
+          "E"
+        ]
+      },
+      "title": "Stride Not Relevant",
+      "type": "object"
+    },
     "title": {
       "title": "Title",
       "type": "string"

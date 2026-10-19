@@ -1,0 +1,6 @@
+schema_version: 1
+id: F-0001
+uuid: 00000000-0000-4000-8000-0000000002b1
+title: Flow to nowhere
+source: E-0001
+target: E-0099

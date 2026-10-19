@@ -1,0 +1,8 @@
+schema_version: 1
+fields:
+  threat:
+    - name: owner_team
+      required: true
+    - name: severity
+      type: choice
+      options: [a, b]

@@ -1,0 +1,5 @@
+schema_version: 1
+id: A-0001
+uuid: 00000000-0000-4000-8000-0000000003b1
+title: Unknown class
+asset_class: Nope.Class

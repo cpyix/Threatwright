@@ -20,6 +20,15 @@
       "title": "Libraries",
       "type": "array"
     },
+    "lifecycle": {
+      "default": "development",
+      "enum": [
+        "development",
+        "post_market"
+      ],
+      "title": "Lifecycle",
+      "type": "string"
+    },
     "method": {
       "default": "tr-03183-1",
       "title": "Method",

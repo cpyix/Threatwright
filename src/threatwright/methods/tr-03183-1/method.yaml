@@ -1,0 +1,144 @@
+# Risk assessment method after BSI TR-03183-1 v1.0.0, Annex D (risk scoring).
+# Page numbers refer to the BSI PDF "BSI-TR-03183-1_v1_0_0.pdf".
+# Values marked "tool convention" are not taken from the TR; see docs/VERIFY.md.
+# Labels are short own wording, not quotations; German labels are own translations.
+schema_version: 1
+id: tr-03183-1
+title:
+  de: BSI TR-03183-1 v1.0.0 (Anhang D, Risikobewertung)
+  en: BSI TR-03183-1 v1.0.0 (Annex D, risk scoring)
+source:
+  document: BSI TR-03183-1 Cyber Resilience Requirements for Manufacturers and Products, Part 1
+  version: 1.0.0
+  url: https://www.bsi.bund.de/EN/Themen/Unternehmen-und-Organisationen/Standards-und-Zertifizierung/Technische-Richtlinien/TR-nach-Thema-sortiert/tr03183/TR-03183_node.html
+
+impact_levels:
+  source: §5.14.1, p. 45-46
+  levels:
+    1: {de: vernachlässigbar, en: negligible}
+    2: {de: gering, en: small}
+    3: {de: mittel, en: moderate}
+    4: {de: hoch, en: high}
+    5: {de: sehr hoch, en: very high}
+
+# Base impact per asset class for loss of C/I/A. null = not applicable ("-").
+# A list means "inherited from the protected assets" (C', I', A' in the TR);
+# where the TR gives "C'/I'" the maximum of both is used (tool convention).
+asset_classes:
+  PII.TechnicalNecessary: {c: 2, i: 1, a: 1, source: 'Table 1, p. 46'}
+  PII.Generic: {c: 3, i: 2, a: 3, source: 'Table 1, p. 46'}
+  PII.Important: {c: 4, i: 3, a: 3, source: 'Table 1, p. 46'}
+  BusinessData.Generic: {c: 3, i: 2, a: 3, source: 'Table 1, p. 47'}
+  BusinessData.Important: {c: 4, i: 4, a: 3, source: 'Table 1, p. 47'}
+  Other.Telemetric: {c: 1, i: 1, a: 1, source: 'Table 1, p. 47'}
+  Other.Configuration: {c: 1, i: 3, a: 1, source: 'Table 1, p. 47'}
+  Functions.Essential: {c: null, i: null, a: 3, source: 'Table 2, p. 47'}
+  Functions.NonEssential: {c: null, i: null, a: 1, source: 'Table 2, p. 47'}
+  Functions.Safety: {c: null, i: null, a: 5, source: 'Table 2, p. 48'}
+  Functions.CommunicationNetwork: {c: null, i: 3, a: null, source: 'Table 2, p. 48'}
+  Functions.CommunicationLocal: {c: null, i: 2, a: null, source: 'Table 2, p. 48'}
+  Security.Secrets: {c: [C, I], i: [C, I], a: [A], source: 'Table 3, p. 48-49'}
+  Security.PublicConfiguration: {c: 1, i: [I, C], a: [A], source: 'Table 3, p. 49'}
+  Security.Logs: {c: [C], i: [I], a: 2, source: 'Table 3, p. 49'}
+  Security.Mechanism: {c: null, i: [I, C], a: [A], source: 'Table 3, p. 49'}
+
+# Environment indicators and factors (Annex D.1).
+interface:
+  source: Table 11, p. 74-75
+  values:
+    physical: {factor: 0.38, de: physisch, en: physical}
+    local: {factor: 0.55, de: lokal, en: local}
+    dedicated_known_network: {factor: 0.70, de: dediziertes bekanntes Netz, en: dedicated known network}
+    known_network: {factor: 0.80, de: bekanntes Netz, en: known network}
+    external_network: {factor: 1.0, de: externes Netz, en: external network}
+access:
+  source: Table 12, p. 76
+  values:
+    restricted: {factor: 0.42, de: beschränkt, en: restricted}
+    public_restricted: {factor: 0.58, de: öffentlich beaufsichtigt, en: public restricted}
+    movable: {factor: 0.81, de: beweglich, en: movable}
+    non_restricted: {factor: 1.0, de: unbeschränkt, en: non restricted}
+user:
+  source: Table 13, p. 77
+  values:
+    non_user_related: {factor: 1.0, de: nicht nutzerabhängig, en: non-user-related}
+    skilled: {factor: 0.58, de: fachkundig, en: skilled}
+    instructed: {factor: 0.81, de: unterwiesen, en: instructed}
+    layman: {factor: 1.0, de: Laie, en: layman}
+
+# environment = round(offset + interface * access * user * scale), half up.
+exposure:
+  offset: 1
+  scale: 4
+  source: Annex D.1, p. 74
+  note: >-
+    The TR prints "round(1 + interface * access * user) * 4", which can only
+    yield 4 or 8. The text on p. 78 states that the fixed factors 1 and 4 map
+    onto the target scale 1 to 5, so the multiplication by 4 belongs inside.
+
+risk_levels:
+  source: Annex D.2, p. 78
+  levels:
+    1: {de: sehr niedrig, en: very low}
+    2: {de: niedrig, en: low}
+    3: {de: mittel, en: moderate}
+    4: {de: hoch, en: high}
+    5: {de: sehr hoch, en: very high}
+
+risk_matrix:
+  source: Annex D.2, p. 79
+  # Exactly as printed: row "Environment N" -> risk for impact 1..5.
+  rows:
+    5: [1, 1, 1, 2, 3]
+    4: [1, 1, 2, 3, 3]
+    3: [2, 2, 3, 4, 4]
+    2: [2, 3, 4, 4, 5]
+    1: [2, 3, 4, 5, 5]
+  # The formula gives 5 for the most exposed environment, but the printed
+  # matrix assigns the highest risk to "Environment 1". "inverted" reads
+  # row (6 - exposure), so maximum exposure yields maximum risk.
+  matrix_row_from_exposure: inverted
+
+acceptance:
+  source: Annex D.2, p. 78-79
+  max_acceptable_risk: 2  # "Every Low and Very Low Risk can be accepted"
+  # Who may accept which risk level: {level: [names or roles]}; empty = anyone.
+  approvers: {}
+  rules:
+    - id: post-market-moderate
+      label:
+        de: Bestandsprodukt nach dem Inverkehrbringen, mittel akzeptierbar
+        en: Post-market product, moderate acceptable
+      source: Annex D.2 note, p. 78-79
+      enabled: false
+      when: {project.lifecycle: post_market}
+      max_acceptable_risk: 3
+    - id: safety-stricter
+      label:
+        de: Strengere Grenze bei Sicherheitsbezug
+        en: Stricter limit for safety-related threats
+      source: tool convention
+      enabled: false
+      when: {threat.safety_related: true}
+      max_acceptable_risk: 1
+    - id: fleet-wide-amplifier
+      label:
+        de: Impact +1 bei flottenweiter Wirkung
+        en: Impact +1 for fleet-wide effect
+      source: tool convention (TR §5.14.1 allows a justified amplifier)
+      enabled: false
+      when: {threat.custom.fleet_wide: true}
+      impact_delta: 1
+
+# Tool conventions for suggestions and coverage, not part of the TR.
+stride_impact:
+  source: tool convention
+  map: {S: [I], T: [I], R: [I], I: [C], D: [A], E: [C, I, A]}
+stride_per_kind:
+  source: tool convention (STRIDE per element)
+  map:
+    external: [S, R]
+    process: [S, T, R, I, D, E]
+    device: [S, T, R, I, D, E]
+    datastore: [T, R, I, D]
+    flow: [T, I, D]

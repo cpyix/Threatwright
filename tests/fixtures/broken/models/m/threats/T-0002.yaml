@@ -1,0 +1,11 @@
+schema_version: 1
+id: T-0002
+uuid: 00000000-0000-4000-8000-0000000004b2
+title: Accepted although very high
+targets: [E-0001]
+stride: [S]
+cyber_cause: true
+assessment: {interface: external_network, access: non_restricted, user: layman, impact: 5}
+status: accepted
+acceptance: {by: Developer, rationale: ' '}
+custom: {owner_team: Dev, severity: c}

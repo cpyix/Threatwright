@@ -8,7 +8,7 @@ actually changed: saving without edits never produces a diff.
 import io
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ValidationError
 from ruamel.yaml import YAML
@@ -19,6 +19,7 @@ from ruamel.yaml.scalarstring import LiteralScalarString, ScalarString
 from threatwright.branding import PROJECT_FILE
 from threatwright.model.objects import (
     COLLECTIONS,
+    CustomFields,
     DiagramLayout,
     ModelMeta,
     ModelObject,
@@ -29,6 +30,7 @@ MAX_FILE_BYTES = 1 << 20
 MAX_DEPTH = 32
 MAX_NODES = 50_000  # also stops alias bombs: shared nodes are counted per visit
 
+CUSTOM_FIELDS_FILE = "custom-fields.yaml"
 MODEL_FILE = "model.yaml"
 LAYOUT_FILE = "diagram.layout.yaml"
 DEFAULT_PREFIXES = {
@@ -44,13 +46,19 @@ ALWAYS_WRITTEN = ("schema_version", "id", "uuid")
 
 @dataclass(frozen=True)
 class Issue:
-    path: Path
+    """A load or validation finding, addressable down to the field."""
+
+    path: Path | None
     location: str
     message: str
+    code: str = "schema"
+    severity: Literal["error", "warning"] = "error"
+    model: str | None = None
+    object_id: str | None = None
 
     def __str__(self) -> str:
         loc = f" [{self.location}]" if self.location else ""
-        return f"{self.path}{loc}: {self.message}"
+        return f"{self.severity}: {self.path}{loc}: {self.message} ({self.code})"
 
 
 class LoadError(Exception):
@@ -96,6 +104,8 @@ def read_yaml(path: Path) -> CommentedMap:
         doc = _yaml().load(data.decode("utf-8-sig"))
     except (YAMLError, UnicodeDecodeError) as exc:
         raise LoadError(f"invalid YAML: {exc}") from exc
+    if doc is None:  # empty or comments only
+        doc = CommentedMap()
     if not isinstance(doc, CommentedMap):
         raise LoadError("top level must be a mapping")
     return doc
@@ -217,6 +227,7 @@ def merge_into(doc: CommentedMap, obj: BaseModel) -> bool:
 class Project:
     root: Path
     config: ProjectConfig
+    custom_fields: CustomFields = field(default_factory=CustomFields)
     models: dict[str, SubModel] = field(default_factory=dict)
     issues: list[Issue] = field(default_factory=list)
     _docs: dict[Path, CommentedMap] = field(default_factory=dict, repr=False)
@@ -230,6 +241,9 @@ class Project:
         if config is None:
             raise LoadError(f"not a project: {root / PROJECT_FILE} missing or invalid")
         project.config = config
+        if (root / CUSTOM_FIELDS_FILE).exists():
+            custom = project._load(root / CUSTOM_FIELDS_FILE, CustomFields)
+            project.custom_fields = custom or project.custom_fields
         models_dir = root / "models"
         for model_dir in sorted(p for p in models_dir.glob("*") if p.is_dir()):
             meta = project._load(model_dir / MODEL_FILE, ModelMeta)
@@ -282,6 +296,9 @@ class Project:
         """Write every changed file and delete files of removed objects."""
         written: list[Path] = []
         self._save_one(self.root / PROJECT_FILE, self.config, written)
+        custom_path = self.root / CUSTOM_FIELDS_FILE
+        if custom_path.exists() or self.custom_fields.fields:
+            self._save_one(custom_path, self.custom_fields, written)
         wanted: set[Path] = set()
         for name, sub in self.models.items():
             model_dir = self.root / "models" / name

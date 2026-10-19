@@ -14,7 +14,7 @@ consequence: Manipulated inputs.
 safety_related: true
 assessment:
   interface: local
-  access: public_supervised
+  access: public_restricted
   user: non_user_related
   impact: 4
   rationale: Test rationale.

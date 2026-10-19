@@ -1,0 +1,9 @@
+schema_version: 1
+id: T-0003
+uuid: 00000000-0000-4000-8000-0000000004b3
+title: Rejected without rationale
+targets: [F-0001]
+stride: [I]
+assessment: {interface: wifi}
+status: rejected
+custom: {owner_team: Dev}

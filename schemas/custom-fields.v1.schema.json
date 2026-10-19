@@ -1,0 +1,104 @@
+{
+  "$defs": {
+    "CustomField": {
+      "additionalProperties": false,
+      "properties": {
+        "default": {
+          "default": null,
+          "title": "Default"
+        },
+        "help": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "propertyNames": {
+            "enum": [
+              "de",
+              "en"
+            ]
+          },
+          "title": "Help",
+          "type": "object"
+        },
+        "label": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "propertyNames": {
+            "enum": [
+              "de",
+              "en"
+            ]
+          },
+          "title": "Label",
+          "type": "object"
+        },
+        "name": {
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "options": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Options",
+          "type": "array"
+        },
+        "required": {
+          "default": false,
+          "title": "Required",
+          "type": "boolean"
+        },
+        "type": {
+          "default": "text",
+          "enum": [
+            "text",
+            "longtext",
+            "number",
+            "date",
+            "choice",
+            "multichoice",
+            "reference",
+            "bool"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "CustomField",
+      "type": "object"
+    }
+  },
+  "$id": "custom-fields.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Content of custom-fields.yaml: extra fields per object type.",
+  "properties": {
+    "fields": {
+      "additionalProperties": {
+        "items": {
+          "$ref": "#/$defs/CustomField"
+        },
+        "type": "array"
+      },
+      "default": {},
+      "title": "Fields",
+      "type": "object"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    }
+  },
+  "title": "CustomFields",
+  "type": "object"
+}

@@ -1,0 +1,8 @@
+schema_version: 1
+id: T-0001
+uuid: 00000000-0000-4000-8000-0000000004b1
+title: Assessed without assessment
+targets: [E-0001]
+stride: [T]
+scenario: See M-0042.
+status: assessed

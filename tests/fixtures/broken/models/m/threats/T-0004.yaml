@@ -1,0 +1,9 @@
+schema_version: 1
+id: T-0004
+uuid: 00000000-0000-4000-8000-0000000004b4
+title: Wear and tear, not a cyber risk
+targets: [E-0001]
+stride: [D]
+cyber_cause: false
+measures: [M-0001]
+custom: {owner_team: Dev, foo: 1}

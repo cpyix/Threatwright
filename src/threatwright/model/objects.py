@@ -50,8 +50,27 @@ class ProjectConfig(Versioned):
     uuid: Uuid = Field(default_factory=new_uuid)
     method: str = "tr-03183-1"
     language: Literal["de", "en"] = "de"
+    lifecycle: Literal["development", "post_market"] = "development"
     libraries: list[str] = []
     templates: list[str] = []
+
+
+class CustomField(Strict):
+    name: Annotated[str, Field(pattern=r"^[a-z][a-z0-9_]*$")]
+    label: dict[Literal["de", "en"], str] = {}
+    type: Literal[
+        "text", "longtext", "number", "date", "choice", "multichoice", "reference", "bool"
+    ] = "text"
+    required: bool = False
+    default: Any = None
+    options: list[str] = []
+    help: dict[Literal["de", "en"], str] = {}
+
+
+class CustomFields(Versioned):
+    """Content of custom-fields.yaml: extra fields per object type."""
+
+    fields: dict[str, list[CustomField]] = {}
 
 
 class Environment(Strict):
@@ -116,6 +135,7 @@ class Element(ModelObject):
     kind: Literal["process", "device", "datastore", "external"]
     zone: str | None = None
     configurations: list[str] = []
+    stride_not_relevant: dict[Stride, str] = {}  # category -> rationale
 
 
 class Flow(ModelObject):
@@ -125,6 +145,7 @@ class Flow(ModelObject):
     bidirectional: bool = False
     assets: list[ObjectId] = []
     configurations: list[str] = []
+    stride_not_relevant: dict[Stride, str] = {}
 
 
 class CiaAmplifier(Strict):
@@ -218,6 +239,7 @@ COLLECTIONS: dict[str, type[ModelObject]] = {
 
 FILE_TYPES: dict[str, type[Versioned]] = {
     "project": ProjectConfig,
+    "custom-fields": CustomFields,
     "model": ModelMeta,
     "diagram-layout": DiagramLayout,
     **{name.removesuffix("s"): cls for name, cls in COLLECTIONS.items()},

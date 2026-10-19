@@ -1,0 +1,8 @@
+schema_version: 1
+id: E-0001
+uuid: 00000000-0000-4000-8000-0000000001b1
+title: Element in unknown zone
+kind: device
+zone: Z-NOPE
+configurations: [K-X]
+stride_not_relevant: {R: ' '}

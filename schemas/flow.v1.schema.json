@@ -95,6 +95,24 @@
       "title": "Source",
       "type": "string"
     },
+    "stride_not_relevant": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "default": {},
+      "propertyNames": {
+        "enum": [
+          "S",
+          "T",
+          "R",
+          "I",
+          "D",
+          "E"
+        ]
+      },
+      "title": "Stride Not Relevant",
+      "type": "object"
+    },
     "target": {
       "pattern": "^[A-Za-z][A-Za-z0-9_]*-[0-9]{4,}$",
       "title": "Target",

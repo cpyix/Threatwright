@@ -1,0 +1,9 @@
+schema_version: 1
+title: Broken
+uuid: 00000000-0000-4000-8000-0000000000b2
+configurations:
+  - id: K-A
+    title: Base
+zones:
+  - id: Z-1
+    title: Zone

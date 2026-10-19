@@ -88,6 +88,22 @@ def test_undo_redo(client: TestClient) -> None:
     assert client.get("/api/project").json()["models"]["main"]["counts"]["questions"] == 0
 
 
+def test_preview_url_is_single_use_with_strict_csp(client: TestClient) -> None:
+    templates = client.get("/api/templates").json()
+    assert {"tr-analysis", "acceptance-criteria", "tr-analysis-compact"} <= {
+        t["id"] for t in templates
+    }
+    url = client.post("/api/preview", json={"template": "tr-analysis", "model": "main"}).json()[
+        "url"
+    ]
+    page = client.get(url)
+    assert page.status_code == 200 and "T-0001" in page.text
+    assert "script-src" not in page.headers["content-security-policy"]
+    assert "default-src 'none'" in page.headers["content-security-policy"]
+    assert client.get(url).status_code == 404  # single use
+    assert client.post("/api/build", json={"format": "exe"}).status_code == 422
+
+
 def test_external_changes_are_detected(client: TestClient, project_dir: Path) -> None:
     assert client.get("/api/changes").json()["changed"] == []
     path = project_dir / "models/main/assets/A-0001.yaml"

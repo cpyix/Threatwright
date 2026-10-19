@@ -1,0 +1,47 @@
+{#- Generic Markdown document: renders the blocks of every outline section.
+    Use it with {% extends "document.md.j2" %} and override `content` or `header`. -#}
+{% block header %}{% endblock %}
+{% block content %}
+{% for s in outline %}
+{% for b in s.blocks %}
+{% if b.kind == "title" %}
+# {{ b.text }}
+
+{% elif b.kind == "subtitle" %}
+**{{ b.text }}**
+
+{% elif b.kind == "h1" %}
+## {{ b.text }}
+
+{% elif b.kind == "h2" %}
+### {{ b.text }}
+
+{% elif b.kind == "p" %}
+{{ b.text }}
+
+{% elif b.kind == "note" %}
+> **{{ t("note") }}:** {{ b.text }}
+
+{% elif b.kind == "table" %}
+| {{ b.headers|map("md_cell")|join(" | ") }} |
+|{% for h in b.headers %}---|{% endfor %}
+
+{% for r in b.rows %}
+| {{ r|map("md_cell")|join(" | ") }} |
+{% endfor %}
+
+{% elif b.kind == "fields" %}
+| | |
+|---|---|
+{% for r in b.rows %}
+| **{{ r[0]|md_cell }}** | {{ r[1]|md_cell }} |
+{% endfor %}
+
+{% endif %}
+{% endfor %}
+{% endfor %}
+{% endblock %}
+{% block footer %}
+---
+{{ document.generator }} · {{ document.title }} · {{ t("version") }} {{ document.version or "–" }} · {{ document.date|date }}
+{% endblock %}

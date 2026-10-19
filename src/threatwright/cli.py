@@ -21,6 +21,13 @@ from threatwright.model.objects import SCHEMA_VERSION
 from threatwright.model.store import LoadError, Project
 from threatwright.oscal import OSCAL_VERSION, OscalError, validate_oscal
 from threatwright.oscal.project import import_into_project
+from threatwright.render import (
+    OUT_FORMATS,
+    RenderError,
+    build_documents,
+    check_template,
+    derive_template,
+)
 from threatwright.report import as_json, as_junit, as_sarif, as_text
 from threatwright.rules import has_errors, validate
 from threatwright.scaffold import ProjectExists, create_project
@@ -250,6 +257,61 @@ def oscal_import_cmd(
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(1) from exc
     typer.echo(f"imported into {written}")
+
+
+template_app = typer.Typer(help="Document templates.", no_args_is_help=True)
+app.add_typer(template_app, name="template")
+
+
+@app.command("build")
+def build_cmd(
+    path: Annotated[Path, typer.Argument(help="Project folder.")] = Path("."),
+    model: Annotated[str | None, typer.Option(help="Only this model.")] = None,
+    template: Annotated[str | None, typer.Option(help="Only this template.")] = None,
+    fmt: Annotated[
+        list[str] | None, typer.Option("--format", help="docx, odt, md, html, pdf; repeatable.")
+    ] = None,
+    output: Annotated[Path | None, typer.Option("-o", "--output", help="Output folder.")] = None,
+) -> None:
+    """Generate documents from templates (default output: <project>/build)."""
+    _load(path)
+    formats: list[str | None] = list(fmt) if fmt else [None]
+    unknown = [f for f in formats if f is not None and f not in OUT_FORMATS]
+    if unknown:
+        raise typer.BadParameter(f"unknown format(s): {', '.join(unknown)}")
+    try:
+        for f in formats:
+            for written in build_documents(path, model, template, f, output):  # type: ignore[arg-type]
+                typer.echo(f"wrote {written}")
+    except (RenderError, MethodError) as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(1) from exc
+
+
+@template_app.command("check")
+def template_check_cmd(
+    path: Annotated[Path, typer.Argument(help="Template package folder or template.yaml.")],
+) -> None:
+    """Report syntax errors and unknown variables in a template."""
+    issues = check_template(path)
+    for issue in issues:
+        typer.echo(str(issue))
+    typer.echo(f"{len(issues)} issue(s)")
+    raise typer.Exit(1 if any(i.severity == "error" for i in issues) else 0)
+
+
+@template_app.command("derive")
+def template_derive_cmd(
+    document: Annotated[Path, typer.Argument(help="Existing .docx or .odt of your company.")],
+    out_dir: Annotated[Path, typer.Argument(help="New template folder (its name becomes the id).")],
+) -> None:
+    """Turn an existing document into a template (keeps styles, header and footer)."""
+    try:
+        written = derive_template(document, out_dir)
+    except RenderError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(1) from exc
+    typer.echo(f"created {written}; check it with: threatwright template check {out_dir}")
 
 
 @app.command("migrate")

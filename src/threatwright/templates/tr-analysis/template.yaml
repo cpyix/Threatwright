@@ -1,0 +1,29 @@
+# Bundled neutral template (CC BY 4.0, ADR-0002). Copy the folder to
+# <project>/templates/tr-analysis/ to override it; see docs/vorlagenreferenz.md.
+schema_version: 1
+id: tr-analysis
+name:
+  de: Bedrohungs- und Risikoanalyse nach BSI TR-03183-1
+  en: Threat and risk analysis according to BSI TR-03183-1
+description:
+  de: Vollständige Analyse eines Modells mit Methode, Assets, Bedrohungen, Maßnahmen und Rückverfolgbarkeit.
+  en: Complete analysis of one model with method, assets, threats, measures and traceability.
+files:
+  docx: template.docx
+  odt: template.odt
+  md: template.md
+  html: template.html
+outline:
+  - type: cover
+  - type: scope
+  - type: method
+  - type: assets
+  - type: elements_and_flows
+  - type: risk_distribution
+  - type: threats
+  - type: rejected
+  - type: measures
+  - type: traceability
+  - type: questions
+  - type: custom_fields
+  - type: changelog

@@ -10,7 +10,10 @@ import json
 import os
 import re
 import secrets
+import subprocess
+import sys
 import threading
+import time
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any
@@ -47,6 +50,13 @@ from threatwright.model.refactor import rename_id
 from threatwright.model.store import LoadError, Project, SubModel
 from threatwright.oscal import OscalError, imported_libraries
 from threatwright.oscal.project import import_into_project
+from threatwright.render import (
+    OUT_FORMATS,
+    RenderError,
+    build_documents,
+    list_templates,
+    preview_html,
+)
 from threatwright.rules import relative, validate
 from threatwright.scaffold import ProjectExists, create_project
 from threatwright.vcs import VcsError, changed_objects, release_tags
@@ -59,6 +69,11 @@ CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
     "font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; "
     "form-action 'none'; frame-ancestors 'none'"
+)
+# Document preview: static HTML with inline styles, no scripts, framed by the app only.
+PREVIEW_CSP = (
+    "default-src 'none'; style-src 'unsafe-inline'; img-src data:; "
+    "frame-ancestors 'self'; base-uri 'none'; form-action 'none'"
 )
 
 
@@ -208,7 +223,7 @@ def create_app(token: str, port: int | None = None, project: Path | None = None)
             if int(request.headers.get("content-length") or 0) > MAX_BODY:
                 return JSONResponse({"detail": "request too large"}, status_code=413)
         response: Response = await call_next(request)
-        response.headers["Content-Security-Policy"] = CSP
+        response.headers.setdefault("Content-Security-Policy", CSP)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "no-referrer"
         response.headers["Cache-Control"] = "no-store"
@@ -592,6 +607,79 @@ def create_app(token: str, port: int | None = None, project: Path | None = None)
                 raise HTTPException(422, json.loads(exc.json(include_url=False))) from exc
             set_override(root, name, measure_id, override)
             return controls(name)
+
+    # --- documents (M5) ----------------------------------------------------------------
+    # Documents are rendered from the files on disk, so the GUI asks to save first.
+
+    previews: dict[str, tuple[float, str]] = {}
+
+    @app.get("/api/templates")
+    def templates() -> list[dict[str, Any]]:
+        with session.lock:
+            root = session.require().root
+        try:
+            return list_templates(root)
+        except RenderError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/preview")
+    def preview(body: dict[str, str]) -> dict[str, str]:
+        with session.lock:
+            root = session.require().root
+        try:
+            html = preview_html(root, body.get("model") or None, body.get("template", ""))
+        except RenderError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        now = time.monotonic()
+        for key in [k for k, (t, _) in previews.items() if now - t > 60]:
+            del previews[key]
+        ticket = secrets.token_urlsafe(32)
+        previews[ticket] = (now, html)
+        return {"url": f"/preview/{ticket}"}
+
+    @app.get("/preview/{ticket}", include_in_schema=False)
+    def preview_page(ticket: str) -> Response:
+        """Single-use, short-lived URL for the sandboxed preview iframe (no scripts)."""
+        entry = previews.pop(ticket, None)
+        if entry is None or time.monotonic() - entry[0] > 60:
+            raise HTTPException(404)
+        return Response(
+            entry[1],
+            media_type="text/html",
+            headers={"Content-Security-Policy": PREVIEW_CSP},
+        )
+
+    @app.post("/api/build")
+    def build(body: dict[str, str]) -> dict[str, Any]:
+        with session.lock:
+            root = session.require().root
+            if session.dirty:
+                raise HTTPException(409, "save your changes before building documents")
+        fmt = body.get("format") or None
+        if fmt is not None and fmt not in OUT_FORMATS:
+            raise HTTPException(422, f"format: {', '.join(OUT_FORMATS)}")
+        try:
+            written = build_documents(
+                root,
+                body.get("model") or None,
+                body.get("template") or None,
+                fmt,
+            )
+        except RenderError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        return {"written": [p.relative_to(root).as_posix() for p in written]}
+
+    @app.post("/api/open-build-folder")
+    def open_build_folder() -> dict[str, str]:
+        """Open <project>/build in the file manager of the local machine."""
+        with session.lock:
+            folder = session.require().root.resolve() / "build"
+        folder.mkdir(exist_ok=True)
+        if sys.platform == "win32":
+            os.startfile(folder)  # noqa: S606
+        else:
+            subprocess.Popen(["xdg-open", str(folder)])  # noqa: S603, S607
+        return {"folder": str(folder)}
 
     # --- CI templates (ADR-0009) ----------------------------------------------------
 

@@ -1,0 +1,47 @@
+# Bundled neutral template (CC BY 4.0, ADR-0002). Shows that layout and outline
+# change without code changes: own styles in template.docx, different section
+# order, fewer columns, a free-text section and a disabled section.
+schema_version: 1
+id: tr-analysis-compact
+name:
+  de: Bedrohungs- und Risikoanalyse (Kurzfassung)
+  en: Threat and risk analysis (summary)
+description:
+  de: Kurzfassung für das Management mit Zusammenfassung, Risikoverteilung und Maßnahmen.
+  en: Management summary with risk distribution, threats and measures.
+format: docx
+file: template.docx
+outline:
+  - type: cover
+  - type: text
+    title:
+      de: Zusammenfassung
+      en: Summary
+    text:
+      de: |
+        Für {{ model.title }} wurden {{ threats|length }} Bedrohungen betrachtet.
+        {{ threats|selectattr("treatment", "equalto", "to_treat")|list|length }} davon
+        überschreiten die Akzeptanzgrenze „{{ method.max_acceptable_label }}“ und werden
+        behandelt; {{ measures|length }} Maßnahmen sind erfasst.
+
+        Grundlage ist {{ method.title }}. Stand: {{ document.date|date("long") }}.
+      en: |
+        {{ threats|length }} threats were considered for {{ model.title }}.
+        {{ threats|selectattr("treatment", "equalto", "to_treat")|list|length }} of them
+        exceed the acceptance limit “{{ method.max_acceptable_label }}” and are treated;
+        {{ measures|length }} measures are recorded.
+
+        Basis: {{ method.title }}. Date: {{ document.date|date("long") }}.
+  - type: risk_distribution
+    columns: [label, count, treatment]
+  - type: threats
+    columns: [id, title, risk, treatment]
+    details: false
+  - type: measures
+    columns: [id, title, status, owner]
+  - type: questions
+    columns: [id, title, status]
+  - type: method
+  - type: scope
+  - type: assets
+    enabled: false

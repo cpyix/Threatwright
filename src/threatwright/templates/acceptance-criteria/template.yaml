@@ -1,0 +1,41 @@
+# Bundled neutral template (CC BY 4.0, ADR-0002): decision document for the
+# risk acceptance criteria, generated from the method configuration.
+schema_version: 1
+id: acceptance-criteria
+name:
+  de: Risikoakzeptanzkriterien – Entscheidungsvorlage
+  en: Risk acceptance criteria – decision document
+description:
+  de: Entscheidungspunkte der Methode mit Optionen, Empfehlung, Unterschriftsfeldern und Auswirkung auf die bestehenden Modelle.
+  en: Decision points of the method with options, recommendation, signature fields and effect on the existing models.
+scope: project
+files:
+  docx: template.docx
+  odt: template.odt
+  md: template.md
+outline:
+  - type: cover
+  - type: text
+    title:
+      de: Zweck
+      en: Purpose
+    text:
+      de: |
+        Mit diesem Dokument wird festgelegt, nach welchen Kriterien Risiken im Projekt
+        {{ project.name }} akzeptiert werden. Grundlage ist {{ method.title }}.
+
+        Für jeden Entscheidungspunkt sind die Optionen, die Empfehlung (Voreinstellung der
+        Methode) und die aktuelle Einstellung angegeben. Der Anhang zeigt, wie viele der
+        derzeit {{ acceptance.assessed_total }} bewerteten Bedrohungen je Option behandelt
+        werden müssten.
+      en: |
+        This document defines the criteria for accepting risks in project
+        {{ project.name }}. Basis: {{ method.title }}.
+
+        Each decision point lists the options, the recommendation (method default) and the
+        current setting. The appendix shows how many of the currently
+        {{ acceptance.assessed_total }} assessed threats would need treatment per option.
+  - type: method
+  - type: decisions
+  - type: signatures
+  - type: acceptance_impact

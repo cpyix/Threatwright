@@ -2,6 +2,7 @@ name: ci
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 permissions:
@@ -47,3 +48,11 @@ jobs:
         run: |
           uv run python -c "from threatwright.model.store import Project; p = Project.load('tests/fixtures/project'); assert not p.issues, p.issues; p.save()"
           git diff --exit-code
+
+  # One stable check name for branch protection; matrix job names change with the matrix.
+  ci-ok:
+    if: always()
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - run: test "${{ needs.test.result }}" = success

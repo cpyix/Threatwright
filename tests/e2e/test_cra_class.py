@@ -6,7 +6,12 @@ from pathlib import Path
 from playwright.sync_api import Page, expect
 
 TEXT = {
-    "de": ("Smart-Home-Produkte mit Sicherheitsfunktionen", "Klasse I (", "keine davon", "Standard"),
+    "de": (
+        "Smart-Home-Produkte mit Sicherheitsfunktionen",
+        "Klasse I (",
+        "keine davon",
+        "Standard",
+    ),
     "en": ("Smart home products with security functions", "Class I (", "none of these", "Default"),
 }
 

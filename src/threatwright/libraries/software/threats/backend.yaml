@@ -61,7 +61,7 @@ threats:
     environment: {interface: external_network, access: non_restricted, user: layman}
     impact: 4
     cra_refs: [AI-I-2-d]
-    asvs: [V6.2.1, V6.3.1, V6.4.1]
+    asvs: [V6.2.1, V6.2.4, V6.3.1, V6.3.8, V6.4.3]
     masvs: [MASVS-AUTH-1]
     measures: [sw-account-auth, api-rate-limiting]
     sources: ["OWASP Top 10 2021 A07 Identification and Authentication Failures; OWASP API Security Top 10 2023 API2 Broken Authentication"]
@@ -245,7 +245,7 @@ threats:
     environment: {interface: external_network, access: non_restricted, user: instructed}
     impact: 5
     cra_refs: [AI-I-2-d]
-    asvs: [V6.3.3, V6.4.1]
+    asvs: [V6.3.3, V6.3.5]
     measures: [sw-account-auth]
     sources: ["OWASP Top 10 2021 A07 Identification and Authentication Failures; CWE-308 Use of Single-factor Authentication"]
 
@@ -279,7 +279,7 @@ threats:
     environment: {interface: external_network, access: non_restricted, user: instructed}
     impact: 4
     cra_refs: [AI-I-2-f, AI-I-2-d]
-    asvs: [V1.2.1, V3.3.1, V3.4.3, V3.5.1]
+    asvs: [V1.2.1, V3.3.2, V3.4.3, V3.5.1]
     measures: [web-console-hardening]
     sources: ["OWASP Top 10 2021 A03 Injection; CWE-79; CWE-352"]
 
@@ -375,3 +375,68 @@ threats:
     masvs: [MASVS-CRYPTO-1]
     measures: [vetted-crypto]
     sources: ["OWASP Top 10 2021 A02 Cryptographic Failures; CWE-327; CWE-338"]
+
+  - id: api-ssrf
+    rev: 1
+    stride: [I, E]
+    applies_to: [backend-api]
+    title:
+      de: '{element} ruft im Auftrag eines Angreifers interne Adressen ab'
+      en: '{element} fetches internal addresses on behalf of an attacker'
+    scenario:
+      de: >-
+        Das Backend lädt Inhalte von einer Adresse, die der Nutzer angibt, z. B. für
+        eine Vorschau, einen Import oder einen Webhook. Ein Angreifer gibt statt einer
+        Web-Adresse eine interne Adresse an, etwa die Metadaten-Schnittstelle der
+        Cloud oder eine Verwaltungsoberfläche im internen Netz.
+      en: >-
+        The backend loads content from an address the user provides, e.g. for a
+        preview, an import or a webhook. Instead of a web address an attacker enters
+        an internal address, such as the cloud metadata interface or a management
+        interface in the internal network.
+    consequence:
+      de: >-
+        Der Angreifer erhält Cloud-Zugangsdaten oder erreicht interne Dienste, die
+        nie aus dem Internet erreichbar sein sollten, und kann von dort weiter
+        vordringen.
+      en: >-
+        The attacker obtains cloud credentials or reaches internal services that
+        should never be reachable from the internet, and can advance from there.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-d, AI-I-2-e, AI-I-2-j]
+    asvs: [V1.3.6, V13.2.4, V15.3.2]
+    measures: [sw-input-validation]
+    sources: ["OWASP API Security Top 10 2023 API7 Server Side Request Forgery; CWE-918"]
+
+  - id: api-mass-assignment
+    rev: 1
+    stride: [T, E]
+    applies_to: [backend-api]
+    title:
+      de: Zusätzliche Felder in Anfragen an {element} ändern geschützte Werte
+      en: Extra fields in requests to {element} change protected values
+    scenario:
+      de: >-
+        Das Backend übernimmt alle Felder einer Anfrage direkt in den Datensatz. Ein
+        Nutzer ergänzt beim Ändern seines Profils Felder wie "rolle": "admin",
+        "freigeschaltet": true oder eine fremde Kunden-ID, die die Oberfläche gar
+        nicht anbietet.
+      en: >-
+        The backend copies all fields of a request directly into the record. When
+        changing his profile a user adds fields such as "role": "admin",
+        "activated": true or a foreign customer ID that the user interface does not
+        even offer.
+    consequence:
+      de: >-
+        Der Nutzer macht sich zum Administrator, schaltet bezahlte Funktionen frei
+        oder schiebt Daten in fremde Konten.
+      en: >-
+        The user makes himself administrator, unlocks paid functions or moves data
+        into foreign accounts.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    asvs: [V15.3.3, V8.2.3]
+    measures: [object-level-authz]
+    sources: ["OWASP API Security Top 10 2023 API3 Broken Object Property Level Authorization; CWE-915"]

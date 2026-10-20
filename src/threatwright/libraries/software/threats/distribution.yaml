@@ -47,11 +47,13 @@ threats:
         den Programmordner mit Schreibrecht für alle Benutzer an oder richtet einen
         Dienst ein, der dauerhaft als SYSTEM oder root läuft, obwohl das nicht nötig
         ist.
+        Schadsoftware, die so etwas tut, gelangt typischerweise über das Internet auf das Gerät (Download, E-Mail-Anhang); der Angriff ist dann ein zweiter Schritt aus der Ferne.
       en: >-
         The installer runs with administrator rights, unpacks files into a temp
         folder writable by everyone and starts them from there. It creates the
         program folder with write access for all users or sets up a service that runs
         permanently as SYSTEM or root although this is not needed.
+        Malware that does this typically reaches the device via the internet (download, e-mail attachment); the attack is then a remote second step.
     consequence:
       de: >-
         Jeder Benutzer oder jede Schadsoftware auf dem Rechner kann Programmdateien
@@ -59,7 +61,7 @@ threats:
       en: >-
         Every user or any malware on the computer can replace program files and gains
         administrator rights at the next start.
-    environment: {interface: local, access: non_restricted}
+    environment: {interface: external_network, access: non_restricted}
     impact: 4
     cra_refs: [AI-I-2-j, AI-I-2-k, AI-I-2-d]
     asvs: [V13.2.2]
@@ -95,7 +97,7 @@ threats:
     cra_refs: [AI-I-2-c, AI-I-2-f, AI-II-7]
     asvs: [V12.3.2]
     measures: [sw-signed-updates, tls-pinning-or-validation]
-    sources: ["OWASP Top 10 2021 A08 Software and Data Integrity Failures; CWE-494"]
+    sources: ["OWASP Top 10 2021 A08 Software and Data Integrity Failures; CWE-494 Download of Code Without Integrity Check; ASVS V12.3.2 covers only the transport, not the signature check"]
 
   - id: update-downgrade
     rev: 1
@@ -125,7 +127,7 @@ threats:
     cra_refs: [AI-I-2-c, AI-I-2-f]
     masvs: [MASVS-CODE-2]
     measures: [update-anti-rollback]
-    sources: ["OWASP Top 10 2021 A08 Software and Data Integrity Failures"]
+    sources: ["OWASP Top 10 2021 A08 Software and Data Integrity Failures; CWE-1328 Security Version Number Mutable to Older Versions"]
 
   - id: security-update-unnoticed
     rev: 1
@@ -189,7 +191,7 @@ threats:
     cra_refs: [AI-I-2-h, AI-II-7]
     asvs: [V16.5.3]
     measures: [update-failsafe]
-    sources: ["general software engineering practice"]
+    sources: ["general software engineering practice; ASVS V16.5.3 (fail securely) is only a loose fit for installation and update robustness"]
 
   - id: license-bypass-unpatched-copies
     rev: 1
@@ -217,7 +219,7 @@ threats:
       en: >-
         Many installations remain vulnerable permanently or are already infected;
         attacks on them are attributed to the product.
-    environment: {interface: local, access: non_restricted}
+    environment: {interface: external_network, access: non_restricted}
     impact: 3
     cra_refs: [AI-I-2-c, AI-I-2-f]
     masvs: [MASVS-RESILIENCE-2]

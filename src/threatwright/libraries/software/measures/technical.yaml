@@ -13,13 +13,15 @@ measures:
         gelten als nicht vertrauenswürdig. Die Software prüft Typ, Länge und
         erlaubte Werte nach einer Positivliste. Datenbankabfragen nutzen Parameter
         statt zusammengesetzter Zeichenketten, Betriebssystembefehle werden nicht
-        aus Eingaben gebaut. Die Prüfung findet auf dem Server statt, auch wenn der
+        aus Eingaben gebaut. Adressen, die der Server selbst abruft, müssen auf einer
+        Positivliste stehen. Die Prüfung findet auf dem Server statt, auch wenn der
         Client schon prüft.
       en: >-
         All data from outside (API requests, files, messages from other programs) is
         treated as untrusted. The software checks type, length and allowed values
         against an allowlist. Database queries use parameters instead of assembled
-        strings, operating system commands are not built from input. Checks take
+        strings, operating system commands are not built from input. Addresses the
+        server fetches itself must be on an allowlist. Checks take
         place on the server, even if the client already checks.
     kind: technical
     evidence:
@@ -30,7 +32,7 @@ measures:
         Development guideline; code review checklist; results of static analysis and
         of tests with manipulated input.
     cra_refs: [AI-I-2-f, AI-I-2-k]
-    asvs: [V1.2.4, V1.2.5, V2.2.1]
+    asvs: [V1.2.4, V1.2.5, V1.3.6, V2.2.1, V2.2.2, V13.2.4]
     masvs: [MASVS-CODE-4]
     sources: ["OWASP Top 10 2021 A03 Injection; CWE-20"]
 
@@ -44,14 +46,16 @@ measures:
         Der Server prüft bei jeder Anfrage, ob der angemeldete Nutzer genau dieses
         Objekt (z. B. Auftrag, Dokument, Gerät) und genau diese Funktion nutzen
         darf. Eine ID in der Anfrage allein berechtigt zu nichts. Antworten
-        enthalten nur die Felder, die der Nutzer sehen darf. Verwaltungsfunktionen
+        enthalten nur die Felder, die der Nutzer sehen darf, und beim Schreiben
+        übernimmt der Server nur Felder, die der Nutzer ändern darf. Verwaltungsfunktionen
         sind nur für Administratorrollen erreichbar. Entscheidungen, die der Client
         trifft (Preis, Rolle, Freischaltung), übernimmt der Server nicht ungeprüft.
       en: >-
         For every request the server checks whether the logged-in user may use
         exactly this object (e.g. order, document, device) and exactly this
         function. An ID in the request alone grants nothing. Responses contain only
-        the fields the user may see. Administration functions are only reachable for
+        the fields the user may see, and when writing the server accepts only fields
+        the user may change. Administration functions are only reachable for
         administrator roles. The server does not accept decisions made by the client
         (price, role, activation) without checking.
     kind: technical
@@ -63,7 +67,7 @@ measures:
         Role and permission concept; automated tests that access the other
         account's objects with two accounts.
     cra_refs: [AI-I-2-d]
-    asvs: [V8.2.1, V8.2.2, V8.2.3, V8.3.1]
+    asvs: [V8.2.1, V8.2.2, V8.2.3, V8.3.1, V15.3.3]
     sources: ["OWASP API Security Top 10 2023 API1, API3 and API5"]
 
   - id: api-rate-limiting
@@ -113,7 +117,7 @@ measures:
       de: Passwort- und MFA-Richtlinie; Test der Anmeldung und der Kontowiederherstellung.
       en: Password and MFA policy; test of login and account recovery.
     cra_refs: [AI-I-2-d]
-    asvs: [V6.2.1, V6.3.3, V6.4.1]
+    asvs: [V6.2.1, V6.2.4, V6.3.3, V6.3.5, V6.4.3]
     masvs: [MASVS-AUTH-1]
     sources: ["OWASP Top 10 2021 A07 Identification and Authentication Failures"]
 
@@ -165,7 +169,7 @@ measures:
       de: Ausgelieferte Sicherheits-Header; Ergebnis eines Web-Schwachstellenscans.
       en: Delivered security headers; result of a web vulnerability scan.
     cra_refs: [AI-I-2-f, AI-I-2-k]
-    asvs: [V1.2.1, V3.3.1, V3.4.3, V3.5.1]
+    asvs: [V1.2.1, V3.3.2, V3.4.3, V3.5.1]
     sources: ["OWASP Top 10 2021 A03 Injection; CWE-79; CWE-352"]
 
   - id: audit-trail
@@ -218,7 +222,7 @@ measures:
       de: Kryptografie-Inventar; Code-Review; Suche nach veralteten Verfahren im Code.
       en: Cryptography inventory; code review; search for outdated methods in the code.
     cra_refs: [AI-I-2-e, AI-I-2-f]
-    asvs: [V11.1.1, V11.2.1, V11.3.2, V11.5.1]
+    asvs: [V11.1.2, V11.2.1, V11.3.2, V11.5.1]
     masvs: [MASVS-CRYPTO-1]
     sources: ["OWASP Top 10 2021 A02 Cryptographic Failures; CWE-327"]
 
@@ -435,7 +439,7 @@ measures:
       de: Dienstkonto und Rechte; Liste der angebotenen Befehle; Test als normaler Nutzer.
       en: Service account and rights; list of offered commands; test as a normal user.
     cra_refs: [AI-I-2-d, AI-I-2-j]
-    asvs: [V8.3.1]
+    asvs: [V8.3.1, V13.2.2]
     sources: ["CWE-269; CWE-250"]
 
   - id: ipc-hardening
@@ -592,7 +596,7 @@ measures:
       de: Durchsicht einer Exportdatei; Test mit einer veränderten signierten Datei.
       en: Review of an export file; test with a modified signed file.
     cra_refs: [AI-I-2-e, AI-I-2-f]
-    asvs: [V14.2.8]
+    asvs: [V14.2.4, V14.2.8]
     sources: ["CWE-212; CWE-345"]
 
   - id: push-content-minimal
@@ -685,19 +689,22 @@ measures:
         Jedes Update und jede Update-Liste ist vom Hersteller signiert. Die
         Update-Funktion prüft die Signatur mit einem fest eingebauten Schlüssel,
         bevor sie etwas installiert, und lädt nur über geprüftes HTTPS. Eine
-        ungültige Signatur bricht das Update ab und wird gemeldet.
+        ungültige Signatur bricht das Update ab und wird gemeldet. (Der ASVS-Bezug
+        betrifft nur den geprüften Transportweg; für die Signaturprüfung selbst hat
+        ASVS keine Anforderung.)
       en: >-
         Every update and every update list is signed by the manufacturer. The
         updater checks the signature with a built-in key before installing
         anything and downloads only via validated HTTPS. An invalid signature aborts
-        the update and is reported.
+        the update and is reported. (The ASVS reference covers only the validated
+        transport; ASVS has no requirement for the signature check itself.)
     kind: technical
     evidence:
       de: Test mit einem manipulierten Update-Paket; Beschreibung der Update-Signierung.
       en: Test with a manipulated update package; description of update signing.
     cra_refs: [AI-I-2-c, AI-I-2-f, AI-II-7]
     asvs: [V12.3.2]
-    sources: ["OWASP Top 10 2021 A08 Software and Data Integrity Failures; CWE-494"]
+    sources: ["OWASP Top 10 2021 A08 Software and Data Integrity Failures; CWE-494 Download of Code Without Integrity Check"]
 
   - id: update-anti-rollback
     rev: 1
@@ -745,7 +752,7 @@ measures:
       en: Test with an aborted update; description of staged rollout.
     cra_refs: [AI-I-2-h, AI-II-7]
     asvs: [V16.5.3]
-    sources: ["general software engineering practice"]
+    sources: ["general software engineering practice; ASVS V16.5.3 (fail securely) is only a loose fit"]
 
   - id: update-notification
     rev: 1
@@ -821,3 +828,32 @@ measures:
     asvs: [V15.1.1, V15.2.1]
     masvs: [MASVS-CODE-3]
     sources: ["OWASP Top 10 2021 A06 Vulnerable and Outdated Components; CWE-1395"]
+
+  - id: release-signing-protection
+    rev: 1
+    title:
+      de: Build und Signierschlüssel abschotten
+      en: Isolate build and signing key
+    description:
+      de: >-
+        Der Signaturschlüssel liegt in einem Hardware-Sicherheitsmodul oder
+        Cloud-Signaturdienst und lässt sich nicht exportieren. Signiert wird nur
+        aus einer abgeschotteten Build-Umgebung, für Releases mit Freigabe durch
+        eine zweite Person, und jede Signatur wird protokolliert. Build-Server und
+        Quellcode-Verwaltung sind mit zweitem Faktor und minimalen Rechten
+        geschützt; Builds sind nach Möglichkeit reproduzierbar, sodass sich ein
+        Release gegen einen unabhängigen Build vergleichen lässt.
+      en: >-
+        The signing key is kept in a hardware security module or cloud signing
+        service and cannot be exported. Signing takes place only from an isolated
+        build environment, for releases with approval by a second person, and every
+        signature is logged. Build server and source code management are protected
+        with a second factor and minimal rights; builds are reproducible where
+        possible so that a release can be compared against an independent build.
+    kind: technical
+    evidence:
+      de: Beschreibung der Schlüsselaufbewahrung; Signaturprotokoll; Rechte auf Build-Server und Repository.
+      en: Description of key storage; signing log; rights on build server and repository.
+    cra_refs: [AI-I-2-f, AI-II-7]
+    asvs: [V13.3.1]
+    sources: ["SLSA framework (supply-chain levels for software artifacts); CWE-506"]

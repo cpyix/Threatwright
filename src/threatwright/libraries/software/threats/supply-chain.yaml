@@ -99,3 +99,40 @@ threats:
     asvs: [V15.1.2]
     measures: [sbom-generated, dependency-provenance]
     sources: ["Regulation (EU) 2024/2847 Annex I Part II (1); BSI TR-03183-2"]
+
+  - id: build-pipeline-compromise
+    rev: 1
+    stride: [S, T, E]
+    applies_to: [installer, updater, desktop-app, mobile-app]
+    title:
+      de: Angreifer im Build-System des Herstellers verteilt Schadcode über {element}
+      en: Attacker in the manufacturer's build system distributes malicious code via {element}
+    scenario:
+      de: >-
+        Ein Angreifer dringt in Build-Server, Quellcode-Verwaltung oder den Rechner
+        eines Entwicklers ein, der signieren darf. Er fügt beim Bauen unbemerkt
+        Schadcode ein oder signiert eigene Programme mit dem Schlüssel des
+        Herstellers. Der Signaturschlüssel liegt als Datei auf dem Build-Server oder
+        bei mehreren Entwicklern.
+      en: >-
+        An attacker gets into the build server, source code management or the
+        computer of a developer who is allowed to sign. He silently adds malicious
+        code during the build or signs own programs with the manufacturer's key. The
+        signing key is kept as a file on the build server or with several
+        developers.
+    consequence:
+      de: >-
+        Alle Kunden erhalten über den regulären, korrekt signierten Update-Weg
+        Schadsoftware, der sie vertrauen. Signaturprüfungen bei Kunden schlagen nicht
+        an. Der Schlüssel muss gesperrt und alle Installationen neu ausgestattet
+        werden.
+      en: >-
+        All customers receive malware through the regular, correctly signed update
+        path, and they trust it. Signature checks at customers do not trigger. The
+        key has to be revoked and all installations re-equipped.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 5
+    cra_refs: [AI-I-2-f, AI-II-7]
+    asvs: [V13.3.1]
+    measures: [release-signing-protection, code-signing]
+    sources: ["Public incident reports on the SolarWinds Orion (2020) and 3CX (2023) supply chain attacks; CWE-506 Embedded Malicious Code"]

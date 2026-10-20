@@ -115,11 +115,13 @@ threats:
         eine Schadsoftware ändert die Server-Adresse, schaltet Prüfungen ab, ersetzt
         ein hinterlegtes Zertifikat oder schreibt präparierte Werte in die Datenbank,
         die beim Einlesen einen Fehler auslösen.
+        Schadsoftware, die so etwas tut, gelangt typischerweise über das Internet auf das Gerät (Download, E-Mail-Anhang); der Angriff ist dann ein zweiter Schritt aus der Ferne.
       en: >-
         The application trusts its local files blindly. Another user or malware
         changes the server address, switches off checks, replaces a stored
         certificate or writes prepared values into the database that trigger a flaw
         when read.
+        Malware that does this typically reaches the device via the internet (download, e-mail attachment); the attack is then a remote second step.
     consequence:
       de: >-
         Die Anwendung spricht mit einem fremden Server, arbeitet ohne Schutz oder
@@ -127,7 +129,7 @@ threats:
       en: >-
         The application talks to a foreign server, works without protection or
         executes injected code.
-    environment: {interface: local, access: non_restricted}
+    environment: {interface: external_network, access: non_restricted}
     impact: 3
     cra_refs: [AI-I-2-f]
     asvs: [V2.2.1]
@@ -148,11 +150,13 @@ threats:
         gespeicherte Zugangsdaten ersetzt, ohne dass die Anwendung festhält, wann und
         durch wen. Änderungen direkt im Betriebssystem, z. B. in einer
         Einstellungsdatei, bemerkt sie gar nicht.
+        Schadsoftware, die so etwas tut, gelangt typischerweise über das Internet auf das Gerät (Download, E-Mail-Anhang); der Angriff ist dann ein zweiter Schritt aus der Ferne.
       en: >-
         Security settings are changed, versions installed or removed, stored
         credentials replaced without the application recording when and by whom.
         Changes made directly in the operating system, e.g. in a settings file, go
         completely unnoticed.
+        Malware that does this typically reaches the device via the internet (download, e-mail attachment); the attack is then a remote second step.
     consequence:
       de: >-
         Nach einem Vorfall lässt sich nicht klären, was passiert ist, welche Version
@@ -160,7 +164,7 @@ threats:
       en: >-
         After an incident it cannot be clarified what happened, which version was
         running and who was responsible. Customers and support argue about the cause.
-    environment: {interface: local, access: non_restricted}
+    environment: {interface: external_network, access: non_restricted}
     impact: 2
     cra_refs: [AI-I-2-l]
     asvs: [V16.2.1]
@@ -180,10 +184,12 @@ threats:
         Verschlüsselungs-Schadsoftware oder ein Angreifer mit Schreibrecht beschädigt
         oder löscht Einstellungen und Datenbank. Die Anwendung startet danach nicht
         mehr oder verliert Daten.
+        Schadsoftware, die so etwas tut, gelangt typischerweise über das Internet auf das Gerät (Download, E-Mail-Anhang); der Angriff ist dann ein zweiter Schritt aus der Ferne.
       en: >-
         A crash while saving, a full disk, ransomware or an attacker with write access
         damages or deletes settings and database. The application then no longer
         starts or loses data.
+        Malware that does this typically reaches the device via the internet (download, e-mail attachment); the attack is then a remote second step.
     consequence:
       de: >-
         Der Nutzer kann nicht arbeiten und verliert Arbeitsstände; der Support muss
@@ -191,7 +197,7 @@ threats:
       en: >-
         The user cannot work and loses work in progress; support has to repair each
         installation individually.
-    environment: {interface: local, access: non_restricted}
+    environment: {interface: external_network, access: non_restricted}
     impact: 3
     cra_refs: [AI-I-2-h]
     asvs: [V16.5.3]
@@ -213,11 +219,13 @@ threats:
         Arbeitsordner oder in einem für alle Benutzer beschreibbaren Ordner. Ein
         Angreifer legt dort eine gleichnamige DLL oder dylib ab, z. B. per Download
         neben das Installationsprogramm.
+        Schadsoftware, die so etwas tut, gelangt typischerweise über das Internet auf das Gerät (Download, E-Mail-Anhang); der Angriff ist dann ein zweiter Schritt aus der Ferne.
       en: >-
         The program loads libraries or helper programs without a full path. The
         operating system then also searches the downloads folder, the current working
         folder or a folder writable by all users. An attacker places a library with
         the same name there, e.g. via a download next to the installer.
+        Malware that does this typically reaches the device via the internet (download, e-mail attachment); the attack is then a remote second step.
     consequence:
       de: >-
         Fremder Code läuft mit den Rechten des Programms, beim Installationsprogramm
@@ -227,10 +235,9 @@ threats:
         Foreign code runs with the rights of the program, for installer or update
         service often with administrator rights. The computer is completely taken
         over.
-    environment: {interface: local, access: non_restricted, user: layman}
+    environment: {interface: external_network, access: non_restricted, user: layman}
     impact: 4
     cra_refs: [AI-I-2-f, AI-I-2-k]
-    masvs: [MASVS-RESILIENCE-2]
     measures: [safe-library-loading, least-privilege-install]
     sources: ["CWE-427 Uncontrolled Search Path Element; CWE-426 Untrusted Search Path"]
 
@@ -247,11 +254,13 @@ threats:
         für Updates oder Lizenzen. Er nimmt Befehle von jedem lokalen Programm an,
         z. B. "installiere diese Datei" oder "starte dieses Programm", oder führt
         Dateien aus einem für Benutzer beschreibbaren Ordner aus.
+        Schadsoftware, die so etwas tut, gelangt typischerweise über das Internet auf das Gerät (Download, E-Mail-Anhang); der Angriff ist dann ein zweiter Schritt aus der Ferne.
       en: >-
         The software includes a background service running as SYSTEM or root, e.g.
         for updates or licences. It accepts commands from any local program, e.g.
         "install this file" or "start this program", or executes files from a
         folder writable by users.
+        Malware that does this typically reaches the device via the internet (download, e-mail attachment); the attack is then a remote second step.
     consequence:
       de: >-
         Ein Benutzer ohne Rechte oder eine Schadsoftware übernimmt den ganzen Rechner,
@@ -259,10 +268,10 @@ threats:
       en: >-
         A user without rights or malware takes over the whole computer, switches off
         protection software and accesses the data of all users.
-    environment: {interface: local, access: non_restricted}
+    environment: {interface: external_network, access: non_restricted}
     impact: 4
     cra_refs: [AI-I-2-d, AI-I-2-j, AI-I-2-k]
-    asvs: [V8.3.1]
+    asvs: [V8.3.1, V13.2.2]
     measures: [local-service-hardening, ipc-hardening]
     sources: ["CWE-269 Improper Privilege Management; CWE-250"]
 
@@ -280,11 +289,13 @@ threats:
         Activity, einen Service oder Content Provider. Sie prüft nicht, wer aufruft.
         Eine andere App, eine Webseite im Browser (über den lokalen Web-Server) oder
         ein anderer Benutzer schickt Befehle.
+        Schadsoftware, die so etwas tut, gelangt typischerweise über das Internet auf das Gerät (Download, E-Mail-Anhang); der Angriff ist dann ein zweiter Schritt aus der Ferne.
       en: >-
         The application offers other programs a local interface: a named pipe, a
         local web server or on Android an exported activity, service or content
         provider. It does not check who is calling. Another app, a web page in the
         browser (via the local web server) or another user sends commands.
+        Malware that does this typically reaches the device via the internet (download, e-mail attachment); the attack is then a remote second step.
     consequence:
       de: >-
         Der Angreifer löst Funktionen im Namen des Nutzers aus, liest dessen Daten
@@ -292,7 +303,7 @@ threats:
       en: >-
         The attacker triggers functions in the user's name, reads the user's data or
         uses permissions of the app that he does not have himself.
-    environment: {interface: local, access: non_restricted}
+    environment: {interface: external_network, access: non_restricted}
     impact: 4
     cra_refs: [AI-I-2-d, AI-I-2-j]
     masvs: [MASVS-PLATFORM-1]
@@ -311,17 +322,19 @@ threats:
         Programmteile tauschen Token oder persönliche Daten über einen Weg aus, den
         auch andere Programme sehen: eine Rundsendung (Broadcast), eine Zwischenablage,
         eine temporäre Datei für alle oder einen lokalen Port ohne Zugriffsschutz.
+        Schadsoftware, die so etwas tut, gelangt typischerweise über das Internet auf das Gerät (Download, E-Mail-Anhang); der Angriff ist dann ein zweiter Schritt aus der Ferne.
       en: >-
         Program parts exchange tokens or personal data via a path that other programs
         can also see: a broadcast, the clipboard, a temporary file for everyone or a
         local port without access protection.
+        Malware that does this typically reaches the device via the internet (download, e-mail attachment); the attack is then a remote second step.
     consequence:
       de: >-
         Eine beliebige App oder ein anderer Benutzer liest die Daten mit und nutzt die
         Token für eigene Zugriffe.
       en: >-
         Any app or another user reads the data and uses the tokens for own access.
-    environment: {interface: local, access: non_restricted}
+    environment: {interface: external_network, access: non_restricted}
     impact: 3
     cra_refs: [AI-I-2-e]
     masvs: [MASVS-PLATFORM-1, MASVS-STORAGE-2]
@@ -340,10 +353,12 @@ threats:
         Ein anderes Programm schickt über die lokale Schnittstelle sehr große,
         unvollständige oder sehr viele Nachrichten. Der empfangende Programmteil
         prüft sie nicht und stürzt ab oder hängt.
+        Schadsoftware, die so etwas tut, gelangt typischerweise über das Internet auf das Gerät (Download, E-Mail-Anhang); der Angriff ist dann ein zweiter Schritt aus der Ferne.
       en: >-
         Another program sends very large, incomplete or very many messages via the
         local interface. The receiving program part does not check them and crashes
         or hangs.
+        Malware that does this typically reaches the device via the internet (download, e-mail attachment); the attack is then a remote second step.
     consequence:
       de: >-
         Die Anwendung, der Update- oder der Lizenzdienst fallen aus; Updates werden
@@ -351,7 +366,7 @@ threats:
       en: >-
         The application, the update or the licence service fail; updates are no
         longer installed or the software is locked.
-    environment: {interface: local, access: non_restricted}
+    environment: {interface: external_network, access: non_restricted}
     impact: 2
     cra_refs: [AI-I-2-h]
     masvs: [MASVS-CODE-4]
@@ -471,10 +486,12 @@ threats:
         Token und Kundendaten. Logs liegen lesbar auf dem Rechner, werden an
         Support-Tickets gehängt oder gehen mit Absturzberichten an einen
         Dienstleister.
+        Schadsoftware, die so etwas tut, gelangt typischerweise über das Internet auf das Gerät (Download, E-Mail-Anhang); der Angriff ist dann ein zweiter Schritt aus der Ferne.
       en: >-
         For troubleshooting the software logs whole requests with passwords, tokens
         and customer data. Logs are readable on the computer, attached to support
         tickets or sent with crash reports to a service provider.
+        Malware that does this typically reaches the device via the internet (download, e-mail attachment); the attack is then a remote second step.
     consequence:
       de: >-
         Zugangsdaten und persönliche Daten landen bei Personen und Firmen, die sie nie
@@ -482,7 +499,7 @@ threats:
       en: >-
         Credentials and personal data end up with people and companies that should
         never see them, often without anyone noticing.
-    environment: {interface: local, access: non_restricted}
+    environment: {interface: external_network, access: non_restricted}
     impact: 3
     cra_refs: [AI-I-2-e, AI-I-2-g]
     asvs: [V16.2.5]
@@ -550,7 +567,7 @@ threats:
     environment: {interface: external_network, access: non_restricted}
     impact: 4
     cra_refs: [AI-I-2-d]
-    asvs: [V8.3.1, V2.3.1]
+    asvs: [V8.3.1, V2.2.2]
     masvs: [MASVS-AUTH-1]
     measures: [object-level-authz, sw-input-validation]
     sources: ["CWE-602 Client-Side Enforcement of Server-Side Security"]
@@ -617,7 +634,7 @@ threats:
     environment: {interface: external_network, access: non_restricted, user: layman}
     impact: 3
     cra_refs: [AI-I-2-e, AI-I-2-f]
-    asvs: [V14.2.8]
+    asvs: [V14.2.4, V14.2.8]
     measures: [file-exchange-protection]
     sources: ["CWE-212 Improper Removal of Sensitive Information Before Storage or Transfer; CWE-345"]
 
@@ -698,11 +715,13 @@ threats:
         Updates mehr. Die Schutzfunktionen der Plattform, auf die sich die Software
         verlässt (Sandbox, Schlüsselspeicher, Rechte), wirken nicht mehr, und das
         System meldet trotzdem "alles in Ordnung".
+        Schadsoftware, die so etwas tut, gelangt typischerweise über das Internet auf das Gerät (Download, E-Mail-Anhang); der Angriff ist dann ein zweiter Schritt aus der Ferne.
       en: >-
         The phone is rooted or jailbroken, the computer has malware with administrator
         rights, or the operating system has not received updates for years. The
         platform protection functions the software relies on (sandbox, key store,
         rights) no longer work, and the system still reports "all fine".
+        Malware that does this typically reaches the device via the internet (download, e-mail attachment); the attack is then a remote second step.
     consequence:
       de: >-
         Gespeicherte Zugangsdaten, Zahlungs- oder Gesundheitsdaten werden ausgelesen,
@@ -710,7 +729,7 @@ threats:
       en: >-
         Stored credentials, payment or health data are read, requests of the app can
         be forged.
-    environment: {interface: local, access: non_restricted, user: layman}
+    environment: {interface: external_network, access: non_restricted, user: layman}
     impact: 3
     cra_refs: [AI-I-2-d, AI-I-2-f]
     masvs: [MASVS-RESILIENCE-1, MASVS-CODE-1]

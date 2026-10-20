@@ -19,6 +19,9 @@ runner = CliRunner()
 
 # Minimum (elements, threats, measures) per bundled library.
 BUNDLED = {"ot": (25, 120, 80), "iot": (12, 30, 20), "software": (12, 30, 20)}
+# software threats without an honest ASVS/MASVS fit (native desktop issues); they
+# must cite a CWE instead. Keep this as small as possible.
+NO_CATALOG_FIT = {"library-search-path-hijack"}
 
 
 @pytest.mark.parametrize("name", list(BUNDLED))
@@ -40,7 +43,9 @@ def test_bundled_library_is_complete_and_valid(name: str) -> None:
         assert t.cra_refs, f"threat {t.id} has no CRA reference"
         if name == "iot":
             assert t.etsi303645, f"threat {t.id} has no ETSI EN 303 645 reference"
-        if name == "software":
+        if name == "software" and t.id in NO_CATALOG_FIT:
+            assert any("CWE-" in s for s in t.sources), f"threat {t.id} cites no CWE"
+        elif name == "software":
             assert t.asvs or t.masvs, f"threat {t.id} has no ASVS/MASVS reference"
     used = {m for t in libs.threats.values() for m in t.measures}
     assert set(libs.measures) <= used | {

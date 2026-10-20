@@ -1,5 +1,30 @@
 {
   "$defs": {
+    "DiagramNote": {
+      "additionalProperties": false,
+      "description": "Free text on the diagram canvas (annotation, not part of the threat model).",
+      "properties": {
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "x": {
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "text"
+      ],
+      "title": "DiagramNote",
+      "type": "object"
+    },
     "NodeLayout": {
       "additionalProperties": false,
       "properties": {
@@ -47,7 +72,7 @@
   "$id": "diagram-layout.v1.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Content of diagram.layout.yaml: positions only, never content.",
+  "description": "Content of diagram.layout.yaml: positions and canvas notes, never model content.",
   "properties": {
     "nodes": {
       "additionalProperties": {
@@ -55,6 +80,14 @@
       },
       "default": {},
       "title": "Nodes",
+      "type": "object"
+    },
+    "notes": {
+      "additionalProperties": {
+        "$ref": "#/$defs/DiagramNote"
+      },
+      "default": {},
+      "title": "Notes",
       "type": "object"
     },
     "schema_version": {

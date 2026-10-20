@@ -318,7 +318,7 @@ class Project:
             model_dir = self.root / "models" / name
             self._save_one(model_dir / MODEL_FILE, sub.meta, written)
             layout_path = model_dir / LAYOUT_FILE
-            if layout_path.exists() or sub.layout.nodes:
+            if layout_path.exists() or sub.layout.nodes or sub.layout.notes:
                 self._save_one(layout_path, sub.layout, written)
             for collection, objects in sub.objects.items():
                 for obj_id, obj in objects.items():

@@ -122,10 +122,19 @@ class NodeLayout(Strict):
     height: float | None = None
 
 
+class DiagramNote(Strict):
+    """Free text on the diagram canvas (annotation, not part of the threat model)."""
+
+    x: float
+    y: float
+    text: str
+
+
 class DiagramLayout(Versioned):
-    """Content of diagram.layout.yaml: positions only, never content."""
+    """Content of diagram.layout.yaml: positions and canvas notes, never model content."""
 
     nodes: dict[str, NodeLayout] = {}
+    notes: dict[str, DiagramNote] = {}
 
 
 # --- per-object files --------------------------------------------------------

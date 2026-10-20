@@ -39,6 +39,12 @@ export interface ThreatEvaluation {
   suggestion: { impact: number; asset_id: string; dimension: string } | null
 }
 
+export interface Note {
+  x: number
+  y: number
+  text: string
+}
+
 export interface ModelPayload {
   name: string
   meta: {
@@ -50,7 +56,7 @@ export interface ModelPayload {
   objects: Record<Collection, Obj[]>
   evaluations: Record<string, ThreatEvaluation>
   max_risks: Record<string, number>
-  layout: { nodes: Record<string, { x: number; y: number }> }
+  layout: { nodes: Record<string, { x: number; y: number }>; notes: Record<string, Note> }
   asset_impacts: Record<string, Record<'C' | 'I' | 'A', number | null>>
 }
 

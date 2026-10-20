@@ -63,6 +63,16 @@ def test_server_mode_confines_client_paths(project_dir: Path, tmp_path: Path) ->
     assert c.post("/api/open-build-folder").status_code == 501
 
 
+def test_layout_notes(client: TestClient) -> None:
+    note = {"x": 10, "y": 20, "text": "Hinweis"}
+    put = lambda body: client.put("/api/models/main/layout", json=body)  # noqa: E731
+    assert put({"nodes": {}, "notes": {"N1": note}}).status_code == 200
+    assert put({"nodes": {"E-0001": {"x": 1, "y": 2}}}).status_code == 200  # keeps the notes
+    layout = client.get("/api/models/main").json()["layout"]
+    assert layout["notes"] == {"N1": {"x": 10.0, "y": 20.0, "text": "Hinweis"}}
+    assert put({"nodes": {}, "notes": {"N1": {"x": 1}}}).status_code == 422
+
+
 def test_open_build_folder_refuses_symlink(
     client: TestClient, project_dir: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

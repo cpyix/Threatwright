@@ -1,3 +1,4 @@
+import itertools
 import os
 import shutil
 from pathlib import Path
@@ -18,19 +19,9 @@ runner = CliRunner()
 
 # Minimum (elements, threats, measures) per bundled library.
 BUNDLED = {"ot": (25, 120, 80), "iot": (12, 30, 20), "software": (12, 30, 20)}
-# software is added by its own task; strict xfail flips to a failure once it exists.
-NOT_YET = {"software"}
 
 
-@pytest.mark.parametrize(
-    "name",
-    [
-        pytest.param(n, marks=pytest.mark.xfail(strict=True, reason="library not yet bundled"))
-        if n in NOT_YET
-        else n
-        for n in BUNDLED
-    ],
-)
+@pytest.mark.parametrize("name", list(BUNDLED))
 def test_bundled_library_is_complete_and_valid(name: str) -> None:
     libs = load_libraries([name])
     assert libs.issues == []
@@ -55,6 +46,17 @@ def test_bundled_library_is_complete_and_valid(name: str) -> None:
     assert set(libs.measures) <= used | {
         m.id for m in libs.measures.values() if m.kind != "technical"
     }
+
+
+def test_bundled_libraries_do_not_collide() -> None:
+    # A later library overrides same-kind same-ID entries of an earlier one, so
+    # bundled libraries must never share an ID or combining them loses content.
+    loaded = {n: load_libraries([n]) for n in BUNDLED}
+    for a, b in itertools.combinations(BUNDLED, 2):
+        for kind in ("elements", "threats", "measures"):
+            shared = set(getattr(loaded[a], kind)) & set(getattr(loaded[b], kind))
+            assert not shared, f"{a} and {b} share {kind} {sorted(shared)}"
+    assert load_libraries(list(BUNDLED)).issues == []
 
 
 def own_library(root: Path) -> None:

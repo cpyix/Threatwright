@@ -1,0 +1,27 @@
+schema_version: 1
+id: software
+version: 0.1.0
+title:
+  de: Software-Bibliothek für Desktop-, Mobil- und Backend-Anwendungen
+  en: Software library for desktop, mobile and backend applications
+license: CC-BY-4.0
+description:
+  de: >-
+    Generische Element-, Bedrohungs- und Maßnahmenvorlagen für Software als
+    Produkt, z. B. eine Desktop-Anwendung mit Installer und Updater, eine
+    Mobil-App und das zugehörige Backend mit Admin-Konsole: Client, Backend und
+    API, lokale Daten, Auslieferung und Updates, Lizenzprüfung und
+    Drittbibliotheken. Vorschläge, keine vollständige Analyse; jede Übernahme
+    ist im Produktkontext zu prüfen.
+  en: >-
+    Generic element, threat and measure templates for software as a product,
+    e.g. a desktop application with installer and updater, a mobile app and the
+    backend with admin console that belongs to it: client, backend and API,
+    local data, delivery and updates, licence check and third-party libraries.
+    Suggestions, not a complete analysis; review every entry in the context of
+    your product.
+attribution:
+  - OWASP ASVS 5.0.0 and OWASP MASVS v2 identifiers (c) OWASP Foundation, referenced by number only.
+  - OWASP Top 10 2021, OWASP API Security Top 10 2023 and OWASP Mobile Top 10 2024 cited by item name only.
+  - CWE identifiers (c) The MITRE Corporation, referenced by number only.
+  - CRA requirement mapping after BSI TR-03183-1 v1.0.0, Annex B.

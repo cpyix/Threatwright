@@ -1,0 +1,377 @@
+# Threat templates for backend and API, web front end (admin console), accounts
+# and cryptography used across client and backend.
+threats:
+  - id: api-injection
+    rev: 1
+    stride: [T, I, E]
+    applies_to: [backend-api, web-frontend, license-service]
+    title:
+      de: Eingeschleuste Befehle über Eingaben an {element}
+      en: Injected commands via input to {element}
+    scenario:
+      de: >-
+        Das Backend baut aus Eingaben direkt Datenbankabfragen, Betriebssystembefehle,
+        Dateipfade oder Vorlagen zusammen. Ein Angreifer schickt statt eines Namens
+        oder einer Suche ein Stück Abfrage- oder Befehlssprache, z. B. über ein
+        Formularfeld oder einen API-Parameter.
+      en: >-
+        The backend assembles database queries, operating system commands, file
+        paths or templates directly from input. Instead of a name or search term an
+        attacker sends a piece of query or command language, e.g. via a form field or
+        an API parameter.
+    consequence:
+      de: >-
+        Der Angreifer liest oder ändert die Daten aller Kunden, löscht die Datenbank
+        oder übernimmt den Server.
+      en: >-
+        The attacker reads or changes the data of all customers, deletes the database
+        or takes over the server.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 5
+    cra_refs: [AI-I-2-f, AI-I-2-e, AI-I-2-k]
+    asvs: [V1.2.4, V1.2.5, V2.2.1]
+    measures: [sw-input-validation]
+    sources: ["OWASP Top 10 2021 A03 Injection; CWE-89; CWE-78"]
+
+  - id: broken-authentication
+    rev: 1
+    stride: [S]
+    applies_to: [backend-api, web-frontend, license-service, app-user, admin-user]
+    title:
+      de: Fremder meldet sich als {element} an
+      en: Outsider logs in as {element}
+    scenario:
+      de: >-
+        Die Anmeldung erlaubt kurze oder bekannte Passwörter, begrenzt die Versuche
+        nicht und verrät, ob ein Konto existiert. Ein Angreifer probiert geleakte
+        E-Mail-Passwort-Paare automatisiert durch oder setzt über eine schwache
+        "Passwort vergessen"-Funktion das Passwort zurück.
+      en: >-
+        Login allows short or known passwords, does not limit attempts and reveals
+        whether an account exists. An attacker automatically tries leaked
+        e-mail/password pairs or resets the password via a weak "forgot password"
+        function.
+    consequence:
+      de: >-
+        Der Angreifer übernimmt Kundenkonten, sieht deren Daten und handelt in ihrem
+        Namen.
+      en: >-
+        The attacker takes over customer accounts, sees their data and acts in their
+        name.
+    environment: {interface: external_network, access: non_restricted, user: layman}
+    impact: 4
+    cra_refs: [AI-I-2-d]
+    asvs: [V6.2.1, V6.3.1, V6.4.1]
+    masvs: [MASVS-AUTH-1]
+    measures: [sw-account-auth, api-rate-limiting]
+    sources: ["OWASP Top 10 2021 A07 Identification and Authentication Failures; OWASP API Security Top 10 2023 API2 Broken Authentication"]
+
+  - id: session-token-theft
+    rev: 1
+    stride: [S, I]
+    applies_to: [backend-api, web-frontend, mobile-app, desktop-app]
+    title:
+      de: Gestohlenes oder ewig gültiges Token öffnet {element}
+      en: Stolen or never-expiring token opens {element}
+    scenario:
+      de: >-
+        Sitzungstoken laufen nie ab, gelten nach Abmeldung oder Passwortwechsel
+        weiter, stehen in URLs oder sind vorhersagbar. Signierte Token werden mit
+        jedem angegebenen Algorithmus akzeptiert. Ein Angreifer findet ein Token in
+        einem Log, einem Browser-Verlauf oder auf einem verlorenen Gerät.
+      en: >-
+        Session tokens never expire, stay valid after logout or password change,
+        appear in URLs or are predictable. Signed tokens are accepted with any stated
+        algorithm. An attacker finds a token in a log, a browser history or on a lost
+        device.
+    consequence:
+      de: >-
+        Der Angreifer nutzt das Konto weiter, auch wenn der Nutzer sich abmeldet oder
+        das Passwort ändert.
+      en: >-
+        The attacker keeps using the account even if the user logs out or changes the
+        password.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-d]
+    asvs: [V7.2.1, V7.2.4, V7.3.1, V7.4.1, V9.1.1]
+    masvs: [MASVS-AUTH-1]
+    measures: [secure-session-mgmt]
+    sources: ["OWASP Top 10 2021 A07; CWE-384 Session Fixation; CWE-613 Insufficient Session Expiration"]
+
+  - id: api-object-level-access
+    rev: 1
+    stride: [I, T, E]
+    applies_to: [backend-api, web-frontend]
+    title:
+      de: Zugriff auf fremde Daten oder Admin-Funktionen über {element}
+      en: Access to foreign data or admin functions via {element}
+    scenario:
+      de: >-
+        Die API prüft nur, ob jemand angemeldet ist, nicht ob ihm das angefragte
+        Objekt gehört. Ein Kunde ändert in der Anfrage die Auftrags- oder Kundennummer
+        und erhält fremde Daten. Verwaltungsfunktionen sind nur in der Oberfläche
+        ausgeblendet, aber über die API für jeden Nutzer aufrufbar.
+      en: >-
+        The API only checks whether someone is logged in, not whether the requested
+        object belongs to him. A customer changes the order or customer number in the
+        request and receives foreign data. Administration functions are only hidden
+        in the user interface but callable via the API by every user.
+    consequence:
+      de: >-
+        Ein einziger Kunde liest oder ändert die Daten aller anderen Kunden oder
+        verschafft sich Administratorrechte. Meldepflichtiger Datenschutzvorfall.
+      en: >-
+        A single customer reads or changes the data of all other customers or gains
+        administrator rights. Reportable data protection incident.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 5
+    cra_refs: [AI-I-2-d, AI-I-2-e]
+    asvs: [V8.2.1, V8.2.2]
+    measures: [object-level-authz]
+    sources: ["OWASP API Security Top 10 2023 API1 Broken Object Level Authorization and API5 Broken Function Level Authorization; CWE-639; CWE-285"]
+
+  - id: api-returns-too-much
+    rev: 1
+    stride: [I]
+    applies_to: [backend-api, flow-https-api]
+    title:
+      de: '{element} liefert mehr Daten aus als angezeigt'
+      en: '{element} returns more data than displayed'
+    scenario:
+      de: >-
+        Die API gibt ganze Datensätze zurück und überlässt es der App, nur einen Teil
+        anzuzeigen, z. B. Telefonnummer, interne Notizen oder Passwort-Hashes anderer
+        Nutzer. Wer den Datenverkehr ansieht, sieht alles.
+      en: >-
+        The API returns whole records and leaves it to the app to show only part of
+        them, e.g. phone number, internal notes or password hashes of other users.
+        Anyone looking at the traffic sees everything.
+    consequence:
+      de: >-
+        Persönliche und interne Daten werden ohne Angriff im engeren Sinn bekannt.
+      en: >-
+        Personal and internal data becomes known without an attack in the narrow
+        sense.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-e, AI-I-2-g]
+    asvs: [V8.2.3, V15.3.1]
+    measures: [object-level-authz]
+    sources: ["OWASP API Security Top 10 2023 API3 Broken Object Property Level Authorization; CWE-213"]
+
+  - id: api-no-rate-limit
+    rev: 1
+    stride: [D]
+    applies_to: [backend-api, web-frontend, license-service, flow-https-api]
+    title:
+      de: Anfrageflut legt {element} lahm
+      en: Request flood disables {element}
+    scenario:
+      de: >-
+        Die Schnittstelle begrenzt weder Anzahl noch Größe der Anfragen. Ein Angreifer,
+        ein fehlerhafter Client oder ein Skript ruft teure Funktionen wie Suche, Export
+        oder Upload massenhaft auf.
+      en: >-
+        The interface limits neither number nor size of requests. An attacker, a
+        faulty client or a script calls expensive functions such as search, export or
+        upload en masse.
+    consequence:
+      de: >-
+        Der Dienst ist für alle Kunden nicht erreichbar, Anwendungen ohne
+        Offline-Betrieb sind unbenutzbar, und die Cloud-Rechnung steigt.
+      en: >-
+        The service is unreachable for all customers, applications without offline
+        mode are unusable, and the cloud bill rises.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h]
+    asvs: [V2.4.1, V15.2.2]
+    measures: [api-rate-limiting]
+    sources: ["OWASP API Security Top 10 2023 API4 Unrestricted Resource Consumption; CWE-770"]
+
+  - id: actions-not-attributable
+    rev: 1
+    stride: [R]
+    applies_to: [backend-api, web-frontend, license-service, desktop-app, mobile-app, app-user, admin-user]
+    title:
+      de: Aktionen über {element} lassen sich niemandem zuordnen
+      en: Actions via {element} cannot be attributed to anyone
+    scenario:
+      de: >-
+        Anmeldungen, Rechteänderungen, Löschungen und Exporte werden nicht oder ohne
+        Konto und Zeit protokolliert, oder mehrere Personen teilen sich ein Konto. Ein
+        Nutzer bestreitet eine Aktion, oder ein Angreifer handelt unbemerkt.
+      en: >-
+        Logins, permission changes, deletions and exports are not logged, or logged
+        without account and time, or several people share one account. A user denies
+        an action, or an attacker acts unnoticed.
+    consequence:
+      de: >-
+        Ein Angriff wird spät oder gar nicht erkannt; Umfang und Verursacher lassen
+        sich nicht klären, Meldepflichten nicht erfüllen.
+      en: >-
+        An attack is detected late or not at all; scope and originator cannot be
+        clarified, reporting obligations cannot be met.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 2
+    cra_refs: [AI-I-2-l]
+    asvs: [V16.3.1, V16.3.2]
+    measures: [audit-trail]
+    sources: ["OWASP Top 10 2021 A09 Security Logging and Monitoring Failures; CWE-778"]
+
+  - id: admin-account-takeover
+    rev: 1
+    stride: [S, E]
+    applies_to: [admin-user, web-frontend, backend-api]
+    title:
+      de: Angreifer übernimmt ein Administratorkonto über {element}
+      en: Attacker takes over an administrator account via {element}
+    scenario:
+      de: >-
+        Administratoren und Support-Mitarbeiter melden sich nur mit Passwort an. Ein
+        Angreifer erbeutet es per Phishing-Mail oder aus einem Datenleck eines
+        anderen Dienstes.
+      en: >-
+        Administrators and support staff log in with a password only. An attacker
+        obtains it via a phishing e-mail or from a data leak of another service.
+    consequence:
+      de: >-
+        Der Angreifer verwaltet alle Kunden, legt sich eigene Konten an, liest alle
+        Daten und kann Einstellungen für alle Installationen ändern.
+      en: >-
+        The attacker manages all customers, creates own accounts, reads all data and
+        can change settings for all installations.
+    environment: {interface: external_network, access: non_restricted, user: instructed}
+    impact: 5
+    cra_refs: [AI-I-2-d]
+    asvs: [V6.3.3, V6.4.1]
+    measures: [sw-account-auth]
+    sources: ["OWASP Top 10 2021 A07 Identification and Authentication Failures; CWE-308 Use of Single-factor Authentication"]
+
+  - id: web-console-xss-csrf
+    rev: 1
+    stride: [T, S]
+    applies_to: [web-frontend]
+    title:
+      de: Fremdes Skript oder fremde Seite handelt in {element}
+      en: Foreign script or foreign page acts in {element}
+    scenario:
+      de: >-
+        Die Admin-Konsole zeigt Eingaben anderer Nutzer (z. B. Gerätenamen,
+        Kommentare) ohne Kodierung an, sodass ein eingeschleustes Skript im Browser
+        des Administrators läuft. Oder eine fremde Webseite, die der Administrator
+        nebenbei öffnet, schickt im Hintergrund Anfragen an die Konsole, die mit
+        seinem Cookie ausgeführt werden.
+      en: >-
+        The admin console displays input from other users (e.g. device names,
+        comments) without encoding, so an injected script runs in the
+        administrator's browser. Or a foreign web page the administrator opens on the
+        side sends background requests to the console that are executed with his
+        cookie.
+    consequence:
+      de: >-
+        Der Angreifer handelt mit den Rechten des Administrators: legt Konten an,
+        ändert Einstellungen oder liest Daten aus.
+      en: >-
+        The attacker acts with the administrator's rights: creates accounts, changes
+        settings or reads data.
+    environment: {interface: external_network, access: non_restricted, user: instructed}
+    impact: 4
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    asvs: [V1.2.1, V3.3.1, V3.4.3, V3.5.1]
+    measures: [web-console-hardening]
+    sources: ["OWASP Top 10 2021 A03 Injection; CWE-79; CWE-352"]
+
+  - id: verbose-errors
+    rev: 1
+    stride: [I]
+    applies_to: [backend-api, web-frontend, license-service]
+    title:
+      de: Fehlermeldungen von {element} verraten interne Details
+      en: Error messages of {element} reveal internal details
+    scenario:
+      de: >-
+        Bei Fehlern zeigt der Server Stack-Traces, SQL-Abfragen, Dateipfade oder
+        Versionsnummern an, weil der Debug-Modus aus der Entwicklung aktiv geblieben
+        ist. Ein Angreifer provoziert Fehler gezielt.
+      en: >-
+        On errors the server shows stack traces, SQL queries, file paths or version
+        numbers because the debug mode from development has stayed active. An
+        attacker provokes errors on purpose.
+    consequence:
+      de: >-
+        Der Angreifer erfährt Aufbau, Komponenten und Versionen und findet passende
+        Schwachstellen viel schneller.
+      en: >-
+        The attacker learns structure, components and versions and finds matching
+        vulnerabilities much faster.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 2
+    cra_refs: [AI-I-2-b, AI-I-2-e]
+    asvs: [V13.4.2, V16.5.1]
+    measures: [secure-defaults]
+    sources: ["OWASP Top 10 2021 A05 Security Misconfiguration; CWE-209"]
+
+  - id: insecure-default-config
+    rev: 1
+    stride: [T, I, E]
+    applies_to: [backend-api, web-frontend, desktop-app, local-config]
+    title:
+      de: '{element} ist im Auslieferungszustand unsicher'
+      en: '{element} is insecure in its delivered state'
+    scenario:
+      de: >-
+        Nach der Installation gibt es ein Standard-Administratorkonto mit bekanntem
+        Passwort, Beispielkonten, offene Debug- oder Verwaltungsschnittstellen, und
+        Sicherheitsfunktionen wie Verschlüsselung sind aus. Viele Kunden ändern daran
+        nie etwas.
+      en: >-
+        After installation there is a default administrator account with a known
+        password, sample accounts, open debug or management interfaces, and security
+        functions such as encryption are off. Many customers never change any of
+        this.
+    consequence:
+      de: >-
+        Angreifer finden ungeschützte Installationen automatisiert im Internet und
+        übernehmen sie ohne Aufwand.
+      en: >-
+        Attackers find unprotected installations automatically on the internet and
+        take them over without effort.
+    environment: {interface: external_network, access: non_restricted, user: layman}
+    impact: 4
+    cra_refs: [AI-I-2-b, AI-I-2-j]
+    asvs: [V13.4.2, V15.2.3]
+    measures: [secure-defaults]
+    sources: ["OWASP Top 10 2021 A05 Security Misconfiguration; CWE-1188 Insecure Default Initialization of Resource"]
+
+  - id: weak-crypto
+    rev: 1
+    stride: [I, T]
+    applies_to: [backend-api, desktop-app, mobile-app, local-database, app-secrets-store]
+    title:
+      de: Schwache oder selbst gebaute Verschlüsselung in {element}
+      en: Weak or home-made encryption in {element}
+    scenario:
+      de: >-
+        Daten werden mit veralteten Verfahren (z. B. MD5, SHA-1, DES, ECB-Modus) oder
+        einer selbst erfundenen Verschlüsselung geschützt, Passwörter einfach gehasht,
+        Schlüssel aus vorhersagbarem Zufall erzeugt oder fest im Code abgelegt.
+      en: >-
+        Data is protected with outdated methods (e.g. MD5, SHA-1, DES, ECB mode) or a
+        self-invented encryption, passwords are simply hashed, keys are generated
+        from predictable randomness or stored fixed in the code.
+    consequence:
+      de: >-
+        Verschlüsselte Daten und Passwörter lassen sich mit vertretbarem Aufwand
+        knacken, Signaturen fälschen. Der Schutz besteht nur auf dem Papier.
+      en: >-
+        Encrypted data and passwords can be cracked with reasonable effort,
+        signatures forged. The protection exists only on paper.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-e, AI-I-2-f]
+    asvs: [V11.2.1, V11.3.2, V11.4.1, V11.5.1]
+    masvs: [MASVS-CRYPTO-1]
+    measures: [vetted-crypto]
+    sources: ["OWASP Top 10 2021 A02 Cryptographic Failures; CWE-327; CWE-338"]

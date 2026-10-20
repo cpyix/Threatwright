@@ -1,0 +1,301 @@
+# Element types for software products (desktop application, mobile app, backend
+# with API and admin console, installer, updater, licence check). kind = DFD
+# category; "flow" entries are data flow types. environment = suggestion only;
+# asset_class values refer to TR-03183-1 Tables 1-3.
+elements:
+  # --- clients -----------------------------------------------------------------------
+  - id: desktop-app
+    category: app
+    name: {de: Desktop-Anwendung, en: Desktop application}
+    kind: process
+    icon: workstation
+    description:
+      de: >-
+        Programm, das der Kunde unter Windows, macOS oder Linux auf seinem Rechner
+        installiert, z. B. eine Planungs-, Konfigurations- oder Bürosoftware.
+      en: >-
+        Program the customer installs on a Windows, macOS or Linux computer, e.g.
+        planning, configuration or office software.
+    interfaces: [internet, file-system, ipc]
+    environment: {interface: known_network, access: movable, user: layman}
+    properties: {platform: windows-macos-linux, update_path: updater}
+    assets:
+      - title: {de: Funktion der Anwendung, en: Application function}
+        asset_class: Functions.Essential
+      - title: {de: Dokumente und Daten des Nutzers, en: User documents and data}
+        asset_class: BusinessData.Important
+      - title: {de: Anmeldedaten und Sitzungstoken, en: Login data and session tokens}
+        asset_class: Security.Secrets
+  - id: mobile-app
+    category: app
+    name: {de: Mobil-App, en: Mobile app}
+    kind: process
+    icon: tablet
+    description:
+      de: >-
+        App für Android oder iOS, die der Kunde aus dem App-Store installiert.
+      en: >-
+        App for Android or iOS that the customer installs from the app store.
+    interfaces: [internet, ipc, deep-link, push]
+    environment: {interface: external_network, access: movable, user: layman}
+    properties: {platform: android-ios, update_path: app-store}
+    assets:
+      - title: {de: Funktion der App, en: App function}
+        asset_class: Functions.Essential
+      - title: {de: Daten des Nutzers, en: User data}
+        asset_class: PII.Generic
+      - title: {de: Anmeldedaten und Sitzungstoken, en: Login data and session tokens}
+        asset_class: Security.Secrets
+
+  # --- backend -----------------------------------------------------------------------
+  - id: backend-api
+    category: backend
+    name: {de: Backend und API, en: Backend and API}
+    kind: process
+    icon: server
+    description:
+      de: >-
+        Server-Teil des Produkts, den Desktop-Anwendung, App oder Admin-Konsole über
+        das Internet aufrufen, z. B. für Konten, Synchronisation oder Auswertungen.
+      en: >-
+        Server part of the product that the desktop application, app or admin
+        console call over the internet, e.g. for accounts, synchronisation or
+        analyses.
+    interfaces: [internet]
+    environment: {interface: external_network, access: non_restricted}
+    properties: {authentication: accounts, encryption: tls, multi_tenant: true}
+    assets:
+      - title: {de: Konten und Daten aller Kunden, en: Accounts and data of all customers}
+        asset_class: PII.Important
+        rationale:
+          de: Ein einzelner Fehler betrifft alle Kunden zugleich
+          en: A single flaw affects all customers at once
+      - title: {de: Verfügbarkeit des Dienstes, en: Service availability}
+        asset_class: Functions.Essential
+  - id: web-frontend
+    category: backend
+    name: {de: 'Web-Oberfläche (z. B. Admin-Konsole)', en: 'Web front end (e.g. admin console)'}
+    kind: process
+    icon: hmi
+    description:
+      de: >-
+        Browser-Oberfläche, die zum Produkt gehört, z. B. eine Admin-Konsole für
+        Kundenadministratoren oder ein Kundenportal. Keine allgemeine Website.
+      en: >-
+        Browser user interface that belongs to the product, e.g. an admin console
+        for customer administrators or a customer portal. Not a general website.
+    interfaces: [internet]
+    environment: {interface: external_network, access: non_restricted, user: instructed}
+    properties: {authentication: accounts}
+    assets:
+      - title: {de: Verwaltungsfunktionen, en: Administration functions}
+        asset_class: Security.Mechanism
+      - title: {de: Angezeigte Kundendaten, en: Displayed customer data}
+        asset_class: PII.Generic
+  - id: license-service
+    category: backend
+    name: {de: Lizenzprüfung, en: Licence check}
+    kind: process
+    icon: key
+    description:
+      de: >-
+        Prüft, ob ein Kunde die Software nutzen darf, z. B. über einen Lizenzserver
+        des Herstellers oder einen Lizenzdienst auf dem Rechner.
+      en: >-
+        Checks whether a customer may use the software, e.g. via a licence server of
+        the manufacturer or a licence service on the computer.
+    interfaces: [internet, ipc]
+    environment: {interface: external_network, access: non_restricted}
+    assets:
+      - title: {de: Lizenzstatus und Lizenzschlüssel, en: Licence status and licence keys}
+        asset_class: BusinessData.Important
+      - title: {de: Nutzbarkeit der Software, en: Usability of the software}
+        asset_class: Functions.Essential
+
+  # --- delivery and updates ----------------------------------------------------------
+  - id: installer
+    category: distribution
+    name: {de: Installationsprogramm, en: Installer}
+    kind: process
+    icon: process
+    description:
+      de: >-
+        Setup-Programm oder Paket (z. B. MSI, PKG, DEB), das die Software auf dem
+        Rechner einrichtet, oft mit Administratorrechten.
+      en: >-
+        Setup program or package (e.g. MSI, PKG, DEB) that sets up the software on
+        the computer, often with administrator rights.
+    interfaces: [download, file-system]
+    environment: {interface: external_network, access: non_restricted, user: layman}
+    properties: {signing: required, elevated: possible}
+    assets:
+      - title: {de: Installationspaket, en: Installation package}
+        asset_class: Security.Mechanism
+      - title: {de: Rechte auf dem Zielrechner, en: Rights on the target computer}
+        asset_class: Security.Mechanism
+  - id: updater
+    category: distribution
+    name: {de: Update-Funktion, en: Updater}
+    kind: process
+    icon: patch
+    description:
+      de: >-
+        Teil der Software oder eigener Dienst, der neue Versionen findet,
+        herunterlädt und installiert.
+      en: >-
+        Part of the software or separate service that finds, downloads and installs
+        new versions.
+    interfaces: [internet, ipc]
+    environment: {interface: external_network, access: non_restricted}
+    properties: {signing: required, elevated: possible}
+    assets:
+      - title: {de: Updates, en: Updates}
+        asset_class: Security.Mechanism
+      - title: {de: Signaturschlüssel des Herstellers, en: Manufacturer signing key}
+        asset_class: Security.Secrets
+
+  # --- local data --------------------------------------------------------------------
+  - id: local-config
+    category: data
+    name: {de: Lokale Konfiguration, en: Local configuration}
+    kind: datastore
+    icon: datastore
+    description:
+      de: >-
+        Einstellungsdateien, Registry-Einträge oder Einstellungen der App auf dem
+        Gerät des Nutzers.
+      en: >-
+        Settings files, registry entries or app preferences on the user's device.
+    assets:
+      - title: {de: Einstellungen, en: Settings}
+        asset_class: Other.Configuration
+      - title: {de: Sicherheitseinstellungen (z. B. Server-Adresse), en: Security settings (e.g. server address)}
+        asset_class: Security.PublicConfiguration
+  - id: local-database
+    category: data
+    name: {de: Lokale Datenbank und Dateien, en: Local database and files}
+    kind: datastore
+    icon: database
+    description:
+      de: >-
+        Daten, die die Anwendung auf dem Gerät ablegt: Datenbank, Zwischenspeicher,
+        Projektdateien, Offline-Kopien.
+      en: >-
+        Data the application stores on the device: database, cache, project files,
+        offline copies.
+    assets:
+      - title: {de: Nutzer- und Geschäftsdaten, en: User and business data}
+        asset_class: BusinessData.Important
+      - title: {de: Personenbezogene Daten, en: Personal data}
+        asset_class: PII.Generic
+  - id: app-secrets-store
+    category: data
+    name: {de: Speicher für Zugangsdaten und Schlüssel, en: Store for credentials and keys}
+    kind: datastore
+    icon: key
+    description:
+      de: >-
+        Ort, an dem die Anwendung Passwörter, Token und Schlüssel ablegt, idealerweise
+        der Schlüsselspeicher des Betriebssystems.
+      en: >-
+        Place where the application keeps passwords, tokens and keys, ideally the
+        key store of the operating system.
+    assets:
+      - title: {de: 'Token, Passwörter, Schlüssel', en: 'Tokens, passwords, keys'}
+        asset_class: Security.Secrets
+
+  # --- environment and people --------------------------------------------------------
+  - id: os-platform
+    category: other
+    name: {de: Betriebssystem und Plattform, en: Operating system and platform}
+    kind: external
+    icon: external
+    description:
+      de: >-
+        Windows, macOS, Linux, Android oder iOS, auf dem die Software läuft, mit
+        Dateisystem, Rechteverwaltung und Schlüsselspeicher.
+      en: >-
+        Windows, macOS, Linux, Android or iOS on which the software runs, with file
+        system, rights management and key store.
+    environment: {interface: local, access: non_restricted}
+    assets:
+      - title: {de: Schutzfunktionen der Plattform, en: Platform protection functions}
+        asset_class: Security.Mechanism
+  - id: third-party-library
+    category: components
+    name: {de: Drittbibliothek, en: Third-party library}
+    kind: process
+    icon: process
+    description:
+      de: >-
+        Fremder Code, der in die Software eingebaut ist: Open-Source-Pakete,
+        SDKs von Dienstleistern (z. B. Analyse, Werbung, Zahlungen), Frameworks.
+      en: >-
+        Foreign code built into the software: open source packages, SDKs of service
+        providers (e.g. analytics, advertising, payments), frameworks.
+    environment: {interface: external_network, access: non_restricted}
+    assets:
+      - title: {de: Rechte und Daten der einbettenden Anwendung, en: Rights and data of the embedding application}
+        asset_class: Security.Mechanism
+  - id: app-user
+    category: app
+    name: {de: Nutzer, en: User}
+    kind: external
+    icon: external
+    environment: {interface: external_network, access: non_restricted, user: layman}
+    assets:
+      - title: {de: Konto des Nutzers, en: User account}
+        asset_class: PII.Generic
+  - id: admin-user
+    category: backend
+    name: {de: Administrator, en: Administrator}
+    kind: external
+    icon: directory
+    description:
+      de: >-
+        Person mit erweiterten Rechten, z. B. Administrator beim Kunden oder Support-
+        Mitarbeiter des Herstellers.
+      en: >-
+        Person with extended rights, e.g. administrator at the customer or support
+        staff of the manufacturer.
+    environment: {interface: external_network, access: non_restricted, user: instructed}
+    assets:
+      - title: {de: Administratorkonto, en: Administrator account}
+        asset_class: Security.Secrets
+
+  # --- communication: flow types -----------------------------------------------------
+  - id: flow-https-api
+    name: {de: HTTPS-API-Aufruf, en: HTTPS API call}
+    kind: flow
+    interfaces: [internet]
+    environment: {interface: external_network, access: non_restricted}
+    properties: {encryption: tls}
+    assets:
+      - title: {de: 'Anfragen, Antworten und Token', en: 'Requests, responses and tokens'}
+        asset_class: Functions.CommunicationNetwork
+  - id: flow-ipc
+    name: {de: 'Lokale Kommunikation zwischen Programmen (IPC)', en: 'Local inter-process communication (IPC)'}
+    kind: flow
+    interfaces: [ipc]
+    environment: {interface: local, access: non_restricted}
+    properties: {authentication: optional}
+    assets:
+      - title: {de: Befehle zwischen Programmteilen, en: Commands between program parts}
+        asset_class: Functions.CommunicationLocal
+  - id: flow-file-exchange
+    name: {de: Dateiaustausch (Import und Export), en: File exchange (import and export)}
+    kind: flow
+    interfaces: [file-system]
+    environment: {interface: external_network, access: non_restricted, user: layman}
+    assets:
+      - title: {de: Ausgetauschte Dateien, en: Exchanged files}
+        asset_class: BusinessData.Generic
+  - id: flow-push
+    name: {de: Push-Benachrichtigung, en: Push notification}
+    kind: flow
+    interfaces: [push]
+    environment: {interface: external_network, access: non_restricted}
+    properties: {provider: platform-push-service}
+    assets:
+      - title: {de: Benachrichtigungen an die App, en: Notifications to the app}
+        asset_class: Functions.CommunicationNetwork

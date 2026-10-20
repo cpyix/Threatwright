@@ -1,0 +1,9 @@
+schema_version: 1
+id: M-0008
+uuid: 9bcd3eaf-1baf-4984-81e1-76d410556c10
+title: Genuine spare parts from trusted sources
+description: Spare parts for controller, drives and electronics are sourced only from the manufacturer or authorised distributors. At goods receipt, packaging, labelling and firmware version are checked; before installation the firmware is brought to an approved version. The operating manual points the operator to these sources.
+library_ref: lib:ot/measure/genuine-spare-parts@1
+kind: supply_chain
+evidence: List of authorised sources, goods receipt inspection instruction, note in the operating manual.
+cra_refs: [AI-I-2-f]

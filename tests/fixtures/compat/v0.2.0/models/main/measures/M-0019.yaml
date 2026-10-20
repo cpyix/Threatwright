@@ -1,0 +1,9 @@
+schema_version: 1
+id: M-0019
+uuid: 405450f6-4f49-4197-94ed-d4e1685b2616
+title: Hardening of the remote maintenance jump host
+description: "The manufacturer's central access server or remote maintenance portal is operated in a hardened state: current patches, only required services, multi-factor login, separate administration access and monitoring. Service technicians reach machines only through this path, not directly from their laptops."
+library_ref: lib:ot/measure/jumphost-hardening@1
+kind: technical
+evidence: Hardening baseline, vulnerability scan report, configuration export of access rules.
+cra_refs: [AI-I-2-d, AI-I-2-j, AI-I-2-a]

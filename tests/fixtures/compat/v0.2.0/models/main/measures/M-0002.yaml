@@ -1,0 +1,10 @@
+schema_version: 1
+id: M-0002
+uuid: 256a1941-5cdb-4bcc-b8df-60a01c3ca9f3
+title: Fieldbus topology monitoring
+description: At startup and cyclically, the controller compares the devices actually found (count, address, vendor/product code, serial number where available) with the configured target topology. On deviation, e.g. an additional or replaced device, operation is not enabled or the machine is brought into a safe state and an alarm is raised.
+library_ref: lib:ot/measure/fieldbus-topology-monitoring@1
+kind: technical
+compensating: true
+evidence: Extract of the target topology from the controller project, test report with an inserted or replaced device and the observed reaction.
+cra_refs: [AI-I-2-f, AI-I-2-l]

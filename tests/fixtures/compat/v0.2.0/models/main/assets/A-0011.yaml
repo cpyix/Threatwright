@@ -1,0 +1,5 @@
+schema_version: 1
+id: A-0011
+uuid: a810f160-e24d-4f73-8b72-2c8113f8bd6b
+title: Controller credentials (Engineering workstation)
+asset_class: Security.Secrets

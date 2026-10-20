@@ -1,0 +1,9 @@
+schema_version: 1
+id: M-0012
+uuid: ba632b46-8292-4a81-baec-66593740c78b
+title: Device-specific credentials
+description: Each machine or device receives individual passwords, keys and certificates during production that cannot be derived from the serial number or other public data. Shared credentials across a product series are not permitted. Initial credentials are handed over to the operator through a secure channel.
+library_ref: lib:ot/measure/unique-device-credentials@1
+kind: technical
+evidence: Production instruction for generating credentials, sample check of two devices with different credentials.
+cra_refs: [AI-I-2-b, AI-I-2-d]

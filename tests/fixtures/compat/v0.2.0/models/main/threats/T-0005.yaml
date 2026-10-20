@@ -1,0 +1,18 @@
+schema_version: 1
+id: T-0005
+uuid: 0c584467-6ce2-4121-8f2f-9d70a201a1fb
+title: Default password or fleet-wide identical credentials on Operator panel
+library_ref: lib:ot/threat/default-credentials-fleet@1
+stride: [S, E]
+targets: [E-0004]
+cyber_cause: true
+scenario: Operator panel ships with a default password, or all machines of a series use the same credentials for service and administrator accounts. The credentials are printed in manuals, hard-coded in the software or known among service technicians. An attacker logs in as an authorised user.
+consequence: Administrative access to one machine means access to the whole fleet. The attacker can change programs, parameters and security settings and thereby endanger persons.
+safety_related: true
+assessment:
+  interface: known_network
+  access: public_restricted
+  user: instructed
+  impact: 5
+measures: [M-0012, M-0013, M-0006]
+cra_refs: [AI-I-2-b, AI-I-2-d]

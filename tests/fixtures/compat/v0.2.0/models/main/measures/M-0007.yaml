@@ -1,0 +1,9 @@
+schema_version: 1
+id: M-0007
+uuid: 99f21a67-f9aa-4bd9-99d2-7e8259d3215b
+title: Priority of local control
+description: Operation at the machine always takes precedence over commands from control system, cloud or remote access. Local stop and emergency stop functions work independently of network connections. While local operation is active, remote commands that trigger motion are blocked.
+library_ref: lib:ot/measure/local-control-priority@1
+kind: design
+evidence: Functional description of control authority, test report with competing commands.
+cra_refs: [AI-I-2-h, AI-I-2-k]

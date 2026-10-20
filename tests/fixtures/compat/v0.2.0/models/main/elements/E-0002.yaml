@@ -1,0 +1,7 @@
+schema_version: 1
+id: E-0002
+uuid: 33ad6c81-5362-43d7-ab32-e42798c015d2
+title: Axis drive
+library_ref: lib:ot/element/drive@1
+kind: device
+zone: Z-INTERNAL

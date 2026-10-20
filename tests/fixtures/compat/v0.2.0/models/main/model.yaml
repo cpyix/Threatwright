@@ -1,0 +1,32 @@
+schema_version: 1
+title: Demo machine
+uuid: 4c0d977f-98cc-4b3a-a3fe-6b55525a0706
+description: Neutral demo model from the OT library building blocks.
+configurations:
+  - id: K-A
+    title: Standard
+zones:
+  - id: Z-INTERNAL
+    title: Device internal
+    environment:
+      interface: physical
+      access: restricted
+      user: non_user_related
+  - id: Z-LOCAL
+    title: Local interfaces
+    environment:
+      interface: local
+      access: public_restricted
+      user: instructed
+  - id: Z-PLANT
+    title: Plant network
+    environment:
+      interface: known_network
+      access: restricted
+      user: skilled
+  - id: Z-EXTERNAL
+    title: External network
+    environment:
+      interface: external_network
+      access: non_restricted
+      user: skilled

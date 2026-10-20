@@ -108,7 +108,9 @@ docker run --rm -p 127.0.0.1:8080:8080 -v "${PWD}/my-product:/work" `
 
 The container prints `open: http://localhost:8080/#token=…`; open that link. `-p 127.0.0.1:8080:8080` keeps the port on your machine only.
 
-**On a server (Docker Compose behind a TLS proxy):**
+**On a server (Docker Compose behind a TLS proxy with login):**
+
+The proxy ([Caddy](https://caddyserver.com/)) provides HTTPS with an automatic certificate and a username/password login (HTTP Basic Auth) in front of the GUI. Threatwright itself is not published on any port.
 
 ```yaml
 # compose.yaml
@@ -118,26 +120,47 @@ services:
     command: [--project, /work, --no-browser, --host, 0.0.0.0, --port, "8080",
               --allowed-host, threatwright.example.com]
     environment:
-      THREATWRIGHT_TOKEN: ${THREATWRIGHT_TOKEN}   # e.g. openssl rand -base64 32, in .env
+      THREATWRIGHT_TOKEN: ${THREATWRIGHT_TOKEN}   # e.g. openssl rand -hex 32, in .env
     volumes:
       - ./my-product:/work   # a Git checkout of the project
     restart: unless-stopped
   caddy:
     image: caddy:2
-    command: caddy reverse-proxy --from threatwright.example.com --to threatwright:8080
     ports: ["443:443", "80:80"]
-    volumes: [caddy-data:/data]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    restart: unless-stopped
 volumes:
   caddy-data:
 ```
 
-Then open `https://threatwright.example.com/#token=<THREATWRIGHT_TOKEN>`. The project folder must be writable by UID 10001 (`chown -R 10001 my-product`), or set `user:` to the folder's owner.
+```
+# Caddyfile
+threatwright.example.com {
+	basic_auth {
+		# one line per user: name and bcrypt hash (see below)
+		alice $2a$14$replace-with-the-output-of-hash-password
+	}
+	reverse_proxy threatwright:8080
+}
+```
+
+Create a password hash for each user and paste it into the `Caddyfile`:
+
+```
+docker run --rm -it caddy:2 caddy hash-password
+```
+
+Start with `docker compose up -d`. Open `https://threatwright.example.com/#token=<THREATWRIGHT_TOKEN>`, log in with the user name and password, and bookmark the link. The project folder must be writable by UID 10001 (`chown -R 10001 my-product`), or set `user:` to the folder's owner. To add or remove users, edit the `Caddyfile` and run `docker compose restart caddy`.
+
+Any other reverse proxy works the same way: terminate TLS, require a login (Basic Auth, or your SSO via e.g. oauth2-proxy), forward to port 8080 and pass the original `Host` header.
 
 **Without Docker on a server:** run `threatwright --project my-product --no-browser --port 8080` (still bound to `127.0.0.1`) and reach it through an SSH tunnel: `ssh -L 8080:127.0.0.1:8080 server`, then open the printed link locally.
 
 Before you host it, note:
 
-- **The token is the only login.** Anyone with the link can read and change the model. Expose it only over TLS and behind your own access control (VPN, SSO proxy); never put a bare port on the internet.
+- **Put a login in front.** Threatwright itself only checks the token in the link; anyone with the link can read and change the model. Use the proxy login above (or VPN/SSO) and always TLS; never publish port 8080 directly on a network.
 - **One shared session per instance.** Everyone works on the same in-memory state; it suits one person or a coordinated team. Run one instance per project.
 - **Git stays with you.** The GUI saves files into the mounted folder; commit, push and merge requests happen outside, as with the local GUI.
 - **Confined to the project folder.** As soon as the GUI is reachable for others (`--host` other than loopback, or any `--allowed-host`), it only opens, creates and imports inside the `--project` folder (or the working directory). The folder dialog and "open build folder" are switched off; pass the project with `--project`.

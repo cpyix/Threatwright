@@ -12,7 +12,17 @@
 
   let types = $state<ElementType[]>([])
   let flowType = $state('')
-  let configuration = $state('')
+  let configuration = $state<string[]>([]) // selected variants; empty = all
+  const configs = $derived(app.model?.meta.configurations ?? [])
+  // elements with variants of which none is selected; unassigned ones belong to every variant
+  const hiddenCount = $derived(
+    configuration.length
+      ? app.objects('elements').filter((e) => e.configurations?.length && !e.configurations.some((c: string) => configuration.includes(c))).length
+      : 0,
+  )
+  function toggleConfig(id: string, on: boolean) {
+    configuration = on ? [...configuration, id] : configuration.filter((c) => c !== id)
+  }
   let selected = $state<{ collection: 'elements' | 'flows'; id: string } | null>(null)
   let canvas: Canvas | undefined = $state()
   const lang = $derived(app.lang)
@@ -63,13 +73,36 @@
           {#each flowTypes as t}<option value={t.id}>{t.name[lang]}</option>{/each}
         </select>
       </label>
-      <label>
+      <div class="filter">
         <span>{tr(lang, 'configurations')} <Info term="configurations" /></span>
-        <select bind:value={configuration}>
-          <option value="">{tr(lang, 'all_configurations')}</option>
-          {#each app.model?.meta.configurations ?? [] as c}<option value={c.id}>{c.id} {c.title}</option>{/each}
-        </select>
-      </label>
+        <details class="dropdown" data-testid="config-filter">
+          <summary>
+            {configuration.length
+              ? configs.filter((c) => configuration.includes(c.id)).map((c) => c.title || c.id).join(', ')
+              : tr(lang, 'all_configurations')}
+            {#if hiddenCount}<span class="muted">· {hiddenCount} {tr(lang, 'hidden_count')}</span>{/if}
+          </summary>
+          <div class="menu">
+            {#each configs as c (c.id)}
+              <label class="check">
+                <input
+                  type="checkbox"
+                  checked={configuration.includes(c.id)}
+                  onchange={(e) => toggleConfig(c.id, e.currentTarget.checked)}
+                  data-testid="config-{c.id}"
+                />
+                {c.id} {c.title}
+              </label>
+            {:else}
+              <p class="muted">{tr(lang, 'no_configurations')}</p>
+            {/each}
+            {#if configuration.length}
+              <button type="button" class="link" onclick={() => (configuration = [])}>{tr(lang, 'show_all')}</button>
+            {/if}
+            <p class="muted small">{tr(lang, 'config_filter_help')}</p>
+          </div>
+        </details>
+      </div>
       <span class="spacer"></span>
       <button onclick={() => canvas?.autoLayout()} data-testid="auto-layout">{tr(lang, 'auto_layout')}</button>
       <button onclick={exportSvg}>{tr(lang, 'export_svg')}</button>
@@ -151,6 +184,62 @@
   }
   .toolbar select {
     width: auto;
+  }
+  .filter {
+    display: grid;
+    gap: 0.15rem;
+    font-size: 0.9em;
+    position: relative;
+  }
+  .dropdown summary {
+    list-style: none;
+    cursor: pointer;
+    min-width: 12rem;
+    padding: 0.35rem 1.8rem 0.35rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    position: relative;
+  }
+  .dropdown summary::after {
+    content: '';
+    position: absolute;
+    right: 0.7rem;
+    top: 50%;
+    width: 0.4rem;
+    height: 0.4rem;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: translateY(-70%) rotate(45deg);
+  }
+  .dropdown[open] summary {
+    border-color: var(--accent);
+  }
+  .menu {
+    position: absolute;
+    z-index: 10;
+    margin-top: 0.25rem;
+    min-width: 16rem;
+    max-width: 24rem;
+    display: grid;
+    gap: 0.35rem;
+    padding: 0.6rem 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+  }
+  .menu .check {
+    display: flex;
+    gap: 0.45rem;
+    align-items: center;
+  }
+  .menu .check input {
+    width: auto;
+  }
+  .menu .small {
+    margin: 0;
+    font-size: 0.85em;
   }
   .spacer {
     flex: 1;

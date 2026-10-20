@@ -22,6 +22,19 @@ def _overlap(a: dict[str, float], b: dict[str, float]) -> bool:
     )
 
 
+def test_variant_filter_is_a_multi_select(gui: str, page: Page) -> None:
+    page.goto(gui)
+    page.get_by_test_id("nav-diagram").click()
+    expect(page.get_by_test_id("node-E-0002")).to_be_visible()
+    filt = page.get_by_test_id("config-filter")
+    filt.locator("summary").click()
+    page.get_by_test_id("config-K-A").check()
+    expect(page.get_by_test_id("node-E-0002")).to_be_hidden()  # belongs to K-B only
+    expect(filt.locator("summary")).to_contain_text("1")  # one element hidden
+    page.get_by_test_id("config-K-B").check()
+    expect(page.get_by_test_id("node-E-0002")).to_be_visible()
+
+
 def test_auto_layout_and_zone_assignment(
     ui: dict[str, str], gui: str, page: Page, project_dir: Path
 ) -> None:

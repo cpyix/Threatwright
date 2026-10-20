@@ -42,6 +42,11 @@ const de = {
   reload_discard: 'Neu laden und eigene Änderungen verwerfen',
   ignore: 'Ignorieren',
   reloaded: 'Externe Änderungen geladen',
+  hidden_count: 'ausgeblendet',
+  show_all: 'Alle anzeigen',
+  no_configurations: 'Keine Ausbaustufen / Varianten angelegt (Einrichtung, Schritt 1).',
+  config_filter_help:
+    'Zeigt Elemente und Verbindungen der gewählten Varianten. Was keiner Variante zugeordnet ist, gilt für alle und bleibt sichtbar.',
   current_project: 'Geöffnetes Projekt',
   download_zip: 'Als .zip herunterladen',
   download_help: 'Lädt den gespeicherten Stand des Projekts herunter, z. B. um lokal oder mit Git weiterzuarbeiten.',
@@ -273,6 +278,11 @@ const en: Record<Key, string> = {
   reload_discard: 'Reload and discard my changes',
   ignore: 'Ignore',
   reloaded: 'External changes loaded',
+  hidden_count: 'hidden',
+  show_all: 'Show all',
+  no_configurations: 'No configurations / variants defined (setup, step 1).',
+  config_filter_help:
+    'Shows elements and connections of the selected variants. Anything not assigned to a variant applies to all and stays visible.',
   current_project: 'Open project',
   download_zip: 'Download as .zip',
   download_help: 'Downloads the saved state of the project, e.g. to continue locally or with Git.',

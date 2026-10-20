@@ -1,21 +1,9 @@
-// Thin client for the local server. The session token arrives in the URL
-// fragment (never sent to the server in URLs or logs) and is kept per tab.
+// Thin client for the local server. Every request carries X-Threatwright: other
+// websites cannot add that header without a CORS preflight, which the server never
+// grants, so they cannot send requests on the user's behalf (CSRF). The login, if
+// any, is HTTP Basic Auth handled by the browser.
 
-function readToken(): string {
-  const match = location.hash.match(/token=([^&]+)/)
-  try {
-    if (match) {
-      sessionStorage.setItem('tw-token', match[1])
-      history.replaceState(null, '', location.pathname)
-      return match[1]
-    }
-    return sessionStorage.getItem('tw-token') ?? ''
-  } catch {
-    return match ? match[1] : ''
-  }
-}
-
-const token = readToken()
+const HEADER = { 'X-Threatwright': '1' }
 
 export class ApiError extends Error {
   constructor(
@@ -38,7 +26,7 @@ function formatDetail(detail: unknown): string {
 export async function api<T>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(`/api${path}`, {
     method,
-    headers: { 'X-Threatwright-Token': token, 'Content-Type': 'application/json' },
+    headers: { ...HEADER, 'Content-Type': 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body),
   })
   if (!response.ok) {
@@ -52,7 +40,7 @@ export async function api<T>(method: string, path: string, body?: unknown): Prom
 export async function upload<T>(path: string, file: Blob): Promise<T> {
   const response = await fetch(`/api${path}`, {
     method: 'POST',
-    headers: { 'X-Threatwright-Token': token, 'Content-Type': 'application/zip' },
+    headers: { ...HEADER, 'Content-Type': 'application/zip' },
     body: file,
   })
   if (!response.ok) {
@@ -64,7 +52,7 @@ export async function upload<T>(path: string, file: Blob): Promise<T> {
 
 /** Download an API resource (e.g. the diagram SVG) as a file. */
 export async function download(path: string, filename: string): Promise<void> {
-  const response = await fetch(`/api${path}`, { headers: { 'X-Threatwright-Token': token } })
+  const response = await fetch(`/api${path}`, { headers: HEADER })
   if (!response.ok) {
     const data = await response.json().catch(() => ({ detail: response.statusText }))
     throw new ApiError(response.status, data.detail)

@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from typer.testing import CliRunner
 
 from threatwright.cli import app
-from threatwright.server import TOKEN_HEADER, create_app
+from threatwright.server import API_HEADER, create_app
 
 runner = CliRunner()
 DRAGON = ROOT / "tests" / "fixtures" / "interop" / "threat-dragon-v2.json"
@@ -78,9 +78,9 @@ def test_diff_and_change_markers(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 
     monkeypatch.setenv("THREATWRIGHT_CONFIG_DIR", str(tmp_path / "cfg"))
     c = TestClient(
-        create_app("t", None, repo / "product"),
+        create_app(None, repo / "product"),
         base_url="http://127.0.0.1",
-        headers={TOKEN_HEADER: "t"},
+        headers={API_HEADER: "1"},
     )
     data = c.get("/api/vcs/changed").json()
     assert data["available"] and data["models"]["main"] == ["T-0001"]
@@ -93,6 +93,6 @@ def test_change_markers_without_git(
     monkeypatch.setenv("THREATWRIGHT_CONFIG_DIR", str(tmp_path / "cfg"))
     monkeypatch.setenv("GIT_CEILING_DIRECTORIES", str(tmp_path))
     c = TestClient(
-        create_app("t", None, project_dir), base_url="http://127.0.0.1", headers={TOKEN_HEADER: "t"}
+        create_app(None, project_dir), base_url="http://127.0.0.1", headers={API_HEADER: "1"}
     )
     assert c.get("/api/vcs/changed").json()["available"] is False

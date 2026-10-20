@@ -1,8 +1,10 @@
 """Local web server for the GUI (ADR-0003, ADR-0007).
 
-Binds to 127.0.0.1 by default (`--host` for containers/servers), requires a
-session token on every API call, rejects Host headers not explicitly allowed
-(DNS rebinding) and sends a strict CSP.
+Binds to 127.0.0.1 by default (`--host` for containers/servers). Every API call
+needs the custom header X-Threatwright, which other websites cannot send without a
+CORS preflight this server never grants (CSRF). Host headers not explicitly allowed
+are rejected (DNS rebinding) and a strict CSP is sent. In server mode HTTP Basic
+Auth is on unless switched off explicitly (ADR-0013).
 The server holds exactly one open project in memory; files are written only
 on an explicit save.
 """
@@ -26,6 +28,7 @@ from pydantic import ValidationError
 
 from threatwright import __version__, archive, assistant, history
 from threatwright.arc import ArcOverride, applicability, set_override
+from threatwright.auth import REALM, BasicAuth, users_from
 from threatwright.branding import PRODUCT_NAME, PROJECT_FILE
 from threatwright.ci import render_ci
 from threatwright.ci import target_path as ci_target_path
@@ -64,7 +67,7 @@ from threatwright.scaffold import ProjectExists, create_project
 from threatwright.vcs import VcsError, changed_objects, release_tags
 
 WEB_DIR = Path(__file__).parent / "web"
-TOKEN_HEADER = "X-Threatwright-Token"  # noqa: S105 - header name, not a secret
+API_HEADER = "X-Threatwright"  # any value; its presence forces a CORS preflight (CSRF)
 MODEL_NAME = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 MAX_BODY = 1 << 20
 UPLOAD_PATH = "/api/project/upload"
@@ -262,14 +265,16 @@ def pick_folder(title: str, initial: str | None = None) -> str | None:
 
 
 def create_app(
-    token: str,
     port: int | None = None,
     project: Path | None = None,
     hosts: frozenset[str] = frozenset(),
     root: Path | None = None,
+    users: dict[str, str] | None = None,
 ) -> FastAPI:
     """`hosts`: extra host names accepted on any port (server/container use).
-    `root`: server mode; project and import paths from clients must stay inside it."""
+    `root`: server mode; project and import paths from clients must stay inside it.
+    `users`: name -> password hash for HTTP Basic Auth; None = no login."""
+    basic = BasicAuth(users) if users else None
     app = FastAPI(title=PRODUCT_NAME, docs_url=None, redoc_url=None, openapi_url=None)
     jail = root.resolve() if root is not None else None
 
@@ -317,10 +322,11 @@ def create_app(
             host = host.split(":")[0]
         if host not in allowed and host.rsplit(":", 1)[0] not in hosts:
             return JSONResponse({"detail": "forbidden host"}, status_code=403)
+        if basic is not None and not basic.check(request.headers.get("authorization")):
+            return Response("login required", status_code=401, headers={"WWW-Authenticate": REALM})
         if request.url.path.startswith("/api/"):
-            sent = request.headers.get(TOKEN_HEADER, "")
-            if not secrets.compare_digest(sent, token):
-                return JSONResponse({"detail": "invalid session token"}, status_code=401)
+            if API_HEADER.lower() not in request.headers:  # cross-site requests cannot set it
+                return JSONResponse({"detail": f"missing {API_HEADER} header"}, status_code=403)
             limit = archive.MAX_UPLOAD if request.url.path == UPLOAD_PATH else MAX_BODY
             if int(request.headers.get("content-length") or 0) > limit:
                 return JSONResponse({"detail": "request too large"}, status_code=413)
@@ -1014,9 +1020,6 @@ def _step(
         return {"ok": True}
 
 
-MIN_TOKEN = 24
-
-
 def serve(
     project: Path | None,
     open_browser: bool = True,
@@ -1024,35 +1027,50 @@ def serve(
     port: int = 0,
     allowed_hosts: tuple[str, ...] = (),
     workspace: Path | None = None,
+    auth: str | None = None,
+    users_file: Path | None = None,
 ) -> None:
-    """Start the GUI server; default a random free localhost port."""
+    """Start the GUI server; default a random free localhost port.
+
+    `auth`: "basic" or "none"; default basic as soon as the GUI is reachable by others
+    (secure by default), none for the local 127.0.0.1 GUI.
+    """
     import socket
     import webbrowser
 
     import uvicorn
 
-    token = os.environ.get("THREATWRIGHT_TOKEN") or secrets.token_urlsafe(32)
-    if len(token) < MIN_TOKEN:
-        raise SystemExit(f"THREATWRIGHT_TOKEN must be at least {MIN_TOKEN} characters")
+    # reachable by others (bound beyond loopback, or behind a proxy): server mode
+    shared = bool(allowed_hosts) or host not in ("127.0.0.1", "::1", "localhost")
+    auth = auth or ("basic" if shared else "none")
+    users = None
+    if auth == "basic":
+        try:
+            users, generated = users_from(users_file, os.environ)
+        except (OSError, ValueError) as exc:
+            raise SystemExit(f"error: {exc}") from exc
+        if generated:
+            name, password = generated
+            print(f"login: user '{name}', password '{password}'", flush=True)
+            print(
+                "  (generated for this start; set THREATWRIGHT_PASSWORD or --users-file)",
+                flush=True,
+            )
+    elif shared:
+        print("WARNING: --auth none: anyone who reaches this port can read and change", flush=True)
+        print("  the models. Put a login in front (reverse proxy with authentication).", flush=True)
     sock = socket.socket(socket.AF_INET6 if ":" in host else socket.AF_INET)
     sock.bind((host, port))
     port = sock.getsockname()[1]
-    # reachable by others (bound beyond loopback, or behind a proxy): confine client paths
-    shared = bool(allowed_hosts) or host not in ("127.0.0.1", "::1", "localhost")
     # server mode works in a workspace folder holding any number of projects
     root = (workspace or Path.cwd()).resolve() if shared else None
     if root is not None and project is not None and not project.resolve().is_relative_to(root):
         raise SystemExit(f"--project must be inside the workspace {root}")
-    app = create_app(token, port, project, frozenset(allowed_hosts), root)
+    app = create_app(port, project, frozenset(allowed_hosts), root, users)
     shown = allowed_hosts[0] if allowed_hosts else "127.0.0.1"
-    url = f"http://{shown}:{port}/#token={token}"
-    print(
-        f"{PRODUCT_NAME} {__version__} running at http://{shown}:{port}/ (Ctrl+C to stop)",
-        flush=True,
-    )
+    url = f"http://{shown}:{port}/"
+    print(f"{PRODUCT_NAME} {__version__} running at {url} (Ctrl+C to stop)", flush=True)
     if open_browser:
         threading.Timer(0.8, webbrowser.open, args=(url,)).start()
-    else:
-        print(f"open: {url}", flush=True)
     config = uvicorn.Config(app, log_level="warning", server_header=False)
     uvicorn.Server(config).run(sockets=[sock])

@@ -10,9 +10,7 @@ from fastapi.testclient import TestClient
 from threatwright import archive
 from threatwright.branding import PROJECT_FILE
 from threatwright.history import HISTORY_DIR
-from threatwright.server import TOKEN_HEADER, create_app
-
-TOKEN = "t"
+from threatwright.server import API_HEADER, create_app
 
 
 @pytest.fixture(autouse=True)
@@ -21,8 +19,8 @@ def config_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def server(workspace: Path) -> TestClient:
-    app = create_app(TOKEN, None, None, root=workspace)
-    return TestClient(app, base_url="http://127.0.0.1", headers={TOKEN_HEADER: TOKEN})
+    app = create_app(None, None, root=workspace)
+    return TestClient(app, base_url="http://127.0.0.1", headers={API_HEADER: "1"})
 
 
 def zipped(files: dict[str, str]) -> bytes:
@@ -83,8 +81,8 @@ def test_upload_rejects_bad_archives(workspace: Path) -> None:
 
 
 def test_server_features_are_off_locally(project_dir: Path) -> None:
-    app = create_app(TOKEN, None, project_dir)
-    c = TestClient(app, base_url="http://127.0.0.1", headers={TOKEN_HEADER: TOKEN})
+    app = create_app(None, project_dir)
+    c = TestClient(app, base_url="http://127.0.0.1", headers={API_HEADER: "1"})
     assert c.get("/api/app").json()["server"] is False
     assert c.get("/api/workspace").status_code == 501
     assert c.post("/api/project/upload?folder=x", content=b"").status_code == 501

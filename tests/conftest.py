@@ -15,7 +15,6 @@ from threatwright.server import WEB_DIR, create_app
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "tests" / "fixtures" / "project"
-E2E_TOKEN = "e2e-token"
 
 _real_connect = socket.socket.connect
 
@@ -96,13 +95,13 @@ def _serve(project: Path | None, root: Path | None = None) -> Iterator[str]:
     sock = socket.socket()
     sock.bind(("127.0.0.1", 0))
     port = sock.getsockname()[1]
-    app = create_app(E2E_TOKEN, port, project, root=root)
+    app = create_app(port, project, root=root)
     server = uvicorn.Server(uvicorn.Config(app, log_level="warning"))
     thread = threading.Thread(target=server.run, kwargs={"sockets": [sock]}, daemon=True)
     thread.start()
     while not server.started:
         time.sleep(0.05)
-    yield f"http://127.0.0.1:{port}/#token={E2E_TOKEN}"
+    yield f"http://127.0.0.1:{port}/"
     server.should_exit = True
     thread.join(5)
 

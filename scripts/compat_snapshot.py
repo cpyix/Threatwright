@@ -17,7 +17,7 @@ from fastapi.testclient import TestClient
 from threatwright import __version__
 from threatwright.history import HISTORY_DIR
 from threatwright.scaffold import create_project
-from threatwright.server import TOKEN_HEADER, create_app
+from threatwright.server import API_HEADER, create_app
 
 ROOT = Path(__file__).resolve().parents[1]
 TARGET = ROOT / "tests" / "fixtures" / "compat" / f"v{__version__}"
@@ -37,7 +37,7 @@ def main() -> None:
         root = Path(tmp) / "demo"
         create_project(root, "tr", "Demo machine", "en")
         client = TestClient(
-            create_app("t", None, root), base_url="http://127.0.0.1", headers={TOKEN_HEADER: "t"}
+            create_app(None, root), base_url="http://127.0.0.1", headers={API_HEADER: "1"}
         )
 
         def call(method: str, path: str, body: object = None) -> Any:

@@ -16,10 +16,9 @@ import uvicorn
 from playwright.sync_api import Page, sync_playwright
 
 from threatwright.scaffold import create_project
-from threatwright.server import TOKEN_HEADER, create_app
+from threatwright.server import API_HEADER, create_app
 
 OUT = Path(__file__).resolve().parents[1] / "docs" / "images"
-TOKEN = "screenshot-token"  # noqa: S105 - throwaway local server, not a secret
 
 Call = Callable[..., Any]
 
@@ -127,7 +126,7 @@ def main() -> None:
         sock = socket.socket()
         sock.bind(("127.0.0.1", 0))
         port = sock.getsockname()[1]
-        server = uvicorn.Server(uvicorn.Config(create_app(TOKEN, port, root), log_level="warning"))
+        server = uvicorn.Server(uvicorn.Config(create_app(port, root), log_level="warning"))
         threading.Thread(target=server.run, kwargs={"sockets": [sock]}, daemon=True).start()
         while not server.started:
             time.sleep(0.05)
@@ -141,13 +140,13 @@ def main() -> None:
 
             def call(method: str, path: str, body: object = None) -> Any:
                 r = page.request.fetch(
-                    f"{base}/api{path}", method=method, headers={TOKEN_HEADER: TOKEN}, data=body
+                    f"{base}/api{path}", method=method, headers={API_HEADER: "1"}, data=body
                 )
                 assert r.ok, (method, path, r.status, r.text())
                 return r.json()
 
             ids = build_model(call)
-            page.goto(f"{base}/#token={TOKEN}")
+            page.goto(f"{base}/")
             screenshots(page, ids)
             browser.close()
         server.should_exit = True

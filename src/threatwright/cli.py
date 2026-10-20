@@ -67,6 +67,11 @@ class Language(StrEnum):
     en = "en"
 
 
+class AuthMode(StrEnum):
+    basic = "basic"
+    none = "none"
+
+
 @app.callback(invoke_without_command=True)
 def main(
     ctx: typer.Context,
@@ -87,6 +92,17 @@ def main(
         Path | None,
         typer.Option(help="Server mode: folder with the projects users may open (default: cwd)."),
     ] = None,
+    auth: Annotated[
+        AuthMode | None,
+        typer.Option(
+            help="Login: basic (HTTP Basic Auth) or none. Default: basic in server mode, "
+            "none for the local GUI on 127.0.0.1."
+        ),
+    ] = None,
+    users_file: Annotated[
+        Path | None,
+        typer.Option(help="Basic Auth users, one 'name:hash' per line (see hash-password)."),
+    ] = None,
 ) -> None:
     """Without a command: start the GUI on a local port."""
     if version:
@@ -97,7 +113,30 @@ def main(
 
         if project is None and (Path(".") / PROJECT_FILE).exists():
             project = Path(".")
-        serve(project, browser, host, port, tuple(allowed_host or ()), workspace)
+        serve(
+            project,
+            browser,
+            host,
+            port,
+            tuple(allowed_host or ()),
+            workspace,
+            auth.value if auth else None,
+            users_file,
+        )
+
+
+@app.command("hash-password")
+def hash_password_cmd(
+    user: Annotated[str, typer.Argument(help="User name for the line.")] = "admin",
+) -> None:
+    """Print a 'name:hash' line for --users-file (HTTP Basic Auth in server mode)."""
+    from threatwright.auth import hash_password
+
+    password = typer.prompt("Password", hide_input=True, confirmation_prompt=True)
+    if len(password) < 12:
+        typer.echo("error: use at least 12 characters", err=True)
+        raise typer.Exit(1)
+    typer.echo(f"{user}:{hash_password(password)}")
 
 
 @app.command("validate")

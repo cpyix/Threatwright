@@ -18,9 +18,10 @@ def project_dir(project_dir: Path) -> Path:
 def test_adopt_single_then_all(gui: str, page: Page, project_dir: Path) -> None:
     page.goto(gui)
     # a drive from the library: its own templates (an untyped element gets every device template)
-    token = {"X-Threatwright-Token": gui.rsplit("token=", 1)[1]}
     page.request.post(
-        gui.split("#")[0] + "api/models/main/add/element", headers=token, data={"type": "drive"}
+        gui + "api/models/main/add/element",
+        headers={"X-Threatwright": "1"},
+        data={"type": "drive"},
     )
     page.reload()
     page.get_by_test_id("nav-assistant").click()

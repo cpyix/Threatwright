@@ -2,6 +2,7 @@ import os
 import shutil
 from pathlib import Path
 
+import pytest
 from conftest import FIXTURE, ROOT
 from typer.testing import CliRunner
 
@@ -15,12 +16,28 @@ from threatwright.rules import validate
 runner = CliRunner()
 
 
-def test_bundled_ot_library_is_complete_and_valid() -> None:
-    libs = load_libraries(["ot"])
+# Minimum (elements, threats, measures) per bundled library.
+BUNDLED = {"ot": (25, 120, 80), "iot": (12, 30, 20), "software": (12, 30, 20)}
+# iot/software are added by their own tasks; strict xfail flips to a failure once they exist.
+NOT_YET = {"iot", "software"}
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        pytest.param(n, marks=pytest.mark.xfail(strict=True, reason="library not yet bundled"))
+        if n in NOT_YET
+        else n
+        for n in BUNDLED
+    ],
+)
+def test_bundled_library_is_complete_and_valid(name: str) -> None:
+    libs = load_libraries([name])
     assert libs.issues == []
-    assert len(libs.elements) >= 25
-    assert len(libs.threats) >= 120
-    assert len(libs.measures) >= 80
+    n_el, n_th, n_me = BUNDLED[name]
+    assert len(libs.elements) >= n_el
+    assert len(libs.threats) >= n_th
+    assert len(libs.measures) >= n_me
     method = load_method(ROOT, ProjectConfig(name="t"))
     for el in libs.elements.values():
         have = {s for t in libs.threats.values() if el.id in t.applies_to for s in t.stride}
@@ -29,6 +46,12 @@ def test_bundled_ot_library_is_complete_and_valid() -> None:
     for t in libs.threats.values():
         assert t.measures, f"threat {t.id} suggests no measure"
         assert t.sources, f"threat {t.id} has no source"
+        if name != "ot":
+            assert t.cra_refs, f"threat {t.id} has no CRA reference"
+        if name == "iot":
+            assert t.etsi303645, f"threat {t.id} has no ETSI EN 303 645 reference"
+        if name == "software":
+            assert t.asvs or t.masvs, f"threat {t.id} has no ASVS/MASVS reference"
     used = {m for t in libs.threats.values() for m in t.measures}
     assert set(libs.measures) <= used | {
         m.id for m in libs.measures.values() if m.kind != "technical"

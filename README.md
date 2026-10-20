@@ -75,7 +75,7 @@ Started inside a project folder, `threatwright` opens that project directly. By 
 
 ### Docker (CLI and pipelines)
 
-The image `ghcr.io/cpyix/threatwright:<version>` contains the CLI, the GUI, Git and LibreOffice (for PDF). The pipeline templates use it. Run it on a project in the current folder:
+The image `ghcr.io/cpyix/threatwright:<version>` contains the CLI, the GUI, Git and LibreOffice (for PDF). The pipeline templates use it. Tags: the exact version (e.g. `0.2.0`, recommended for pipelines), `0.2` (newest patch of that minor version) and `latest` (newest stable release); release candidates are only tagged with their version. Run it on a project in the current folder:
 
 ```
 # Linux / macOS

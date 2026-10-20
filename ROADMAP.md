@@ -20,5 +20,4 @@ Open points after 0.1.0, ordered by impact. Sizes: S = hours, M = days, L = a we
 ## Housekeeping
 
 - ADR-0010 links `docs/methodology.md`; the file is `docs/methodik.md`.
-- Remove the empty `Test/` folder in the repository root.
 - A `CHANGELOG.md` from 0.1.0 on.

@@ -201,7 +201,8 @@ def pick_folder(title: str, initial: str | None = None) -> str | None:
     Linux prefers zenity/kdialog (desktop-native), otherwise Tk, which uses the
     Explorer dialog on Windows. Raises RuntimeError without a desktop (container, SSH).
     """
-    start = initial or str(Path.home())
+    # absolute, so a value like "--help" can never be read as a dialog option
+    start = str(Path(initial or Path.home()).resolve())
     if sys.platform.startswith("linux"):
         for cmd in (
             [
@@ -239,9 +240,26 @@ def create_app(
     port: int | None = None,
     project: Path | None = None,
     hosts: frozenset[str] = frozenset(),
+    root: Path | None = None,
 ) -> FastAPI:
-    """`hosts`: extra host names accepted on any port (server/container use)."""
+    """`hosts`: extra host names accepted on any port (server/container use).
+    `root`: server mode; project and import paths from clients must stay inside it."""
     app = FastAPI(title=PRODUCT_NAME, docs_url=None, redoc_url=None, openapi_url=None)
+    jail = root.resolve() if root is not None else None
+
+    def client_path(raw: str) -> Path:
+        """Locally the user may pick any folder; on a server only inside `root` (ADR-0013)."""
+        if jail is None:
+            return Path(raw)
+        path = (jail / raw).resolve()  # relative paths count from root; absolute ones replace it
+        if not path.is_relative_to(jail):
+            raise HTTPException(403, "path is outside the folder this server works on")
+        return path
+
+    def local_only() -> None:
+        if jail is not None:
+            raise HTTPException(501, "not available when Threatwright runs as a server")
+
     session = Session()
     app.state.session = session
     if project is not None:
@@ -284,7 +302,7 @@ def create_app(
 
     @app.post("/api/project/open")
     def open_project(body: dict[str, str]) -> dict[str, Any]:
-        path = Path(body.get("path", ""))
+        path = client_path(body.get("path", ""))
         with session.lock:
             try:
                 session.open(path)
@@ -297,6 +315,7 @@ def create_app(
 
     @app.post("/api/pick-folder")
     def pick_folder_endpoint(body: dict[str, str]) -> dict[str, str | None]:
+        local_only()  # would open a dialog on the server's desktop
         if not dialog_lock.acquire(blocking=False):
             raise HTTPException(409, "a folder dialog is already open")
         try:
@@ -312,7 +331,7 @@ def create_app(
         language = body.get("language", "de")
         if template not in ("tr", "empty") or language not in ("de", "en"):
             raise HTTPException(422, "template: tr|empty, language: de|en")
-        path = Path(body.get("path", ""))
+        path = client_path(body.get("path", ""))
         with session.lock:
             try:
                 create_project(path, template, body.get("name") or None, language)  # type: ignore[arg-type]
@@ -599,8 +618,8 @@ def create_app(
         try:
             changed = changed_objects(root, since or None)
             tags = [asdict(t) for t in release_tags(root)]
-        except VcsError as exc:
-            return {"available": False, "error": str(exc), "models": {}, "tags": []}
+        except VcsError:
+            return {"available": False, "models": {}, "tags": []}
         return {
             "available": True,
             "models": {m: sorted(ids) for m, ids in changed.items()},
@@ -638,7 +657,7 @@ def create_app(
             if session.dirty:
                 raise HTTPException(409, "save your changes before importing")
             try:
-                written = import_into_project(root, Path(body.get("path", "")), kind)  # type: ignore[arg-type]
+                written = import_into_project(root, client_path(body.get("path", "")), kind)  # type: ignore[arg-type]
             except OscalError as exc:
                 raise HTTPException(422, "\n".join(str(i) for i in exc.issues) or str(exc)) from exc
             except (ValueError, OSError) as exc:
@@ -734,6 +753,7 @@ def create_app(
     @app.post("/api/open-build-folder")
     def open_build_folder() -> dict[str, str]:
         """Open <project>/build in the file manager of the local machine."""
+        local_only()
         with session.lock:
             folder = session.require().root.resolve() / "build"
         folder.mkdir(exist_ok=True)
@@ -824,7 +844,8 @@ def create_app(
         if path.startswith("api/"):
             raise HTTPException(404)
         target = (WEB_DIR / path).resolve()
-        if path and target.is_file() and target.is_relative_to(WEB_DIR.resolve()):
+        # boundary first: never even probe files outside the bundled frontend
+        if path and target.is_relative_to(WEB_DIR.resolve()) and target.is_file():
             return FileResponse(target)
         index = WEB_DIR / "index.html"
         if not index.exists():
@@ -895,7 +916,10 @@ def serve(
     sock = socket.socket(socket.AF_INET6 if ":" in host else socket.AF_INET)
     sock.bind((host, port))
     port = sock.getsockname()[1]
-    app = create_app(token, port, project, frozenset(allowed_hosts))
+    # reachable by others (bound beyond loopback, or behind a proxy): confine client paths
+    shared = bool(allowed_hosts) or host not in ("127.0.0.1", "::1", "localhost")
+    root = (project or Path.cwd()) if shared else None
+    app = create_app(token, port, project, frozenset(allowed_hosts), root)
     shown = allowed_hosts[0] if allowed_hosts else "127.0.0.1"
     url = f"http://{shown}:{port}/#token={token}"
     print(

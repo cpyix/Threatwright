@@ -47,6 +47,19 @@ def test_allowed_hosts_for_server_use(project_dir: Path) -> None:
     assert status("http://evil.example:8080") == 403
 
 
+def test_server_mode_confines_client_paths(project_dir: Path, tmp_path: Path) -> None:
+    app = create_app(TOKEN, None, project_dir, root=project_dir.parent)
+    c = TestClient(app, base_url="http://127.0.0.1", headers={TOKEN_HEADER: TOKEN})
+    outside = tmp_path / "elsewhere"
+    assert c.post("/api/project/open", json={"path": str(outside)}).status_code == 403
+    assert c.post("/api/project/open", json={"path": "../../.."}).status_code == 403
+    assert c.post("/api/project/new", json={"path": str(outside), "name": "x"}).status_code == 403
+    assert not outside.exists()
+    assert c.post("/api/project/open", json={"path": project_dir.name}).status_code == 200
+    assert c.post("/api/pick-folder", json={}).status_code == 501
+    assert c.post("/api/open-build-folder").status_code == 501
+
+
 def test_short_env_token_refused(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("THREATWRIGHT_TOKEN", "short")
     with pytest.raises(SystemExit, match="at least"):

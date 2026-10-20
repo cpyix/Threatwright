@@ -140,7 +140,7 @@ Before you host it, note:
 - **The token is the only login.** Anyone with the link can read and change the model. Expose it only over TLS and behind your own access control (VPN, SSO proxy); never put a bare port on the internet.
 - **One shared session per instance.** Everyone works on the same in-memory state; it suits one person or a coordinated team. Run one instance per project.
 - **Git stays with you.** The GUI saves files into the mounted folder; commit, push and merge requests happen outside, as with the local GUI.
-- The folder dialog on the start page does not work in a container; pass the project with `--project`.
+- **Confined to the project folder.** As soon as the GUI is reachable for others (`--host` other than loopback, or any `--allowed-host`), it only opens, creates and imports inside the `--project` folder (or the working directory). The folder dialog and "open build folder" are switched off; pass the project with `--project`.
 
 ## Development
 

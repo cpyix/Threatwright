@@ -13,6 +13,14 @@ export type View =
   | { kind: 'controls' }
   | { kind: 'documents' }
   | { kind: 'objects'; collection: Collection; selected: string | null }
+  | { kind: 'history' }
+
+export interface HistoryEntry {
+  id: string
+  time: string
+  kind: 'auto' | 'save' | 'open'
+  counts: Record<Collection, number>
+}
 
 const LANG_KEY = 'tw-lang'
 
@@ -56,6 +64,31 @@ class AppState {
   changed = $state<Set<string>>(new Set())
   tags = $state<{ name: string; date: string }[]>([])
   vcs = $state(false)
+  lastAutosave = $state<string | null>(null) // ISO time of the latest autosave in this session
+  recovery = $state<HistoryEntry | null>(null) // unsaved autosave found when the project was opened
+
+  /** Snapshot unsaved edits into the version history (never into the project files). */
+  async autosave(): Promise<void> {
+    if (!this.project?.dirty) return
+    const r = await api<{ saved: boolean; time: string | null }>('POST', '/autosave')
+    if (r.saved) this.lastAutosave = r.time
+  }
+
+  async history(): Promise<{ entries: HistoryEntry[]; pending: string | null }> {
+    return api('GET', '/history')
+  }
+
+  async restoreVersion(id: string): Promise<void> {
+    this.project = await api<ProjectInfo>('POST', `/history/${encodeURIComponent(id)}/restore`)
+    this.recovery = null
+    await this.refreshModel()
+    this.flash('restored')
+  }
+
+  async dismissRecovery(): Promise<void> {
+    await api('POST', '/history/dismiss')
+    this.recovery = null
+  }
 
   async init(): Promise<void> {
     const info = await api<{ version: string; recent: string[] }>('GET', '/app')
@@ -74,12 +107,16 @@ class AppState {
 
   async loadProject(info: ProjectInfo): Promise<void> {
     this.project = info
+    this.lastAutosave = null // at the start: a slow load must not hide an autosave made meanwhile
     this.method = await api<Method>('GET', '/method').catch(() => null)
     const cra = await api<{ entries: Record<string, I18n> }>('GET', '/catalog/cra')
     this.cra = cra.entries
     const names = Object.keys(info.models)
     if (!this.modelName || !names.includes(this.modelName)) this.modelName = names[0] ?? null
     await this.refreshModel()
+    await this.refreshProject() // `info` may be outdated by now (edits while loading)
+    const h = await this.history().catch(() => null)
+    this.recovery = h?.entries.find((e) => e.id === h.pending) ?? null
   }
 
   /** Landing view: the diagram once there is something to see, else the setup wizard. */

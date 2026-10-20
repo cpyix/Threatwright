@@ -6,6 +6,7 @@
   import FolderOpen from '@lucide/svelte/icons/folder-open'
   import Gem from '@lucide/svelte/icons/gem'
   import Grid3x3 from '@lucide/svelte/icons/grid-3x3'
+  import HistoryIcon from '@lucide/svelte/icons/history'
   import LayoutDashboard from '@lucide/svelte/icons/layout-dashboard'
   import ListChecks from '@lucide/svelte/icons/list-checks'
   import MessageCircleQuestion from '@lucide/svelte/icons/message-circle-question'
@@ -26,6 +27,7 @@
   import CyberCauseDialog from './lib/CyberCauseDialog.svelte'
   import Diagram from './lib/diagram/Diagram.svelte'
   import Documents from './lib/Documents.svelte'
+  import History from './lib/History.svelte'
   import Objects from './lib/Objects.svelte'
   import Overview from './lib/Overview.svelte'
   import SettingsView from './lib/Settings.svelte'
@@ -45,8 +47,19 @@
   onMount(() => {
     app.init()
     const poll = setInterval(() => app.pollChanges().catch(() => {}), 3000)
-    return () => clearInterval(poll)
+    const autosave = setInterval(() => app.autosave().catch(() => {}), 30_000)
+    // also when the tab is hidden: the window may be closed next
+    const onhide = () => document.visibilityState === 'hidden' && app.autosave().catch(() => {})
+    document.addEventListener('visibilitychange', onhide)
+    return () => {
+      clearInterval(poll)
+      clearInterval(autosave)
+      document.removeEventListener('visibilitychange', onhide)
+    }
   })
+
+  const clock = (iso: string) =>
+    new Date(iso).toLocaleTimeString(lang === 'de' ? 'de-DE' : 'en-GB', { hour: '2-digit', minute: '2-digit' })
 
   function onkeydown(e: KeyboardEvent) {
     const mod = e.ctrlKey || e.metaKey
@@ -119,7 +132,10 @@
             title: 'nav_check',
             items: [simple('validation', CircleCheckBig), simple('documents', FileText), simple('controls', ListChecks)],
           },
-          { title: 'nav_project', items: [simple('start', FolderOpen), simple('settings', Settings)] },
+          {
+            title: 'nav_project',
+            items: [simple('start', FolderOpen), simple('history', HistoryIcon), simple('settings', Settings)],
+          },
         ]
       : [{ title: 'nav_project', items: [simple('start', FolderOpen)] }],
   )
@@ -159,6 +175,9 @@
       </select>
     {/if}
     <span class="spacer"></span>
+    {#if app.project.dirty && app.lastAutosave}
+      <span class="autosaved muted" data-testid="autosaved">{tr(lang, 'autosaved')} {clock(app.lastAutosave)}</span>
+    {/if}
     <button onclick={() => app.undoRedo('undo')} disabled={!app.project.can_undo} title="Ctrl+Z">{tr(lang, 'undo')}</button>
     <button onclick={() => app.undoRedo('redo')} disabled={!app.project.can_redo} title="Ctrl+Y">{tr(lang, 'redo')}</button>
     <button class="primary" onclick={() => app.save()} title="Ctrl+S" data-testid="save">
@@ -171,6 +190,15 @@
     {lang === 'de' ? 'EN' : 'DE'}
   </button>
 </header>
+
+{#if app.recovery}
+  <div class="banner" role="alert" data-testid="recovery">
+    {tr(lang, 'recovery_text')} ({clock(app.recovery.time)})
+    <button class="primary" onclick={() => app.restoreVersion(app.recovery!.id)} data-testid="recovery-restore">{tr(lang, 'restore')}</button>
+    <button onclick={() => app.dismissRecovery()}>{tr(lang, 'discard')}</button>
+    <button class="link" onclick={() => (app.view = { kind: 'history' })}>{tr(lang, 'show_versions')}</button>
+  </div>
+{/if}
 
 {#if app.externalChange}
   <div class="banner" role="alert">
@@ -217,6 +245,8 @@
       <Start />
     {:else if app.view.kind === 'setup'}
       <Setup step={app.view.step} />
+    {:else if app.view.kind === 'history'}
+      <History />
     {:else if !app.model}
       <p class="muted">{tr(lang, 'project_none')}</p>
     {:else if app.view.kind === 'overview'}
@@ -267,6 +297,9 @@
   }
   .spacer {
     flex: 1;
+  }
+  .autosaved {
+    font-size: 0.85em;
   }
   .banner {
     padding: 0.5rem 1rem;

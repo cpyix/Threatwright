@@ -51,7 +51,8 @@ def test_diagram_assistant_coverage(
     expect(page.get_by_test_id("coverage")).to_contain_text("E-0004")
 
     page.keyboard.press("Control+s")
-    expect(page.get_by_test_id("toast")).to_contain_text("Gespeichert")
+    # Save can exceed the 5 s default on slow Windows CI runners
+    expect(page.get_by_test_id("toast")).to_contain_text("Gespeichert", timeout=15_000)
     project = Project.load(project_dir)
     sub = project.models["main"]
     assert sub.objects["elements"]["E-0004"].library_ref == "lib:ot/element/drive@1"

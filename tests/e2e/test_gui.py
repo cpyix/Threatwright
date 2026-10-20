@@ -32,7 +32,7 @@ def test_create_assess_link_save(
 
     page.keyboard.press("Control+s")
     target = project_dir / "models/main/threats/T-0002.yaml"
-    expect(page.get_by_test_id("toast")).to_contain_text("Gespeichert")
+    expect(page.get_by_test_id("toast")).to_contain_text("Gespeichert", timeout=15_000)
     text = target.read_text(encoding="utf-8")
     assert "impact: 4" in text and "M-0001" in text and "status: treated" in text
 

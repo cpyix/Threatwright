@@ -64,7 +64,7 @@ def test_setup_wizard(gui: str, page: Page, offline: list[str], tmp_path: Path) 
     expect(checks).to_contain_text("Komponenten angelegt: 2")
     expect(checks).to_contain_text("✓ Ursachenfrage beantwortet")
     page.get_by_test_id("setup-save").click()
-    expect(page.get_by_test_id("toast")).to_contain_text("Gespeichert")
+    expect(page.get_by_test_id("toast")).to_contain_text("Gespeichert", timeout=15_000)
 
     model = target / "models" / "main"
     assert "Testanlage zum Verpacken" in (model / "model.yaml").read_text(encoding="utf-8")

@@ -32,7 +32,7 @@ threats:
     cra_refs: [AI-I-2-b, AI-I-2-d]
     etsi303645: ['5.1-1', '5.1-2']
     measures: [iot-unique-credentials, secure-setup-guide]
-    sources: ["ETSI EN 303 645 V3.1.3 provision 5.1; generic consumer IoT threat knowledge"]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.1; OWASP IoT Top 10 2018; ENISA Baseline Security Recommendations for IoT (2017)"]
 
   - id: iot-password-guessing
     rev: 1
@@ -58,7 +58,7 @@ threats:
     cra_refs: [AI-I-2-d]
     etsi303645: ['5.1-5']
     measures: [rate-limiting]
-    sources: ["ETSI EN 303 645 V3.1.3 provision 5.1-5; generic consumer IoT threat knowledge"]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.1-5; OWASP IoT Top 10 2018; ENISA Baseline Security Recommendations for IoT (2017)"]
 
   - id: local-api-unauthenticated
     rev: 1
@@ -91,7 +91,7 @@ threats:
     cra_refs: [AI-I-2-d, AI-I-2-j]
     etsi303645: ['5.5-4', '5.5-5', '5.6-2']
     measures: [local-api-auth, unused-interfaces-off]
-    sources: ["ETSI EN 303 645 V3.1.3 provisions 5.5 and 5.6; generic consumer IoT threat knowledge"]
+    sources: ["ETSI EN 303 645 V3.1.3 provisions 5.5 and 5.6; OWASP IoT Top 10 2018; ENISA Baseline Security Recommendations for IoT (2017)"]
 
   - id: device-malformed-input
     rev: 1
@@ -249,7 +249,7 @@ threats:
     cra_refs: [AI-I-2-d]
     etsi303645: ['5.4-2']
     measures: [secure-element-keys, iot-unique-credentials]
-    sources: ["ETSI EN 303 645 V3.1.3 provision 5.4-2; generic consumer IoT threat knowledge"]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.4-2; OWASP IoT Top 10 2018; ENISA Baseline Security Recommendations for IoT (2017)"]
 
   - id: credential-store-tampering
     rev: 1
@@ -336,9 +336,9 @@ threats:
     environment: {interface: physical, access: public_restricted, user: layman}
     impact: 3
     cra_refs: [AI-I-2-d]
-    etsi303645: ['5.5-5', '5.13-1A']
+    etsi303645: ['5.5-5']
     measures: [local-ui-protection]
-    sources: ["ETSI EN 303 645 V3.1.3 provisions 5.5-5 and 5.13-1"]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.5-5"]
 
   - id: insecure-factory-reset
     rev: 1
@@ -368,7 +368,7 @@ threats:
     cra_refs: [AI-I-2-b, AI-I-2-d]
     etsi303645: ['5.5-4', '5.5-5']
     measures: [secure-factory-reset, secure-pairing]
-    sources: ["ETSI EN 303 645 V3.1.3 provision 5.5; generic consumer IoT threat knowledge"]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.5; OWASP IoT Top 10 2018; ENISA Baseline Security Recommendations for IoT (2017)"]
 
   # --- impact on others ---------------------------------------------------------------
   - id: device-botnet-node
@@ -401,7 +401,7 @@ threats:
     cra_refs: [AI-I-2-i, AI-I-2-j]
     etsi303645: ['5.6-1', '5.6-2', '5.1-1']
     measures: [unused-interfaces-off, iot-unique-credentials, automatic-updates]
-    sources: ["ETSI EN 303 645 V3.1.3 provisions 5.1 and 5.6; generic consumer IoT threat knowledge"]
+    sources: ["ETSI EN 303 645 V3.1.3 provisions 5.1 and 5.6; OWASP IoT Top 10 2018; ENISA Baseline Security Recommendations for IoT (2017)"]
 
   - id: hub-pivot
     rev: 1
@@ -430,7 +430,7 @@ threats:
     cra_refs: [AI-I-2-k, AI-I-2-d]
     etsi303645: ['5.6-7', '5.6-5']
     measures: [least-privilege-firmware, unused-interfaces-off]
-    sources: ["ETSI EN 303 645 V3.1.3 provision 5.6; generic consumer IoT threat knowledge"]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.6; OWASP IoT Top 10 2018; ENISA Baseline Security Recommendations for IoT (2017)"]
 
   # --- logging -------------------------------------------------------------------------
   - id: device-security-events-unlogged
@@ -462,3 +462,69 @@ threats:
     etsi303645: ['5.10-1', '5.7-2']
     measures: [security-event-logging]
     sources: ["ETSI EN 303 645 V3.1.3 provisions 5.7-2 and 5.10; TR-03183-1 Annex B"]
+
+  # --- hardware attacks and supply chain -------------------------------------------------
+  - id: fault-injection-bypass
+    rev: 1
+    stride: [T, I, E]
+    applies_to: [iot-device, iot-firmware, iot-credentials-store]
+    title:
+      de: Ausleseschutz oder sicherer Start von {element} wird durch Fehlerinjektion umgangen
+      en: Readout protection or secure boot of {element} is bypassed by fault injection
+    scenario:
+      de: >-
+        Ein Angreifer stört mit einfacher, frei erhältlicher Ausrüstung im richtigen
+        Moment die Versorgungsspannung oder den Takt des Mikrocontrollers. Der Baustein
+        überspringt dadurch die Prüfung der Debug-Sperre oder der Firmware-Signatur.
+        Anleitungen für verbreitete Mikrocontroller sind öffentlich.
+      en: >-
+        With simple, freely available equipment an attacker disturbs the supply voltage
+        or the clock of the microcontroller at the right moment. The chip thereby skips
+        the check of the debug lock or of the firmware signature. Instructions for
+        common microcontrollers are public.
+    consequence:
+      de: >-
+        Firmware und Schlüssel werden trotz Sperre ausgelesen oder eine fremde Firmware
+        startet. Gelten die Schlüssel für mehrere Geräte, ist die ganze Baureihe
+        betroffen.
+      en: >-
+        Firmware and keys are read out despite the lock, or foreign firmware boots. If
+        the keys apply to several devices, the whole product line is affected.
+    environment: {interface: physical, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-e, AI-I-2-f]
+    etsi303645: ['5.4-1', '5.7-1', '5.6-4A']
+    measures: [fault-injection-hardening, secure-element-keys, iot-unique-credentials]
+    sources: ["OWASP IoT Top 10 2018; ETSI EN 303 645 V3.1.3 provisions 5.4 and 5.7"]
+
+  - id: odm-firmware-backdoor
+    rev: 1
+    stride: [S, E]
+    applies_to: [iot-firmware, iot-device, iot-hub]
+    title:
+      de: Zugekaufte Firmware von {element} enthält einen versteckten Zugang
+      en: Purchased firmware of {element} contains a hidden access
+    scenario:
+      de: >-
+        Gerät oder Funkmodul stammen von einem Auftragsfertiger (ODM, White Label) und
+        werden unter eigener Marke verkauft. Die Firmware enthält einen Wartungszugang
+        mit festem Passwort, einen Telnet-Dienst oder eine Verbindung zu einem Server
+        des Zulieferers, von der der Hersteller nichts weiß.
+      en: >-
+        Device or radio module come from a contract manufacturer (ODM, white label) and
+        are sold under the own brand. The firmware contains a maintenance access with a
+        fixed password, a Telnet service or a connection to a server of the supplier
+        that the manufacturer does not know about.
+    consequence:
+      de: >-
+        Zulieferer oder jeder, der den Zugang entdeckt, steuert alle Geräte. Der
+        Hersteller haftet trotzdem als Inverkehrbringer.
+      en: >-
+        The supplier, or anyone who discovers the access, controls all devices. The
+        manufacturer is nevertheless liable as the one placing the product on the market.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 5
+    cra_refs: [AI-I-2-a, AI-I-2-d, AI-II-1]
+    etsi303645: ['5.4-3', '5.6-5', '5.6-9']
+    measures: [odm-firmware-review, sbom-maintained, unused-interfaces-off]
+    sources: ["OWASP IoT Top 10 2018; ENISA Baseline Security Recommendations for IoT (2017)"]

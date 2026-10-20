@@ -86,7 +86,7 @@ threats:
     environment: {interface: external_network, access: restricted}
     impact: 5
     cra_refs: [AI-I-2-f, AI-II-7]
-    etsi303645: ['5.3-2', '5.4-1']
+    etsi303645: ['5.3-2']
     measures: [ota-signing-key-hsm]
     sources: ["ETSI EN 303 645 V3.1.3 provision 5.3-2; generic supply chain threat knowledge"]
 
@@ -144,9 +144,9 @@ threats:
     environment: {interface: external_network, access: non_restricted}
     impact: 3
     cra_refs: [AI-I-2-h, AI-II-7]
-    etsi303645: ['5.3-12', '5.9-1']
+    etsi303645: ['5.9-1']
     measures: [power-fail-safe-updates]
-    sources: ["ETSI EN 303 645 V3.1.3 provisions 5.3 and 5.9-1; generic embedded engineering knowledge"]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.9-1; generic embedded engineering knowledge"]
 
   - id: updates-not-installed
     rev: 1
@@ -172,7 +172,7 @@ threats:
     environment: {interface: external_network, access: non_restricted, user: layman}
     impact: 4
     cra_refs: [AI-I-2-c, AI-II-8]
-    etsi303645: ['5.3-3', '5.3-4A', '5.3-11']
+    etsi303645: ['5.3-3', '5.3-4A', '5.3-4B', '5.3-11']
     masvs: [MASVS-CODE-2]
     measures: [automatic-updates]
     sources: ["ETSI EN 303 645 V3.1.3 provision 5.3; OWASP MASVS v2"]

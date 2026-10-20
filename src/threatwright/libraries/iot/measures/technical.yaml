@@ -283,12 +283,17 @@ measures:
         JTAG und SWD werden in der Fertigung per Sicherungsbit (z. B. Readout
         Protection) dauerhaft gesperrt. Die UART-Konsole ist in der Serienfirmware
         abgeschaltet oder verlangt eine gerätespezifische Anmeldung. Testpunkte liegen
-        nicht offen zugänglich.
+        nicht offen zugänglich. Die Sperre vieler Mikrocontroller lässt sich durch
+        Fehlerinjektion (z. B. Spannungsglitches) umgehen; sie ist daher kein
+        alleiniger Schutz für Schlüssel und Firmware (siehe geschützter
+        Hardware-Speicher und Härtung gegen Fehlerinjektion).
       en: >-
         JTAG and SWD are locked permanently during production via a fuse bit (e.g.
         readout protection). The UART console is switched off in the production
         firmware or requires device-specific authentication. Test points are not openly
-        accessible.
+        accessible. The lock of many microcontrollers can be bypassed by fault injection
+        (e.g. voltage glitches); it is therefore not the sole protection for keys and
+        firmware (see protected hardware storage and fault injection hardening).
     kind: technical
     evidence:
       de: Fertigungsschritt zum Sperren; Test mit Debug-Adapter am Seriengerät.
@@ -409,8 +414,8 @@ measures:
       de: Bedienkonzept; Test der Tastenkombinationen am Seriengerät.
       en: Operating concept; test of button combinations on the production device.
     cra_refs: [AI-I-2-d]
-    etsi303645: ['5.5-5', '5.13-1A']
-    sources: ["ETSI EN 303 645 V3.1.3 provisions 5.5-5 and 5.13"]
+    etsi303645: ['5.5-5']
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.5-5"]
 
   - id: secure-factory-reset
     rev: 1
@@ -673,5 +678,57 @@ measures:
       de: HSM-Konfiguration; Signierprotokoll.
       en: HSM configuration; signing log.
     cra_refs: [AI-I-2-f, AI-II-7]
-    etsi303645: ['5.4-1']
-    sources: ["generic code signing practice"]
+    etsi303645: ['5.3-2']
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.3-2; generic code signing practice"]
+
+  - id: fault-injection-hardening
+    rev: 1
+    title:
+      de: Härtung gegen Fehlerinjektion
+      en: Fault injection hardening
+    description:
+      de: >-
+        Für Produkte, deren Schlüssel oder Firmware lohnende Ziele sind, wählt der
+        Hersteller Mikrocontroller oder Secure Elements mit Schutz gegen Spannungs-,
+        Takt- und elektromagnetische Glitches. Sicherheitsprüfungen im Bootloader werden
+        doppelt und mit zufälliger Verzögerung ausgeführt. Ein erfolgreicher Angriff auf
+        ein Gerät verrät keine Geheimnisse, die für andere Geräte gelten.
+      en: >-
+        For products whose keys or firmware are worthwhile targets, the manufacturer
+        selects microcontrollers or secure elements with protection against voltage,
+        clock and electromagnetic glitches. Security checks in the bootloader are
+        executed twice and with random delay. A successful attack on one device reveals
+        no secrets that apply to other devices.
+    kind: technical
+    evidence:
+      de: Datenblatt bzw. Zertifizierung des Bausteins; Code-Review des Bootloaders.
+      en: Data sheet or certification of the chip; code review of the bootloader.
+    cra_refs: [AI-I-2-e, AI-I-2-f]
+    etsi303645: ['5.4-1', '5.7-1']
+    sources: ["OWASP IoT Top 10 2018; generic hardware security practice"]
+
+  - id: stream-access-control
+    rev: 1
+    title:
+      de: Geschützter Zugriff auf Kamera- und Audiostreams
+      en: Protected access to camera and audio streams
+    description:
+      de: >-
+        Video- und Audiostreams (RTSP, P2P-Relay, Web-Ansicht) sind nur nach Anmeldung
+        und verschlüsselt abrufbar. Der Relay-Dienst prüft bei jedem Verbindungsaufbau,
+        ob der Anfragende zum Konto des Geräts gehört; eine Geräte-ID allein reicht nicht.
+        Nicht benötigte Streaming-Dienste sind ab Werk aus, und eine sichtbare Anzeige
+        am Gerät zeigt aktive Aufnahmen.
+      en: >-
+        Video and audio streams (RTSP, P2P relay, web view) are only retrievable after
+        authentication and encrypted. The relay service checks at every connection
+        whether the requester belongs to the device's account; a device ID alone is not
+        enough. Unneeded streaming services are off by default, and a visible indicator
+        on the device shows active recording.
+    kind: technical
+    evidence:
+      de: Test des Streamabrufs ohne Anmeldung und mit fremdem Konto.
+      en: Test of stream retrieval without authentication and with another account.
+    cra_refs: [AI-I-2-d, AI-I-2-e]
+    etsi303645: ['5.8-2', '5.8-3', '5.6-2']
+    sources: ["ETSI EN 303 645 V3.1.3 provisions 5.6 and 5.8"]

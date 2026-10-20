@@ -27,12 +27,12 @@ threats:
       en: >-
         An outsider controls the device and sees its data, often without the owner
         noticing.
-    environment: {interface: local, access: public_restricted, user: layman}
+    environment: {interface: dedicated_known_network, access: public_restricted, user: layman}
     impact: 4
     cra_refs: [AI-I-2-b, AI-I-2-d]
     etsi303645: ['5.5-4', '5.12-2']
     measures: [secure-pairing]
-    sources: ["ETSI EN 303 645 V3.1.3 provisions 5.5-4 and 5.12; generic consumer IoT threat knowledge"]
+    sources: ["ETSI EN 303 645 V3.1.3 provisions 5.5-4 and 5.12; OWASP IoT Top 10 2018; ENISA Baseline Security Recommendations for IoT (2017)"]
 
   - id: pairing-open-setup-network
     rev: 1
@@ -59,7 +59,7 @@ threats:
       en: >-
         The attacker knows the Wi-Fi password and is thus inside the user's entire home
         network.
-    environment: {interface: local, access: non_restricted, user: layman}
+    environment: {interface: dedicated_known_network, access: non_restricted, user: layman}
     impact: 4
     cra_refs: [AI-I-2-e]
     etsi303645: ['5.5-6', '5.5-7']
@@ -88,12 +88,12 @@ threats:
       en: >-
         The authorised user cannot set up the device, the battery drains, or an
         outsider uses the open time window to pair.
-    environment: {interface: local, access: non_restricted}
+    environment: {interface: dedicated_known_network, access: non_restricted}
     impact: 2
     cra_refs: [AI-I-2-h, AI-I-2-j]
     etsi303645: ['5.6-2']
     measures: [secure-pairing, rate-limiting]
-    sources: ["ETSI EN 303 645 V3.1.3 provision 5.6-2; generic consumer IoT threat knowledge"]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.6-2; OWASP IoT Top 10 2018; ENISA Baseline Security Recommendations for IoT (2017)"]
 
   - id: radio-default-network-key
     rev: 1
@@ -182,7 +182,7 @@ threats:
         The device switches unintentionally, shows wrong values or controls wrongly,
         e.g. heats an empty house or switches the heating off in winter.
     environment: {interface: dedicated_known_network, access: non_restricted}
-    impact: 3
+    impact: 4
     cra_refs: [AI-I-2-f]
     etsi303645: ['5.5-1']
     measures: [radio-encryption, replay-protection]

@@ -127,7 +127,7 @@ elements:
         Initial setup: connect the device to Wi-Fi, link it to app and account, add
         it to a radio network.
     interfaces: [ble, setup-ap, qr-code]
-    environment: {interface: local, access: public_restricted, user: layman}
+    environment: {interface: dedicated_known_network, access: public_restricted, user: layman}
     properties: {proof_of_possession: optional}
     assets:
       - title: {de: WLAN-Zugangsdaten des Nutzers, en: User's Wi-Fi credentials}
@@ -220,7 +220,7 @@ elements:
     name: {de: Bluetooth Low Energy, en: Bluetooth Low Energy}
     kind: flow
     interfaces: [ble]
-    environment: {interface: local, access: non_restricted}
+    environment: {interface: dedicated_known_network, access: non_restricted}
     properties: {encryption: optional}
     assets:
       - title: {de: Befehle und Statusdaten über Bluetooth, en: Commands and status data via Bluetooth}

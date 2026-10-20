@@ -119,4 +119,34 @@ threats:
     cra_refs: [AI-I-2-m, AI-I-2-d]
     etsi303645: ['5.11-1', '5.11-3']
     measures: [secure-factory-reset, security-event-logging]
-    sources: ["ETSI EN 303 645 V3.1.3 provision 5.11; generic consumer IoT threat knowledge"]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.11; OWASP IoT Top 10 2018; ENISA Baseline Security Recommendations for IoT (2017)"]
+
+  - id: camera-stream-exposed
+    rev: 1
+    stride: [I]
+    applies_to: [iot-device, vendor-cloud]
+    title:
+      de: Kamera- oder Mikrofonstream von {element} ist ohne Anmeldung abrufbar
+      en: Camera or microphone stream of {element} can be retrieved without login
+    scenario:
+      de: >-
+        Das Gerät bietet einen RTSP-Stream ohne Passwort an, oder der P2P-Relay-Dienst
+        des Herstellers verbindet jeden, der die Geräte-ID kennt. Geräte-IDs sind
+        fortlaufend oder stehen auf dem Gehäuse.
+      en: >-
+        The device offers an RTSP stream without password, or the manufacturer's P2P
+        relay service connects anyone who knows the device ID. Device IDs are sequential
+        or printed on the housing.
+    consequence:
+      de: >-
+        Fremde sehen und hören in Wohnungen und Kinderzimmern mit. Das verletzt die
+        Privatsphäre schwer und wird oft öffentlich bekannt.
+      en: >-
+        Outsiders watch and listen in homes and children's rooms. This severely violates
+        privacy and often becomes public.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 5
+    cra_refs: [AI-I-2-e, AI-I-2-d]
+    etsi303645: ['5.8-2', '5.8-3', '5.6-2']
+    measures: [stream-access-control, tenant-isolation]
+    sources: ["OWASP IoT Top 10 2018; ENISA Baseline Security Recommendations for IoT (2017)"]

@@ -116,7 +116,7 @@ threats:
     consequence:
       de: >-
         Der Angreifer steuert alle Geräte des Kunden, sieht Kamerabilder oder
-        Anwesenheitsdaten und kann das Konto für sich sperren.
+        Anwesenheitsdaten und kann den Besitzer aus dem Konto aussperren.
       en: >-
         The attacker controls all of the customer's devices, sees camera images or
         presence data and can lock the customer out.

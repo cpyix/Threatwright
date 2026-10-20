@@ -251,16 +251,15 @@ def create_app(
         """Locally the user may pick any folder; on a server only inside `root` (ADR-0013)."""
         if jail is None:
             return Path(raw)
-        # string check before any file access (relative paths count from root, absolute ones
-        # replace it), then again after resolving symlinks
+        # realpath resolves ".." and symlinks; relative paths count from root, absolute ones
+        # replace it. One prefix check on the result, before any use of the path.
         base = str(jail)
-        candidate = os.path.normpath(os.path.join(base, raw))
-        if candidate != base and not candidate.startswith(base + os.sep):
+        candidate = os.path.realpath(os.path.join(base, raw))
+        if candidate == base:
+            return jail
+        if not candidate.startswith(base + os.sep):
             raise HTTPException(403, "path is outside the folder this server works on")
-        path = Path(candidate).resolve()
-        if not path.is_relative_to(jail):
-            raise HTTPException(403, "path is outside the folder this server works on")
-        return path
+        return Path(candidate)
 
     def local_only() -> None:
         if jail is not None:

@@ -234,14 +234,17 @@ def pick_folder(title: str, initial: str | None = None) -> str | None:
     # absolute, so a value like "--help" can never be read as a dialog option
     start = os.path.abspath(initial or Path.home())
     if sys.platform == "darwin":
-        if not os.path.isdir(start):  # choose folder fails on a missing default location
-            start = str(Path.home())
-        # title and folder as argv, never spliced into the script
+        # title and folder as argv, never spliced into the script; choose folder fails on a
+        # missing default location, so that falls back to the home folder
         script = (
             "on run argv",
+            "try",
+            "set startAt to (POSIX file (item 2 of argv)) as alias",
+            "on error",
+            "set startAt to path to home folder",
+            "end try",
             "activate",
-            "POSIX path of (choose folder with prompt (item 1 of argv)"
-            " default location (POSIX file (item 2 of argv)))",
+            "POSIX path of (choose folder with prompt (item 1 of argv) default location startAt)",
             "end run",
         )
         args = [arg for line in script for arg in ("-e", line)]

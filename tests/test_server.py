@@ -268,5 +268,4 @@ def test_pick_folder_macos(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     assert calls[-1][0] == "/usr/bin/osascript"
     assert calls[-1][-2:] == ["T", str(tmp_path)]  # as argv, not inside the script
     stdout = ""  # cancelled
-    assert server.pick_folder("T", str(tmp_path / "missing")) is None
-    assert calls[-1][-1] == str(Path.home())
+    assert server.pick_folder("T", str(tmp_path)) is None

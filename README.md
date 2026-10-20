@@ -20,6 +20,27 @@ Local-first threat modelling and risk analysis for products with digital element
 - **CI:** the same checks as the GUI in GitLab or GitHub pipelines, template pre-filled per project ([CI](docs/ci.md)).
 - **Interop:** OSCAL import (catalogs such as Grundschutz++, profiles, component definitions), Threat Dragon and CSV import, CSV/JSON/XLSX export.
 
+![Data flow diagram with zones as trust boundaries, risk colours and threat counts](docs/images/diagram.png)
+
+<details>
+<summary><strong>More screenshots</strong>: setup wizard, STRIDE assistant, threat assessment, coverage</summary>
+
+**Setup wizard:** connections step with the live diagram
+![Setup wizard, connections step](docs/images/setup.png)
+
+**STRIDE assistant:** library suggestions per category, each with the question behind it
+![STRIDE assistant with library suggestions](docs/images/assistant.png)
+
+**Threats:** list with risk and the assessment form
+![Threat list and form](docs/images/threat.png)
+
+**Coverage:** every element and data flow against every STRIDE category
+![Coverage matrix](docs/images/coverage.png)
+
+</details>
+
+The screenshots show a neutral demo model built from the library building blocks; `uv run python scripts/screenshots.py` regenerates them.
+
 **Contents:** [Install](#install) · [Usage](#usage) · [Docker](#docker-cli-and-pipelines) · [Hosting the GUI](#hosting-the-gui-container-or-server) · [Documentation](#documentation-german) · [Develop and contribute](#develop-and-contribute) · [License](#license)
 
 ## Use Threatwright

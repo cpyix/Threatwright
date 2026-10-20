@@ -61,10 +61,14 @@ class AppState {
     const info = await api<{ version: string; recent: string[] }>('GET', '/app')
     this.version = info.version
     this.recent = info.recent
+    // Loading takes a moment; if the user navigated meanwhile (e.g. created a new project
+    // from the start page), their view wins over the landing view.
+    const before = this.view
     try {
       await this.loadProject(await api<ProjectInfo>('GET', '/project'))
+      if (this.view === before) this.view = this.home()
     } catch {
-      this.view = { kind: 'start' }
+      if (this.view === before) this.view = { kind: 'start' }
     }
   }
 
@@ -76,7 +80,6 @@ class AppState {
     const names = Object.keys(info.models)
     if (!this.modelName || !names.includes(this.modelName)) this.modelName = names[0] ?? null
     await this.refreshModel()
-    if (this.view.kind === 'start') this.view = this.home()
   }
 
   /** Landing view: the diagram once there is something to see, else the setup wizard. */

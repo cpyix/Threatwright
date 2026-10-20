@@ -19,7 +19,7 @@ from threatwright.scaffold import create_project
 from threatwright.server import TOKEN_HEADER, create_app
 
 OUT = Path(__file__).resolve().parents[1] / "docs" / "images"
-TOKEN = "screenshot-token"
+TOKEN = "screenshot-token"  # noqa: S105 - throwaway local server, not a secret
 
 Call = Callable[..., Any]
 
@@ -72,7 +72,9 @@ def build_model(call: Call) -> dict[str, str]:
         templates = [s["template_id"] for c in categories.values() for s in c["suggestions"]]
         for template in list(dict.fromkeys(templates))[:count]:  # a template may span categories
             adopted = call("POST", f"/models/main/assistant/{ids[key]}", {"template": template})
-            threat = next(t for t in adopted["model"]["objects"]["threats"] if t["id"] == adopted["id"])
+            threat = next(
+                t for t in adopted["model"]["objects"]["threats"] if t["id"] == adopted["id"]
+            )
             call("PUT", f"/models/main/threats/{threat['id']}", {**threat, "cyber_cause": True})
     call("POST", "/save", {})
     return ids

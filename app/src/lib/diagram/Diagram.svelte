@@ -5,6 +5,7 @@
   import '@xyflow/svelte/dist/style.css'
   import { api, download } from '../../api'
   import { tr } from '../../i18n'
+  import { CATEGORIES } from '../../setup-text'
   import { app } from '../../state.svelte'
   import type { ElementType } from '../../types'
   import { iconFor } from '../icons'
@@ -55,6 +56,18 @@
   let canvas: Canvas | undefined = $state()
   const lang = $derived(app.lang)
   const elementTypes = $derived(types.filter((t) => t.kind !== 'flow'))
+  let paletteFilter = $state('')
+  // grouped like the setup wizard; the search also looks at the description
+  const paletteGroups = $derived.by(() => {
+    const f = paletteFilter.trim().toLowerCase()
+    const shown = elementTypes.filter(
+      (t) => !f || [t.name[lang], t.id, t.description?.[lang]].some((v) => v?.toLowerCase().includes(f)),
+    )
+    const order = Object.keys(CATEGORIES[lang])
+    const by: Record<string, ElementType[]> = {}
+    for (const t of shown) (by[t.category && order.includes(t.category) ? t.category : 'other'] ??= []).push(t)
+    return order.filter((c) => by[c]).map((c) => [c, by[c]] as const)
+  })
   const flowTypes = $derived(types.filter((t) => t.kind === 'flow'))
   const current = $derived(selected ? app.objects(selected.collection).find((o) => o.id === selected!.id) : null)
 
@@ -81,22 +94,40 @@
         {#each flowTypes as t}<option value={t.id}>{t.name[lang]}</option>{/each}
       </select>
     </label>
-    <ul>
-      {#each elementTypes as t (t.id)}
-        {@const Icon = iconFor(t.icon, t.kind)}
-        <li>
-          <button
-            draggable="true"
-            ondragstart={(e) => e.dataTransfer?.setData('application/x-threatwright-type', t.id)}
-            onclick={() => canvas?.addElement(t.id)}
-            title={tr(lang, 'palette_add')}
-            data-testid="palette-{t.id}"
-          >
-            <span class="kind kind-{t.kind}"><Icon size={16} strokeWidth={1.75} aria-hidden="true" /></span>{t.name[lang]}
-          </button>
-        </li>
-      {/each}
-    </ul>
+    <input
+      type="search"
+      class="palette-search"
+      bind:value={paletteFilter}
+      placeholder={tr(lang, 'palette_search')}
+      aria-label={tr(lang, 'palette_search')}
+      onkeydown={(e) => {
+        // Enter adds the first match
+        const first = paletteGroups[0]?.[1][0]
+        if (e.key === 'Enter' && first) canvas?.addElement(first.id)
+      }}
+      data-testid="palette-search"
+    />
+    {#each paletteGroups as [cat, list] (cat)}
+      <h3>{CATEGORIES[lang][cat]}</h3>
+      <ul>
+        {#each list as t (t.id)}
+          {@const Icon = iconFor(t.icon, t.kind)}
+          <li>
+            <button
+              draggable="true"
+              ondragstart={(e) => e.dataTransfer?.setData('application/x-threatwright-type', t.id)}
+              onclick={() => canvas?.addElement(t.id)}
+              title={tr(lang, 'palette_add')}
+              data-testid="palette-{t.id}"
+            >
+              <span class="kind kind-{t.kind}"><Icon size={16} strokeWidth={1.75} aria-hidden="true" /></span>{t.name[lang]}
+            </button>
+          </li>
+        {/each}
+      </ul>
+    {:else}
+      <p class="muted">{elementTypes.length ? tr(lang, 'palette_no_match') : ''}</p>
+    {/each}
     <p class="muted small">{tr(lang, 'multi_select_help')}</p>
   </aside>
 
@@ -234,6 +265,18 @@
   }
   .palette .small {
     font-size: 0.85em;
+  }
+  .palette-search {
+    width: 100%;
+    margin: 0.25rem 0;
+  }
+  .palette h3 {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+    margin: 0.75rem 0 0;
   }
   .palette ul {
     list-style: none;

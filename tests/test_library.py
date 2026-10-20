@@ -46,8 +46,7 @@ def test_bundled_library_is_complete_and_valid(name: str) -> None:
     for t in libs.threats.values():
         assert t.measures, f"threat {t.id} suggests no measure"
         assert t.sources, f"threat {t.id} has no source"
-        if name != "ot":
-            assert t.cra_refs, f"threat {t.id} has no CRA reference"
+        assert t.cra_refs, f"threat {t.id} has no CRA reference"
         if name == "iot":
             assert t.etsi303645, f"threat {t.id} has no ETSI EN 303 645 reference"
         if name == "software":

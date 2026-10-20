@@ -1,5 +1,5 @@
 <script lang="ts">
-  // Guided initial setup of a model: product, zones, components, connections, assets, threats.
+  // Guided initial setup of a model: product, CRA classification (orientation only), zones, components, connections, assets, threats.
   // Every step works on the regular model through the existing API (undo and save as usual).
   import { api, ApiError } from '../api'
   import { label, tr } from '../i18n'
@@ -9,6 +9,7 @@
   import { SvelteFlowProvider } from '@xyflow/svelte'
   import '@xyflow/svelte/dist/style.css'
   import Canvas from './diagram/Canvas.svelte'
+  import CraClass from './CraClass.svelte'
   import Info from './Info.svelte'
   import MultiSelect from './MultiSelect.svelte'
 
@@ -16,7 +17,7 @@
 
   const lang = $derived(app.lang)
   const t = $derived(SETUP[lang])
-  const STEPS = ['s_product', 's_zones', 's_elements', 's_flows', 's_assets', 's_threats', 's_finish'] as const
+  const STEPS = ['s_product', 's_cra', 's_zones', 's_elements', 's_flows', 's_assets', 's_threats', 's_finish'] as const
   const indicators = ['interface', 'access', 'user'] as const
 
   let error = $state('')
@@ -69,7 +70,7 @@
 
   async function go(n: number) {
     // product and zones are edited as a draft: apply before leaving the step
-    if (step === 1 || step === 2) {
+    if (step === 1 || step === 3) {
       error = ''
       try {
         await saveMeta()
@@ -95,7 +96,7 @@
     })
   }
 
-  // --- step 3: components ----------------------------------------------------------
+  // --- step 4: components ----------------------------------------------------------
   let filter = $state('')
   let picked = $state<ElementType | null>(null)
   let newTitle = $state('')
@@ -155,7 +156,7 @@
     })
   }
 
-  // --- step 4: connections -------------------------------------------------------------
+  // --- step 5: connections -------------------------------------------------------------
   let source = $state('')
   let target = $state('')
   let flowType = $state('')
@@ -173,7 +174,7 @@
     })
   }
 
-  // --- step 5: assets ---------------------------------------------------------------------
+  // --- step 6: assets ---------------------------------------------------------------------
   let assetTitle = $state('')
   let assetClass = $state('')
   const classes = $derived(Object.keys(app.method?.asset_classes ?? {}))
@@ -194,7 +195,7 @@
     return i ? (['C', 'I', 'A'] as const).map((d) => i[d] ?? '–').join(' / ') : ''
   }
 
-  // --- step 6: threats ---------------------------------------------------------------------
+  // --- step 7: threats ---------------------------------------------------------------------
   let suggestions = $state<Record<string, Record<string, Category>>>({})
   let chosen = $state<Record<string, string[]>>({})
   const targets = $derived([...elements, ...flows])
@@ -236,7 +237,7 @@
     })
   }
 
-  // --- step 7: finish ------------------------------------------------------------------------
+  // --- step 8: finish ------------------------------------------------------------------------
   const errors = $derived(app.issues.filter((i) => i.severity === 'error').length)
   const checks = $derived([
     [t.c_description, !!app.model?.meta.description?.trim()],
@@ -330,6 +331,9 @@
       }}>{t.add_configuration}</button
     >
   {:else if step === 2}
+    <h2>{t.s_cra}</h2>
+    <CraClass />
+  {:else if step === 3}
     <h2>{t.s_zones} <Info term="zone" /></h2>
     <p>{t.zones_text}</p>
     <p class="muted">{libraries.includes('ot') ? t.zones_hint : t.zones_hint_other}</p>
@@ -370,7 +374,7 @@
         meta.zones = [...list, { id: `Z-${n}`, title: '', environment: {} }]
       }}>{t.add_zone}</button
     >
-  {:else if step === 3}
+  {:else if step === 4}
     <h2>{t.s_elements}</h2>
     <p>{t.elements_text}</p>
     <p class="muted">{t.elements_hint}</p>
@@ -430,7 +434,7 @@
       </div>
     </div>
     {#if elements.length}{@render preview('')}{/if}
-  {:else if step === 4}
+  {:else if step === 5}
     <h2>{t.s_flows} <Info term="flow" /></h2>
     <p>{t.flows_text}</p>
     <p class="muted">{t.flows_hint}</p>
@@ -486,7 +490,7 @@
       <p class="muted">{t.none_yet}</p>
     {/each}
     {#if elements.length}{@render preview(flowType)}{/if}
-  {:else if step === 5}
+  {:else if step === 6}
     <h2>{t.s_assets} <Info term="asset_class" /></h2>
     <p>{t.assets_text}</p>
     <table>
@@ -539,7 +543,7 @@
       </div>
       <button class="primary" type="submit" disabled={busy} data-testid="setup-asset-add">{t.add_asset}</button>
     </form>
-  {:else if step === 6}
+  {:else if step === 7}
     <h2>{t.s_threats} <Info term="stride" /></h2>
     <p>{t.threats_text}</p>
     <p class="muted">{t.threats_cyber}</p>

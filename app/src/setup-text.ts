@@ -10,7 +10,7 @@ const de = {
   skip: 'Assistent beenden',
   start: 'Los geht’s',
 
-  intro_title: 'Ihr erstes Bedrohungsmodell in sieben Schritten',
+  intro_title: 'Ihr erstes Bedrohungsmodell in acht Schritten',
   intro_text:
     'Der Assistent führt Sie von der Produktbeschreibung bis zu den ersten Bedrohungen nach BSI TR-03183-1. ' +
     'Alles, was Sie hier anlegen, ist normaler Modellinhalt und lässt sich später in jeder Ansicht ändern. ' +
@@ -19,6 +19,7 @@ const de = {
   intro_time: 'Planen Sie für ein überschaubares Produkt etwa 30 bis 60 Minuten ein.',
 
   s_product: 'Produkt und Einsatzzweck',
+  s_cra: 'CRA-Einstufung (optional)',
   s_zones: 'Einsatzumgebung und Zonen',
   s_elements: 'Komponenten',
   s_flows: 'Verbindungen',
@@ -175,7 +176,7 @@ const en: Text = {
   skip: 'Close wizard',
   start: 'Let’s start',
 
-  intro_title: 'Your first threat model in seven steps',
+  intro_title: 'Your first threat model in eight steps',
   intro_text:
     'The wizard takes you from the product description to the first threats according to BSI TR-03183-1. ' +
     'Everything you create here is regular model content and can be changed later in every view. ' +
@@ -184,6 +185,7 @@ const en: Text = {
   intro_time: 'Plan about 30 to 60 minutes for a manageable product.',
 
   s_product: 'Product and intended purpose',
+  s_cra: 'CRA classification (optional)',
   s_zones: 'Operating environment and zones',
   s_elements: 'Components',
   s_flows: 'Connections',

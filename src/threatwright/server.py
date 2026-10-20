@@ -437,16 +437,23 @@ def create_app(
             dialog_lock.release()
 
     @app.post("/api/project/new")
-    def new_project(body: dict[str, str]) -> dict[str, Any]:
+    def new_project(body: dict[str, Any]) -> dict[str, Any]:
         template = body.get("template", "tr")
         language = body.get("language", "de")
         if template not in ("tr", "empty") or language not in ("de", "en"):
             raise HTTPException(422, "template: tr|empty, language: de|en")
+        libraries = body.get("libraries")
+        if libraries is not None and not (
+            isinstance(libraries, list) and all(isinstance(x, str) for x in libraries)
+        ):
+            raise HTTPException(422, "libraries: list of strings")
         path = client_path(body.get("path", ""))
         with session.lock:
             try:
-                create_project(path, template, body.get("name") or None, language)  # type: ignore[arg-type]
+                create_project(path, template, body.get("name") or None, language, libraries)
                 session.open(path)
+            except ValueError as exc:
+                raise HTTPException(422, str(exc)) from exc
             except (ProjectExists, LoadError, OSError) as exc:
                 raise HTTPException(400, str(exc)) from exc
             _recent(path)

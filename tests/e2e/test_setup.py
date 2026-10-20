@@ -83,3 +83,24 @@ def test_setup_wizard(
     threats = list((model / "threats").glob("T-*.yaml"))
     assert threats and all("cyber_cause: true" in t.read_text(encoding="utf-8") for t in threats)
     assert offline == [], f"unexpected outbound requests: {offline}"
+
+
+def test_setup_product_type(
+    ui: dict[str, str], gui: str, page: Page, offline: list[str], tmp_path: Path
+) -> None:
+    page.goto(gui)
+    page.get_by_role("button", name="Start", exact=True).click()
+    page.get_by_test_id("new-path").fill(str(tmp_path / "geraet"))
+    page.get_by_test_id("new-lib-ot").uncheck()
+    page.get_by_test_id("new-lib-iot").check()
+    page.get_by_test_id("create-project").click()
+
+    expect(page.get_by_test_id("setup")).to_be_visible()
+    page.get_by_test_id("setup-start").click()
+    page.get_by_test_id("setup-next").click()  # product
+    page.get_by_test_id("zone-Z-LAN-access").select_option("restricted")
+    page.get_by_test_id("setup-next").click()  # zones
+    expect(page.get_by_test_id("setup-type-iot-device")).to_be_visible()
+    assert "libraries: [iot]" in (tmp_path / "geraet" / "threatwright.yaml").read_text(
+        encoding="utf-8"
+    )

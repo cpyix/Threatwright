@@ -68,3 +68,24 @@ def test_server_import_and_controls(
     changed = next(x for x in after if x["measure_id"] == first["measure_id"])
     assert changed["overridden"] and changed["applies"] is not first["applies"]
     assert c.post("/api/oscal/import", json={"path": "x", "as": "nope"}).status_code == 422
+
+
+def test_server_import_from_browser_upload(
+    project_dir: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The file picker uploads the file, so it also works when Threatwright runs as a server."""
+    monkeypatch.setenv("THREATWRIGHT_CONFIG_DIR", str(tmp_path / "cfg"))
+    app = create_app(None, project_dir, root=project_dir.parent)
+    c = TestClient(app, base_url="http://127.0.0.1", headers={API_HEADER: "1"})
+    assert c.post("/api/project/open", json={"path": project_dir.name}).status_code == 200
+    data = (OSCAL / "synthetic-arc-catalog.json").read_bytes()
+    up = lambda name, kind="catalog": c.post(  # noqa: E731
+        "/api/oscal/upload", params={"name": name, "kind": kind}, content=data
+    )
+    r = up("../../evil/catalog.json")  # only the base name is used, inside a temp folder
+    assert r.status_code == 200, r.text
+    assert c.get("/api/oscal/imported").json()[0]["entries"] > 0
+    assert not (project_dir.parent.parent / "evil").exists()
+    assert up("catalog.json", "nope").status_code == 422
+    assert up("catalog.xml").status_code == 422  # JSON only
+    assert up("..").status_code == 400

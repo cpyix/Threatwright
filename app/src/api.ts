@@ -36,11 +36,11 @@ export async function api<T>(method: string, path: string, body?: unknown): Prom
   return response.json() as Promise<T>
 }
 
-/** Send a file as raw request body (e.g. a zipped project). */
+/** Send a file as raw request body (e.g. a zipped project or an OSCAL JSON file). */
 export async function upload<T>(path: string, file: Blob): Promise<T> {
   const response = await fetch(`/api${path}`, {
     method: 'POST',
-    headers: { ...HEADER, 'Content-Type': 'application/zip' },
+    headers: { ...HEADER, 'Content-Type': file.type || 'application/octet-stream' },
     body: file,
   })
   if (!response.ok) {

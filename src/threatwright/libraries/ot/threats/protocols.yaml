@@ -1,0 +1,691 @@
+# Threat templates for further industrial protocols: EtherNet/IP, PROFIBUS,
+# LoRaWAN, BACnet/IP, OPC UA PubSub, telecontrol (IEC 60870-5-104, DNP3),
+# IEC 61850, cellular links and short-range commissioning links.
+threats:
+  # --- EtherNet/IP (CIP) ---------------------------------------------------------------
+  - id: cip-unauthenticated-explicit-messaging
+    rev: 1
+    stride: [T]
+    applies_to: [fieldbus-ethernet-ip]
+    title:
+      de: Unautorisierte explizite CIP-Nachrichten über {element}
+      en: Unauthorised explicit CIP messages via {element}
+    scenario:
+      de: >-
+        Ohne CIP Security nehmen Steuerungen und Adapter explizite Nachrichten von jedem
+        Teilnehmer an, der TCP-Port 44818 erreicht. Ein Angreifer im Netz schreibt mit
+        frei verfügbaren Werkzeugen Attribute per Set_Attribute, ändert Variablen
+        (Tags) der Steuerung oder wechselt deren Betriebszustand.
+      en: >-
+        Without CIP Security, controllers and adapters accept explicit messages from any
+        party that reaches TCP port 44818. An attacker in the network uses freely
+        available tools to write attributes via Set_Attribute, change controller
+        variables (tags) or switch its operating state.
+    consequence:
+      de: >-
+        Sollwerte, Freigaben und Konfiguration werden an der regulären Steuerung vorbei
+        verändert; je nach Variable sind Fehlproduktion und gefährliche Zustände möglich.
+      en: >-
+        Set points, enables and configuration are changed bypassing the regular control
+        logic; depending on the variable, faulty production and hazardous states are
+        possible.
+    environment: {interface: dedicated_known_network, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T1692, T0836, T0858]
+    emb3d: [TID-310, TID-406]
+    iec62443: [FR1, FR2, FR3]
+    measures: [protocol-security-extension, firewall-allowlist, network-segmentation, parameter-plausibility]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: cip-identity-reset
+    rev: 1
+    stride: [D]
+    applies_to: [fieldbus-ethernet-ip]
+    title:
+      de: Reset-Dienst des Identity-Objekts startet Teilnehmer an {element} neu
+      en: Reset service of the identity object restarts nodes on {element}
+    scenario:
+      de: >-
+        Das CIP-Identity-Objekt bietet einen Reset-Dienst, der das Gerät neu startet oder
+        auf Werkseinstellungen zurücksetzt. Ein Angreifer im Netz sendet diesen Dienst
+        ohne Authentisierung wiederholt an Adapter, Antriebe oder E/A-Module.
+      en: >-
+        The CIP identity object offers a reset service that restarts the device or resets
+        it to factory settings. An attacker in the network repeatedly sends this service
+        without authentication to adapters, drives or I/O modules.
+    consequence:
+      de: >-
+        Die E/A-Verbindungen brechen ab, die Maschine stoppt; nach einem Rücksetzen auf
+        Werkseinstellungen fehlt die Konfiguration und muss vor Ort neu geladen werden.
+      en: >-
+        The I/O connections drop and the machine stops; after a factory reset the
+        configuration is missing and must be reloaded on site.
+    environment: {interface: dedicated_known_network, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h, AI-I-2-d]
+    attack_ics: [T0816, T0814]
+    emb3d: [TID-310, TID-404]
+    iec62443: [FR7, FR1]
+    measures: [protocol-security-extension, firewall-allowlist, network-segmentation, backup-restore]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- PROFIBUS DP ------------------------------------------------------------------------
+  - id: profibus-rogue-class2-master
+    rev: 1
+    stride: [T]
+    applies_to: [fieldbus-profibus]
+    title:
+      de: Zusätzlicher Klasse-2-Master parametriert Slaves an {element} um
+      en: Additional class 2 master reconfigures slaves on {element}
+    scenario:
+      de: >-
+        PROFIBUS erlaubt mehrere Master, die sich über Token-Passing abwechseln.
+        Ein Angreifer schließt an einen freien Busstecker einen Klasse-2-Master an, etwa
+        einen Laptop mit PROFIBUS-Adapter. Dieser erhält das Token und ändert ohne
+        Authentisierung Parameter oder mit Set_Slave_Address die Adressen von Slaves.
+      en: >-
+        PROFIBUS allows several masters that take turns via token passing. An attacker
+        connects a class 2 master, e.g. a laptop with a PROFIBUS adapter, to a free bus
+        connector. It receives the token and changes parameters or, using
+        Set_Slave_Address, the addresses of slaves without authentication.
+    consequence:
+      de: >-
+        Slaves verhalten sich anders als geplant oder sind für den Klasse-1-Master nicht
+        mehr erreichbar; Fehlfunktion und Stillstand der Anlage folgen.
+      en: >-
+        Slaves behave differently than planned or are no longer reachable for the class 1
+        master; malfunction and standstill of the plant follow.
+    environment: {interface: local, access: restricted}
+    impact: 4
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T0848, T0836]
+    emb3d: [TID-406]
+    iec62443: [FR1, FR3]
+    measures: [fieldbus-physical-protection, unused-ports-closed, fieldbus-topology-monitoring, tamper-evident-seals]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: profibus-bus-disruption
+    rev: 1
+    stride: [D]
+    applies_to: [fieldbus-profibus]
+    title:
+      de: Elektrische Störung legt {element} lahm
+      en: Electrical disturbance disables {element}
+    scenario:
+      de: >-
+        Ein RS-485-Segment funktioniert nur mit korrekter Terminierung und ohne
+        Störsender. Ein Angreifer schaltet einen Abschlusswiderstand ab, schließt die
+        Datenleitungen kurz oder speist dauerhaft Zeichen ein, sodass das Token verloren
+        geht.
+      en: >-
+        An RS-485 segment only works with correct termination and without interfering
+        transmitters. An attacker switches off a terminating resistor, short-circuits the
+        data lines or continuously injects characters, so that the token is lost.
+    consequence:
+      de: >-
+        Alle Teilnehmer des Segments verlieren die Verbindung, die Anlage stoppt; die
+        Fehlersuche dauert, weil die Ursache wie ein Verkabelungsfehler aussieht.
+      en: >-
+        All nodes in the segment lose the connection and the plant stops;
+        troubleshooting takes time because the cause looks like a wiring fault.
+    environment: {interface: local, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h]
+    attack_ics: [T0814, T1695]
+    iec62443: [FR7]
+    measures: [fieldbus-physical-protection, watchdog-safe-state, physical-access-control]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- LoRaWAN --------------------------------------------------------------------------------
+  - id: lorawan-abp-frame-counter-replay
+    rev: 1
+    stride: [T]
+    applies_to: [lorawan]
+    title:
+      de: Wiedereingespielte Telegramme auf {element}
+      en: Replayed frames on {element}
+    scenario:
+      de: >-
+        Geräte mit statischer Aktivierung (ABP) setzen nach einem Neustart ihren
+        Telegrammzähler zurück. Damit sie weiter angenommen werden, ist die
+        Zählerprüfung im Netzwerkserver gelockert. Ein Angreifer zeichnet Uplink-Telegramme
+        auf und spielt sie später erneut ein; der Netzwerkserver nimmt sie als gültig an.
+      en: >-
+        Devices with activation by personalisation (ABP) reset their frame counter after
+        a restart. To keep them accepted, the counter check in the network server is
+        relaxed. An attacker records uplink frames and replays them later; the network
+        server accepts them as valid.
+    consequence:
+      de: >-
+        Veraltete Messwerte oder Zustände überdecken die aktuellen; Alarme werden
+        verschleiert oder Fehlreaktionen der Anwendung ausgelöst.
+      en: >-
+        Outdated measured values or states mask the current ones; alarms are concealed
+        or wrong reactions of the application are triggered.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-f]
+    attack_ics: [T1692, T0832]
+    emb3d: [TID-407, TID-221]
+    iec62443: [FR3]
+    measures: [radio-key-management, measurement-cross-check, secure-commissioning-guide]
+    sources: ["generic IoT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lorawan-shared-root-keys
+    rev: 1
+    stride: [I, T]
+    applies_to: [lorawan]
+    title:
+      de: Gemeinsame oder aufgedruckte Stammschlüssel kompromittieren {element}
+      en: Shared or printed root keys compromise {element}
+    scenario:
+      de: >-
+        Der Hersteller vergibt denselben AppKey für eine ganze Serie oder druckt ihn im
+        Klartext auf Typenschild und Verpackung. Ein Angreifer liest den Schlüssel von
+        einem zugänglichen Gerät ab, zeichnet die Join-Prozedur anderer Geräte auf und
+        leitet daraus die Sitzungsschlüssel ab.
+      en: >-
+        The manufacturer assigns the same AppKey to an entire series or prints it in
+        clear text on the rating plate and packaging. An attacker reads the key from an
+        accessible device, records the join procedure of other devices and derives the
+        session keys from it.
+    consequence:
+      de: >-
+        Der Angreifer entschlüsselt die Nutzdaten und erzeugt gültige Telegramme und
+        Downlink-Befehle im Namen der Geräte.
+      en: >-
+        The attacker decrypts the payload and generates valid frames and downlink
+        commands in the name of the devices.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-e, AI-I-2-d]
+    attack_ics: [T0887, T0860]
+    emb3d: [TID-317, TID-328]
+    iec62443: [FR4, FR1]
+    measures: [radio-key-management, unique-device-credentials, hardware-secure-element]
+    sources: ["generic IoT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  # --- BACnet/IP --------------------------------------------------------------------------------
+  - id: bacnet-unauthenticated-writeproperty
+    rev: 1
+    stride: [T]
+    applies_to: [bacnet-ip, building-controller]
+    title:
+      de: Unautorisierte WriteProperty-Befehle an {element}
+      en: Unauthorised WriteProperty commands to {element}
+    scenario:
+      de: >-
+        BACnet/IP ohne BACnet Secure Connect kennt keine Authentisierung. Ein Angreifer im
+        Gebäudenetz schreibt per WriteProperty in den Present_Value von Ausgängen und
+        Sollwerten. Mit einer hohen Priorität im Priority_Array überstimmt er die
+        Regelprogramme dauerhaft.
+      en: >-
+        BACnet/IP without BACnet Secure Connect has no authentication. An attacker in the
+        building network writes to the Present_Value of outputs and set points via
+        WriteProperty. With a high priority in the Priority_Array the attacker overrides
+        the control programs permanently.
+    consequence:
+      de: >-
+        Heizung, Lüftung, Kühlung oder Zutritt werden verstellt; Räume überhitzen oder
+        kühlen aus, Prozesskühlung oder Rauchabzug arbeiten nicht wie vorgesehen.
+      en: >-
+        Heating, ventilation, cooling or access control are misadjusted; rooms overheat
+        or cool down, process cooling or smoke extraction do not work as intended.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T1692, T0836, T0831]
+    emb3d: [TID-310, TID-406]
+    iec62443: [FR1, FR2, FR3]
+    measures: [protocol-security-extension, network-segmentation, firewall-allowlist, parameter-plausibility]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: bacnet-reinitialize-dcc
+    rev: 1
+    stride: [D]
+    applies_to: [bacnet-ip, building-controller]
+    title:
+      de: ReinitializeDevice oder DeviceCommunicationControl schaltet {element} ab
+      en: ReinitializeDevice or DeviceCommunicationControl disables {element}
+    scenario:
+      de: >-
+        Die BACnet-Dienste ReinitializeDevice und DeviceCommunicationControl starten
+        einen Regler neu bzw. schalten seine Kommunikation ab. Das optionale Passwort ist
+        nicht gesetzt oder ein Standardwert. Ein Angreifer im Netz sendet diese Dienste an
+        alle Regler.
+      en: >-
+        The BACnet services ReinitializeDevice and DeviceCommunicationControl restart a
+        controller or disable its communication. The optional password is not set or is
+        a default value. An attacker in the network sends these services to all
+        controllers.
+    consequence:
+      de: >-
+        Regler sind für die Leitstation nicht mehr erreichbar oder starten wiederholt neu;
+        Überwachung und Bedienung der Gebäudetechnik fallen aus.
+      en: >-
+        Controllers are no longer reachable for the management station or restart
+        repeatedly; monitoring and operation of the building systems fail.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h, AI-I-2-d, AI-I-2-b]
+    attack_ics: [T0816, T0814, T0815]
+    emb3d: [TID-310, TID-311]
+    iec62443: [FR7, FR1]
+    measures: [no-default-passwords, protocol-security-extension, network-segmentation]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- OPC UA PubSub ------------------------------------------------------------------------------
+  - id: opcua-pubsub-message-injection
+    rev: 1
+    stride: [T]
+    applies_to: [opcua-pubsub]
+    title:
+      de: Gefälschte NetworkMessages auf {element}
+      en: Forged NetworkMessages on {element}
+    scenario:
+      de: >-
+        Die PubSub-Verbindung überträgt UADP-Nachrichten per UDP-Multicast mit dem
+        Sicherheitsmodus None. Ein Angreifer im selben Netzsegment sendet Nachrichten mit
+        der PublisherId und DataSetWriterId des echten Publishers und abweichenden
+        Werten; die Subscriber übernehmen sie ohne Prüfung.
+      en: >-
+        The PubSub connection transmits UADP messages via UDP multicast with security
+        mode None. An attacker in the same network segment sends messages with the
+        PublisherId and DataSetWriterId of the genuine publisher and different values;
+        the subscribers accept them without verification.
+    consequence:
+      de: >-
+        Steuerungen und Antriebe arbeiten mit vorgetäuschten Prozesswerten; Fehlfunktion
+        und gefährliche Bewegungen sind möglich.
+      en: >-
+        Controllers and drives work with spoofed process values; malfunction and
+        hazardous movements are possible.
+    environment: {interface: dedicated_known_network, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    attack_ics: [T1692, T0831, T0832]
+    emb3d: [TID-406, TID-407]
+    iec62443: [FR3, FR1]
+    measures: [opcua-security-mode, certificate-management, network-segmentation, parameter-plausibility]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: opcua-pubsub-multicast-flooding
+    rev: 1
+    stride: [D]
+    applies_to: [opcua-pubsub]
+    title:
+      de: Überflutung der Multicast-Gruppe von {element}
+      en: Flooding of the multicast group of {element}
+    scenario:
+      de: >-
+        Subscriber müssen alle Nachrichten der Multicast-Gruppe empfangen und verwerfen
+        fremde selbst. Ein Angreifer sendet große Mengen an Nachrichten in die Gruppe;
+        die Subscriber verarbeiten die echten Nachrichten nicht mehr rechtzeitig.
+      en: >-
+        Subscribers must receive all messages of the multicast group and discard foreign
+        ones themselves. An attacker sends large volumes of messages to the group; the
+        subscribers no longer process the genuine messages in time.
+    consequence:
+      de: >-
+        Das MessageReceiveTimeout der Subscriber läuft ab, sie gehen in den Fehlerzustand;
+        die Maschine stoppt.
+      en: >-
+        The subscribers' MessageReceiveTimeout expires and they enter the error state;
+        the machine stops.
+    environment: {interface: dedicated_known_network, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h, AI-I-2-i]
+    attack_ics: [T0814, T1695]
+    emb3d: [TID-405]
+    iec62443: [FR7]
+    measures: [dos-rate-limiting, network-segmentation, watchdog-safe-state]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- IEC 60870-5-104 ------------------------------------------------------------------------------
+  - id: iec104-unauthenticated-commands
+    rev: 1
+    stride: [T]
+    applies_to: [iec-104, rtu]
+    title:
+      de: Unautorisierte Steuerbefehle und Sollwerte über {element}
+      en: Unauthorised commands and set points via {element}
+    scenario:
+      de: >-
+        IEC 60870-5-104 ohne IEC 62351 authentisiert die Gegenstelle nicht. Die
+        Unterstation nimmt Einzel- und Doppelbefehle sowie Sollwertbefehle von jedem
+        Client an, der TCP-Port 2404 erreicht, allenfalls mit einer IP-Adressliste. Ein
+        Angreifer im Fernwirknetz baut eine Verbindung auf und sendet Schaltbefehle.
+      en: >-
+        IEC 60870-5-104 without IEC 62351 does not authenticate the peer. The outstation
+        accepts single and double commands as well as set point commands from any client
+        that reaches TCP port 2404, at most with an IP address list. An attacker in the
+        telecontrol network establishes a connection and sends switching commands.
+    consequence:
+      de: >-
+        Schalter, Pumpen oder Schieber werden gegen den Willen der Leitstelle betätigt;
+        Versorgungsausfälle und Schäden an Betriebsmitteln sind möglich.
+      en: >-
+        Switches, pumps or valves are operated against the will of the control centre;
+        supply outages and damage to equipment are possible.
+    environment: {interface: known_network, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T1692, T0831]
+    emb3d: [TID-310, TID-406]
+    iec62443: [FR1, FR3]
+    measures: [protocol-security-extension, firewall-allowlist, vpn-hardening, network-monitoring-ids]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: iec104-connection-exhaustion
+    rev: 1
+    stride: [D]
+    applies_to: [iec-104, rtu]
+    title:
+      de: Belegte Verbindungen sperren die Leitstelle von {element} aus
+      en: Occupied connections lock the control centre out of {element}
+    scenario:
+      de: >-
+        Unterstationen erlauben nur wenige gleichzeitige 104-Verbindungen. Ein Angreifer
+        öffnet diese Verbindungen und hält sie mit Testframes aktiv, sodass die
+        Leitstelle keine Verbindung mehr erhält.
+      en: >-
+        Outstations allow only a few simultaneous 104 connections. An attacker opens
+        these connections and keeps them alive with test frames, so that the control
+        centre no longer gets a connection.
+    consequence:
+      de: >-
+        Die Leitstelle verliert Sicht und Steuerung über die Station; Störungen werden
+        nicht gemeldet und können nicht behoben werden.
+      en: >-
+        The control centre loses view and control of the station; faults are not reported
+        and cannot be remedied.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h]
+    attack_ics: [T0814, T0829, T0827]
+    emb3d: [TID-405]
+    iec62443: [FR7, FR5]
+    measures: [firewall-allowlist, dos-rate-limiting, network-segmentation]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- DNP3 ------------------------------------------------------------------------------------------
+  - id: dnp3-unauthenticated-operate
+    rev: 1
+    stride: [T]
+    applies_to: [dnp3, rtu]
+    title:
+      de: Gefälschter Master steuert Ausgänge über {element}
+      en: Spoofed master operates outputs via {element}
+    scenario:
+      de: >-
+        DNP3 ohne Secure Authentication prüft nur die Link-Adresse des Masters. Ein
+        Angreifer, der die Verbindung zur Unterstation erreicht, sendet mit der Adresse
+        des Masters Direct-Operate- oder Select-Before-Operate-Befehle an Relaisausgänge
+        (CROB) oder Analogausgänge.
+      en: >-
+        DNP3 without Secure Authentication only checks the link address of the master. An
+        attacker who reaches the connection to the outstation sends Direct Operate or
+        Select Before Operate commands to relay outputs (CROB) or analogue outputs using
+        the master's address.
+    consequence:
+      de: >-
+        Betriebsmittel werden gegen den Willen der Leitstelle geschaltet oder verstellt;
+        Versorgungsausfälle und gefährliche Prozesszustände sind möglich.
+      en: >-
+        Equipment is switched or adjusted against the will of the control centre; supply
+        outages and hazardous process states are possible.
+    environment: {interface: known_network, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T1692, T0831, T0849]
+    emb3d: [TID-406]
+    iec62443: [FR1, FR3]
+    measures: [protocol-security-extension, firewall-allowlist, vpn-hardening, network-monitoring-ids]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: dnp3-restart-disable-unsolicited
+    rev: 1
+    stride: [D]
+    applies_to: [dnp3, rtu]
+    title:
+      de: Neustart- und Abschaltbefehle stören die Meldungen von {element}
+      en: Restart and disable commands disrupt the reporting of {element}
+    scenario:
+      de: >-
+        DNP3 kennt Funktionscodes für Kalt- und Warmstart der Unterstation und zum
+        Abschalten spontaner Meldungen (Disable Unsolicited). Ein Angreifer sendet diese
+        Funktionscodes ohne Authentisierung mit der Adresse des Masters.
+      en: >-
+        DNP3 has function codes for cold and warm restart of the outstation and for
+        disabling unsolicited responses (Disable Unsolicited). An attacker sends these
+        function codes without authentication using the master's address.
+    consequence:
+      de: >-
+        Die Station startet wiederholt neu oder meldet Zustandsänderungen nicht mehr von
+        sich aus; die Leitstelle erfährt Störungen verspätet oder gar nicht.
+      en: >-
+        The station restarts repeatedly or no longer reports state changes on its own;
+        the control centre learns of faults late or not at all.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h, AI-I-2-d]
+    attack_ics: [T0816, T0815, T1692]
+    emb3d: [TID-406]
+    iec62443: [FR7, FR1]
+    measures: [protocol-security-extension, firewall-allowlist, network-monitoring-ids]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- IEC 61850 -----------------------------------------------------------------------------------
+  - id: goose-spoofing
+    rev: 1
+    stride: [T]
+    applies_to: [iec-61850]
+    title:
+      de: Gefälschte GOOSE-Nachrichten auf {element} lösen Schalthandlungen aus
+      en: Spoofed GOOSE messages on {element} trigger switching operations
+    scenario:
+      de: >-
+        GOOSE-Nachrichten werden als Ethernet-Multicast ohne Authentisierung übertragen.
+        Empfänger übernehmen eine Nachricht, wenn GoID und Datensatz passen und die
+        Zustandsnummer (stNum) höher ist. Ein Angreifer im Stationsbus sendet Nachrichten
+        mit erhöhter stNum und gefälschten Auslöse- oder Verriegelungssignalen.
+      en: >-
+        GOOSE messages are transmitted as Ethernet multicast without authentication.
+        Receivers accept a message if GoID and data set match and the state number
+        (stNum) is higher. An attacker in the station bus sends messages with increased
+        stNum and forged trip or interlocking signals.
+    consequence:
+      de: >-
+        Leistungsschalter lösen ungewollt aus oder Verriegelungen werden aufgehoben;
+        Versorgungsausfall, Schäden an Betriebsmitteln und Gefährdung von Personen bei
+        Schalthandlungen sind möglich.
+      en: >-
+        Circuit breakers trip unintentionally or interlocks are released; supply outage,
+        damage to equipment and danger to persons during switching operations are
+        possible.
+    environment: {interface: dedicated_known_network, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    attack_ics: [T1692, T0831, T0880]
+    emb3d: [TID-406, TID-407]
+    iec62443: [FR3, FR1]
+    measures: [protocol-security-extension, network-segmentation, network-monitoring-ids, fieldbus-physical-protection]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: iec61850-goose-flood
+    rev: 1
+    stride: [D]
+    applies_to: [iec-61850]
+    title:
+      de: Multicast-Flut auf {element} verzögert Schutzsignale
+      en: Multicast flood on {element} delays protection signals
+    scenario:
+      de: >-
+        Schutzgeräte müssen GOOSE-Nachrichten innerhalb weniger Millisekunden empfangen.
+        Ein Angreifer oder ein kompromittiertes Gerät im Stationsbus überflutet das Netz
+        mit Multicast-Verkehr; Switches und Empfänger verarbeiten die echten Nachrichten
+        verspätet.
+      en: >-
+        Protection devices must receive GOOSE messages within a few milliseconds. An
+        attacker or a compromised device in the station bus floods the network with
+        multicast traffic; switches and receivers process the genuine messages late.
+    consequence:
+      de: >-
+        Schutzauslösungen und Verriegelungen kommen zu spät oder gar nicht an; Fehler im
+        Netz werden langsamer abgeschaltet und Betriebsmittel können beschädigt werden.
+      en: >-
+        Protection trips and interlocks arrive too late or not at all; faults in the grid
+        are cleared more slowly and equipment can be damaged.
+    environment: {interface: dedicated_known_network, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-h, AI-I-2-i]
+    attack_ics: [T0814, T1695, T0837]
+    emb3d: [TID-405]
+    iec62443: [FR7]
+    measures: [dos-rate-limiting, network-segmentation, network-monitoring-ids]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- cellular link -------------------------------------------------------------------------------
+  - id: cellular-fake-base-station
+    rev: 1
+    stride: [T, I]
+    applies_to: [cellular-link]
+    title:
+      de: Gefälschte Basisstation fängt {element} ab
+      en: Fake base station intercepts {element}
+    scenario:
+      de: >-
+        Ein Angreifer betreibt in der Nähe der Anlage eine gefälschte Basisstation und
+        stört die echten LTE- und 5G-Zellen, sodass das Modem auf 2G ausweicht. Dort
+        authentisiert sich das Netz nicht gegenüber dem Endgerät und die Verschlüsselung
+        der Funkstrecke ist schwach oder abgeschaltet.
+      en: >-
+        An attacker operates a fake base station near the plant and jams the genuine LTE
+        and 5G cells so that the modem falls back to 2G. There the network does not
+        authenticate itself to the terminal and the radio link encryption is weak or
+        switched off.
+    consequence:
+      de: >-
+        Ohne Ende-zu-Ende-Verschlüsselung liest der Angreifer Daten und Zugangsdaten mit
+        und verändert Befehle auf dem Übertragungsweg.
+      en: >-
+        Without end-to-end encryption the attacker reads data and credentials and alters
+        commands in transit.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-e, AI-I-2-f]
+    attack_ics: [T0830, T0887]
+    emb3d: [TID-411, TID-408]
+    iec62443: [FR4, FR3]
+    measures: [cellular-private-apn, vpn-hardening, data-encryption-transit]
+    sources: ["generic threat knowledge on cellular networks; ATT&CK for ICS v20"]
+
+  - id: cellular-link-outage
+    rev: 1
+    stride: [D]
+    applies_to: [cellular-link]
+    title:
+      de: Ausfall von {element} durch Störung oder gesperrte SIM-Karte
+      en: Outage of {element} due to jamming or a blocked SIM card
+    scenario:
+      de: >-
+        Die Verbindung hängt an einem öffentlichen Mobilfunknetz und einer SIM-Karte. Ein
+        Angreifer stört die Funkzellen am Standort, oder die SIM-Karte wird gesperrt,
+        etwa weil der Vertrag ausläuft oder ein Angreifer sie beim Netzbetreiber sperren
+        lässt.
+      en: >-
+        The connection depends on a public mobile network and a SIM card. An attacker
+        jams the radio cells at the site, or the SIM card is blocked, e.g. because the
+        contract expires or an attacker has it blocked at the network operator.
+    consequence:
+      de: >-
+        Fernüberwachung, Fernwirken und Fernwartung fallen aus; Störungen am Standort
+        werden nicht gemeldet.
+      en: >-
+        Remote monitoring, telecontrol and remote maintenance fail; faults at the site
+        are not reported.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h]
+    attack_ics: [T1695, T0829]
+    iec62443: [FR7]
+    measures: [local-autonomy, watchdog-safe-state, user-security-documentation]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- Bluetooth LE / NFC commissioning ----------------------------------------------------------
+  - id: ble-unauthenticated-configuration
+    rev: 1
+    stride: [T]
+    applies_to: [short-range-commissioning, field-transmitter, valve-positioner, der-inverter]
+    title:
+      de: Umkonfiguration von {element} per Bluetooth aus der Nähe
+      en: Reconfiguration of {element} via Bluetooth from nearby
+    scenario:
+      de: >-
+        Die Bluetooth-LE-Schnittstelle für die Inbetriebnahme-App ist dauerhaft aktiv und
+        koppelt im Modus „Just Works“ oder mit festem PIN; schreibbare GATT-Merkmale
+        prüfen keine Berechtigung. Ein Angreifer verbindet sich mit der öffentlich
+        verfügbaren App, mit Richtantenne auch von außerhalb des Geländes, und ändert
+        Parameter.
+      en: >-
+        The Bluetooth LE interface for the commissioning app is permanently active and
+        pairs in "Just Works" mode or with a fixed PIN; writable GATT characteristics do
+        not check authorisation. An attacker connects with the publicly available app,
+        with a directional antenna even from outside the premises, and changes
+        parameters.
+    consequence:
+      de: >-
+        Messbereiche, Stellverhalten oder Betriebsgrenzen werden unbemerkt verändert;
+        Fehlmessungen, Fehlsteuerungen und gefährliche Zustände sind möglich.
+      en: >-
+        Measuring ranges, positioning behaviour or operating limits are changed
+        unnoticed; incorrect measurements, incorrect control and hazardous states are
+        possible.
+    environment: {interface: local, access: public_restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-j, AI-I-2-b]
+    attack_ics: [T0860, T0836]
+    emb3d: [TID-310]
+    iec62443: [FR1, FR2]
+    measures: [commissioning-interface-time-limited, bluetooth-secure-pairing, radio-key-management, write-protection-switch]
+    sources: ["generic IoT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: ble-data-disclosure
+    rev: 1
+    stride: [I]
+    applies_to: [short-range-commissioning]
+    title:
+      de: '{element} gibt Konfiguration und Messwerte an Unbefugte preis'
+      en: '{element} discloses configuration and measured values to unauthorised parties'
+    scenario:
+      de: >-
+        Das Gerät sendet in seinen Advertising-Paketen Messstellenbezeichnung,
+        Seriennummer und Messwerte und erlaubt das Lesen der GATT-Merkmale ohne Kopplung.
+        Ein Angreifer mit einem Smartphone in Reichweite zeichnet diese Daten auf.
+      en: >-
+        The device broadcasts tag name, serial number and measured values in its
+        advertising packets and allows GATT characteristics to be read without pairing.
+        An attacker with a smartphone within range records this data.
+    consequence:
+      de: >-
+        Anlagenaufbau und Prozesswerte werden offengelegt und erleichtern gezielte
+        Angriffe; einzelne Geräte lassen sich über ihre Kennung verfolgen.
+      en: >-
+        Plant structure and process values are disclosed and facilitate targeted attacks;
+        individual devices can be tracked via their identifier.
+    environment: {interface: local, access: public_restricted}
+    impact: 2
+    cra_refs: [AI-I-2-e, AI-I-2-g]
+    attack_ics: [T0887, T0888]
+    iec62443: [FR4]
+    measures: [commissioning-interface-time-limited, bluetooth-secure-pairing, data-minimisation]
+    sources: ["generic IoT threat knowledge; ATT&CK for ICS v20"]

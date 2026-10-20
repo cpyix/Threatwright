@@ -499,3 +499,538 @@ elements:
     assets:
       - title: {de: Übertragene Dateien, en: Transferred files}
         asset_class: BusinessData.Generic
+
+  # --- process automation ------------------------------------------------------------
+  - id: dcs-controller
+    category: process
+    name: {de: Prozessstation / DCS-Controller, en: DCS controller / process station}
+    kind: device
+    icon: dcs
+    description:
+      de: Controller eines Prozessleitsystems, oft redundant, mit Funktionsbausteinen für Regelung und Ablaufsteuerung.
+      en: Controller of a distributed control system, often redundant, running function blocks for control and sequencing.
+    interfaces: [ethernet, fieldbus, hart]
+    environment: {interface: dedicated_known_network, access: restricted}
+    properties: {firmware: true, update_path: engineering-tool, authentication: optional, redundancy: typical}
+    assets:
+      - title: {de: Regelungs- und Ablaufstrategie, en: Control and sequence strategy}
+        asset_class: BusinessData.Important
+        rationale: {de: Verfahrens-Know-how des Anlagenbetreibers und Herstellers, en: Process know-how of operator and manufacturer}
+      - title: {de: Regelungsfunktion, en: Control function}
+        asset_class: Functions.Essential
+      - title: {de: 'Regelparameter, Grenzwerte und Verriegelungen', en: 'Tuning parameters, limits and interlocks'}
+        asset_class: Other.Configuration
+  - id: sis-logic-solver
+    category: safety
+    name: {de: 'Logiksystem einer PLT-Sicherheitseinrichtung (SIS)', en: 'Safety instrumented system (SIS) logic solver'}
+    kind: device
+    icon: sis
+    description:
+      de: Sicherheitsgerichtete Steuerung der Prozessindustrie, die bei Grenzwertverletzung Abschaltungen auslöst, mit Schnittstelle zum Prozessleitsystem.
+      en: Safety-rated controller in the process industry that triggers trips on limit violations, with an interface to the control system.
+    interfaces: [ethernet, analog, serial, keyswitch]
+    environment: {interface: dedicated_known_network, access: restricted}
+    properties: {firmware: true, update_path: engineering-tool, authentication: keyswitch-and-password}
+    assets:
+      - title: {de: 'Sicherheitsfunktionen (Abschaltungen)', en: 'Safety instrumented functions (trips)'}
+        asset_class: Functions.Safety
+      - title: {de: 'Sicherheitslogik, Auslösegrenzen und Überbrückungen', en: 'Safety logic, trip set points and bypasses'}
+        asset_class: Other.Configuration
+        rationale: {de: 'Integrität hochstufen, Manipulation wirkt auf Schutzfunktion', en: Raise integrity; manipulation affects protection}
+  - id: field-transmitter
+    category: process
+    name: {de: 'Messumformer (4–20 mA / HART)', en: 'Transmitter (4–20 mA / HART)'}
+    kind: device
+    icon: transmitter
+    description:
+      de: Intelligenter Messumformer für Druck, Temperatur, Durchfluss oder Füllstand mit analogem Signal und digitaler Parametrierung.
+      en: Smart transmitter for pressure, temperature, flow or level with analogue signal and digital configuration.
+    interfaces: [analog, hart, bluetooth]
+    environment: {interface: local, access: public_restricted}
+    properties: {firmware: true, update_path: hart-or-service-tool, authentication: none-typical, write_protection: optional}
+    assets:
+      - title: {de: Messwert, en: Measured value}
+        asset_class: Functions.Essential
+      - title: {de: 'Messbereich, Dämpfung und Kalibrierung', en: 'Range, damping and calibration'}
+        asset_class: Other.Configuration
+        rationale: {de: 'Integrität hochstufen, wenn der Messwert in eine Sicherheitsfunktion eingeht', en: Raise integrity if the measured value feeds a safety function}
+  - id: valve-positioner
+    category: process
+    name: {de: Stellungsregler, en: Valve positioner}
+    kind: device
+    icon: valve
+    interfaces: [analog, hart, fieldbus, bluetooth]
+    environment: {interface: local, access: public_restricted}
+    properties: {firmware: true, update_path: hart-or-service-tool, authentication: none-typical, write_protection: optional}
+    assets:
+      - title: {de: Stellfunktion des Ventils, en: Valve actuation function}
+        asset_class: Functions.Essential
+      - title: {de: 'Kennlinie, Sicherheitsstellung und Diagnoseeinstellungen', en: 'Characteristic, fail-safe position and diagnostic settings'}
+        asset_class: Other.Configuration
+  - id: process-analyser
+    category: process
+    name: {de: Prozessanalysator, en: Process analyser}
+    kind: device
+    icon: analyser
+    description:
+      de: Analysegerät wie Gaschromatograph, Gasanalysator oder Flüssigkeitsanalysator, meist mit eingebettetem Rechner und Netzwerkschnittstelle.
+      en: Analyser such as gas chromatograph, gas analyser or liquid analyser, usually with an embedded computer and network interface.
+    interfaces: [ethernet, analog, fieldbus, web]
+    environment: {interface: known_network, access: public_restricted}
+    properties: {firmware: true, update_path: web-or-tool, authentication: optional, default_password: possible}
+    assets:
+      - title: {de: Analysenergebnisse, en: Analysis results}
+        asset_class: BusinessData.Important
+        rationale: {de: 'Grundlage für Qualitäts-, Emissions- oder Sicherheitsentscheidungen', en: 'Basis for quality, emission or safety decisions'}
+      - title: {de: Kalibrierdaten und Methoden, en: Calibration data and methods}
+        asset_class: Other.Configuration
+  - id: hart-multiplexer
+    category: process
+    name: {de: HART-Multiplexer / HART-Gateway, en: HART multiplexer / HART gateway}
+    kind: device
+    icon: multiplexer
+    description:
+      de: Verbindet viele HART-Feldgeräte oder ein WirelessHART-Netz mit Leitsystem und Asset-Management (z. B. über HART-IP oder Modbus).
+      en: Connects many HART field devices or a WirelessHART network to the control system and asset management (e.g. via HART-IP or Modbus).
+    interfaces: [hart, ethernet, serial, web]
+    environment: {interface: known_network, access: restricted}
+    properties: {firmware: true, update_path: web-or-tool, authentication: optional, default_password: possible}
+    assets:
+      - title: {de: Zugang zu allen angeschlossenen Feldgeräten, en: Access to all connected field devices}
+        asset_class: Security.Mechanism
+      - title: {de: Gerätediagnose und -parameter, en: Device diagnostics and parameters}
+        asset_class: Other.Telemetric
+      - title: {de: WirelessHART-Netz- und Join-Schlüssel, en: WirelessHART network and join keys}
+        asset_class: Security.Secrets
+
+  # --- supervisory level and plant IT ------------------------------------------------
+  - id: scada-server
+    category: supervisory
+    name: {de: SCADA-Server, en: SCADA server}
+    kind: process
+    icon: scada
+    interfaces: [ethernet]
+    environment: {interface: known_network, access: restricted}
+    properties: {update_path: it-managed, authentication: os-or-application-accounts}
+    assets:
+      - title: {de: Prozessvisualisierung und Bedienfunktion der Anlage, en: Plant visualisation and operating function}
+        asset_class: Functions.Essential
+      - title: {de: 'Variablendatenbank (Tags, Skalierung, Adressen)', en: 'Tag database (tags, scaling, addresses)'}
+        asset_class: Other.Configuration
+      - title: {de: Zugangsdaten zu Steuerungen und Datenbanken, en: Credentials for controllers and databases}
+        asset_class: Security.Secrets
+  - id: operator-station
+    category: supervisory
+    name: {de: Bedienstation (SCADA-/HMI-Client), en: Operator station (SCADA/HMI client)}
+    kind: device
+    icon: operator-station
+    interfaces: [ethernet, usb, display]
+    environment: {interface: known_network, access: public_restricted, user: instructed}
+    properties: {firmware: false, update_path: it-managed, authentication: os-or-application-accounts}
+    assets:
+      - title: {de: Bedien- und Beobachtungsfunktion, en: Operating and monitoring function}
+        asset_class: Functions.Essential
+      - title: {de: Benutzerkonten der Bediener, en: Operator accounts}
+        asset_class: PII.TechnicalNecessary
+  - id: mes-connector
+    category: supervisory
+    name: {de: MES-/ERP-Schnittstelle, en: MES/ERP connector}
+    kind: process
+    icon: mes
+    description:
+      de: Dienst, der Aufträge, Rezepte und Rückmeldungen zwischen Produktions-IT (MES, ERP) und Steuerungsebene austauscht.
+      en: Service exchanging orders, recipes and feedback between production IT (MES, ERP) and the control level.
+    interfaces: [ethernet]
+    environment: {interface: known_network, access: restricted}
+    properties: {update_path: it-managed, authentication: service-accounts}
+    assets:
+      - title: {de: Fertigungsaufträge und Rezepte, en: Production orders and recipes}
+        asset_class: BusinessData.Important
+      - title: {de: Zugangsdaten zu IT- und OT-Systemen, en: Credentials for IT and OT systems}
+        asset_class: Security.Secrets
+      - title: {de: Auftragsübergabe an die Produktion, en: Order handover to production}
+        asset_class: Functions.NonEssential
+        rationale: {de: 'Wesentlich, wenn die Produktion ohne Auftragsdaten stoppt', en: Essential if production stops without order data}
+  - id: alarm-server
+    category: supervisory
+    name: {de: Alarmserver / Alarmierung, en: Alarm server / notification}
+    kind: process
+    icon: alarm
+    interfaces: [ethernet, mobile]
+    environment: {interface: known_network, access: restricted}
+    properties: {update_path: it-managed, authentication: application-accounts}
+    assets:
+      - title: {de: Alarmierung des Betriebspersonals, en: Alerting of operating personnel}
+        asset_class: Functions.Essential
+      - title: {de: 'Alarmgrenzen, Prioritäten und Unterdrückungen', en: 'Alarm limits, priorities and suppressions'}
+        asset_class: Other.Configuration
+      - title: {de: 'Bereitschaftspläne und Kontaktdaten', en: 'On-call schedules and contact data'}
+        asset_class: PII.Generic
+  - id: ot-patch-server
+    category: supervisory
+    name: {de: Patch- und Virenschutzserver der OT, en: OT patch and antivirus management server}
+    kind: process
+    icon: patch
+    interfaces: [ethernet]
+    environment: {interface: known_network, access: restricted}
+    properties: {update_path: it-managed, authentication: os-accounts}
+    assets:
+      - title: {de: Softwareverteilung an alle OT-Rechner, en: Software distribution to all OT hosts}
+        asset_class: Security.Mechanism
+      - title: {de: Inventar und Patchstand der OT-Rechner, en: Inventory and patch level of OT hosts}
+        asset_class: Security.PublicConfiguration
+        rationale: {de: 'Vertraulichkeit hochstufen, da Wegweiser für Angreifer', en: Raise confidentiality as it guides attackers}
+  - id: ot-domain-controller
+    category: supervisory
+    name: {de: Domänencontroller der OT, en: OT domain controller}
+    kind: process
+    icon: directory
+    interfaces: [ethernet]
+    environment: {interface: known_network, access: restricted}
+    properties: {update_path: it-managed, authentication: kerberos}
+    assets:
+      - title: {de: 'Benutzer-, Rechner- und Dienstkonten', en: 'User, computer and service accounts'}
+        asset_class: Security.Secrets
+      - title: {de: 'Anmeldung, Namensauflösung und Richtlinien', en: 'Logon, name resolution and policies'}
+        asset_class: Security.Mechanism
+
+  # --- machines and robotics ----------------------------------------------------------
+  - id: robot-controller
+    category: controllers
+    name: {de: Robotersteuerung, en: Robot controller}
+    kind: device
+    icon: robot
+    interfaces: [ethernet, fieldbus, usb, pendant]
+    environment: {interface: known_network, access: restricted}
+    properties: {firmware: true, update_path: usb-or-tool, authentication: user-levels, default_password: possible}
+    assets:
+      - title: {de: 'Roboterprogramme, Positionen und Werkzeugdaten', en: 'Robot programs, positions and tool data'}
+        asset_class: BusinessData.Important
+      - title: {de: Bewegungsfunktion, en: Motion function}
+        asset_class: Functions.Essential
+      - title: {de: 'Sicherheitskonfiguration (Schutzzonen, Geschwindigkeitsgrenzen)', en: 'Safety configuration (safe zones, speed limits)'}
+        asset_class: Functions.Safety
+  - id: teach-pendant
+    category: operation
+    name: {de: Programmierhandgerät (Teach Pendant), en: Teach pendant}
+    kind: device
+    icon: pendant
+    interfaces: [cable, wireless, usb, enabling-switch]
+    environment: {interface: local, access: movable, user: skilled}
+    properties: {firmware: true, update_path: controller, authentication: user-levels}
+    assets:
+      - title: {de: Programmier- und Verfahrfunktion, en: Programming and jogging function}
+        asset_class: Functions.Essential
+      - title: {de: 'Zustimm- und Not-Halt-Funktion', en: 'Enabling and emergency stop function'}
+        asset_class: Functions.Safety
+  - id: cnc-controller
+    category: controllers
+    name: {de: CNC-Steuerung, en: CNC controller}
+    kind: device
+    icon: cnc
+    interfaces: [ethernet, usb, fieldbus, display]
+    environment: {interface: known_network, access: restricted}
+    properties: {firmware: true, update_path: usb-or-tool, authentication: user-levels, default_password: possible}
+    assets:
+      - title: {de: NC-Programme, en: NC programs}
+        asset_class: BusinessData.Important
+      - title: {de: 'Maschinendaten, Werkzeug- und Nullpunktkorrekturen', en: 'Machine data, tool and work offsets'}
+        asset_class: Other.Configuration
+      - title: {de: Bearbeitungsfunktion, en: Machining function}
+        asset_class: Functions.Essential
+  - id: safety-sensor
+    category: safety
+    name: {de: 'Sicherheits-Laserscanner / Lichtvorhang', en: 'Safety laser scanner / light curtain'}
+    kind: device
+    icon: safety-sensor
+    description:
+      de: Berührungslos wirkende Schutzeinrichtung mit konfigurierbaren Schutzfeldern, parametriert per Software über USB, Ethernet oder Feldbus.
+      en: Electro-sensitive protective equipment with configurable protective fields, configured by software via USB, Ethernet or fieldbus.
+    interfaces: [usb, ethernet, fieldbus, safety-outputs]
+    environment: {interface: local, access: restricted}
+    properties: {firmware: true, update_path: configuration-tool, authentication: password, default_password: possible}
+    assets:
+      - title: {de: Personenerkennung und Schutzfunktion, en: Person detection and protective function}
+        asset_class: Functions.Safety
+      - title: {de: 'Schutzfeldkonfiguration und Feldsätze', en: 'Protective field configuration and field sets'}
+        asset_class: Other.Configuration
+        rationale: {de: 'Integrität hochstufen, Manipulation wirkt auf Schutzfunktion', en: Raise integrity; manipulation affects protection}
+  - id: id-reader
+    category: field
+    name: {de: 'RFID-/Code-Lesegerät', en: 'RFID / code reader'}
+    kind: device
+    icon: reader
+    description:
+      de: Lesegerät für RFID-Transponder, Barcodes oder Matrixcodes an Werkstücken, Werkzeugen, Behältern oder Ausweisen.
+      en: Reader for RFID tags, barcodes or matrix codes on workpieces, tools, containers or badges.
+    interfaces: [ethernet, fieldbus, usb, serial]
+    environment: {interface: local, access: public_restricted}
+    properties: {firmware: true, update_path: web-or-tool, authentication: optional, default_password: possible}
+    assets:
+      - title: {de: Identifikationsdaten, en: Identification data}
+        asset_class: Functions.CommunicationLocal
+      - title: {de: Daten auf Transpondern, en: Data stored on tags}
+        asset_class: BusinessData.Generic
+
+  # --- remote sites, IIoT and edge ----------------------------------------------------
+  - id: rtu
+    category: remote
+    name: {de: Fernwirkstation (RTU), en: Remote terminal unit (RTU)}
+    kind: device
+    icon: rtu
+    description:
+      de: Unterstation an abgesetzten, meist unbesetzten Standorten, die über Fernwirkprotokolle mit der Leitstelle kommuniziert.
+      en: Outstation at remote, usually unattended sites that communicates with the control centre via telecontrol protocols.
+    interfaces: [ethernet, serial, mobile, fieldbus]
+    environment: {interface: external_network, access: public_restricted}
+    properties: {firmware: true, update_path: engineering-tool-or-remote, authentication: optional, default_password: possible}
+    assets:
+      - title: {de: 'Fernwirkfunktion (Melden, Messen, Steuern)', en: 'Telecontrol function (indication, measurement, command)'}
+        asset_class: Functions.Essential
+      - title: {de: 'Datenpunktliste und Parametrierung', en: 'Data point list and configuration'}
+        asset_class: Other.Configuration
+  - id: cellular-router
+    category: network
+    name: {de: 'Mobilfunkrouter (LTE/5G)', en: 'Cellular router (LTE/5G)'}
+    kind: device
+    icon: cellular
+    interfaces: [mobile, ethernet, web, sms]
+    environment: {interface: external_network, access: public_restricted}
+    properties: {firmware: true, update_path: web-or-remote, authentication: password, default_password: possible}
+    assets:
+      - title: {de: Weitverkehrsverbindung, en: Wide area connection}
+        asset_class: Functions.CommunicationNetwork
+      - title: {de: 'VPN-Schlüssel, SIM-PIN und Zugangsdaten', en: 'VPN keys, SIM PIN and credentials'}
+        asset_class: Security.Secrets
+      - title: {de: Filter- und Weiterleitungsregeln, en: Filter and forwarding rules}
+        asset_class: Security.Mechanism
+  - id: iiot-gateway
+    category: network
+    name: {de: 'IIoT-Gateway (z. B. LoRaWAN)', en: 'IIoT gateway (e.g. LoRaWAN)'}
+    kind: device
+    icon: iot-gateway
+    description:
+      de: Gateway, das Funksensoren (z. B. LoRaWAN, Funk-Mesh) mit einem Netzwerkserver oder einer Plattform verbindet.
+      en: Gateway connecting wireless sensors (e.g. LoRaWAN, wireless mesh) to a network server or platform.
+    interfaces: [radio, ethernet, mobile, web]
+    environment: {interface: external_network, access: public_restricted}
+    properties: {firmware: true, update_path: remote, authentication: password, default_password: possible}
+    assets:
+      - title: {de: Weiterleitung der Sensordaten, en: Forwarding of sensor data}
+        asset_class: Functions.CommunicationNetwork
+      - title: {de: Zugangsdaten zum Netzwerkserver, en: Network server credentials}
+        asset_class: Security.Secrets
+  - id: cloud-iot-connector
+    category: remote
+    name: {de: Konnektor zur IoT-Cloud-Plattform, en: Cloud IoT platform connector}
+    kind: process
+    icon: cloud-connector
+    description:
+      de: 'Software auf Gerät oder Edge, die Telemetrie an eine IoT-Plattform sendet und von dort Konfiguration, Befehle und Aufträge empfängt.'
+      en: 'Software on the device or edge that sends telemetry to an IoT platform and receives configuration, commands and jobs from it.'
+    interfaces: [internet]
+    environment: {interface: external_network, access: non_restricted}
+    properties: {authentication: device-certificate-or-token, encryption: tls}
+    assets:
+      - title: {de: Geräteidentität und Schlüssel, en: Device identity and keys}
+        asset_class: Security.Secrets
+      - title: {de: Telemetriedaten, en: Telemetry data}
+        asset_class: Other.Telemetric
+      - title: {de: 'Empfangene Konfiguration und Befehle', en: 'Received configuration and commands'}
+        asset_class: Other.Configuration
+  - id: data-diode
+    category: network
+    name: {de: 'Datendiode / Einweg-Gateway', en: 'Data diode / unidirectional gateway'}
+    kind: device
+    icon: diode
+    description:
+      de: Hardwarebasierte Einwegübertragung, meist mit Proxy-Rechnern auf beiden Seiten für Protokolle wie OPC UA, Historian-Replikation oder Dateiübertragung.
+      en: Hardware-enforced one-way transfer, usually with proxy hosts on both sides for protocols such as OPC UA, historian replication or file transfer.
+    interfaces: [ethernet]
+    environment: {interface: known_network, access: restricted}
+    properties: {firmware: true, update_path: local, authentication: password}
+    assets:
+      - title: {de: Rückwirkungsfreiheit zum OT-Netz, en: No return path into the OT network}
+        asset_class: Security.Mechanism
+      - title: {de: Übertragene Prozessdaten, en: Transferred process data}
+        asset_class: BusinessData.Generic
+
+  # --- energy and building systems -------------------------------------------------------
+  - id: energy-meter
+    category: energy
+    name: {de: 'Energie- / Netzqualitätsmessgerät', en: 'Energy / power quality meter'}
+    kind: device
+    icon: meter
+    interfaces: [ethernet, serial, m-bus, web]
+    environment: {interface: known_network, access: public_restricted}
+    properties: {firmware: true, update_path: web-or-tool, authentication: optional, default_password: possible}
+    assets:
+      - title: {de: Mess- und Abrechnungswerte, en: Measured and billing values}
+        asset_class: BusinessData.Important
+      - title: {de: 'Wandlerverhältnisse und Kalibrierung', en: 'Transformer ratios and calibration'}
+        asset_class: Other.Configuration
+      - title: {de: Lastgänge, en: Load profiles}
+        asset_class: BusinessData.Generic
+        rationale: {de: 'In Wohngebäuden Rückschlüsse auf Personen möglich, dann PII.Generic', en: 'In residential buildings inferences about persons are possible, then PII.Generic'}
+  - id: der-inverter
+    category: energy
+    name: {de: 'Wechselrichter (PV / Speicher)', en: 'Inverter (PV / storage)'}
+    kind: device
+    icon: inverter
+    interfaces: [ethernet, wireless, serial, bluetooth, internet]
+    environment: {interface: external_network, access: public_restricted, user: instructed}
+    properties: {firmware: true, update_path: remote-or-app, authentication: user-and-installer-levels, default_password: possible}
+    assets:
+      - title: {de: Einspeise- und Ladefunktion, en: Feed-in and charging function}
+        asset_class: Functions.Essential
+      - title: {de: 'Netzschutz- und Netzregelungseinstellungen', en: 'Grid protection and grid support settings'}
+        asset_class: Functions.Safety
+        rationale: {de: 'Netz- und Anlagenschutz, Schutz vor Inselbetrieb', en: 'Grid and system protection, anti-islanding'}
+      - title: {de: Erzeugungs- und Verbrauchsdaten, en: Generation and consumption data}
+        asset_class: PII.Generic
+  - id: battery-management-system
+    category: energy
+    name: {de: Batteriemanagementsystem (BMS), en: Battery management system (BMS)}
+    kind: device
+    icon: battery
+    interfaces: [can, serial, ethernet, service-port]
+    environment: {interface: local, access: restricted}
+    properties: {firmware: true, update_path: service-tool, authentication: none-typical}
+    assets:
+      - title: {de: 'Zellüberwachung und Schutzabschaltung', en: 'Cell monitoring and protective disconnection'}
+        asset_class: Functions.Safety
+      - title: {de: 'Grenzwerte für Spannung, Strom und Temperatur', en: 'Voltage, current and temperature limits'}
+        asset_class: Other.Configuration
+      - title: {de: Ladezustand und Zelldaten, en: State of charge and cell data}
+        asset_class: Other.Telemetric
+  - id: building-controller
+    category: energy
+    name: {de: 'Gebäudeautomationsregler (BACnet)', en: 'Building automation controller (BACnet)'}
+    kind: device
+    icon: building
+    description:
+      de: 'Automationsstation für Heizung, Lüftung, Klima, Beleuchtung oder Zutritt, meist mit BACnet und Webbedienung.'
+      en: 'Automation station for heating, ventilation, air conditioning, lighting or access, usually with BACnet and web operation.'
+    interfaces: [ethernet, serial, web]
+    environment: {interface: known_network, access: public_restricted}
+    properties: {firmware: true, update_path: web-or-tool, authentication: optional, default_password: possible}
+    assets:
+      - title: {de: Regel- und Schaltfunktionen des Gebäudes, en: Control and switching functions of the building}
+        asset_class: Functions.Essential
+      - title: {de: 'Sollwerte, Zeitprogramme und Objektliste', en: 'Set points, schedules and object list'}
+        asset_class: Other.Configuration
+
+  # --- communication: further flow types --------------------------------------------------
+  - id: fieldbus-ethernet-ip
+    name: {de: 'EtherNet/IP (CIP)', en: 'EtherNet/IP (CIP)'}
+    kind: flow
+    interfaces: [ethernet]
+    environment: {interface: dedicated_known_network, access: restricted}
+    properties: {authentication: optional-cip-security, encryption: optional-cip-security}
+    assets:
+      - title: {de: 'Zyklische E/A-Daten und explizite Nachrichten', en: 'Cyclic I/O data and explicit messages'}
+        asset_class: Functions.CommunicationNetwork
+  - id: fieldbus-profibus
+    name: {de: 'PROFIBUS DP (RS-485)', en: 'PROFIBUS DP (RS-485)'}
+    kind: flow
+    interfaces: [serial]
+    environment: {interface: local, access: restricted}
+    properties: {authentication: none, encryption: none}
+    assets:
+      - title: {de: Zyklische Prozessdaten und Parametrierung, en: Cyclic process data and parameterisation}
+        asset_class: Functions.CommunicationLocal
+  - id: hart
+    name: {de: 'HART über 4–20 mA', en: 'HART over 4–20 mA'}
+    kind: flow
+    interfaces: [analog, hart]
+    environment: {interface: local, access: public_restricted}
+    properties: {authentication: none, encryption: none}
+    assets:
+      - title: {de: Analoger Messwert bzw. Stellwert, en: Analogue measured or output value}
+        asset_class: Functions.CommunicationLocal
+      - title: {de: Digitale Parametrier- und Diagnosedaten, en: Digital configuration and diagnostic data}
+        asset_class: Other.Telemetric
+  - id: wirelesshart
+    name: {de: WirelessHART, en: WirelessHART}
+    kind: flow
+    interfaces: [radio]
+    environment: {interface: dedicated_known_network, access: non_restricted}
+    properties: {authentication: join-key, encryption: aes-128}
+    assets:
+      - title: {de: Mess- und Diagnosedaten, en: Measurement and diagnostic data}
+        asset_class: Functions.CommunicationNetwork
+  - id: lorawan
+    name: {de: LoRaWAN, en: LoRaWAN}
+    kind: flow
+    interfaces: [radio]
+    environment: {interface: external_network, access: non_restricted}
+    properties: {authentication: device-keys, encryption: aes-128}
+    assets:
+      - title: {de: Sensordaten und Downlink-Befehle, en: Sensor data and downlink commands}
+        asset_class: Functions.CommunicationNetwork
+  - id: bacnet-ip
+    name: {de: BACnet/IP, en: BACnet/IP}
+    kind: flow
+    interfaces: [ethernet]
+    environment: {interface: known_network, access: restricted}
+    properties: {authentication: none, encryption: none}
+    assets:
+      - title: {de: 'Objektwerte, Sollwerte und Befehle', en: 'Object values, set points and commands'}
+        asset_class: Functions.CommunicationNetwork
+  - id: opcua-pubsub
+    name: {de: OPC UA PubSub, en: OPC UA PubSub}
+    kind: flow
+    interfaces: [ethernet]
+    environment: {interface: dedicated_known_network, access: restricted}
+    properties: {authentication: optional-group-keys, encryption: optional-group-keys}
+    assets:
+      - title: {de: Veröffentlichte Prozessdaten, en: Published process data}
+        asset_class: Functions.CommunicationNetwork
+  - id: iec-104
+    name: {de: IEC 60870-5-104, en: IEC 60870-5-104}
+    kind: flow
+    interfaces: [ethernet, mobile]
+    environment: {interface: known_network, access: restricted}
+    properties: {authentication: none, encryption: none}
+    assets:
+      - title: {de: 'Meldungen, Messwerte und Steuerbefehle', en: 'Indications, measurements and commands'}
+        asset_class: Functions.CommunicationNetwork
+  - id: dnp3
+    name: {de: DNP3, en: DNP3}
+    kind: flow
+    interfaces: [ethernet, serial, mobile]
+    environment: {interface: known_network, access: restricted}
+    properties: {authentication: optional-secure-authentication, encryption: none}
+    assets:
+      - title: {de: 'Messwerte, Meldungen und Steuerbefehle', en: 'Measurements, indications and commands'}
+        asset_class: Functions.CommunicationNetwork
+  - id: iec-61850
+    name: {de: 'IEC 61850 (MMS, GOOSE)', en: 'IEC 61850 (MMS, GOOSE)'}
+    kind: flow
+    interfaces: [ethernet]
+    environment: {interface: dedicated_known_network, access: restricted}
+    properties: {authentication: none-typical, encryption: none-typical}
+    assets:
+      - title: {de: 'Schutz- und Verriegelungssignale (GOOSE)', en: 'Protection and interlocking signals (GOOSE)'}
+        asset_class: Functions.Safety
+        rationale: {de: 'Elektrischer Anlagenschutz', en: 'Electrical protection of the installation'}
+      - title: {de: 'Mess-, Melde- und Steuerdaten (MMS)', en: 'Measurement, status and control data (MMS)'}
+        asset_class: Functions.CommunicationNetwork
+  - id: cellular-link
+    name: {de: 'Mobilfunkverbindung (LTE/5G)', en: 'Cellular link (LTE/5G)'}
+    kind: flow
+    interfaces: [mobile]
+    environment: {interface: external_network, access: non_restricted}
+    properties: {authentication: sim, encryption: radio-link-only}
+    assets:
+      - title: {de: Übertragene Daten, en: Transmitted data}
+        asset_class: Functions.CommunicationNetwork
+  - id: short-range-commissioning
+    name: {de: 'Inbetriebnahme per Bluetooth LE / NFC', en: 'Commissioning via Bluetooth LE / NFC'}
+    kind: flow
+    interfaces: [bluetooth, nfc]
+    environment: {interface: local, access: public_restricted}
+    properties: {authentication: optional, encryption: optional}
+    assets:
+      - title: {de: Parametrier- und Diagnosezugang per App, en: Configuration and diagnostic access via app}
+        asset_class: Functions.CommunicationLocal

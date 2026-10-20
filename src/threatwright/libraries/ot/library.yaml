@@ -8,12 +8,15 @@ license: CC-BY-4.0
 description:
   de: >-
     Generische Element-, Bedrohungs- und Maßnahmenvorlagen für Produkte mit
-    digitalen Elementen im Maschinen- und Anlagenbau. Vorschläge, keine
-    vollständige Analyse; jede Übernahme ist im Produktkontext zu prüfen.
+    digitalen Elementen im Maschinen- und Anlagenbau, in der
+    Prozessautomatisierung, bei Fernwirk- und IIoT-Systemen sowie in der Energie-
+    und Gebäudetechnik. Vorschläge, keine vollständige Analyse; jede Übernahme
+    ist im Produktkontext zu prüfen.
   en: >-
     Generic element, threat and measure templates for products with digital
-    elements in machine and plant engineering. Suggestions, not a complete
-    analysis; review every entry in the context of your product.
+    elements in machine and plant engineering, process automation, telecontrol
+    and IIoT systems, and energy and building systems. Suggestions, not a
+    complete analysis; review every entry in the context of your product.
 attribution:
   - MITRE ATT&CK for ICS and MITRE EMB3D identifiers (c) The MITRE Corporation, used with permission.
   - CRA requirement mapping after BSI TR-03183-1 v1.0.0, Annex B.

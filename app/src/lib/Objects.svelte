@@ -29,7 +29,9 @@
 
   // Rule 3.3: ask for new threats unless the form already answered it.
   function afterSave(id: string, created: boolean) {
-    select(id)
+    // saving finishes asynchronously; if the user moved on meanwhile, do not pull them back
+    const here = app.view.kind === 'objects' && app.view.collection === collection
+    if (here) select(id)
     const threat = app.objects('threats').find((t) => t.id === id)
     if (created && collection === 'threats' && threat?.cyber_cause == null) app.cyberCheck = id
   }

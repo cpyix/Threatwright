@@ -24,7 +24,7 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import ValidationError
 
-from threatwright import __version__, assistant
+from threatwright import __version__, assistant, history
 from threatwright.arc import ArcOverride, applicability, set_override
 from threatwright.branding import PRODUCT_NAME, PROJECT_FILE
 from threatwright.ci import render_ci
@@ -102,6 +102,9 @@ class Session:
         self.undo: list[dict[str, SubModel]] = []
         self.redo: list[dict[str, SubModel]] = []
         self.dirty = False
+        self.changes = 0  # counts edits; autosave only when it moved
+        self.autosaved = 0
+        self.pending: str | None = None  # unsaved autosave found when opening
 
     def open(self, root: Path) -> None:
         project = Project.load(root)
@@ -115,6 +118,16 @@ class Session:
         self.undo.clear()
         self.redo.clear()
         self.dirty = False
+        self.changes = self.autosaved = 0
+        newest = history.entries(project.root)[:1]
+        self.pending = newest[0].id if newest and newest[0].kind == "auto" else None
+        if self.pending:
+            # marks the unsaved autosave as seen, so it is offered once, not on every open
+            history.record(project.root, project.models, "open")
+
+    def changed(self) -> None:
+        self.changes += 1
+        self.dirty = True
 
     def require(self) -> Project:
         if self.project is None:
@@ -133,14 +146,26 @@ class Session:
         self.undo.append({k: _copy_model(v) for k, v in project.models.items()})
         del self.undo[:-100]
         self.redo.clear()
-        self.dirty = True
+        self.changed()
 
     def save(self) -> list[str]:
         project = self.require()
         written = project.save()
         self.files = _snapshot(project.root)
         self.dirty = False
+        self.pending = None
+        if written:  # an unchanged save adds no version
+            history.record(project.root, project.models, "save")
+        self.autosaved = self.changes
         return [p.relative_to(project.root).as_posix() for p in written]
+
+    def autosave(self) -> history.Entry | None:
+        """Snapshot unsaved edits into the history; None when there is nothing new."""
+        project = self.require()
+        if not self.dirty or self.changes == self.autosaved:
+            return None
+        self.autosaved = self.changes
+        return history.record(project.root, project.models, "auto")
 
 
 def _copy_model(sub: SubModel) -> SubModel:
@@ -488,7 +513,7 @@ def create_app(
                 raise HTTPException(422, str(exc)) from exc
             session.undo.append(snapshot)
             session.redo.clear()
-            session.dirty = True
+            session.changed()
             return {"id": new_id, "updated": updated, "model": model_payload(project.models[name])}
 
     @app.delete("/api/models/{name}/{collection}/{obj_id}")
@@ -801,6 +826,44 @@ def create_app(
         with session.lock:
             return {"written": session.save()}
 
+    @app.post("/api/autosave")
+    def autosave() -> dict[str, Any]:
+        with session.lock:
+            entry = session.autosave()
+            return {"saved": entry is not None, "time": entry.time if entry else None}
+
+    @app.get("/api/history")
+    def history_list() -> dict[str, Any]:
+        with session.lock:
+            root = session.require().root
+            return {
+                "entries": [asdict(e) for e in history.entries(root)],
+                "pending": session.pending,
+            }
+
+    @app.post("/api/history/{entry_id}/restore")
+    def history_restore(entry_id: str) -> dict[str, Any]:
+        if not history.ENTRY_ID.match(entry_id):
+            raise HTTPException(404, "unknown version")
+        with session.lock:
+            project = session.require()
+            try:
+                models = history.restore(project.root, entry_id)
+            except KeyError as exc:
+                raise HTTPException(404, "unknown version") from exc
+            except (OSError, ValueError) as exc:  # damaged file or schema mismatch
+                raise HTTPException(422, f"version cannot be restored: {exc}") from exc
+            session.checkpoint()  # undoable; files change only on the next save
+            project.models = models
+            session.pending = None
+            return project_info()
+
+    @app.post("/api/history/dismiss")
+    def history_dismiss() -> dict[str, bool]:
+        with session.lock:
+            session.pending = None
+            return {"ok": True}
+
     @app.post("/api/undo")
     def undo() -> dict[str, Any]:
         return _step(session, session.undo, session.redo)
@@ -896,7 +959,7 @@ def _step(
             raise HTTPException(409, "nothing to undo/redo")
         target.append({k: _copy_model(v) for k, v in project.models.items()})
         project.models = source.pop()
-        session.dirty = True
+        session.changed()
         return {"ok": True}
 
 

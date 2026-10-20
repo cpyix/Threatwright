@@ -1,0 +1,18 @@
+schema_version: 1
+id: T-0001
+uuid: bdcdd40e-a92f-4c12-ac3d-4974ce039308
+title: Rogue master takes over fieldbus Machine controller
+library_ref: lib:ot/threat/fieldbus-rogue-master@1
+stride: [S, T]
+targets: [E-0001]
+cyber_cause: true
+scenario: The fieldbus has no authentication of the master. An attacker connects their own device (e.g. a laptop with fieldbus master software) to a free connector, or disconnects the controller and acts as master. The slaves accept the attacker's telegrams just like those of the regular controller.
+consequence: The attacker sets outputs, moves drives and changes parameters bypassing the controller. Movements outside the control of the machine controller can endanger persons.
+safety_related: true
+assessment:
+  interface: local
+  access: restricted
+  user: non_user_related
+  impact: 5
+measures: [M-0001, M-0002, M-0003, M-0004]
+cra_refs: [AI-I-2-d, AI-I-2-f]

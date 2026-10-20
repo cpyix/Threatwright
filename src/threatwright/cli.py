@@ -328,16 +328,21 @@ def template_derive_cmd(
 
 @app.command("migrate")
 def migrate_cmd(path: Annotated[Path, typer.Argument(help="Project folder.")] = Path(".")) -> None:
-    """Bring all project files to the current schema version."""
+    """Bring all project files to the current schema version (ADR-0015)."""
     project = _load(path)
-    outdated = [i for i in project.issues if i.location == "schema_version"]
-    for issue in outdated:
+    blocking = [i for i in project.issues if i.severity == "error"]
+    for issue in blocking:
         typer.echo(str(issue), err=True)
-    if outdated:
-        # ponytail: no older schema exists yet; add a migration step per version here
-        typer.echo("error: unknown schema_version; this release only knows version 1", err=True)
+    if blocking:
+        # never write a half-loaded project: a broken file must be fixed by a person first
+        typer.echo("error: fix the files above first; nothing was written", err=True)
         raise typer.Exit(1)
-    typer.echo(f"all files at schema version {SCHEMA_VERSION}; nothing to migrate")
+    if not project.migrated:
+        typer.echo(f"all files at schema version {SCHEMA_VERSION}; nothing to migrate")
+        return
+    count = len(project.migrated)
+    project.save()
+    typer.echo(f"migrated {count} file(s) to schema version {SCHEMA_VERSION}")
 
 
 class CiKind(StrEnum):

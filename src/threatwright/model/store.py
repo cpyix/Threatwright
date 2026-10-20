@@ -17,6 +17,7 @@ from ruamel.yaml.error import YAMLError
 from ruamel.yaml.scalarstring import LiteralScalarString, ScalarString
 
 from threatwright.branding import PROJECT_FILE
+from threatwright.model.migrations import upgrade
 from threatwright.model.objects import (
     COLLECTIONS,
     CustomFields,
@@ -232,6 +233,7 @@ class Project:
     issues: list[Issue] = field(default_factory=list)
     _docs: dict[Path, CommentedMap] = field(default_factory=dict, repr=False)
     _loaded_objects: set[Path] = field(default_factory=set, repr=False)
+    migrated: list[Path] = field(default_factory=list)  # upgraded in memory, written on save
 
     @classmethod
     def load(cls, root: Path) -> "Project":
@@ -274,6 +276,8 @@ class Project:
             return None
         try:
             doc = read_yaml(path)
+            if upgrade(obj_type.__name__, doc):  # older release: migrate in memory (ADR-0015)
+                self.migrated.append(path)
             obj = obj_type.model_validate(to_plain(doc))
         except LoadError as exc:
             self.issues.append(Issue(path, "", str(exc)))
@@ -282,6 +286,9 @@ class Project:
             for err in exc.errors():
                 loc = ".".join(str(p) for p in err["loc"])
                 self.issues.append(Issue(path, loc, err["msg"]))
+            return None
+        except ValueError as exc:  # newer or invalid schema_version (after: ValidationError is one)
+            self.issues.append(Issue(path, "schema_version", str(exc)))
             return None
         self._docs[path] = doc
         return obj
@@ -295,7 +302,7 @@ class Project:
 
     def _save_one(self, path: Path, obj: BaseModel, written: list[Path]) -> None:
         doc = self._docs.setdefault(path, CommentedMap())
-        if merge_into(doc, obj) or not path.exists():
+        if merge_into(doc, obj) or not path.exists() or path in self.migrated:
             write_yaml(path, doc)
             written.append(path)
 
@@ -323,4 +330,5 @@ class Project:
             self._docs.pop(path, None)
             written.append(path)
         self._loaded_objects = wanted
+        self.migrated.clear()
         return written

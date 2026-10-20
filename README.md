@@ -71,7 +71,7 @@ threatwright ci gitlab my-product                  # GitLab pipeline for this pr
 threatwright --help                                # all commands
 ```
 
-Started inside a project folder, `threatwright` opens that project directly. By default the GUI runs on `127.0.0.1` only, on a random port, protected by a per-start token and a strict Content Security Policy; nothing leaves your machine. The GUI follows your browser language (German or English).
+Started inside a project folder, `threatwright` opens that project directly. By default the GUI runs on `127.0.0.1` only, on a random port, protected by a per-start token and a strict Content Security Policy; nothing leaves your machine. The GUI follows your browser language (German or English). Projects created with an older release open in newer ones; their files are brought up to date on the next save ([details](#compatibility-and-releases)).
 
 ### Docker (CLI and pipelines)
 
@@ -224,6 +224,17 @@ scripts/               repo maintenance (leak checks, library coverage)
 ```
 
 Architecture decisions (English): [`docs/adr/`](docs/adr/). Planned work: [ROADMAP.md](ROADMAP.md).
+
+### Compatibility and releases
+
+Projects from any earlier release open in later releases ([ADR-0015](docs/adr/0015-compatibility.md)): every file carries a `schema_version`, older files are upgraded on load and written on the next save (or with `threatwright migrate`), and files from a newer release are refused with a clear message. A change to the file format needs a migration step in `src/threatwright/model/migrations.py`.
+
+Release checklist:
+
+1. Version in `pyproject.toml`, `src/threatwright/__init__.py`, `app/package.json` (and `uv lock`, `npm install`).
+2. `uv run python scripts/compat_snapshot.py`: adds `tests/fixtures/compat/v<version>/`; commit it. CI then checks that every later release still opens it.
+3. Optionally `uv run python scripts/screenshots.py` for the README images.
+4. Merge, then tag `v<version>` on `main`; the release workflow builds and publishes everything.
 
 ### Contributing
 

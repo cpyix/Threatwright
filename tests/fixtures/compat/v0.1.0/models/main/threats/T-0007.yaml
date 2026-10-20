@@ -1,0 +1,18 @@
+schema_version: 1
+id: T-0007
+uuid: 84201445-6b4e-43b7-9cb7-5e2370db93f1
+title: Compromised jump host Remote service gateway opens the way to all customer machines
+library_ref: lib:ot/threat/jumphost-fleet-compromise@1
+stride: [S, T, E]
+targets: [E-0006]
+cyber_cause: true
+scenario: An attacker takes over the manufacturer's central remote maintenance platform, for example via a vulnerability, phishing of an administrator or stolen credentials. Because the platform holds connections to all installed machines and customers are not separated from each other, the attacker moves laterally into the machine networks of many operators at once.
+consequence: Fleet-wide manipulation or sabotage of machines at many customers, possible danger to persons and considerable loss of trust and liability for the manufacturer.
+safety_related: true
+assessment:
+  interface: external_network
+  access: non_restricted
+  user: skilled
+  impact: 5
+measures: [M-0018, M-0019, M-0020, M-0015]
+cra_refs: [AI-I-2-d, AI-I-2-j, AI-I-2-k]

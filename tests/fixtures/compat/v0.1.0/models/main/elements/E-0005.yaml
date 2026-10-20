@@ -1,0 +1,7 @@
+schema_version: 1
+id: E-0005
+uuid: 21a5c19f-69ed-470c-84d1-e76e602d8b46
+title: Engineering workstation
+library_ref: lib:ot/element/engineering-workstation@1
+kind: device
+zone: Z-PLANT

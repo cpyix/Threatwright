@@ -1,0 +1,15 @@
+# Project-specific adjustments of the risk method (merged over the method).
+# Uncomment and adapt; see docs/methodik.md for every decision point.
+#
+# risk_matrix:
+#   matrix_row_from_exposure: inverted   # or: literal
+# acceptance:
+#   max_acceptable_risk: 2               # 1 very low .. 5 very high
+#   approvers:
+#     2: [Product Owner]
+#   rules:                               # lists replace the method's list
+#     - id: safety-stricter
+#       label: {de: Strengere Grenze bei Sicherheitsbezug, en: Stricter limit for safety}
+#       enabled: true
+#       when: {threat.safety_related: true}
+#       max_acceptable_risk: 1

@@ -1,0 +1,18 @@
+schema_version: 1
+id: T-0002
+uuid: dec904df-7716-4871-a5df-4800033b27a5
+title: Spoofed operating mode selection via Machine controller
+library_ref: lib:ot/threat/safety-mode-selection-forged@1
+stride: [S, T]
+targets: [E-0001]
+cyber_cause: true
+scenario: The operating mode (e.g. setup, automatic, service) is transmitted from the operator panel to the controller via a variable or network telegram without verifying the sender. An attacker sends the telegram and poses as an authorised operator panel.
+consequence: The machine changes to an operating mode with different protective measures while persons rely on the previous state.
+safety_related: true
+assessment:
+  interface: known_network
+  access: restricted
+  user: non_user_related
+  impact: 5
+measures: [M-0005, M-0006, M-0007]
+cra_refs: [AI-I-2-d, AI-I-2-f]

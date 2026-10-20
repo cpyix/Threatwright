@@ -13,6 +13,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
+from pydantic import BaseModel
+
+from threatwright.model.migrations import upgrade
 from threatwright.model.objects import COLLECTIONS, DiagramLayout, ModelMeta
 from threatwright.model.store import SubModel
 
@@ -44,14 +47,19 @@ def dump(models: dict[str, SubModel]) -> dict[str, Any]:
     }
 
 
+def _valid[T: BaseModel](cls: type[T], doc: dict[str, Any]) -> T:
+    upgrade(cls.__name__, doc)  # snapshots of an older release migrate like files (ADR-0015)
+    return cls.model_validate(doc)
+
+
 def load(data: dict[str, Any]) -> dict[str, SubModel]:
     return {
         name: SubModel(
             name,
-            ModelMeta.model_validate(m["meta"]),
-            DiagramLayout.model_validate(m["layout"]),
+            _valid(ModelMeta, m["meta"]),
+            _valid(DiagramLayout, m["layout"]),
             {
-                c: {i: cls.model_validate(o) for i, o in m["objects"].get(c, {}).items()}
+                c: {i: _valid(cls, o) for i, o in m["objects"].get(c, {}).items()}
                 for c, cls in COLLECTIONS.items()
             },
         )

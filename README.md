@@ -225,6 +225,8 @@ scripts/               repo maintenance (leak checks, library coverage)
 
 Architecture decisions (English): [`docs/adr/`](docs/adr/). Planned work: [ROADMAP.md](ROADMAP.md).
 
+**AI assistants:** [`skills/threatwright-model/SKILL.md`](skills/threatwright-model/SKILL.md) describes the project files and how to create or edit a model directly in them. It is written as a Claude Skill (copy the folder into your skills directory) and works as plain instructions for other assistants too.
+
 ### Compatibility and releases
 
 Projects from any earlier release open in later releases ([ADR-0015](docs/adr/0015-compatibility.md)): every file carries a `schema_version`, older files are upgraded on load and written on the next save (or with `threatwright migrate`), and files from a newer release are refused with a clear message. A change to the file format needs a migration step in `src/threatwright/model/migrations.py`.

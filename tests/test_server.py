@@ -90,6 +90,8 @@ def test_open_build_folder_refuses_symlink(
         pytest.skip("symlinks not permitted")
     assert client.post("/api/open-build-folder").status_code == 409
     assert opened == []
+    (tmp_path / "secret.txt").write_text("x", encoding="utf-8")
+    assert client.get("/api/build/secret.txt").status_code == 404
 
 
 def test_frontend_does_not_serve_files_outside_web_dir(client: TestClient) -> None:

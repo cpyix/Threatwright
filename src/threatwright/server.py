@@ -867,8 +867,14 @@ def create_app(
         with session.lock:
             folder = session.require().root.resolve() / "build"
         path = folder / name
-        # only plain files directly in build: no "..", subfolders or symlinks out of the project
-        if name != Path(name).name or path.is_symlink() or not path.is_file():
+        # only plain files directly in a plain build folder: no "..", subfolders or symlinks
+        # (of the file or of build itself) out of the project
+        if (
+            name != Path(name).name
+            or folder.is_symlink()
+            or path.is_symlink()
+            or not path.is_file()
+        ):
             raise HTTPException(404, "no such document")
         return Response(path.read_bytes(), media_type="application/octet-stream")
 

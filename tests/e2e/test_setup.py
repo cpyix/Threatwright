@@ -30,10 +30,10 @@ def test_setup_wizard(gui: str, page: Page, offline: list[str], tmp_path: Path) 
     page.get_by_test_id("setup-type-plc").click()
     page.get_by_test_id("setup-el-title").fill("Hauptsteuerung")
     page.get_by_test_id("setup-el-add").click()
-    expect(page.get_by_text("E-0001")).to_be_visible()
+    expect(page.locator("strong", has_text="E-0001")).to_be_visible()
     page.get_by_test_id("setup-type-hmi").click()
     page.get_by_test_id("setup-el-add").click()
-    expect(page.get_by_text("E-0002")).to_be_visible()
+    expect(page.locator("strong", has_text="E-0002")).to_be_visible()
     page.get_by_test_id("setup-next").click()
 
     # 4 connections; changing the source after a pick must not lose the target
@@ -41,7 +41,7 @@ def test_setup_wizard(gui: str, page: Page, offline: list[str], tmp_path: Path) 
     page.get_by_test_id("setup-flow-source").select_option("E-0002")
     page.get_by_test_id("setup-flow-target").select_option("E-0001")
     page.get_by_test_id("setup-flow-add").click()
-    expect(page.get_by_text("F-0001")).to_be_visible()
+    expect(page.locator("strong", has_text="F-0001")).to_be_visible()
     page.get_by_test_id("setup-next").click()
 
     # 5 assets: the PLC brought its typical assets; add an own one

@@ -6,6 +6,9 @@
   import { ASSET_CLASSES, CATEGORIES, SETUP } from '../setup-text'
   import { app } from '../state.svelte'
   import type { Category, ElementType, ModelPayload, Obj, ProjectInfo } from '../types'
+  import { SvelteFlowProvider } from '@xyflow/svelte'
+  import '@xyflow/svelte/dist/style.css'
+  import Canvas from './diagram/Canvas.svelte'
   import Info from './Info.svelte'
   import MultiSelect from './MultiSelect.svelte'
 
@@ -234,6 +237,16 @@
   ] as [string, boolean, number?][])
 </script>
 
+{#snippet preview(type: string)}
+  <h3>{t.preview}</h3>
+  <p class="muted small">{t.preview_help}</p>
+  <div class="preview" data-testid="setup-preview">
+    <SvelteFlowProvider>
+      <Canvas flowType={type} configuration="" types={elementTypes} onselect={() => {}} />
+    </SvelteFlowProvider>
+  </div>
+{/snippet}
+
 <section class="setup" data-testid="setup">
   <h1>{t.title}</h1>
 
@@ -392,6 +405,7 @@
         {/each}
       </div>
     </div>
+    {#if elements.length}{@render preview('')}{/if}
   {:else if step === 4}
     <h2>{t.s_flows} <Info term="flow" /></h2>
     <p>{t.flows_text}</p>
@@ -447,6 +461,7 @@
     {:else}
       <p class="muted">{t.none_yet}</p>
     {/each}
+    {#if elements.length}{@render preview(flowType)}{/if}
   {:else if step === 5}
     <h2>{t.s_assets} <Info term="asset_class" /></h2>
     <p>{t.assets_text}</p>
@@ -730,6 +745,12 @@
   .pick.active {
     border-color: var(--accent);
     outline: 1px solid var(--accent);
+  }
+  .preview {
+    height: 26rem;
+  }
+  .preview :global(.canvas) {
+    min-height: 0;
   }
   .grid4 {
     grid-template-columns: repeat(3, minmax(0, 1fr)) auto;

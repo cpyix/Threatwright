@@ -70,6 +70,9 @@ const de = {
   add: 'Anlegen',
   brings_assets: 'bringt mit',
   none_yet: 'Noch nichts angelegt.',
+  preview: 'So sieht Ihr Modell aus',
+  preview_help:
+    'Das ist das Diagramm. Ziehen Sie Elemente in eine andere Zone oder ziehen Sie eine Verbindung von einem Anfasser zum nächsten Element.',
   remove: 'Entfernen',
   search: 'Suchen …',
 
@@ -212,6 +215,8 @@ const en: Text = {
   add: 'Add',
   brings_assets: 'brings',
   none_yet: 'Nothing added yet.',
+  preview: 'Your model so far',
+  preview_help: 'This is the diagram. Drag elements into another zone or drag a connection from a handle to another element.',
   remove: 'Remove',
   search: 'Search …',
 

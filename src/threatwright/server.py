@@ -862,6 +862,10 @@ def create_app(
         with session.lock:
             folder = session.require().root.resolve() / "build"
         folder.mkdir(exist_ok=True)
+        # a symlinked or non-directory "build" from a cloned repo could point at an app or
+        # executable, which the opener would launch instead of showing a folder
+        if folder.is_symlink() or not folder.is_dir():
+            raise HTTPException(409, "build is not a plain folder")
         if sys.platform == "win32":
             os.startfile(folder)  # noqa: S606
         else:

@@ -34,7 +34,7 @@ from threatwright.branding import PRODUCT_NAME, PROJECT_FILE
 from threatwright.ci import render_ci
 from threatwright.ci import target_path as ci_target_path
 from threatwright.diagram import render_svg
-from threatwright.library import Libraries, load_catalog, load_libraries
+from threatwright.library import CATALOG_NAMES, Libraries, load_catalog, load_libraries
 from threatwright.method import (
     Method,
     MethodError,
@@ -454,7 +454,7 @@ def create_app(
 
     @app.get("/api/catalog/{name}")
     def catalog(name: str) -> dict[str, Any]:
-        if name not in ("cra", "attack-ics", "emb3d", "iec62443"):
+        if name not in CATALOG_NAMES:
             raise HTTPException(404, "unknown catalog")
         return load_catalog(name).model_dump(mode="json")
 

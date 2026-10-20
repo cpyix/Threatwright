@@ -6,7 +6,7 @@ from conftest import FIXTURE, ROOT
 from typer.testing import CliRunner
 
 from threatwright.cli import app
-from threatwright.library import check_library_refs, load_libraries
+from threatwright.library import CATALOG_NAMES, CATALOGS, check_library_refs, load_libraries
 from threatwright.method import load_method
 from threatwright.model.objects import ProjectConfig
 from threatwright.model.store import Project
@@ -100,3 +100,28 @@ def test_unknown_library_and_cra_ref(tmp_path: Path) -> None:
     issues = validate(Project.load(root))
     assert sum(i.code == "library-invalid" for i in issues) == 2
     assert any(i.code == "unknown-cra-ref" for i in issues)
+
+
+def test_new_catalog_refs_are_checked(tmp_path: Path) -> None:
+    root = tmp_path / "p"
+    shutil.copytree(FIXTURE, root)
+    own_library(root)
+    lib = root / "libraries" / "own"
+    (lib / "measures.yaml").write_text(
+        "measures:\n  - id: m\n    rev: 1\n    kind: technical\n"
+        "    title: {de: M, en: M}\n    description: {de: M, en: M}\n",
+        encoding="utf-8",
+    )
+    (lib / "threats.yaml").write_text(
+        "threats:\n  - id: t\n    rev: 1\n    stride: [S]\n    applies_to: [plc]\n"
+        "    title: {de: T, en: T}\n    scenario: {de: T, en: T}\n    consequence: {de: T, en: T}\n"
+        "    etsi303645: ['5.1-1', NOPE]\n    asvs: [V0.0.0]\n    masvs: [MASVS-STORAGE-1]\n"
+        "    measures: [m]\n",
+        encoding="utf-8",
+    )
+    libs = load_libraries(["own"], root)
+    assert [(i.location, i.message) for i in libs.issues] == [
+        ("own/threat/t.etsi303645", "unknown reference 'NOPE'"),
+        ("own/threat/t.asvs", "unknown reference 'V0.0.0'"),
+    ]
+    assert set(CATALOG_NAMES) == {p.stem for p in CATALOGS.glob("*.yaml")}

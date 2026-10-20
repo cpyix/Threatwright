@@ -69,6 +69,9 @@ threats:
     attack_ics: [T0848]                      # Katalog attack-ics (ATT&CK for ICS v20)
     emb3d: [TID-406]                         # Katalog emb3d
     iec62443: [FR1, FR3]                     # nur FR1-FR7
+    etsi303645: [5.1-1, 5.3-2]               # Katalog etsi-303645 (ETSI EN 303 645 V3.1.3, IDs wie veröffentlicht)
+    asvs: [V6.2.1]                           # Katalog asvs (OWASP ASVS 5.0.0, V<Kapitel>.<Abschnitt>.<Anforderung>)
+    masvs: [MASVS-STORAGE-1]                 # Katalog masvs (OWASP MASVS v2)
     measures: [fieldbus-physical-protection]
     sources: ["Herkunft der Aussage"]
 ```
@@ -88,6 +91,7 @@ measures:
     evidence: {de: ..., en: ...}
     cra_refs: [AI-I-2-f]
     iec62443: [FR3]
+    etsi303645: [5.3-2]                      # wie bei Bedrohungen; auch asvs und masvs
 ```
 
 Fließtexte bitte im Blockstil schreiben (`de:` und `en:` auf eigenen Zeilen). In der Kurzschreibweise `{de: ..., en: ...}` trennt jedes Komma den Text.

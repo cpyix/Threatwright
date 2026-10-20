@@ -19,6 +19,16 @@ from threatwright.model.store import Issue, LoadError, Project, read_yaml, to_pl
 
 BUILTIN_LIBRARIES = Path(__file__).parent / "libraries"
 CATALOGS = Path(__file__).parent / "catalogs"
+CATALOG_NAMES = ("cra", "attack-ics", "emb3d", "iec62443", "etsi-303645", "asvs", "masvs")
+# catalog id -> field name on threat/measure templates ("cra" is checked via cra_refs)
+CATALOG_FIELDS = {
+    "attack-ics": "attack_ics",
+    "emb3d": "emb3d",
+    "iec62443": "iec62443",
+    "etsi-303645": "etsi303645",
+    "asvs": "asvs",
+    "masvs": "masvs",
+}
 LIBRARY_FILE = "library.yaml"
 NAME = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 REF = re.compile(r"^lib:([a-z0-9._-]+)/(element|threat|measure)/([a-z0-9._-]+)@(\d+)$")
@@ -75,6 +85,9 @@ class ThreatTemplate(BaseEntry):
     attack_ics: list[str] = []
     emb3d: list[str] = []
     iec62443: list[str] = []
+    etsi303645: list[str] = []
+    asvs: list[str] = []
+    masvs: list[str] = []
     measures: list[str] = []
 
 
@@ -91,6 +104,9 @@ class MeasureTemplate(BaseEntry):
     evidence: I18n | None = None
     cra_refs: list[str] = []
     iec62443: list[str] = []
+    etsi303645: list[str] = []
+    asvs: list[str] = []
+    masvs: list[str] = []
     controls: list[ControlRef] = []
 
 
@@ -248,7 +264,7 @@ def _load_one(libs: Libraries, name: str, folder: Path) -> None:
 
 
 def _check_integrity(libs: Libraries) -> None:
-    catalogs = {c: set(load_catalog(c).entries) for c in ("cra", "attack-ics", "emb3d", "iec62443")}
+    catalogs = {c: set(load_catalog(c).entries) for c in CATALOG_NAMES}
 
     def bad(kind: Kind, entry_id: str, loc: str, values: list[str], valid: set[str]) -> None:
         for v in values:
@@ -267,12 +283,13 @@ def _check_integrity(libs: Libraries) -> None:
         bad("threat", t.id, "applies_to", t.applies_to, set(libs.elements))
         bad("threat", t.id, "measures", t.measures, set(libs.measures))
         bad("threat", t.id, "cra_refs", t.cra_refs, catalogs["cra"])
-        bad("threat", t.id, "attack_ics", t.attack_ics, catalogs["attack-ics"])
-        bad("threat", t.id, "emb3d", t.emb3d, catalogs["emb3d"])
-        bad("threat", t.id, "iec62443", t.iec62443, catalogs["iec62443"])
+        for cat, attr in CATALOG_FIELDS.items():
+            bad("threat", t.id, attr, getattr(t, attr), catalogs[cat])
     for m in libs.measures.values():
         bad("measure", m.id, "cra_refs", m.cra_refs, catalogs["cra"])
-        bad("measure", m.id, "iec62443", m.iec62443, catalogs["iec62443"])
+        for cat, attr in CATALOG_FIELDS.items():
+            if attr in MeasureTemplate.model_fields:
+                bad("measure", m.id, attr, getattr(m, attr), catalogs[cat])
 
 
 # --- project integration --------------------------------------------------------

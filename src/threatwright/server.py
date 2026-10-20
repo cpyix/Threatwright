@@ -792,11 +792,12 @@ def create_app(
             if len(data) > archive.MAX_UPLOAD:
                 raise HTTPException(413, f"file larger than {archive.MAX_UPLOAD >> 20} MB")
         # keep only the base name: the importer reads the suffix (JSON only) and the stem
-        base = Path(name).name
         with tempfile.TemporaryDirectory() as tmp:
-            file = Path(tmp) / (base if base not in ("", ".", "..") else "upload.json")
-            file.write_bytes(bytes(data))
-            return import_oscal(file, kind)
+            file = os.path.normpath(os.path.join(tmp, Path(name).name or "upload.json"))
+            if not file.startswith(tmp + os.sep):  # ".." (the check CodeQL recognises)
+                raise HTTPException(400, "invalid file name")
+            Path(file).write_bytes(bytes(data))
+            return import_oscal(Path(file), kind)
 
     @app.get("/api/models/{name}/controls")
     def controls(name: str) -> list[dict[str, Any]]:

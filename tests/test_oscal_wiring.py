@@ -88,3 +88,4 @@ def test_server_import_from_browser_upload(
     assert not (project_dir.parent.parent / "evil").exists()
     assert up("catalog.json", "nope").status_code == 422
     assert up("catalog.xml").status_code == 422  # JSON only
+    assert up("..").status_code == 400

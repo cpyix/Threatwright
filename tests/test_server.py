@@ -60,6 +60,11 @@ def test_server_mode_confines_client_paths(project_dir: Path, tmp_path: Path) ->
     assert c.post("/api/open-build-folder").status_code == 501
 
 
+def test_frontend_does_not_serve_files_outside_web_dir(client: TestClient) -> None:
+    leaked = client.get("/..%2Fserver.py")
+    assert leaked.status_code in (200, 503) and "create_app" not in leaked.text
+
+
 def test_short_env_token_refused(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("THREATWRIGHT_TOKEN", "short")
     with pytest.raises(SystemExit, match="at least"):

@@ -50,7 +50,7 @@ def convert(source: Path, target: Path, timeout: int = TIMEOUT) -> None:
             "pdf",
             "--outdir",
             str(outdir),
-            str(source.resolve()),  # absolute: cannot be mistaken for an option
+            str(source),  # always inside a temporary directory, so absolute
         ]
         try:
             # Fixed executable and arguments, no shell.

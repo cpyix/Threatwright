@@ -202,7 +202,7 @@ def pick_folder(title: str, initial: str | None = None) -> str | None:
     Explorer dialog on Windows. Raises RuntimeError without a desktop (container, SSH).
     """
     # absolute, so a value like "--help" can never be read as a dialog option
-    start = str(Path(initial or Path.home()).resolve())
+    start = os.path.abspath(initial or Path.home())
     if sys.platform.startswith("linux"):
         for cmd in (
             [
@@ -251,7 +251,13 @@ def create_app(
         """Locally the user may pick any folder; on a server only inside `root` (ADR-0013)."""
         if jail is None:
             return Path(raw)
-        path = (jail / raw).resolve()  # relative paths count from root; absolute ones replace it
+        # string check before any file access (relative paths count from root, absolute ones
+        # replace it), then again after resolving symlinks
+        base = str(jail)
+        candidate = os.path.normpath(os.path.join(base, raw))
+        if candidate != base and not candidate.startswith(base + os.sep):
+            raise HTTPException(403, "path is outside the folder this server works on")
+        path = Path(candidate).resolve()
         if not path.is_relative_to(jail):
             raise HTTPException(403, "path is outside the folder this server works on")
         return path
@@ -843,9 +849,10 @@ def create_app(
     def frontend(path: str) -> Response:
         if path.startswith("api/"):
             raise HTTPException(404)
-        target = (WEB_DIR / path).resolve()
-        # boundary first: never even probe files outside the bundled frontend
-        if path and target.is_relative_to(WEB_DIR.resolve()) and target.is_file():
+        # boundary first (string check): never even probe files outside the bundled frontend
+        web = os.path.abspath(WEB_DIR)
+        target = os.path.normpath(os.path.join(web, path))
+        if path and target.startswith(web + os.sep) and os.path.isfile(target):
             return FileResponse(target)
         index = WEB_DIR / "index.html"
         if not index.exists():

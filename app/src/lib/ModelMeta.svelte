@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Info from './Info.svelte'
   // Zones (with default environment), configurations and changelog of a model.
   import { api, ApiError } from '../api'
   import { tr } from '../i18n'
@@ -43,7 +44,7 @@
   }
 </script>
 
-<h2>{tr(lang, 'zones')}</h2>
+<h2>{tr(lang, 'zones')} <Info term="zone" /></h2>
 <table>
   <thead>
     <tr><th>ID</th><th>{tr(lang, 'title')}</th>{#each indicators as i}<th>{tr(lang, i)}</th>{/each}<th></th></tr>
@@ -74,7 +75,7 @@
 </table>
 <button onclick={() => (draft.zones = [...(draft.zones ?? []), { id: nextId('Z', draft.zones ?? []), title: '', environment: {} }])}>+ {tr(lang, 'zone')}</button>
 
-<h2>{tr(lang, 'configurations')}</h2>
+<h2>{tr(lang, 'configurations')} <Info term="configurations" /></h2>
 <table>
   <tbody>
     {#each draft.configurations ?? [] as c, n}

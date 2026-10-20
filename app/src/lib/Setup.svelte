@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Info from './Info.svelte'
   // Guided initial setup of a model: product, zones, components, connections, assets, threats.
   // Every step works on the regular model through the existing API (undo and save as usual).
   import { api, ApiError } from '../api'
@@ -280,7 +281,7 @@
     <input id="setup-title" bind:value={meta.title} data-testid="setup-title" />
     <label for="setup-description">{t.description}</label>
     <textarea id="setup-description" rows="7" bind:value={meta.description} placeholder={t.description_placeholder} data-testid="setup-description"></textarea>
-    <h3>{t.configurations}</h3>
+    <h3>{t.configurations} <Info term="configurations" /></h3>
     <p class="muted">{t.configurations_help}</p>
     {#each meta.configurations ?? [] as c, n}
       <div class="row">
@@ -298,7 +299,7 @@
       }}>{t.add_configuration}</button
     >
   {:else if step === 2}
-    <h2>{t.s_zones}</h2>
+    <h2>{t.s_zones} <Info term="zone" /></h2>
     <p>{t.zones_text}</p>
     <p class="muted">{t.zones_hint}</p>
     {#each meta.zones ?? [] as zone, n}
@@ -344,7 +345,7 @@
     <p class="muted">{t.elements_hint}</p>
     <div class="split">
       <div>
-        <h3>{t.library}</h3>
+        <h3>{t.library} <Info term="palette" /></h3>
         <input type="search" bind:value={filter} placeholder={t.search} aria-label={t.search} />
         <!-- svelte-ignore a11y_no_noninteractive_tabindex (scrollable region must be keyboard reachable) -->
         <div class="scroll" tabindex="0" role="region" aria-label={t.library}>
@@ -398,7 +399,7 @@
       </div>
     </div>
   {:else if step === 4}
-    <h2>{t.s_flows}</h2>
+    <h2>{t.s_flows} <Info term="flow" /></h2>
     <p>{t.flows_text}</p>
     <p class="muted">{t.flows_hint}</p>
     {#if elements.length < 2}
@@ -443,7 +444,7 @@
       <p class="muted">{t.none_yet}</p>
     {/each}
   {:else if step === 5}
-    <h2>{t.s_assets}</h2>
+    <h2>{t.s_assets} <Info term="asset_class" /></h2>
     <p>{t.assets_text}</p>
     <table>
       <thead>
@@ -496,7 +497,7 @@
       <button class="primary" type="submit" disabled={busy} data-testid="setup-asset-add">{t.add_asset}</button>
     </form>
   {:else if step === 6}
-    <h2>{t.s_threats}</h2>
+    <h2>{t.s_threats} <Info term="stride" /></h2>
     <p>{t.threats_text}</p>
     <p class="muted">{t.threats_cyber}</p>
     {#each targets as o (o.id)}
@@ -551,7 +552,7 @@
     {/each}
 
     {#if openCyber.length}
-      <h3>{t.open_cyber}</h3>
+      <h3>{t.open_cyber} <Info term="cyber_cause" /></h3>
       <button onclick={answerAllYes} disabled={busy} data-testid="setup-cyber-all">{t.all_yes}</button>
       {#each openCyber as x (x.id)}
         <div class="row item">

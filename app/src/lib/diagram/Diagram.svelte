@@ -6,6 +6,7 @@
   import { app } from '../../state.svelte'
   import type { ElementType } from '../../types'
   import { iconFor } from '../icons'
+  import Info from '../Info.svelte'
   import ObjectForm from '../ObjectForm.svelte'
   import Canvas from './Canvas.svelte'
 
@@ -33,7 +34,7 @@
 <section class="diagram">
   <!-- svelte-ignore a11y_no_noninteractive_tabindex (scrollable region must be keyboard reachable) -->
   <aside class="palette" aria-label={tr(lang, 'palette')} tabindex="0">
-    <h2>{tr(lang, 'palette')}</h2>
+    <h2>{tr(lang, 'palette')} <Info term="palette" /></h2>
     <p class="muted">{tr(lang, 'palette_help')}</p>
     <ul>
       {#each elementTypes as t (t.id)}
@@ -56,14 +57,14 @@
   <div class="main">
     <div class="toolbar">
       <label>
-        {tr(lang, 'flow_type')}
+        <span>{tr(lang, 'flow_type')} <Info term="flow" /></span>
         <select bind:value={flowType} data-testid="flow-type">
           <option value="">{tr(lang, 'generic_flow')}</option>
           {#each flowTypes as t}<option value={t.id}>{t.name[lang]}</option>{/each}
         </select>
       </label>
       <label>
-        {tr(lang, 'configurations')}
+        <span>{tr(lang, 'configurations')} <Info term="configurations" /></span>
         <select bind:value={configuration}>
           <option value="">{tr(lang, 'all_configurations')}</option>
           {#each app.model?.meta.configurations ?? [] as c}<option value={c.id}>{c.id} {c.title}</option>{/each}

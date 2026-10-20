@@ -2,6 +2,7 @@
   import { Panel } from '@xyflow/svelte'
   import { tr } from '../../i18n'
   import { app } from '../../state.svelte'
+  import Info from '../Info.svelte'
 
   const lang = $derived(app.lang)
   const levels = $derived(Object.entries(app.method?.risk_levels.levels ?? {}))
@@ -14,7 +15,7 @@
       {#each levels as [n, name]}
         <li><span class="swatch risk-{n}"></span>{tr(lang, 'risk')} {n} {name[lang]}</li>
       {/each}
-      <li><span class="zone"></span>{tr(lang, 'legend_zone')}</li>
+      <li><span class="zone"></span>{tr(lang, 'legend_zone')} <Info term="zone" /></li>
       <li>
         <svg width="28" height="8" aria-hidden="true"><line x1="0" y1="4" x2="28" y2="4" class="cross" /></svg>
         {tr(lang, 'legend_cross_zone')}

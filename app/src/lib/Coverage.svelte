@@ -3,6 +3,7 @@
   import { label, tr } from '../i18n'
   import { app } from '../state.svelte'
   import type { CoverageRow, ModelPayload } from '../types'
+  import Info from './Info.svelte'
 
   let rows = $state<CoverageRow[]>([])
   let marking = $state<{ id: string; s: string } | null>(null)
@@ -32,7 +33,7 @@
 </script>
 
 <section>
-  <h1>{tr(lang, 'coverage')}</h1>
+  <h1>{tr(lang, 'coverage')} <Info term="coverage" /> <Info term="stride" /></h1>
   <table class="matrix" data-testid="coverage">
     <thead>
       <tr>

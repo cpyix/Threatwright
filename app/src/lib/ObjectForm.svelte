@@ -4,7 +4,9 @@
   import { label, tr } from '../i18n'
   import { app } from '../state.svelte'
   import type { Collection, ModelPayload, Obj, ThreatEvaluation } from '../types'
+  import { termForField } from '../glossary'
   import Assessment from './Assessment.svelte'
+  import Info from './Info.svelte'
   import CustomFieldInput from './CustomField.svelte'
   import MultiSelect from './MultiSelect.svelte'
 
@@ -138,14 +140,21 @@
 
   {#each FIELDS[collection] as f (f.key)}
     {@const value = getPath(draft, f.key)}
+    {@const term = termForField(collection, f.key)}
     <div class="field">
       {#if f.type === 'bool'}
-        <label class="check">
-          <input id={fid(f.key)} type="checkbox" checked={!!value} onchange={(e) => set(f.key, e.currentTarget.checked)} />
-          {fieldLabel(f)}
-        </label>
+        <span class="label-row">
+          <label class="check">
+            <input id={fid(f.key)} type="checkbox" checked={!!value} onchange={(e) => set(f.key, e.currentTarget.checked)} />
+            {fieldLabel(f)}
+          </label>
+          {#if term}<Info {term} />{/if}
+        </span>
       {:else}
-        <label id="{fid(f.key)}-label" for={fid(f.key)}>{fieldLabel(f)}{f.required ? ' *' : ''}</label>
+        <span class="label-row">
+          <label id="{fid(f.key)}-label" for={fid(f.key)}>{fieldLabel(f)}{f.required ? ' *' : ''}</label>
+          {#if term}<Info {term} />{/if}
+        </span>
         {#if f.type === 'text' || f.type === 'date'}
           <input id={fid(f.key)} type={f.type === 'date' ? 'date' : 'text'} value={value ?? ''} oninput={(e) => set(f.key, e.currentTarget.value)} data-testid="field-{f.key}" />
         {:else if f.type === 'number'}
@@ -219,6 +228,11 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 0.2rem;
+  }
+  .label-row {
+    display: flex;
+    align-items: center;
+    gap: 0.1rem;
   }
   .check {
     display: flex;

@@ -1,0 +1,9 @@
+schema_version: 1
+id: F-0004
+uuid: 5da2e64d-7524-469e-8e42-8cfc94430c14
+title: Ethernet / IP connection
+library_ref: lib:ot/element/ip-network@1
+source: E-0005
+target: E-0001
+protocol: Ethernet / IP connection
+assets: [A-0017]

@@ -1,0 +1,9 @@
+schema_version: 1
+id: M-0010
+uuid: daf732e1-d371-43c8-b16b-bd5332510b60
+title: Tamper-evident seals
+description: Housings of controller, safety controller and communication modules as well as unused interfaces are fitted with numbered security seals. During maintenance and regular inspections, the condition of the seals is checked and documented; a broken seal triggers an investigation.
+library_ref: lib:ot/measure/tamper-evident-seals@1
+kind: technical
+evidence: Seal list with numbers and positions, photo documentation, inspection records.
+cra_refs: [AI-I-2-f]

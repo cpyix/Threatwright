@@ -1,0 +1,7 @@
+schema_version: 1
+id: E-0006
+uuid: 99f12246-5e50-46b4-b32a-5cf0fda1baea
+title: Remote service gateway
+library_ref: lib:ot/element/remote-access-gateway@1
+kind: device
+zone: Z-EXTERNAL

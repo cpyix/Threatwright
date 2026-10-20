@@ -1,6 +1,16 @@
 # Threatwright
 
-Local-first threat modelling and risk analysis for products with digital elements under the EU Cyber Resilience Act (CRA), following **BSI TR-03183-1**. Built for machine and plant manufacturers (OT) whose engineers are not security specialists. Status: **pre-alpha**.
+[![ci](https://github.com/cpyix/Threatwright/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/cpyix/Threatwright/actions/workflows/ci.yml)
+[![leakcheck](https://github.com/cpyix/Threatwright/actions/workflows/leakcheck.yml/badge.svg?branch=main)](https://github.com/cpyix/Threatwright/actions/workflows/leakcheck.yml)
+[![audit](https://github.com/cpyix/Threatwright/actions/workflows/audit.yml/badge.svg)](https://github.com/cpyix/Threatwright/actions/workflows/audit.yml)
+[![release](https://img.shields.io/github/v/release/cpyix/Threatwright?include_prereleases&sort=semver)](https://github.com/cpyix/Threatwright/releases)
+[![PyPI](https://img.shields.io/pypi/v/threatwright)](https://pypi.org/project/threatwright/)
+[![Python](https://img.shields.io/badge/python-3.12%20%7C%203.14-3776ab)](pyproject.toml)
+[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
+[![signed with Sigstore](https://img.shields.io/badge/releases-signed%20(Sigstore)-informational)](SECURITY.md)
+[![AI-assisted](https://img.shields.io/badge/code-AI--assisted-8a2be2)](#ai-assisted-development)
+
+Local-first threat modelling and risk analysis for products with digital elements under the EU Cyber Resilience Act (CRA), following **BSI TR-03183-1**. Built for machine and plant manufacturers (OT) whose engineers are not security specialists. Status: **alpha** (0.1.0).
 
 - **Offline and local:** Windows and Linux, no admin rights, no network access at runtime, no telemetry.
 - **Git is the database:** one YAML file per object, stable IDs, saving without changes produces no diff. Merge requests are the change history; `threatwright diff` creates change evidence between releases.
@@ -200,6 +210,19 @@ pip install pre-commit && pre-commit install
 ```
 
 Hooks run gitleaks and a forbidden-files check; CI repeats both over the full history. Security issues: see [SECURITY.md](SECURITY.md).
+
+## AI-assisted development
+
+Large parts of the code, tests and documentation in this repository were written with AI coding assistants ("vibe coding"), directed and reviewed by the maintainer. This is deliberate, and contributions made with AI assistance are explicitly welcome, under the same rules as any other contribution.
+
+What keeps the quality up is not who or what wrote a line, but the gates every change has to pass before it reaches `main` or a release:
+
+- **Pull requests only:** `main` is protected; a change needs the required checks `ci-ok` and `leakcheck` to pass.
+- **Tests and static checks:** unit and end-to-end tests (Playwright, in German and English, including an axe-core accessibility check in light and dark mode) on Ubuntu and Windows with Python 3.12 and 3.14; `ruff`, strict `mypy` and `svelte-check`.
+- **Security scans:** CodeQL code scanning on every pull request; gitleaks and a forbidden-files check over the full Git history; `pip-audit`, `npm audit` and OSV for dependencies, on every pull request and weekly.
+- **Supply chain:** GitHub Actions pinned to commit SHAs, locked dependencies, releases with build provenance, Sigstore-signed checksums and CycloneDX SBOMs, PyPI via Trusted Publishing.
+
+These gates reduce risk; they do not prove the absence of errors. Threatwright supports a threat and risk analysis, it does not replace the judgement of the people responsible for it. Review the results before you rely on them, and report problems or security issues (see [SECURITY.md](SECURITY.md)).
 
 ## License
 

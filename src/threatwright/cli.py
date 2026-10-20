@@ -67,6 +67,11 @@ class Language(StrEnum):
     en = "en"
 
 
+class AuthMode(StrEnum):
+    basic = "basic"
+    none = "none"
+
+
 @app.callback(invoke_without_command=True)
 def main(
     ctx: typer.Context,
@@ -83,6 +88,21 @@ def main(
         list[str] | None,
         typer.Option(help="Host name the browser uses, e.g. threatwright.example.com. Repeatable."),
     ] = None,
+    workspace: Annotated[
+        Path | None,
+        typer.Option(help="Server mode: folder with the projects users may open (default: cwd)."),
+    ] = None,
+    auth: Annotated[
+        AuthMode | None,
+        typer.Option(
+            help="Login: basic (HTTP Basic Auth) or none. Default: basic in server mode, "
+            "none for the local GUI on 127.0.0.1."
+        ),
+    ] = None,
+    users_file: Annotated[
+        Path | None,
+        typer.Option(help="Basic Auth users, one 'name:hash' per line (see hash-password)."),
+    ] = None,
 ) -> None:
     """Without a command: start the GUI on a local port."""
     if version:
@@ -93,7 +113,30 @@ def main(
 
         if project is None and (Path(".") / PROJECT_FILE).exists():
             project = Path(".")
-        serve(project, browser, host, port, tuple(allowed_host or ()))
+        serve(
+            project,
+            browser,
+            host,
+            port,
+            tuple(allowed_host or ()),
+            workspace,
+            auth.value if auth else None,
+            users_file,
+        )
+
+
+@app.command("hash-password")
+def hash_password_cmd(
+    user: Annotated[str, typer.Argument(help="User name for the line.")] = "admin",
+) -> None:
+    """Print a 'name:hash' line for --users-file (HTTP Basic Auth in server mode)."""
+    from threatwright.auth import hash_password
+
+    password = typer.prompt("Password", hide_input=True, confirmation_prompt=True)
+    if len(password) < 12:
+        typer.echo("error: use at least 12 characters", err=True)
+        raise typer.Exit(1)
+    typer.echo(f"{user}:{hash_password(password)}")
 
 
 @app.command("validate")
@@ -324,16 +367,21 @@ def template_derive_cmd(
 
 @app.command("migrate")
 def migrate_cmd(path: Annotated[Path, typer.Argument(help="Project folder.")] = Path(".")) -> None:
-    """Bring all project files to the current schema version."""
+    """Bring all project files to the current schema version (ADR-0015)."""
     project = _load(path)
-    outdated = [i for i in project.issues if i.location == "schema_version"]
-    for issue in outdated:
+    blocking = [i for i in project.issues if i.severity == "error"]
+    for issue in blocking:
         typer.echo(str(issue), err=True)
-    if outdated:
-        # ponytail: no older schema exists yet; add a migration step per version here
-        typer.echo("error: unknown schema_version; this release only knows version 1", err=True)
+    if blocking:
+        # never write a half-loaded project: a broken file must be fixed by a person first
+        typer.echo("error: fix the files above first; nothing was written", err=True)
         raise typer.Exit(1)
-    typer.echo(f"all files at schema version {SCHEMA_VERSION}; nothing to migrate")
+    if not project.migrated:
+        typer.echo(f"all files at schema version {SCHEMA_VERSION}; nothing to migrate")
+        return
+    count = len(project.migrated)
+    project.save()
+    typer.echo(f"migrated {count} file(s) to schema version {SCHEMA_VERSION}")
 
 
 class CiKind(StrEnum):

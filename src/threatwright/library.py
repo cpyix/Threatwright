@@ -158,17 +158,51 @@ def _library_dir(project_root: Path | None, name: str) -> Path | None:
     return next((p for p in candidates if (p / LIBRARY_FILE).exists()), None)
 
 
+_CACHE: dict[tuple[Any, ...], Libraries] = {}
+
+
+def _fingerprint(folder: Path) -> tuple[tuple[str, int, int], ...]:
+    stats = ((p, p.stat()) for p in folder.rglob("*.yaml"))
+    return tuple(sorted((str(p), s.st_mtime_ns, s.st_size) for p, s in stats))
+
+
 def load_libraries(names: list[str], project_root: Path | None = None) -> Libraries:
-    libs = Libraries()
-    for name in names:
-        if not NAME.match(name) or (folder := _library_dir(project_root, name)) is None:
-            libs.issues.append(
-                Issue(project_root, "libraries", f"library '{name}' not found", "library-invalid")
-            )
-            continue
-        _load_one(libs, name, folder)
-    _check_integrity(libs)
-    return libs
+    """Libraries by name; project libraries (libraries/<name>/) win over bundled ones.
+
+    Parsing the YAML takes seconds for a large library and validation needs it on
+    every call, so results are cached until a file of the library changes.
+    """
+    folders = [(n, _library_dir(project_root, n) if NAME.match(n) else None) for n in names]
+    key = (
+        str(project_root),
+        tuple((n, str(f)) for n, f in folders),
+        tuple(_fingerprint(f) for _, f in folders if f is not None),
+    )
+    cached = _CACHE.get(key)
+    if cached is None:
+        cached = Libraries()
+        for name, folder in folders:
+            if folder is None:
+                cached.issues.append(
+                    Issue(
+                        project_root, "libraries", f"library '{name}' not found", "library-invalid"
+                    )
+                )
+                continue
+            _load_one(cached, name, folder)
+        _check_integrity(cached)
+        if len(_CACHE) > 16:  # ponytail: tiny cache, cleared wholesale
+            _CACHE.clear()
+        _CACHE[key] = cached
+    # own containers per caller; the entries themselves are never modified
+    return Libraries(
+        dict(cached.manifests),
+        dict(cached.elements),
+        dict(cached.threats),
+        dict(cached.measures),
+        dict(cached.origin),
+        list(cached.issues),
+    )
 
 
 def _load_one(libs: Libraries, name: str, folder: Path) -> None:

@@ -242,7 +242,7 @@
   <p class="muted small">{t.preview_help}</p>
   <div class="preview" data-testid="setup-preview">
     <SvelteFlowProvider>
-      <Canvas flowType={type} configuration="" types={elementTypes} onselect={() => {}} />
+      <Canvas flowType={type} configuration={[]} types={elementTypes} onselect={() => {}} />
     </SvelteFlowProvider>
   </div>
 {/snippet}

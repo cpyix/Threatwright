@@ -50,7 +50,7 @@ pre-1.0. Older versions: update (see the release notes for migration hints).
 In scope: the Python package, the local web GUI and its API, the portable builds, the
 container image and the CI templates in `ci/`. Notable areas: path traversal and zip-slip on
 import and export, XML/YAML parsing of untrusted files, template sandbox escapes
-(document templates are untrusted code), the local server (binds 127.0.0.1, session token,
+(document templates are untrusted code), the local server (binds 127.0.0.1, CSRF header check, Basic Auth by default in server mode,
 CSP), and any outbound network access (the tool must make none).
 
 Out of scope: vulnerabilities in your own document templates or models, and findings that

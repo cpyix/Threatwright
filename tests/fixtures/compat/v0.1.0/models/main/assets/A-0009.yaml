@@ -1,0 +1,5 @@
+schema_version: 1
+id: A-0009
+uuid: 7d4afac3-2b07-47e6-8f4f-e0c327e03196
+title: Recipes and set points (Operator panel)
+asset_class: BusinessData.Important

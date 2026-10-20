@@ -11,7 +11,7 @@ GUI, CLI and CI must share identical loading, validation, scoring and rendering 
 
 ## Decision
 - Core: Python 3.12+, package `threatwright` with modules `model`, `method`, `rules`, `library`, `render`, `vcs`, `cli`. Pydantic v2, ruamel.yaml, jsonschema, Jinja2 `SandboxedEnvironment`, docxtpl, odfpy, Typer.
-- Server: FastAPI bound to `127.0.0.1`, random port, per-session token, strict CSP. Serves the bundled frontend; no CDN.
+- Server: FastAPI bound to `127.0.0.1`, random port, CSRF protection by a required custom header, strict CSP (ADR-0013 for server mode). Serves the bundled frontend; no CDN.
 - Frontend: **Svelte + TypeScript + Svelte Flow**, auto-layout with ELK.js, built with Vite into the Python package.
 - Shell: **default browser**. `pywebview` is an optional extra (`threatwright --window`), not a default dependency.
 - Product name lives only in `src/threatwright/branding.py` and `app/src/branding.ts`.

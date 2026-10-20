@@ -1,0 +1,456 @@
+# Measures for process automation, supervisory systems, remote sites, IIoT and
+# energy systems.
+measures:
+  - id: controller-run-mode-keyswitch
+    rev: 1
+    title:
+      de: Betriebsartenschalter für Programmänderungen an der Steuerung
+      en: Run mode key switch for program changes on the controller
+    description:
+      de: >-
+        Programmdownloads, Online-Änderungen und Firmware-Updates sind nur möglich, wenn
+        am Gerät ein physischer Schlüsselschalter in der Stellung „Programmieren“ steht.
+        Im Normalbetrieb steht der Schalter auf „Run“, der Schlüssel wird verwahrt. Die
+        Schalterstellung wird an das Leitsystem gemeldet und alarmiert, wenn sie länger
+        als vorgesehen nicht auf „Run“ steht.
+      en: >-
+        Program downloads, online changes and firmware updates are only possible when a
+        physical key switch on the device is in the "program" position. In normal
+        operation the switch is set to "run" and the key is kept in safe custody. The
+        switch position is reported to the control system and raises an alarm if it is
+        not set to "run" for longer than intended.
+    kind: design
+    compensating: false
+    evidence:
+      de: >-
+        Gerätedokumentation zum Schlüsselschalter, Testprotokoll eines abgewiesenen
+        Downloads in Stellung „Run“, Alarmkonfiguration für die Schalterstellung.
+      en: >-
+        Device documentation of the key switch, test report of a rejected download in
+        "run" position, alarm configuration for the switch position.
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    iec62443: [FR2, FR3]
+    sources: ["generic OT security practice"]
+
+  - id: sis-bypass-management
+    rev: 1
+    title:
+      de: Geregelte Überbrückung von Sicherheitsfunktionen
+      en: Managed bypassing of safety instrumented functions
+    description:
+      de: >-
+        Überbrückungen und Wartungsschalter von Sicherheitsfunktionen lassen sich nur mit
+        Berechtigung und Freigabe setzen, sind zeitlich begrenzt, werden dauerhaft im
+        Leitsystem angezeigt und mit Benutzer, Zeitpunkt und Grund protokolliert. Das
+        Logiksystem nimmt Überbrückungsbefehle aus dem Leitsystem nur an, wenn sie
+        zusätzlich vor Ort freigegeben sind, z. B. per Schlüsselschalter.
+      en: >-
+        Bypasses and maintenance override switches of safety instrumented functions can
+        only be set with authorisation and approval, are time-limited, permanently
+        displayed in the control system and logged with user, time and reason. The logic
+        solver accepts bypass commands from the control system only if they are also
+        enabled locally, e.g. by key switch.
+    kind: design
+    compensating: false
+    evidence:
+      de: >-
+        Überbrückungskonzept, Konfiguration der Zeitbegrenzung und Anzeige, Auszug aus dem
+        Überbrückungsprotokoll.
+      en: >-
+        Bypass concept, configuration of time limit and display, excerpt from the bypass
+        log.
+    cra_refs: [AI-I-2-d, AI-I-2-l]
+    iec62443: [FR2, FR6]
+    sources: ["generic OT security practice; functional safety design principle"]
+
+  - id: measurement-cross-check
+    rev: 1
+    title:
+      de: Plausibilisierung von Messwerten durch unabhängige Messungen
+      en: Cross-checking of measured values with independent measurements
+    description:
+      de: >-
+        Wichtige Messwerte werden mit redundanten oder diversitären Messungen, Bilanzen
+        oder physikalischen Zusammenhängen verglichen (z. B. Druck und Durchfluss,
+        Füllstand und Zulaufmenge). Abweichungen, eingefrorene Werte und unplausible
+        Sprünge lösen eine Meldung aus. Ein einzelnes manipuliertes Gerät kann den Prozess
+        so nicht unbemerkt in einen falschen Zustand führen.
+      en: >-
+        Important measured values are compared with redundant or diverse measurements,
+        balances or physical relationships (e.g. pressure and flow, level and inflow).
+        Deviations, frozen values and implausible jumps raise a notification. A single
+        manipulated device thus cannot drive the process into a wrong state unnoticed.
+    kind: design
+    compensating: false
+    evidence:
+      de: >-
+        Liste der überwachten Messstellen mit Vergleichsgröße und Toleranz, Testprotokoll
+        einer erkannten Abweichung.
+      en: >-
+        List of monitored measuring points with reference value and tolerance, test
+        report of a detected deviation.
+    cra_refs: [AI-I-2-f, AI-I-2-k]
+    iec62443: [FR3, FR6]
+    sources: ["generic OT security practice"]
+
+  - id: alarm-configuration-management
+    rev: 1
+    title:
+      de: Geschützte Alarmkonfiguration mit Soll-Ist-Vergleich
+      en: Protected alarm configuration with baseline comparison
+    description:
+      de: >-
+        Alarmgrenzen, Prioritäten, Unterdrückungen und Benachrichtigungsregeln dürfen nur
+        berechtigte Rollen ändern. Jede Änderung wird protokolliert, Unterdrückungen sind
+        zeitlich begrenzt und sichtbar. Die aktive Konfiguration wird regelmäßig
+        automatisch mit einer freigegebenen Alarmdatenbank verglichen; Abweichungen werden
+        gemeldet.
+      en: >-
+        Only authorised roles may change alarm limits, priorities, suppressions and
+        notification rules. Every change is logged, suppressions are time-limited and
+        visible. The active configuration is regularly compared automatically with an
+        approved master alarm database; deviations are reported.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Rollenkonzept für die Alarmverwaltung, Änderungsprotokoll, Bericht des
+        automatischen Abgleichs.
+      en: >-
+        Role concept for alarm management, change log, report of the automatic
+        comparison.
+    cra_refs: [AI-I-2-f, AI-I-2-l, AI-I-2-d]
+    iec62443: [FR2, FR3, FR6]
+    sources: ["generic OT security practice"]
+
+  - id: unidirectional-gateway
+    rev: 1
+    title:
+      de: Einwegübertragung aus dem OT-Netz
+      en: Unidirectional transfer out of the OT network
+    description:
+      de: >-
+        Daten, die nur nach außen gelangen müssen (z. B. Historian-Replikation,
+        Überwachung, Berichte), werden über eine hardwarebasierte Einwegverbindung
+        übertragen. Ein Rückweg in das OT-Netz ist physisch ausgeschlossen, auch bei
+        kompromittierten Systemen auf der Empfangsseite. Parallele bidirektionale Wege
+        werden nicht eingerichtet.
+      en: >-
+        Data that only needs to leave the network (e.g. historian replication,
+        monitoring, reports) is transferred via a hardware-enforced one-way connection. A
+        return path into the OT network is physically excluded, even if systems on the
+        receiving side are compromised. No parallel bidirectional paths are set up.
+    kind: design
+    compensating: false
+    evidence:
+      de: >-
+        Netzplan mit Einwegverbindung, Produktnachweis der Einwegfunktion, Prüfung auf
+        parallele Verbindungen.
+      en: >-
+        Network diagram with the one-way connection, product evidence of the one-way
+        function, check for parallel connections.
+    cra_refs: [AI-I-2-j, AI-I-2-k]
+    iec62443: [FR5]
+    sources: ["generic OT security practice"]
+
+  - id: ot-domain-tiering
+    rev: 1
+    title:
+      de: Eigene OT-Domäne mit gestuften Administrationskonten
+      en: Separate OT domain with tiered administration accounts
+    description:
+      de: >-
+        Die OT-Rechner gehören zu einer eigenen Domäne ohne Vertrauensstellung zur
+        Büro-IT oder sind nicht in eine Domäne eingebunden. Domänenadministratoren melden
+        sich nur an Domänencontrollern und gehärteten Administrationsrechnern an, nicht an
+        Bedien- oder Engineering-Stationen. Dienstkonten haben nur die nötigen Rechte;
+        privilegierte Konten nutzen starke, mehrstufige Authentisierung.
+      en: >-
+        OT hosts belong to a separate domain without trust to the office IT or are not
+        joined to a domain. Domain administrators log on only to domain controllers and
+        hardened administration hosts, not to operator or engineering stations. Service
+        accounts have only the rights they need; privileged accounts use strong
+        multi-factor authentication.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Domänen- und Vertrauenskonzept, Liste privilegierter Konten mit
+        Anmeldebeschränkungen, Konfiguration der Mehrfaktor-Authentisierung.
+      en: >-
+        Domain and trust concept, list of privileged accounts with logon restrictions,
+        multi-factor authentication configuration.
+    cra_refs: [AI-I-2-d, AI-I-2-k]
+    iec62443: [FR1, FR2, FR5]
+    sources: ["generic IT/OT security practice"]
+
+  - id: ot-patch-qualification
+    rev: 1
+    title:
+      de: Qualifizierung von Patches und Virensignaturen vor der Verteilung
+      en: Qualification of patches and antivirus signatures before distribution
+    description:
+      de: >-
+        Betriebssystem-Patches, Virensignaturen und Softwareupdates werden vor der
+        Verteilung auf einem Referenzsystem mit der eingesetzten Leitsystem- oder
+        Steuerungssoftware getestet oder vom Hersteller freigegeben. Die Verteilung
+        erfolgt gestaffelt, zuerst auf redundante oder unkritische Rechner, mit
+        dokumentiertem Rückfallweg. Der Hersteller veröffentlicht, welche Patches er für
+        sein Produkt freigegeben hat.
+      en: >-
+        Operating system patches, antivirus signatures and software updates are tested
+        on a reference system with the deployed control software or approved by the
+        manufacturer before distribution. Deployment is staged, first to redundant or
+        non-critical hosts, with a documented fallback. The manufacturer publishes which
+        patches it has approved for its product.
+    kind: organizational
+    compensating: false
+    evidence:
+      de: >-
+        Freigabeliste des Herstellers, Testprotokoll auf dem Referenzsystem,
+        Verteilplan mit Staffelung.
+      en: >-
+        Manufacturer approval list, test report on the reference system, staged
+        deployment plan.
+    cra_refs: [AI-I-2-c, AI-I-2-h, AI-II-8]
+    iec62443: [FR3, FR7]
+    sources: ["generic OT security practice"]
+
+  - id: cellular-private-apn
+    rev: 1
+    title:
+      de: Mobilfunk ohne öffentliche Erreichbarkeit
+      en: Cellular connectivity without public reachability
+    description:
+      de: >-
+        Mobilfunkgeräte nutzen einen privaten APN oder ein Campusnetz ohne öffentliche
+        IP-Adresse; eingehende Verbindungen aus dem Internet sind nicht möglich. Die
+        Kommunikation zur Gegenstelle läuft zusätzlich Ende-zu-Ende verschlüsselt (z. B.
+        VPN). Die SIM-Karte ist per PIN an das Gerät gebunden; Steuerung per SMS ist
+        abgeschaltet oder auf authentisierte Befehle beschränkt.
+      en: >-
+        Cellular devices use a private APN or campus network without a public IP
+        address; inbound connections from the internet are not possible. Communication
+        with the peer is additionally encrypted end to end (e.g. VPN). The SIM card is
+        bound to the device by PIN; control via SMS is disabled or limited to
+        authenticated commands.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Vertrag bzw. Konfiguration des APN, Portscan von außen ohne Befund,
+        Gerätekonfiguration zu SIM-PIN und SMS-Steuerung.
+      en: >-
+        APN contract or configuration, external port scan without findings, device
+        configuration for SIM PIN and SMS control.
+    cra_refs: [AI-I-2-j, AI-I-2-d, AI-I-2-e]
+    iec62443: [FR5, FR4]
+    sources: ["generic OT security practice"]
+
+  - id: radio-key-management
+    rev: 1
+    title:
+      de: Gerätespezifische Schlüssel für Funknetze
+      en: Device-specific keys for radio networks
+    description:
+      de: >-
+        Für Funkprotokolle wie WirelessHART, LoRaWAN oder Bluetooth LE erhält jedes Gerät
+        eigene Join- bzw. Stammschlüssel, die nicht auf Typenschild, Verpackung oder in
+        Sammellisten im Klartext stehen. Schlüssel werden geschützt übergeben, im Gerät
+        gegen Auslesen geschützt gespeichert und bei Verdacht oder Gerätetausch
+        gewechselt. Der Netzwerkmanager lässt nur erwartete Geräte zu.
+      en: >-
+        For radio protocols such as WirelessHART, LoRaWAN or Bluetooth LE every device
+        receives its own join or root keys, which are not printed in clear text on the
+        rating plate, packaging or in collective lists. Keys are handed over securely,
+        stored in the device protected against readout and changed on suspicion or device
+        replacement. The network manager admits only expected devices.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Schlüsselmanagementkonzept, Nachweis der Einzigartigkeit der Schlüssel,
+        Konfiguration der Zulassungsliste im Netzwerkmanager.
+      en: >-
+        Key management concept, proof of key uniqueness, configuration of the admission
+        list in the network manager.
+    cra_refs: [AI-I-2-d, AI-I-2-e]
+    iec62443: [FR1, FR4]
+    sources: ["generic OT security practice"]
+
+  - id: measurement-data-signing
+    rev: 1
+    title:
+      de: Signierte Messwerte
+      en: Signed measured values
+    description:
+      de: >-
+        Das Messgerät signiert abrechnungs- oder nachweisrelevante Messwerte mit einem
+        gerätespezifischen Schlüssel. Empfänger prüfen die Signatur und verwerfen
+        unsignierte oder veränderte Werte. So fallen Manipulationen auf dem
+        Übertragungsweg und in Zwischenspeichern auf.
+      en: >-
+        The meter signs measured values relevant for billing or compliance with a
+        device-specific key. Recipients verify the signature and discard unsigned or
+        altered values. Manipulation in transit and in intermediate storage thus becomes
+        visible.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Beschreibung des Signaturverfahrens, Testprotokoll eines verworfenen veränderten
+        Messwerts.
+      en: >-
+        Description of the signing procedure, test report of a rejected altered value.
+    cra_refs: [AI-I-2-f]
+    iec62443: [FR3]
+    sources: ["generic OT security practice"]
+
+  - id: independent-hardware-limits
+    rev: 1
+    title:
+      de: Von Software unabhängige Schutzgrenzen
+      en: Protection limits independent of software
+    description:
+      de: >-
+        Grenzen, deren Überschreitung Brand, Explosion, Überdruck oder Zerstörung
+        verursachen kann, werden zusätzlich durch Hardware oder fest eingestellte
+        Schutzgeräte überwacht (z. B. Schmelzsicherung, Überspannungsschutz, mechanisches
+        Sicherheitsventil, Temperaturschalter). Diese Schutzebene lässt sich weder per
+        Kommunikation noch per Firmware verstellen.
+      en: >-
+        Limits whose violation can cause fire, explosion, overpressure or destruction are
+        additionally monitored by hardware or fixed protective devices (e.g. fuse,
+        overvoltage protection, mechanical relief valve, thermal switch). This protection
+        layer can be adjusted neither via communication nor via firmware.
+    kind: design
+    compensating: false
+    evidence:
+      de: >-
+        Schutzkonzept mit unabhängigen Schutzebenen, Datenblätter der Schutzgeräte,
+        Prüfprotokoll.
+      en: >-
+        Protection concept with independent protection layers, data sheets of the
+        protective devices, test report.
+    cra_refs: [AI-I-2-k, AI-I-2-f]
+    iec62443: [FR3]
+    sources: ["generic OT security practice; functional safety design principle"]
+
+  - id: commissioning-interface-time-limited
+    rev: 1
+    title:
+      de: Inbetriebnahmeschnittstelle nur nach Freigabe vor Ort
+      en: Commissioning interface only after local enablement
+    description:
+      de: >-
+        Funk- oder Nahfeldschnittstellen für Inbetriebnahme und Service (Bluetooth LE,
+        NFC, WLAN-Hotspot) sind im Betrieb ausgeschaltet. Sie werden nur durch eine
+        Handlung am Gerät (Taster, Magnet, Display) für begrenzte Zeit aktiviert, die
+        Verbindung erfordert eine Kopplung mit gerätespezifischem Code und die Aktivierung
+        wird protokolliert.
+      en: >-
+        Radio or near-field interfaces for commissioning and service (Bluetooth LE, NFC,
+        WLAN hotspot) are switched off during operation. They are only activated for a
+        limited time by an action on the device (button, magnet, display), the connection
+        requires pairing with a device-specific code and the activation is logged.
+    kind: design
+    compensating: false
+    evidence:
+      de: >-
+        Gerätebeschreibung der Aktivierung, Testprotokoll: Schnittstelle nach Ablauf der
+        Zeit nicht mehr erreichbar.
+      en: >-
+        Device description of the activation, test report: interface no longer reachable
+        after the time has expired.
+    cra_refs: [AI-I-2-j, AI-I-2-d, AI-I-2-b]
+    iec62443: [FR1, FR5]
+    sources: ["generic OT security practice"]
+
+  - id: hardware-secure-element
+    rev: 1
+    title:
+      de: Schlüsselspeicherung in Sicherheitschip
+      en: Key storage in a secure element
+    description:
+      de: >-
+        Private Schlüssel der Geräteidentität werden im Gerät erzeugt und in einem
+        Sicherheitschip (Secure Element, TPM) gespeichert, aus dem sie sich nicht
+        auslesen lassen. Kryptografische Operationen laufen im Chip. Ein Abbild des
+        Speichers oder der Firmware enthält damit keine verwertbaren Schlüssel.
+      en: >-
+        Private keys of the device identity are generated in the device and stored in a
+        secure element or TPM from which they cannot be read out. Cryptographic
+        operations run inside the chip. A memory or firmware image thus contains no
+        usable keys.
+    kind: technical
+    compensating: false
+    evidence:
+      de: >-
+        Hardwarebeschreibung, Nachweis der Schlüsselerzeugung im Chip, Analyse eines
+        Firmware-Abbilds ohne Schlüsselfund.
+      en: >-
+        Hardware description, evidence of key generation in the chip, analysis of a
+        firmware image without key findings.
+    cra_refs: [AI-I-2-e, AI-I-2-d]
+    iec62443: [FR1, FR4]
+    sources: ["generic embedded security practice; MITRE EMB3D"]
+
+  - id: local-autonomy
+    rev: 1
+    title:
+      de: Weiterbetrieb bei Ausfall übergeordneter Systeme
+      en: Continued operation on failure of higher-level systems
+    description:
+      de: >-
+        Steuerungs- und Bedienfunktionen hängen nicht von der ständigen Erreichbarkeit
+        übergeordneter Systeme wie MES, ERP, Cloud, Domänencontroller oder Alarmserver
+        ab. Aufträge und Rezepte werden lokal vorgehalten, Anmeldungen funktionieren mit
+        lokalen Notfallkonten oder zwischengespeicherten Anmeldedaten, Pufferspeicher sind
+        begrenzt und überlaufen ohne Auswirkung auf die Steuerung.
+      en: >-
+        Control and operating functions do not depend on the constant availability of
+        higher-level systems such as MES, ERP, cloud, domain controller or alarm server.
+        Orders and recipes are held locally, logons work with local emergency accounts or
+        cached credentials, buffers are limited and overflow without affecting control.
+    kind: design
+    compensating: false
+    evidence:
+      de: >-
+        Testprotokoll des Betriebs bei getrennter Verbindung zu den übergeordneten
+        Systemen, Beschreibung der Notfallkonten.
+      en: >-
+        Test report of operation with the connection to higher-level systems cut,
+        description of emergency accounts.
+    cra_refs: [AI-I-2-h, AI-I-2-i]
+    iec62443: [FR7]
+    sources: ["generic OT security practice"]
+
+  - id: remote-command-allowlist
+    rev: 1
+    title:
+      de: Begrenzter Befehlssatz für übergeordnete Systeme
+      en: Limited command set for higher-level systems
+    description:
+      de: >-
+        Das Gerät nimmt von Cloud, MES oder Leitstelle nur einen dokumentierten Satz von
+        Befehlen und Parameterbereichen an. Gefahrbringende Funktionen, Firmware-Updates
+        und das Ausführen beliebiger Skripte sind über diesen Weg ausgeschlossen oder
+        erfordern eine Freigabe vor Ort. Werte außerhalb der Bereiche werden abgewiesen
+        und protokolliert.
+      en: >-
+        The device accepts only a documented set of commands and parameter ranges from
+        the cloud, MES or control centre. Hazardous functions, firmware updates and the
+        execution of arbitrary scripts are excluded via this path or require approval on
+        site. Values outside the ranges are rejected and logged.
+    kind: design
+    compensating: false
+    evidence:
+      de: >-
+        Schnittstellenspezifikation mit zulässigen Befehlen und Bereichen,
+        Testprotokoll abgewiesener Befehle.
+      en: >-
+        Interface specification with permitted commands and ranges, test report of
+        rejected commands.
+    cra_refs: [AI-I-2-j, AI-I-2-f, AI-I-2-d]
+    iec62443: [FR2, FR3]
+    sources: ["generic OT security practice"]

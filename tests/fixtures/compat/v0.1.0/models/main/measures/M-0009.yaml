@@ -1,0 +1,9 @@
+schema_version: 1
+id: M-0009
+uuid: bafbc30c-6730-440b-962b-6e0352c2142d
+title: Security requirements for suppliers
+description: 'When procuring controllers, drives, HMIs, network components and software, security requirements are contractually defined: support period, provision of security updates, notification of vulnerabilities, delivery of a component list (SBOM) and secure default settings. Fulfilment is assessed during supplier selection.'
+library_ref: lib:ot/measure/supplier-security-requirements@1
+kind: supply_chain
+evidence: Requirements catalogue or contract clauses, supplier assessment.
+cra_refs: [Art13, AI-II-1]

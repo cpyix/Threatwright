@@ -23,7 +23,7 @@
     onselect,
   }: {
     flowType: string
-    configuration: string
+    configuration: string[] // selected variants; empty = all
     types: ElementType[]
     onselect: (collection: 'elements' | 'flows', id: string | null) => void
   } = $props()
@@ -37,8 +37,17 @@
   let nodes = $state.raw<Node[]>([])
   let edges = $state.raw<Edge[]>([])
 
+  // objects without variants belong to every variant
   const visible = (configs: string[] | undefined) =>
-    !configuration || !configs?.length || configs.includes(configuration)
+    !configuration.length || !configs?.length || configs.some((c) => configuration.includes(c))
+
+  /** Handles facing each other: side by side -> right/left, above each other -> bottom/top. */
+  function sides(a: { x: number; y: number }, b: { x: number; y: number }): [string, string] {
+    const dx = b.x - a.x
+    const dy = b.y - a.y
+    if (Math.abs(dx) * H >= Math.abs(dy) * W) return dx >= 0 ? ['right', 'left'] : ['left', 'right']
+    return dy >= 0 ? ['bottom', 'top'] : ['top', 'bottom']
+  }
 
   function zoneNodes(positions: Map<string, { x: number; y: number }>): Node[] {
     const out: Node[] = []
@@ -94,11 +103,20 @@
     }))
     nodes = [...zoneNodes(positions), ...elementNodes]
     const zoneOf = new Map(app.objects('elements').map((e) => [e.id, e.zone]))
-    edges = app.objects('flows').map((f) => ({
+    edges = app.objects('flows').map((f) => {
+      // anchors follow the geometry, so a connection never jumps to a far side of the box
+      const [sourceHandle, targetHandle] =
+        positions.has(f.source) && positions.has(f.target)
+          ? sides(positions.get(f.source)!, positions.get(f.target)!)
+          : ['right', 'left']
+      return {
       id: f.id,
       source: f.source,
       target: f.target,
-      label: `${f.id} ${f.title}`,
+      sourceHandle,
+      targetHandle,
+      type: 'smoothstep',
+      label: f.title,
       markerEnd: { type: MarkerType.ArrowClosed },
       markerStart: f.bidirectional ? { type: MarkerType.ArrowClosed } : undefined,
       hidden: !visible(f.configurations),
@@ -106,7 +124,8 @@
         (model.max_risks[f.id] ?? 0) >= 4 ? 'high-risk' : '',
         zoneOf.get(f.source) !== zoneOf.get(f.target) ? 'cross-zone' : '',
       ].join(' '),
-    }))
+      }
+    })
   }
 
   /** Smallest zone box containing the point; zone boxes may nest or overlap. */
@@ -164,8 +183,11 @@
       target: c.target,
       type: flowType || null,
     })
-    await app.afterChange(r.model)
+    // afterChange sets the model synchronously; select now, before its validation round,
+    // so a click the user makes meanwhile is not overridden afterwards
+    const done = app.afterChange(r.model)
     onselect('flows', r.id)
+    await done
   }
 
   let host: HTMLDivElement | undefined = $state()
@@ -206,8 +228,9 @@
       x: Math.round(p.x - W / 2),
       y: Math.round(p.y - H / 2),
     })
-    await app.afterChange(r.model)
+    const done = app.afterChange(r.model) // see onconnect: select before validation finishes
     onselect('elements', r.id)
+    await done
   }
 
   export async function autoLayout() {
@@ -215,12 +238,20 @@
     const elk = new ELK()
     const elements = app.objects('elements')
     const leaf = (id: string) => ({ id, width: W, height: H })
+    // generous spacing: room for the connection labels and for lines between the boxes
+    const spacing = {
+      'elk.spacing.nodeNode': '50',
+      'elk.layered.spacing.nodeNodeBetweenLayers': '90',
+      'elk.spacing.edgeNode': '30',
+      'elk.spacing.edgeEdge': '20',
+      'elk.layered.spacing.edgeNodeBetweenLayers': '25',
+    }
     // Zones become compound nodes so ELK keeps trust boundaries apart; the padding
     // matches the box zoneNodes() draws around the members afterwards.
     const zones = (app.model?.meta.zones ?? [])
       .map((z) => ({
         id: `zone:${z.id}`,
-        layoutOptions: { 'elk.padding': `[top=${PAD + 14},left=${PAD},bottom=${PAD},right=${PAD}]` },
+        layoutOptions: { ...spacing, 'elk.padding': `[top=${PAD + 14},left=${PAD},bottom=${PAD},right=${PAD}]` },
         children: elements.filter((e) => e.zone === z.id).map((e) => leaf(e.id)),
       }))
       .filter((z) => z.children.length)
@@ -228,14 +259,21 @@
     const graph = await elk.layout({
       id: 'root',
       layoutOptions: {
+        ...spacing,
         'elk.algorithm': 'layered',
         'elk.direction': 'RIGHT',
         'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
-        'elk.spacing.nodeNode': '60',
-        'elk.layered.spacing.nodeNodeBetweenLayers': '100',
+        'elk.edgeRouting': 'ORTHOGONAL',
+        'elk.edgeLabels.inline': 'true',
       },
       children: [...zones, ...elements.filter((e) => !zoned.has(e.id)).map((e) => leaf(e.id))],
-      edges: app.objects('flows').map((f) => ({ id: f.id, sources: [f.source], targets: [f.target] })),
+      // labels with their size, so ELK keeps space for them between the layers
+      edges: app.objects('flows').map((f) => ({
+        id: f.id,
+        sources: [f.source],
+        targets: [f.target],
+        labels: [{ text: f.title, width: f.title.length * 6.5 + 12, height: 18 }],
+      })),
     })
     const layout: Record<string, { x: number; y: number }> = {}
     for (const c of graph.children ?? []) {
@@ -255,6 +293,7 @@
     bind:edges
     {nodeTypes}
     connectionMode={ConnectionMode.Loose}
+    colorMode="system"
     deleteKey={null}
     fitView
     fitViewOptions={{ maxZoom: 1 }}
@@ -292,7 +331,15 @@
     color: var(--text);
     font-size: 11px;
   }
+  /* xyflow's own controls and labels in the app's colours (light and dark) */
   .canvas :global(.svelte-flow) {
     --xy-background-color: var(--surface);
+    --xy-controls-button-background-color: var(--surface);
+    --xy-controls-button-background-color-hover: var(--surface-2);
+    --xy-controls-button-color: var(--text);
+    --xy-controls-button-color-hover: var(--text);
+    --xy-controls-button-border-color: var(--border);
+    --xy-edge-label-background-color: var(--surface);
+    --xy-edge-label-color: var(--text);
   }
 </style>

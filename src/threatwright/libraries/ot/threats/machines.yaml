@@ -1,0 +1,476 @@
+# Threat templates for machines and robotics: robot controller and teach
+# pendant, CNC controller, safety laser scanner / light curtain, RFID and code
+# readers.
+threats:
+  # --- robot controller and teach pendant ----------------------------------------------
+  - id: robot-program-manipulation
+    rev: 1
+    stride: [T]
+    applies_to: [robot-controller, teach-pendant]
+    title:
+      de: Manipulation von Roboterprogrammen und Positionen über {element}
+      en: Manipulation of robot programs and positions via {element}
+    scenario:
+      de: >-
+        Roboterprogramme, Positionen und Werkzeugdaten lassen sich per Dateiübertragung
+        über das Netz, per USB-Stick oder am Programmierhandgerät ohne Freigabe ändern. Ein
+        Angreifer verschiebt Bahnpunkte, ändert Werkzeug- oder Lastdaten oder fügt
+        Bewegungsbefehle ein; das geänderte Programm läuft beim nächsten Automatikstart.
+      en: >-
+        Robot programs, positions and tool data can be changed without approval via file
+        transfer over the network, via USB stick or on the teach pendant. An attacker
+        shifts path points, changes tool or payload data or inserts motion commands; the
+        changed program runs at the next automatic start.
+    consequence:
+      de: >-
+        Der Roboter kollidiert mit Vorrichtungen oder Werkstücken, fertigt fehlerhafte
+        Teile oder fährt in Bereiche, in denen sich Personen aufhalten können.
+      en: >-
+        The robot collides with fixtures or workpieces, produces defective parts or moves
+        into areas where persons may be present.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    attack_ics: [T0889, T0843, T0821]
+    iec62443: [FR3, FR2]
+    measures: [program-integrity-check, role-based-access, change-management, safety-speed-monitoring]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: robot-safety-configuration-change
+    rev: 1
+    stride: [T, E]
+    applies_to: [robot-controller]
+    title:
+      de: Änderung der Sicherheitskonfiguration von {element} mit bekanntem Sicherheitspasswort
+      en: Change of the safety configuration of {element} with a known safety password
+    scenario:
+      de: >-
+        Schutzzonen, Geschwindigkeits- und Kraftgrenzen für den kollaborierenden Betrieb
+        sind durch ein Sicherheitspasswort geschützt, das ab Werk gesetzt oder im
+        Service-Team weit verbreitet ist. Ein Angreifer mit Zugang zum Programmierhandgerät
+        oder zur Konfigurationssoftware meldet sich damit an und erweitert Zonen oder
+        hebt Grenzwerte an.
+      en: >-
+        Safe zones, speed and force limits for collaborative operation are protected by a
+        safety password that is set at the factory or widely known in the service team.
+        An attacker with access to the teach pendant or the configuration software logs
+        in with it and enlarges zones or raises limits.
+    consequence:
+      de: >-
+        Der Roboter bewegt sich schneller oder mit mehr Kraft als zulässig in
+        Bereichen, in denen Personen arbeiten; schwere Verletzungen sind möglich.
+      en: >-
+        The robot moves faster or with more force than permitted in areas where persons
+        work; serious injuries are possible.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f, AI-I-2-b]
+    attack_ics: [T0836, T0880]
+    emb3d: [TID-311]
+    iec62443: [FR1, FR3]
+    measures: [unique-device-credentials, config-integrity-check, safety-separation, change-management]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: robot-remote-command-interface
+    rev: 1
+    stride: [S, T]
+    applies_to: [robot-controller]
+    title:
+      de: Bewegungsbefehle über die nicht authentisierte Fernsteuerschnittstelle von {element}
+      en: Motion commands via the unauthenticated remote control interface of {element}
+    scenario:
+      de: >-
+        Die Robotersteuerung bietet eine Schnittstelle zur Fernsteuerung an, etwa einen
+        TCP-Socket, eine REST-API oder einen Fernbetriebsmodus, über die Programme
+        gestartet, Variablen gesetzt oder Bewegungen befohlen werden. Die Schnittstelle
+        prüft den Absender nicht. Ein Angreifer im Netz sendet eigene Befehle.
+      en: >-
+        The robot controller offers a remote control interface, e.g. a TCP socket, a REST
+        API or a remote operating mode, through which programs are started, variables set
+        or motions commanded. The interface does not check the sender. An attacker in the
+        network sends own commands.
+    consequence:
+      de: >-
+        Der Roboter startet unerwartet oder führt fremde Bewegungen aus; Personen in der
+        Zelle und Anlagenteile können getroffen werden.
+      en: >-
+        The robot starts unexpectedly or executes foreign motions; persons in the cell and
+        plant components can be hit.
+    environment: {interface: known_network, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-j]
+    attack_ics: [T1692, T0831, T0858]
+    emb3d: [TID-310, TID-406]
+    iec62443: [FR1, FR2]
+    measures: [strong-authentication, unused-ports-closed, firewall-allowlist, local-control-priority]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: pendant-unauthorised-operation
+    rev: 1
+    stride: [S]
+    applies_to: [teach-pendant]
+    title:
+      de: Unbefugte bedienen den Roboter über {element}
+      en: Unauthorised persons operate the robot via {element}
+    scenario:
+      de: >-
+        Die Benutzerstufen des Programmierhandgeräts sind nicht eingerichtet oder alle
+        Personen nutzen dieselbe Stufe mit vollen Rechten. Wer das Gerät in die Hand nimmt,
+        kann den Roboter im Handbetrieb verfahren, Programme ändern und Betriebsarten
+        wechseln.
+      en: >-
+        The user levels of the teach pendant are not set up, or everyone uses the same
+        level with full rights. Anyone who picks up the device can jog the robot in manual
+        mode, change programs and switch operating modes.
+    consequence:
+      de: >-
+        Ungeschulte oder unbefugte Personen verändern Programme oder verfahren den
+        Roboter; Kollisionen und Verletzungen sind möglich.
+      en: >-
+        Untrained or unauthorised persons change programs or jog the robot; collisions and
+        injuries are possible.
+    environment: {interface: local, access: public_restricted, user: instructed}
+    impact: 3
+    safety_related: true
+    cra_refs: [AI-I-2-d]
+    attack_ics: [T0823, T0859]
+    iec62443: [FR1, FR2]
+    measures: [role-based-access, strong-authentication, session-timeout, mode-selection-safety-rated]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: pendant-os-compromise
+    rev: 1
+    stride: [T, E]
+    applies_to: [teach-pendant]
+    title:
+      de: Schadsoftware auf dem Betriebssystem von {element}
+      en: Malware on the operating system of {element}
+    scenario:
+      de: >-
+        Das Programmierhandgerät läuft auf einem Standardbetriebssystem und hat einen
+        USB-Anschluss für Programmsicherungen. Über einen infizierten USB-Stick gelangt
+        Schadsoftware auf das Gerät, verändert die Anzeige von Positionen und Programmen
+        oder zeichnet eingegebene Passwörter auf.
+      en: >-
+        The teach pendant runs on a standard operating system and has a USB port for
+        program backups. Malware reaches the device via an infected USB stick, alters the
+        display of positions and programs or records entered passwords.
+    consequence:
+      de: >-
+        Der Programmierer arbeitet mit falschen Anzeigen und gibt manipulierte Programme
+        frei; erbeutete Passwörter öffnen Sicherheitskonfiguration und Steuerung.
+      en: >-
+        The programmer works with false displays and releases manipulated programs;
+        captured passwords open safety configuration and controller.
+    environment: {interface: local, access: movable, user: skilled}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-k, AI-I-2-j]
+    attack_ics: [T0847, T0832]
+    emb3d: [TID-302, TID-111]
+    iec62443: [FR3, FR2]
+    measures: [usb-port-control, application-allowlisting, autorun-disabled, os-hardening]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  # --- CNC controller --------------------------------------------------------------------
+  - id: cnc-nc-program-manipulation
+    rev: 1
+    stride: [T]
+    applies_to: [cnc-controller]
+    title:
+      de: Manipulierte NC-Programme werden auf {element} übertragen
+      en: Manipulated NC programs are transferred to {element}
+    scenario:
+      de: >-
+        NC-Programme liegen auf einem DNC-Server oder einer Netzfreigabe, auf die viele
+        Benutzer im Büronetz schreiben können, oder werden per USB-Stick übertragen. Ein
+        Angreifer ändert Vorschübe, Drehzahlen, Zustellungen oder Konturen, bevor die
+        Maschine das Programm lädt.
+      en: >-
+        NC programs are stored on a DNC server or network share that many users in the
+        office network can write to, or are transferred via USB stick. An attacker changes
+        feed rates, speeds, infeeds or contours before the machine loads the program.
+    consequence:
+      de: >-
+        Werkzeugbruch, Kollision und Ausschuss sind die Folge; subtile Maßabweichungen
+        bleiben unentdeckt und führen zu fehlerhaften Teilen beim Kunden.
+      en: >-
+        Tool breakage, collision and scrap result; subtle dimensional deviations remain
+        undetected and lead to defective parts at the customer.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    cra_refs: [AI-I-2-f]
+    attack_ics: [T0889, T0843]
+    iec62443: [FR3, FR2]
+    measures: [program-integrity-check, role-based-access, network-segmentation, change-management]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: cnc-machine-data-manipulation
+    rev: 1
+    stride: [T]
+    applies_to: [cnc-controller]
+    title:
+      de: Änderung von Maschinendaten und Korrekturwerten in {element}
+      en: Change of machine data and offsets in {element}
+    scenario:
+      de: >-
+        Maschinendaten, Software-Endschalter sowie Werkzeug- und Nullpunktkorrekturen sind
+        über die Netzwerkschnittstelle der Steuerung oder einen Servicezugang schreibbar.
+        Ein Angreifer verändert diese Werte, ohne die NC-Programme anzufassen.
+      en: >-
+        Machine data, software limit switches and tool and work offsets can be written
+        via the controller's network interface or a service access. An attacker changes
+        these values without touching the NC programs.
+    consequence:
+      de: >-
+        Achsen überfahren ihre Grenzen, Werkzeuge fahren in Spannmittel oder Werkstück;
+        Maschine und Personen können durch weggeschleuderte Teile gefährdet werden.
+      en: >-
+        Axes overrun their limits, tools crash into clamping devices or workpiece; machine
+        and persons can be endangered by ejected parts.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    attack_ics: [T0836]
+    iec62443: [FR3, FR2]
+    measures: [role-based-access, config-integrity-check, safety-speed-monitoring, write-protection-switch]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- safety laser scanner / light curtain ---------------------------------------------
+  - id: safety-sensor-field-reduction
+    rev: 1
+    stride: [T]
+    applies_to: [safety-sensor]
+    title:
+      de: Verkleinerung des Schutzfelds von {element} über die Konfigurationssoftware
+      en: Reduction of the protective field of {element} via the configuration software
+    scenario:
+      de: >-
+        Schutzfelder, Ausblendungen und Muting-Bedingungen werden mit der
+        Konfigurationssoftware des Herstellers über USB oder Ethernet eingestellt und nur
+        durch ein Standard- oder Sammelpasswort geschützt. Ein Angreifer verkleinert damit
+        das Schutzfeld oder blendet Bereiche aus, und die Sicherheitssteuerung prüft die
+        Konfigurationsprüfsumme nicht.
+      en: >-
+        Protective fields, blanking and muting conditions are set with the
+        manufacturer's configuration software via USB or Ethernet and protected only by a
+        default or shared password. An attacker uses it to shrink the protective field or
+        blank out areas, and the safety controller does not check the configuration
+        checksum.
+    consequence:
+      de: >-
+        Personen im Gefahrenbereich werden nicht oder zu spät erkannt; die gefährliche
+        Bewegung wird nicht gestoppt und schwere Verletzungen sind möglich.
+      en: >-
+        Persons in the danger zone are detected late or not at all; the hazardous
+        movement is not stopped and serious injuries are possible.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T0836, T0880, T0837]
+    emb3d: [TID-311]
+    iec62443: [FR1, FR3]
+    measures: [unique-device-credentials, config-integrity-check, change-management, physical-access-control]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: safety-sensor-field-set-switching
+    rev: 1
+    stride: [S, T]
+    applies_to: [safety-sensor]
+    title:
+      de: Vorgetäuschte Feldsatzumschaltung an {element}
+      en: Spoofed field set switching at {element}
+    scenario:
+      de: >-
+        Der Scanner wählt zwischen mehreren Feldsätzen, gesteuert über Eingänge oder
+        Feldbusdaten der Standardsteuerung. Ein Angreifer, der die Standardsteuerung oder
+        den Feldbus kontrolliert, wählt einen kleinen Feldsatz, der für eine andere
+        Betriebssituation gedacht ist.
+      en: >-
+        The scanner switches between several field sets, controlled by inputs or fieldbus
+        data from the standard controller. An attacker controlling the standard controller
+        or the fieldbus selects a small field set intended for another operating
+        situation.
+    consequence:
+      de: >-
+        Der Schutzbereich passt nicht zur tatsächlichen Gefährdung; Personen werden
+        nicht rechtzeitig erkannt.
+      en: >-
+        The protected area does not match the actual hazard; persons are not detected in
+        time.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-I-2-k]
+    attack_ics: [T0831, T0880]
+    iec62443: [FR3, FR5]
+    measures: [safety-separation, safe-communication-profile, mode-selection-safety-rated]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: safety-sensor-measurement-data-disclosure
+    rev: 1
+    stride: [I]
+    applies_to: [safety-sensor]
+    title:
+      de: Messdaten von {element} verraten Aufenthalt von Personen und Anlagenaufbau
+      en: Measurement data of {element} reveal the presence of persons and plant layout
+    scenario:
+      de: >-
+        Der Laserscanner gibt Konturdaten und Feldverletzungen über eine
+        Ethernet-Schnittstelle ohne Authentisierung aus. Ein Angreifer im Netz liest die
+        Daten fortlaufend mit.
+      en: >-
+        The laser scanner outputs contour data and field violations via an Ethernet
+        interface without authentication. An attacker in the network continuously reads
+        the data.
+    consequence:
+      de: >-
+        Aufenthalt und Bewegungen von Personen sowie der Aufbau der Anlage werden
+        offengelegt; die Daten erleichtern gezielte Angriffe auf Schutzfunktionen.
+      en: >-
+        Presence and movements of persons as well as the plant layout are disclosed; the
+        data facilitate targeted attacks on protective functions.
+    environment: {interface: known_network, access: restricted}
+    impact: 2
+    cra_refs: [AI-I-2-e, AI-I-2-g]
+    attack_ics: [T0842, T0882]
+    emb3d: [TID-310]
+    iec62443: [FR4]
+    measures: [data-minimisation, network-segmentation, unused-ports-closed]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: safety-sensor-provoked-stop
+    rev: 1
+    stride: [D]
+    applies_to: [safety-sensor]
+    title:
+      de: Gezielt ausgelöste Sicherheitsstopps über {element}
+      en: Deliberately triggered safety stops via {element}
+    scenario:
+      de: >-
+        Ein Angreifer blendet den Lichtvorhang oder Laserscanner mit einer starken
+        Lichtquelle, stellt Gegenstände in das Schutzfeld oder stört die Sensorik
+        elektromagnetisch. Die Schutzeinrichtung löst wiederholt einen Sicherheitsstopp
+        aus.
+      en: >-
+        An attacker dazzles the light curtain or laser scanner with a strong light source,
+        places objects in the protective field or disturbs the sensor electromagnetically.
+        The protective device repeatedly triggers a safety stop.
+    consequence:
+      de: >-
+        Die Maschine steht still und Produktion fällt aus; häufige Fehlauslösungen
+        verleiten Bediener dazu, die Schutzeinrichtung zu überbrücken.
+      en: >-
+        The machine stops and production is lost; frequent false trips tempt operators to
+        bypass the protective device.
+    environment: {interface: local, access: public_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h]
+    attack_ics: [T0813, T0828]
+    iec62443: [FR7]
+    measures: [physical-access-control, bypass-hardwired-key, security-logging]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- RFID and code readers ---------------------------------------------------------------
+  - id: rfid-tag-cloning
+    rev: 1
+    stride: [S]
+    applies_to: [id-reader]
+    title:
+      de: Kopierte oder gefälschte Transponder und Codes täuschen {element}
+      en: Cloned or forged tags and codes deceive {element}
+    scenario:
+      de: >-
+        Die Identifikation beruht nur auf der auslesbaren Kennung eines Transponders oder
+        dem Inhalt eines gedruckten Codes. Ein Angreifer liest einen gültigen Transponder
+        aus und kopiert ihn oder druckt einen Code nach und gibt sich damit als Werkzeug,
+        Werkstückträger oder berechtigte Person aus.
+      en: >-
+        Identification relies only on the readable identifier of a tag or the content of
+        a printed code. An attacker reads a valid tag and clones it, or reprints a code,
+        and thus impersonates a tool, workpiece carrier or authorised person.
+    consequence:
+      de: >-
+        Falsche Werkzeuge oder Teile werden akzeptiert, Prozessschritte übersprungen oder
+        Funktionen von Unbefugten freigeschaltet.
+      en: >-
+        Wrong tools or parts are accepted, process steps are skipped or functions are
+        enabled by unauthorised persons.
+    environment: {interface: local, access: public_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-d]
+    attack_ics: [T0849]
+    emb3d: [TID-221]
+    iec62443: [FR1]
+    measures: [strong-authentication, parameter-plausibility, physical-access-control]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: rfid-tag-data-manipulation
+    rev: 1
+    stride: [T]
+    applies_to: [id-reader]
+    title:
+      de: Veränderte Daten auf Transpondern, die von {element} gelesen werden
+      en: Altered data on tags read by {element}
+    scenario:
+      de: >-
+        Transponder an Werkzeugen oder Werkstückträgern speichern Prozessdaten wie
+        Werkzeugmaße, Standzeiten oder den Bearbeitungsstatus und sind ohne Schreibschutz
+        beschreibbar. Ein Angreifer ändert die Daten mit einem handelsüblichen
+        Schreib-Lese-Gerät.
+      en: >-
+        Tags on tools or workpiece carriers store process data such as tool dimensions,
+        tool life or processing status and are writable without write protection. An
+        attacker changes the data with a commercially available read/write device.
+    consequence:
+      de: >-
+        Die Maschine rechnet mit falschen Werkzeugmaßen oder überspringt
+        Bearbeitungsschritte; Kollisionen und fehlerhafte Teile sind die Folge.
+      en: >-
+        The machine calculates with wrong tool dimensions or skips processing steps;
+        collisions and defective parts result.
+    environment: {interface: local, access: public_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-f]
+    attack_ics: [T0836]
+    iec62443: [FR3]
+    measures: [parameter-plausibility, write-protection-switch, config-integrity-check]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: code-reader-keystroke-injection
+    rev: 1
+    stride: [T, E]
+    applies_to: [id-reader]
+    title:
+      de: Präparierter Code löst über {element} Tastatureingaben am Rechner aus
+      en: Crafted code triggers keystrokes on the host via {element}
+    scenario:
+      de: >-
+        Das Lesegerät ist im Tastaturemulationsmodus an ein Bediengerät oder einen PC
+        angeschlossen und gibt gelesene Inhalte als Tastatureingaben weiter. Ein Angreifer
+        bringt einen Barcode oder Transponder mit Steuerzeichen und Befehlsfolgen in den
+        Lesebereich, die auf dem Rechner Fenster öffnen und Befehle ausführen.
+      en: >-
+        The reader is connected to an HMI or PC in keyboard emulation mode and passes read
+        content on as keystrokes. An attacker places a barcode or tag containing control
+        characters and command sequences in the reading area, which open windows and
+        execute commands on the host.
+    consequence:
+      de: >-
+        Auf dem Rechner wird fremder Code mit den Rechten des angemeldeten Benutzers
+        ausgeführt; die Bedienoberfläche kann verlassen und das System übernommen werden.
+      en: >-
+        Foreign code is executed on the host with the rights of the logged-in user; the
+        operator interface can be left and the system taken over.
+    environment: {interface: local, access: public_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-f, AI-I-2-j, AI-I-2-k]
+    attack_ics: [T0863, T1701]
+    iec62443: [FR3]
+    measures: [input-validation, kiosk-mode, application-allowlisting]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]

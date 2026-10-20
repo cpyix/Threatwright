@@ -1,0 +1,10 @@
+schema_version: 1
+id: M-0003
+uuid: ba32ccb8-30fd-4ee7-9c48-0424103528bd
+title: Unused ports and services disabled
+description: Unneeded switch ports, network interfaces and network services (e.g. web server, FTP, Telnet, SNMP) are disabled on controller, HMI and switch. Unused physical sockets are additionally closed mechanically. The list of open ports is documented per device and reviewed on every change.
+library_ref: lib:ot/measure/unused-ports-closed@1
+kind: technical
+compensating: true
+evidence: Port scan report per device, switch configuration export with disabled ports, photos of closed sockets.
+cra_refs: [AI-I-2-j, AI-I-2-b]

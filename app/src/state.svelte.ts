@@ -50,6 +50,7 @@ class AppState {
   }
   version = $state('')
   recent = $state<string[]>([])
+  server = $state(false) // runs as a shared server: workspace and upload instead of local folders
   project = $state<ProjectInfo | null>(null)
   method = $state<Method | null>(null)
   cra = $state<Record<string, I18n>>({})
@@ -91,15 +92,17 @@ class AppState {
   }
 
   async init(): Promise<void> {
-    const info = await api<{ version: string; recent: string[] }>('GET', '/app')
+    const info = await api<{ version: string; recent: string[]; server: boolean }>('GET', '/app')
     this.version = info.version
     this.recent = info.recent
+    this.server = info.server
     // Loading takes a moment; if the user navigated meanwhile (e.g. created a new project
     // from the start page), their view wins over the landing view.
     const before = this.view
     try {
       await this.loadProject(await api<ProjectInfo>('GET', '/project'))
-      if (this.view === before) this.view = this.home()
+      // on a server the start page with the project overview comes first
+      if (this.view === before) this.view = this.server ? { kind: 'start' } : this.home()
     } catch {
       if (this.view === before) this.view = { kind: 'start' }
     }

@@ -1,0 +1,18 @@
+schema_version: 1
+id: T-0006
+uuid: cce7bf09-5bd1-4826-83af-65781343727a
+title: Permanently open remote maintenance tunnel via Remote service gateway without operator control
+library_ref: lib:ot/threat/remote-tunnel-always-on@1
+stride: [S, E]
+targets: [E-0006]
+cyber_cause: true
+scenario: The remote maintenance gateway establishes an always-on reverse VPN to the manufacturer by default so that service can connect at any time. The operator can neither enable nor block access and cannot see when someone is connected. Anyone who gains access to the manufacturer side of the tunnel reaches the machine without further barriers at any time.
+consequence: Unnoticed external access to control and operating functions, including manipulation of programs and parameters up to hazardous machine movements.
+safety_related: true
+assessment:
+  interface: external_network
+  access: non_restricted
+  user: skilled
+  impact: 5
+measures: [M-0014, M-0015, M-0016, M-0017]
+cra_refs: [AI-I-2-b, AI-I-2-d, AI-I-2-j]

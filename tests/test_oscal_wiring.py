@@ -8,7 +8,7 @@ from typer.testing import CliRunner
 from threatwright.cli import app
 from threatwright.library import load_libraries
 from threatwright.model.store import Project
-from threatwright.server import TOKEN_HEADER, create_app
+from threatwright.server import API_HEADER, create_app
 
 OSCAL = ROOT / "tests" / "fixtures" / "oscal"
 runner = CliRunner()
@@ -49,7 +49,7 @@ def test_server_import_and_controls(
 ) -> None:
     monkeypatch.setenv("THREATWRIGHT_CONFIG_DIR", str(tmp_path / "cfg"))
     c = TestClient(
-        create_app("t", None, project_dir), base_url="http://127.0.0.1", headers={TOKEN_HEADER: "t"}
+        create_app(None, project_dir), base_url="http://127.0.0.1", headers={API_HEADER: "1"}
     )
     r = c.post(
         "/api/oscal/import",

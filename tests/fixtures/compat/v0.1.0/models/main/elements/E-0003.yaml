@@ -1,0 +1,7 @@
+schema_version: 1
+id: E-0003
+uuid: ed67a9be-b343-4305-98a8-aba696e24397
+title: Remote I/O
+library_ref: lib:ot/element/remote-io@1
+kind: device
+zone: Z-INTERNAL

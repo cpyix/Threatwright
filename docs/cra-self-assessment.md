@@ -14,7 +14,7 @@ Dienstleistungen einbaut, ist für diese selbst Hersteller und prüft eigenstän
 | Anforderung | Umsetzung | Nachweis |
 |---|---|---|
 | Keine bekannten ausnutzbaren Schwachstellen bei Auslieferung | `pip-audit` und `npm audit` wöchentlich und bei jedem PR (der Release-Workflow selbst prüft das nicht erneut) | `.github/workflows/audit.yml` |
-| Sichere Standardkonfiguration | GUI-Server nur auf `127.0.0.1`, zufälliger Port, Sitzungstoken, CSP `default-src 'self'` | ADR-0003, ADR-0007 |
+| Sichere Standardkonfiguration | GUI-Server nur auf `127.0.0.1`, zufälliger Port, CSRF-Schutz per Pflicht-Header, CSP `default-src 'self'`; im Servermodus Anmeldung (HTTP Basic Auth) standardmäßig an | ADR-0003, ADR-0007, ADR-0013 |
 | Schutz vor unbefugtem Zugriff | Kein Netzwerkdienst nach außen; Dateirechte des angemeldeten Benutzers; keine Admin-Rechte nötig | ADR-0007 |
 | Vertraulichkeit | Keine Telemetrie, keine CDNs, keine Update-Prüfung, keine Cloud; Modelle bleiben im eigenen Repository | ADR-0007; Testsuite blockiert ausgehende Verbindungen (`tests/conftest.py`) |
 | Integrität | Dokumentvorlagen laufen in der Jinja-Sandbox; Importe mit Größengrenzen, ohne XML-Entity-Auflösung, ohne Zip-Slip | ADR-0003, Tests |

@@ -1,0 +1,6 @@
+schema_version: 1
+id: A-0001
+uuid: d387f3f3-7c73-435c-9f29-8c75709cab24
+title: Control program (Machine controller)
+description: Know-how and function of the machine
+asset_class: BusinessData.Important

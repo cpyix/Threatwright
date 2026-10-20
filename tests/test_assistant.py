@@ -10,7 +10,7 @@ from threatwright.method import load_method
 from threatwright.model.objects import Measure, Threat
 from threatwright.model.store import Project
 from threatwright.rules import validate
-from threatwright.server import TOKEN_HEADER, create_app
+from threatwright.server import API_HEADER, create_app
 
 
 @pytest.fixture
@@ -105,7 +105,7 @@ def test_m4_endpoints(project_dir: Path, monkeypatch: pytest.MonkeyPatch, tmp_pa
         encoding="utf-8",
     )
     c = TestClient(
-        create_app("t", None, project_dir), base_url="http://127.0.0.1", headers={TOKEN_HEADER: "t"}
+        create_app(None, project_dir), base_url="http://127.0.0.1", headers={API_HEADER: "1"}
     )
     assert any(e["id"] == "plc" for e in c.get("/api/library").json()["elements"])
     el = c.post("/api/models/main/add/element", json={"type": "drive", "x": 5, "y": 6}).json()

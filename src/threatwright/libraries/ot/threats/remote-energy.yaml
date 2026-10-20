@@ -1,0 +1,764 @@
+# Threat templates for remote sites, IIoT connectivity, data diodes and energy
+# systems: RTU, cellular router, IIoT gateway, cloud IoT connector, energy meter,
+# inverter, battery management system and building automation controller.
+threats:
+  # --- remote terminal units ------------------------------------------------------
+  - id: rtu-unattended-site-access
+    rev: 1
+    stride: [T, I]
+    applies_to: [rtu]
+    title:
+      de: Zugriff auf {element} über den Serviceanschluss am unbesetzten Standort
+      en: Access to {element} via the service port at the unattended site
+    scenario:
+      de: >-
+        Die Fernwirkstation steht in einem abgesetzten, unbesetzten Gebäude oder
+        Außenschrank, etwa an einer Pumpstation oder Umspannstation. Ein Angreifer
+        öffnet den Schrank mit einem Standardschlüssel oder durch Aufbrechen und schließt
+        einen Laptop an den lokalen Service- oder Engineering-Anschluss an, der ohne
+        Anmeldung oder mit einem bekannten Passwort Zugriff gewährt.
+      en: >-
+        The remote terminal unit is located in a remote, unattended building or outdoor
+        cabinet, e.g. at a pumping station or substation. An attacker opens the cabinet
+        with a standard key or by force and connects a laptop to the local service or
+        engineering port, which grants access without login or with a known password.
+    consequence:
+      de: >-
+        Der Angreifer liest Datenpunktliste und Zugangsdaten zur Leitstelle aus und
+        verändert Parametrierung oder Logik; Manipulationen wirken, bis sie bei der
+        nächsten Begehung oder durch Fehlverhalten auffallen.
+      en: >-
+        The attacker reads the data point list and credentials for the control centre
+        and changes configuration or logic; the manipulation takes effect until it is
+        noticed at the next inspection or through malfunction.
+    environment: {interface: local, access: public_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-d, AI-I-2-j, AI-I-2-e]
+    attack_ics: [T0836, T0882]
+    emb3d: [TID-224, TID-116]
+    iec62443: [FR1, FR2, FR4]
+    measures: [physical-access-control, tamper-alarm, strong-authentication, debug-interfaces-disabled]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  # --- cellular router ------------------------------------------------------------------
+  - id: cellular-router-public-exposure
+    rev: 1
+    stride: [S, E]
+    applies_to: [cellular-router]
+    title:
+      de: Verwaltungszugang von {element} ist aus dem Internet erreichbar
+      en: Management access of {element} is reachable from the internet
+    scenario:
+      de: >-
+        Der Mobilfunkrouter erhält vom Netzbetreiber eine öffentliche IP-Adresse.
+        Weboberfläche, SSH oder Telnet lauschen auch auf der Mobilfunkschnittstelle.
+        Internetweite Scanner finden das Gerät innerhalb kurzer Zeit; ein Angreifer
+        meldet sich mit Standardzugangsdaten an oder probiert Passwörter durch.
+      en: >-
+        The cellular router receives a public IP address from the network operator.
+        Web interface, SSH or Telnet also listen on the cellular interface. Internet-wide
+        scanners find the device within a short time; an attacker logs in with default
+        credentials or guesses passwords.
+    consequence:
+      de: >-
+        Der Angreifer kontrolliert den Router, öffnet Weiterleitungen in das Anlagennetz
+        und erreicht dahinterliegende Steuerungen direkt aus dem Internet.
+      en: >-
+        The attacker controls the router, opens port forwardings into the plant network
+        and reaches the controllers behind it directly from the internet.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 5
+    cra_refs: [AI-I-2-j, AI-I-2-d, AI-I-2-b]
+    attack_ics: [T0883, T0822, T0859]
+    emb3d: [TID-310, TID-314]
+    iec62443: [FR1, FR5]
+    measures: [cellular-private-apn, firewall-allowlist, no-default-passwords, account-lockout]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: cellular-router-sms-commands
+    rev: 1
+    stride: [T, D]
+    applies_to: [cellular-router]
+    title:
+      de: Gefälschte SMS-Befehle konfigurieren {element} um oder starten es neu
+      en: Forged SMS commands reconfigure or restart {element}
+    scenario:
+      de: >-
+        Der Router nimmt Steuerbefehle per SMS an, etwa zum Neustart, zum Aufbau einer
+        Verbindung oder zum Ändern von Einstellungen. Die Berechtigung wird nur über die
+        Absenderrufnummer geprüft oder gar nicht. Ein Angreifer, der die Rufnummer der
+        SIM-Karte kennt, sendet SMS mit gefälschter Absenderkennung.
+      en: >-
+        The router accepts control commands via SMS, e.g. to restart, to establish a
+        connection or to change settings. Authorisation is only checked via the sender's
+        phone number or not at all. An attacker who knows the SIM card's phone number
+        sends SMS with a spoofed sender ID.
+    consequence:
+      de: >-
+        Die Verbindung zur Anlage wird wiederholt unterbrochen oder auf eine vom Angreifer
+        kontrollierte Gegenstelle umgelenkt; Fernüberwachung und Fernwartung fallen aus.
+      en: >-
+        The connection to the plant is repeatedly interrupted or redirected to a peer
+        controlled by the attacker; remote monitoring and maintenance fail.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-d, AI-I-2-j, AI-I-2-h]
+    attack_ics: [T1692, T0816]
+    emb3d: [TID-406]
+    iec62443: [FR1, FR7]
+    measures: [cellular-private-apn, unused-ports-closed, least-privilege-services]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- IIoT gateway -----------------------------------------------------------------------
+  - id: iiot-gateway-forwarder-redirect
+    rev: 1
+    stride: [T, D]
+    applies_to: [iiot-gateway]
+    title:
+      de: Umgeleitete Weiterleitung von {element} an einen fremden Netzwerkserver
+      en: Forwarding of {element} redirected to a foreign network server
+    scenario:
+      de: >-
+        Das Gateway leitet empfangene Funktelegramme an einen konfigurierten
+        Netzwerkserver weiter. Ein Angreifer mit Zugang zur Weboberfläche ändert Adresse
+        oder Zugangsdaten des Netzwerkservers oder setzt Filter, sodass Telegramme an
+        einen eigenen Server gehen oder verworfen werden.
+      en: >-
+        The gateway forwards received radio frames to a configured network server. An
+        attacker with access to the web interface changes the address or credentials of
+        the network server or sets filters, so that frames go to the attacker's own
+        server or are discarded.
+    consequence:
+      de: >-
+        Sensordaten fehlen in Überwachung und Regelung oder werden vom Angreifer
+        ausgewertet und verändert weitergegeben; Downlink-Befehle kann er selbst erzeugen.
+      en: >-
+        Sensor data is missing in monitoring and control or is evaluated by the attacker
+        and passed on altered; the attacker can generate downlink commands.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-d, AI-I-2-f, AI-I-2-h]
+    attack_ics: [T0884, T0815]
+    emb3d: [TID-412]
+    iec62443: [FR2, FR3, FR7]
+    measures: [strong-authentication, config-integrity-check, mutual-tls, watchdog-safe-state]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  # --- cloud IoT connector ------------------------------------------------------------------
+  - id: iot-device-identity-cloning
+    rev: 1
+    stride: [S]
+    applies_to: [cloud-iot-connector]
+    title:
+      de: Geklonte Geräteidentität meldet sich über {element} an der Plattform an
+      en: Cloned device identity connects to the platform via {element}
+    scenario:
+      de: >-
+        Die Verbindungsdaten zur IoT-Plattform (Verbindungszeichenfolge, symmetrischer
+        Schlüssel, Token oder privater Schlüssel) liegen unverschlüsselt im Dateisystem
+        oder Flash des Geräts. Ein Angreifer liest sie aus einem gekauften oder
+        ausgebauten Gerät aus, etwa über die Debug-Schnittstelle oder ein Speicherabbild,
+        und baut mit ihnen eine eigene Verbindung auf.
+      en: >-
+        The connection data for the IoT platform (connection string, symmetric key,
+        token or private key) is stored unencrypted in the device's file system or
+        flash. An attacker reads it out of a purchased or removed device, e.g. via the
+        debug interface or a memory dump, and establishes their own connection with it.
+    consequence:
+      de: >-
+        Der Angreifer sendet gefälschte Telemetrie unter fremder Identität, empfängt die
+        für das Gerät bestimmten Befehle und Konfigurationen und kann bei
+        flottenweit gleichen Schlüsseln jedes Gerät nachahmen.
+      en: >-
+        The attacker sends forged telemetry under a foreign identity, receives the
+        commands and configuration intended for the device and, with fleet-wide
+        identical keys, can impersonate every device.
+    environment: {interface: physical, access: movable}
+    impact: 4
+    cra_refs: [AI-I-2-d, AI-I-2-e]
+    attack_ics: [T0849]
+    emb3d: [TID-115, TID-214, TID-328]
+    iec62443: [FR1, FR4]
+    measures: [hardware-secure-element, unique-device-credentials, certificate-management, debug-interfaces-disabled]
+    sources: ["generic IoT threat knowledge; MITRE EMB3D"]
+
+  - id: iot-cloud-remote-jobs-abuse
+    rev: 1
+    stride: [T, E]
+    applies_to: [cloud-iot-connector]
+    title:
+      de: Ferngesteuerte Aufträge über {element} führen beliebige Befehle auf Geräten aus
+      en: Remote jobs via {element} execute arbitrary commands on devices
+    scenario:
+      de: >-
+        Der Konnektor setzt Soll-Konfigurationen (Desired Properties), direkte
+        Methodenaufrufe und Fernaufträge der Plattform ungeprüft um, bis hin zum Ausführen
+        von Skripten mit Root-Rechten. Ein Angreifer übernimmt ein Administratorkonto im
+        Mandanten der Plattform, etwa durch Phishing, und startet einen Auftrag für alle
+        Geräte.
+      en: >-
+        The connector applies desired properties, direct method calls and remote jobs
+        from the platform without checks, up to executing scripts with root privileges.
+        An attacker takes over an administrator account in the platform tenant, e.g. by
+        phishing, and starts a job for all devices.
+    consequence:
+      de: >-
+        Konfiguration und Software der gesamten Flotte werden gleichzeitig verändert; die
+        Geräte fallen aus oder dienen als Ausgangspunkt in die Kundennetze.
+      en: >-
+        Configuration and software of the entire fleet are changed simultaneously; the
+        devices fail or serve as a starting point into customer networks.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 5
+    cra_refs: [AI-I-2-d, AI-I-2-f, AI-I-2-j]
+    attack_ics: [T0871, T0859]
+    emb3d: [TID-303]
+    iec62443: [FR2, FR3]
+    measures: [remote-command-allowlist, mfa-remote-access, operator-confirmation-remote, signed-updates]
+    sources: ["generic IoT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: iot-fleet-commands-not-attributable
+    rev: 1
+    stride: [R]
+    applies_to: [cloud-iot-connector]
+    title:
+      de: Über {element} ausgeführte Befehle lassen sich keinem Benutzer zuordnen
+      en: Commands executed via {element} cannot be attributed to a user
+    scenario:
+      de: >-
+        Befehle und Konfigurationsänderungen erreichen das Gerät nur mit der Kennung
+        eines technischen Plattformdienstes. Das Gerät protokolliert nicht, welcher
+        Benutzer der Plattform den Auftrag ausgelöst hat, und die Plattform verknüpft ihre
+        Audit-Daten nicht mit der Ausführung auf dem Gerät. Ein Angreifer oder
+        Innentäter löst Änderungen aus, die sich später niemandem zuordnen lassen.
+      en: >-
+        Commands and configuration changes reach the device only with the identifier of
+        a technical platform service. The device does not log which platform user
+        triggered the job, and the platform does not link its audit data to execution on
+        the device. An attacker or insider triggers changes that can later be attributed
+        to no one.
+    consequence:
+      de: >-
+        Unberechtigte Änderungen fallen spät auf, die Aufklärung eines Vorfalls über
+        Hersteller, Betreiber und Plattformanbieter hinweg ist kaum möglich.
+      en: >-
+        Unauthorised changes are noticed late, investigating an incident across
+        manufacturer, operator and platform provider is hardly possible.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 2
+    cra_refs: [AI-I-2-l]
+    attack_ics: [T0872]
+    iec62443: [FR6, FR1]
+    measures: [security-logging, time-synchronization, log-protection]
+    sources: ["generic IoT threat knowledge"]
+
+  - id: iot-connector-overcollection
+    rev: 1
+    stride: [I]
+    applies_to: [cloud-iot-connector]
+    title:
+      de: '{element} überträgt mehr Daten an die Plattform als nötig'
+      en: '{element} transmits more data to the platform than necessary'
+    scenario:
+      de: >-
+        Der Konnektor sendet vorsorglich alle verfügbaren Variablen, Protokolle und
+        Bedienereingaben an die Plattform, auch Benutzernamen, Schichtzuordnungen oder
+        Rezepturen, die für den Dienst nicht gebraucht werden. Ein Angreifer mit Zugriff
+        auf das Plattformkonto, eine Fehlkonfiguration der Speicher oder ein Mitarbeiter
+        des Anbieters liest diese Daten.
+      en: >-
+        The connector proactively sends all available variables, logs and operator
+        inputs to the platform, including user names, shift assignments or formulations
+        not needed for the service. An attacker with access to the platform account, a
+        misconfigured storage or an employee of the provider reads this data.
+    consequence:
+      de: >-
+        Personenbezogene Daten und Verfahrens-Know-how des Betreibers werden offengelegt;
+        der Hersteller verletzt das Gebot der Datenminimierung.
+      en: >-
+        Personal data and process know-how of the operator are disclosed; the
+        manufacturer violates the principle of data minimisation.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-g, AI-I-2-e]
+    attack_ics: [T0882, T0802]
+    iec62443: [FR4]
+    measures: [data-minimisation, data-encryption-transit, cloud-security-baseline]
+    sources: ["generic IoT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: iot-connector-offline-resource-exhaustion
+    rev: 1
+    stride: [D]
+    applies_to: [cloud-iot-connector]
+    title:
+      de: '{element} erschöpft bei unterbrochener Cloud-Verbindung die Ressourcen des Geräts'
+      en: '{element} exhausts device resources when the cloud connection is interrupted'
+    scenario:
+      de: >-
+        Ist die Plattform nicht erreichbar, puffert der Konnektor Telemetrie ohne Grenze
+        im Speicher oder auf dem Datenträger und versucht ununterbrochen, die Verbindung
+        neu aufzubauen. Ein Angreifer blockiert die ausgehende Verbindung, etwa durch
+        DNS-Manipulation oder Störung der Internetanbindung, über längere Zeit.
+      en: >-
+        If the platform is unreachable, the connector buffers telemetry without limit in
+        memory or on disk and continuously tries to reconnect. An attacker blocks the
+        outgoing connection for an extended period, e.g. by DNS manipulation or by
+        disrupting the internet uplink.
+    consequence:
+      de: >-
+        Speicher oder Datenträger laufen voll, Prozessorlast steigt; lokale Steuer- und
+        Bedienfunktionen auf demselben Gerät werden langsam oder fallen aus.
+      en: >-
+        Memory or disk fills up and processor load rises; local control and operating
+        functions on the same device slow down or fail.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h, AI-I-2-i]
+    attack_ics: [T1695, T0813]
+    emb3d: [TID-222]
+    iec62443: [FR7]
+    measures: [local-autonomy, license-grace-operation, security-testing]
+    sources: ["generic IoT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- data diode ---------------------------------------------------------------------------
+  - id: data-diode-parallel-path
+    rev: 1
+    stride: [E, T]
+    applies_to: [data-diode]
+    title:
+      de: Parallele Verbindung umgeht {element}
+      en: Parallel connection bypasses {element}
+    scenario:
+      de: >-
+        Neben der Einwegverbindung besteht ein zweiter Weg in das OT-Netz, etwa ein
+        Fernwartungszugang, ein Rechner mit zwei Netzwerkkarten oder eine für die
+        Inbetriebnahme eingerichtete Firewall-Regel, die nie entfernt wurde. Ein
+        Angreifer aus dem Büronetz nutzt diesen Weg und gelangt trotz Datendiode in das
+        OT-Netz.
+      en: >-
+        Besides the one-way connection there is a second path into the OT network, e.g.
+        a remote maintenance access, a host with two network cards or a firewall rule set
+        up for commissioning and never removed. An attacker from the office network uses
+        this path and enters the OT network despite the data diode.
+    consequence:
+      de: >-
+        Die angenommene Rückwirkungsfreiheit besteht nicht; Steuerungen sind aus dem
+        Büronetz angreifbar, obwohl das Sicherheitskonzept dies ausschließt.
+      en: >-
+        The assumed absence of a return path does not exist; controllers can be attacked
+        from the office network although the security concept rules this out.
+    environment: {interface: known_network, access: restricted}
+    impact: 5
+    cra_refs: [AI-I-2-j, AI-I-2-k]
+    attack_ics: [T0886, T0884]
+    emb3d: [TID-412]
+    iec62443: [FR5]
+    measures: [unidirectional-gateway, network-segmentation, network-monitoring-ids, change-management]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: data-diode-replica-falsification
+    rev: 1
+    stride: [T]
+    applies_to: [data-diode]
+    title:
+      de: Verfälschung der über {element} übertragenen Daten auf der Empfangsseite
+      en: Falsification of data transferred via {element} on the receiving side
+    scenario:
+      de: >-
+        Die Datendiode schützt nur das OT-Netz. Der Empfangs-Proxy und die Replikate
+        (z. B. Historian-Kopie, Dateiablage) liegen im Büronetz ohne Integritätsschutz.
+        Ein Angreifer im Büronetz verändert dort Messwerte oder Berichte.
+      en: >-
+        The data diode only protects the OT network. The receiving proxy and the
+        replicas (e.g. historian copy, file share) are located in the office network
+        without integrity protection. An attacker in the office network alters measured
+        values or reports there.
+    consequence:
+      de: >-
+        Planung, Qualitätsnachweise und Fernüberwachung beruhen auf falschen Daten; ein
+        tatsächlicher Störzustand wird übersehen.
+      en: >-
+        Planning, quality records and remote monitoring rely on false data; an actual
+        fault condition is overlooked.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-f]
+    attack_ics: [T0832]
+    iec62443: [FR3]
+    measures: [data-encryption-transit, config-integrity-check, measurement-cross-check]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: data-diode-silent-data-loss
+    rev: 1
+    stride: [D]
+    applies_to: [data-diode]
+    title:
+      de: Datenverlust über {element} bleibt unbemerkt
+      en: Data loss via {element} goes unnoticed
+    scenario:
+      de: >-
+        Über die Einwegverbindung gibt es keine Empfangsbestätigung. Ein Angreifer oder
+        ein fehlerhaftes System auf der Sendeseite erzeugt so viel Verkehr, dass Puffer
+        überlaufen, oder bringt den Sende-Proxy zum Stillstand. Die Empfangsseite erkennt
+        nicht, dass Daten fehlen.
+      en: >-
+        There is no acknowledgement across the one-way connection. An attacker or a
+        faulty system on the sending side generates so much traffic that buffers
+        overflow, or stalls the sending proxy. The receiving side does not detect that
+        data is missing.
+    consequence:
+      de: >-
+        Überwachung, Alarmierung und Nachweise außerhalb des OT-Netzes sind lückenhaft,
+        ohne dass dies auffällt.
+      en: >-
+        Monitoring, alerting and records outside the OT network are incomplete without
+        anyone noticing.
+    environment: {interface: known_network, access: restricted}
+    impact: 2
+    cra_refs: [AI-I-2-h, AI-I-2-l]
+    attack_ics: [T1695, T0815]
+    iec62443: [FR7, FR6]
+    measures: [watchdog-safe-state, dos-rate-limiting, network-monitoring-ids]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- energy meter -----------------------------------------------------------------------
+  - id: meter-calibration-manipulation
+    rev: 1
+    stride: [T]
+    applies_to: [energy-meter]
+    title:
+      de: Manipulation von Wandlerverhältnissen und Kalibrierwerten in {element}
+      en: Manipulation of transformer ratios and calibration values in {element}
+    scenario:
+      de: >-
+        Wandlerverhältnisse, Korrekturfaktoren und Zählerstände lassen sich über Modbus
+        oder die Konfigurationssoftware ohne Anmeldung und ohne Plombe oder
+        Schreibschutzschalter schreiben. Ein Angreifer im Netz ändert diese Werte.
+      en: >-
+        Transformer ratios, correction factors and meter readings can be written via
+        Modbus or the configuration software without login and without seal or write
+        protection switch. An attacker in the network changes these values.
+    consequence:
+      de: >-
+        Verbrauchs- und Abrechnungswerte sind dauerhaft falsch; Energiemanagement,
+        Kostenverteilung und Nachweise gegenüber Behörden beruhen auf verfälschten Daten.
+      en: >-
+        Consumption and billing values are permanently wrong; energy management, cost
+        allocation and records for authorities are based on falsified data.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    attack_ics: [T0836]
+    iec62443: [FR3, FR2]
+    measures: [write-protection-switch, config-integrity-check, strong-authentication, security-logging]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: meter-reading-spoofing
+    rev: 1
+    stride: [S, T]
+    applies_to: [energy-meter]
+    title:
+      de: Gefälschte Messwerte im Namen von {element}
+      en: Forged readings in the name of {element}
+    scenario:
+      de: >-
+        Das Energiemanagementsystem fragt den Zähler über Modbus oder M-Bus ab und
+        akzeptiert jede Antwort mit der passenden Adresse. Ein Angreifer schaltet sich in
+        den Übertragungsweg oder antwortet anstelle des Zählers mit erfundenen Werten.
+      en: >-
+        The energy management system polls the meter via Modbus or M-Bus and accepts any
+        response with the matching address. An attacker inserts themselves into the
+        transmission path or answers instead of the meter with fabricated values.
+    consequence:
+      de: >-
+        Lastmanagement und Spitzenlastbegrenzung reagieren auf falsche Werte, Abrechnung
+        und Energienachweise sind verfälscht.
+      en: >-
+        Load management and peak load limiting react to false values, billing and energy
+        records are falsified.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    attack_ics: [T0830, T0849]
+    emb3d: [TID-406]
+    iec62443: [FR1, FR3]
+    measures: [measurement-data-signing, measurement-cross-check, network-segmentation]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: meter-load-profile-disclosure
+    rev: 1
+    stride: [I]
+    applies_to: [energy-meter]
+    title:
+      de: Lastgänge aus {element} verraten Produktion oder Anwesenheit
+      en: Load profiles from {element} reveal production or presence
+    scenario:
+      de: >-
+        Der Zähler speichert hochaufgelöste Lastgänge und gibt sie über Webserver oder
+        Modbus ohne Anmeldung aus. Ein Angreifer liest sie ab und erkennt daraus
+        Schichtbetrieb, Auslastung einzelner Maschinen oder in Wohngebäuden Anwesenheit
+        und Gewohnheiten der Bewohner.
+      en: >-
+        The meter stores high-resolution load profiles and returns them via web server
+        or Modbus without login. An attacker reads them and derives shift patterns,
+        utilisation of individual machines or, in residential buildings, the presence
+        and habits of residents.
+    consequence:
+      de: >-
+        Betriebsgeheimnisse und personenbezogene Daten werden offengelegt; Einbrüche
+        oder gezielte Angriffe lassen sich auf Zeiten ohne Anwesenheit legen.
+      en: >-
+        Business secrets and personal data are disclosed; burglaries or targeted attacks
+        can be timed for periods of absence.
+    environment: {interface: known_network, access: restricted}
+    impact: 2
+    cra_refs: [AI-I-2-e, AI-I-2-g]
+    attack_ics: [T0882]
+    iec62443: [FR4]
+    measures: [role-based-access, data-minimisation, data-encryption-transit]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- inverter -------------------------------------------------------------------------------
+  - id: inverter-grid-settings-manipulation
+    rev: 1
+    stride: [T]
+    applies_to: [der-inverter]
+    title:
+      de: Manipulation der Netzschutz- und Netzregelungseinstellungen von {element}
+      en: Manipulation of the grid protection and grid support settings of {element}
+    scenario:
+      de: >-
+        Netzschutzgrenzen, Abschaltzeiten, Inselnetzerkennung, Leistungsbegrenzung und
+        Blindleistungsverhalten lassen sich per App, Cloud-Portal oder Installateurzugang
+        ändern. Ein Angreifer mit diesem Zugang setzt Werte außerhalb der
+        Netzanschlussregeln, etwa eine abgeschaltete Inselnetzerkennung oder erweiterte
+        Frequenzgrenzen.
+      en: >-
+        Grid protection limits, disconnection times, islanding detection, power
+        limitation and reactive power behaviour can be changed via app, cloud portal or
+        installer access. An attacker with this access sets values outside the grid
+        connection rules, e.g. disabled islanding detection or widened frequency limits.
+    consequence:
+      de: >-
+        Der Wechselrichter speist bei Netzabschaltung weiter ein und gefährdet Personen,
+        die am vermeintlich spannungsfreien Netz arbeiten; Betriebsmittel können
+        beschädigt werden und viele manipulierte Anlagen gefährden die Netzstabilität.
+      en: >-
+        The inverter keeps feeding in when the grid is disconnected and endangers persons
+        working on the supposedly de-energised grid; equipment can be damaged and many
+        manipulated systems endanger grid stability.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T0836, T0831, T0880]
+    iec62443: [FR2, FR3]
+    measures: [independent-hardware-limits, role-based-access, config-integrity-check, remote-command-allowlist]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: inverter-installer-code-shared
+    rev: 1
+    stride: [S, E]
+    applies_to: [der-inverter]
+    title:
+      de: Gemeinsamer Installateurcode von {element} ist öffentlich bekannt
+      en: Shared installer code of {element} is publicly known
+    scenario:
+      de: >-
+        Die Installateurebene des Wechselrichters ist mit einem Code geschützt, der für
+        alle Geräte gleich ist oder sich aus der Seriennummer berechnen lässt. Der Code
+        kursiert in Foren und Installationsanleitungen. Ein Betreiber oder Angreifer gibt
+        ihn ein und erhält Installateurrechte.
+      en: >-
+        The inverter's installer level is protected by a code that is the same for all
+        devices or can be derived from the serial number. The code circulates in forums
+        and installation guides. An operator or attacker enters it and obtains installer
+        rights.
+    consequence:
+      de: >-
+        Netzrelevante Einstellungen, die nur Fachbetrieben vorbehalten sind, werden von
+        Unbefugten geändert; die Rechtetrennung des Geräts ist wirkungslos.
+      en: >-
+        Grid-relevant settings reserved for qualified installers are changed by
+        unauthorised persons; the device's separation of rights is ineffective.
+    environment: {interface: local, access: public_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-d, AI-I-2-b]
+    attack_ics: [T1694, T0859]
+    emb3d: [TID-328, TID-317]
+    iec62443: [FR1, FR2]
+    measures: [unique-device-credentials, strong-authentication, security-logging]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: inverter-fleet-remote-shutdown
+    rev: 1
+    stride: [D]
+    applies_to: [der-inverter]
+    title:
+      de: Flottenweite Abschaltung von {element} über die Fernverwaltung
+      en: Fleet-wide shutdown of {element} via remote management
+    scenario:
+      de: >-
+        Die Wechselrichter sind dauerhaft mit dem Portal des Herstellers verbunden, das
+        Leistungsbegrenzung und Abschaltung ferngesteuert setzen kann. Ein Angreifer
+        kompromittiert das Portal oder ein Konto mit Flottenrechten und schaltet viele
+        Anlagen gleichzeitig ab oder begrenzt ihre Leistung.
+      en: >-
+        The inverters are permanently connected to the manufacturer's portal, which can
+        set power limitation and shutdown remotely. An attacker compromises the portal or
+        an account with fleet rights and shuts down or curtails many systems at the same
+        time.
+    consequence:
+      de: >-
+        Erzeugung fällt großflächig aus, Betreiber verlieren Erträge; ein plötzlicher
+        Leistungssprung vieler Anlagen kann das Stromnetz belasten.
+      en: >-
+        Generation is lost on a large scale and operators lose revenue; a sudden power
+        step of many systems can stress the power grid.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-h, AI-I-2-i, AI-I-2-d]
+    attack_ics: [T0816, T0826, T0828]
+    iec62443: [FR7, FR2]
+    measures: [remote-command-allowlist, mfa-remote-access, cloud-security-baseline, local-control-priority]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- battery management system --------------------------------------------------------------
+  - id: bms-protection-limit-manipulation
+    rev: 1
+    stride: [T]
+    applies_to: [battery-management-system]
+    title:
+      de: Manipulation der Schutzgrenzen in {element}
+      en: Manipulation of the protection limits in {element}
+    scenario:
+      de: >-
+        Grenzwerte für Zellspannung, Ladestrom und Temperatur lassen sich über CAN oder
+        das Service-Werkzeug ohne Authentisierung ändern. Ein Angreifer mit Zugang zum
+        Bus oder zum Serviceanschluss hebt die Ladeschlussspannung oder die
+        Temperaturgrenze an.
+      en: >-
+        Limits for cell voltage, charging current and temperature can be changed via CAN
+        or the service tool without authentication. An attacker with access to the bus
+        or the service port raises the end-of-charge voltage or the temperature limit.
+    consequence:
+      de: >-
+        Zellen werden überladen oder überhitzt; thermisches Durchgehen mit Brand und
+        Gasfreisetzung gefährdet Personen und Gebäude.
+      en: >-
+        Cells are overcharged or overheated; thermal runaway with fire and gas release
+        endangers persons and buildings.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    attack_ics: [T0836, T0879, T0880]
+    emb3d: [TID-224]
+    iec62443: [FR3, FR1]
+    measures: [independent-hardware-limits, config-integrity-check, write-protection-switch, debug-interfaces-disabled]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: bms-can-message-spoofing
+    rev: 1
+    stride: [S, T]
+    applies_to: [battery-management-system]
+    title:
+      de: Gefälschte CAN-Nachrichten täuschen {element} oder das Ladegerät
+      en: Spoofed CAN messages deceive {element} or the charger
+    scenario:
+      de: >-
+        BMS, Zellmodule, Ladegerät und Wechselrichter tauschen Zellwerte, Ladezustand und
+        zulässige Ladeströme über CAN ohne Authentisierung aus. Ein Angreifer mit Zugang
+        zum Bus sendet Nachrichten mit den Kennungen eines Moduls oder des BMS und meldet
+        zu niedrige Zellspannungen oder zu hohe zulässige Ströme.
+      en: >-
+        BMS, cell modules, charger and inverter exchange cell values, state of charge and
+        permissible charging currents via CAN without authentication. An attacker with
+        bus access sends messages with the identifiers of a module or the BMS and reports
+        too low cell voltages or too high permissible currents.
+    consequence:
+      de: >-
+        Das Ladegerät lädt über die zulässigen Grenzen hinaus; Überladung bis zum Brand
+        ist möglich, sofern keine unabhängige Schutzebene greift.
+      en: >-
+        The charger charges beyond the permissible limits; overcharging up to fire is
+        possible unless an independent protection layer intervenes.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    attack_ics: [T1692, T0832, T0831]
+    emb3d: [TID-406]
+    iec62443: [FR1, FR3]
+    measures: [independent-hardware-limits, measurement-cross-check, fieldbus-physical-protection, protocol-security-extension]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: bms-forced-disconnect
+    rev: 1
+    stride: [D]
+    applies_to: [battery-management-system]
+    title:
+      de: Provozierte Schutzabschaltung von {element}
+      en: Provoked protective disconnection of {element}
+    scenario:
+      de: >-
+        Das BMS öffnet die Hauptschütze, wenn es einen Fehler erkennt oder einen
+        Abschaltbefehl erhält. Ein Angreifer sendet über CAN oder die übergeordnete
+        Steuerung wiederholt Abschaltbefehle oder fehlerhafte Zellwerte, die eine
+        Schutzabschaltung auslösen.
+      en: >-
+        The BMS opens the main contactors when it detects a fault or receives a
+        disconnection command. An attacker repeatedly sends disconnection commands or
+        faulty cell values via CAN or the higher-level controller that trigger a
+        protective disconnection.
+    consequence:
+      de: >-
+        Der Speicher steht nicht zur Verfügung, Notstromversorgung oder Lastspitzenkappung
+        fallen aus; häufiges Schalten unter Last verschleißt die Schütze.
+      en: >-
+        The storage is unavailable, backup power or peak shaving fails; frequent
+        switching under load wears out the contactors.
+    environment: {interface: local, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h, AI-I-2-d]
+    attack_ics: [T1692, T0813, T0826]
+    emb3d: [TID-406]
+    iec62443: [FR7, FR1]
+    measures: [fieldbus-physical-protection, parameter-plausibility, protocol-security-extension]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- building automation controller ---------------------------------------------------------
+  - id: bacnet-device-instance-spoofing
+    rev: 1
+    stride: [S]
+    applies_to: [building-controller]
+    title:
+      de: Fremdes Gerät meldet sich mit der Geräteinstanz von {element}
+      en: Foreign device announces itself with the device instance of {element}
+    scenario:
+      de: >-
+        BACnet-Geräte werden über ihre Geräteinstanz gefunden, die sie per I-Am selbst
+        bekannt geben. Ein Angreifer im Gebäudenetz beantwortet Who-Is-Anfragen mit der
+        Instanznummer des Reglers. Bedienstationen und andere Regler binden sich an das
+        falsche Gerät.
+      en: >-
+        BACnet devices are found via their device instance, which they announce
+        themselves with I-Am. An attacker in the building network answers Who-Is requests
+        with the controller's instance number. Operator stations and other controllers
+        bind to the wrong device.
+    consequence:
+      de: >-
+        Leitstation und abhängige Regler erhalten vom Angreifer erzeugte Werte, Befehle
+        erreichen den echten Regler nicht; Heizung, Lüftung oder Zutritt reagieren falsch.
+      en: >-
+        The management station and dependent controllers receive values generated by the
+        attacker, commands do not reach the real controller; heating, ventilation or
+        access control react incorrectly.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T0849, T0832]
+    emb3d: [TID-406]
+    iec62443: [FR1]
+    measures: [protocol-security-extension, network-segmentation, network-monitoring-ids]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]

@@ -1,0 +1,7 @@
+schema_version: 1
+id: E-0001
+uuid: 3f94b57d-bde9-49e6-9efe-89853db3ba0a
+title: Machine controller
+library_ref: lib:ot/element/plc@1
+kind: device
+zone: Z-INTERNAL

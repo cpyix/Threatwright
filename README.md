@@ -15,7 +15,7 @@ Local-first threat modelling and risk analysis for products with digital element
 - **Offline and local:** Windows and Linux, no admin rights, no network access at runtime, no telemetry.
 - **Git is the database:** one YAML file per object, stable IDs, saving without changes produces no diff. Merge requests are the change history; `threatwright diff` creates change evidence between releases.
 - **TR-03183-1 as configuration:** scales, factors, risk matrix and acceptance rules live in a method file with page references and can be overridden per project ([Methodik](docs/methodik.md)).
-- **Building blocks instead of empty forms:** OT library with 42 element types, 131 threat and 96 measure templates; STRIDE assistant, coverage matrix, data flow diagram.
+- **Building blocks instead of empty forms:** OT library with 80 element types, 239 threat and 111 measure templates; STRIDE assistant, coverage matrix, data flow diagram.
 - **Documents from your own templates:** DOCX, ODT, Markdown, HTML, PDF via LibreOffice; layout and outline without code changes ([Vorlagenreferenz](docs/vorlagenreferenz.md)).
 - **CI:** the same checks as the GUI in GitLab or GitHub pipelines, template pre-filled per project ([CI](docs/ci.md)).
 - **Interop:** OSCAL import (catalogs such as Grundschutz++, profiles, component definitions), Threat Dragon and CSV import, CSV/JSON/XLSX export.
@@ -41,7 +41,7 @@ Local-first threat modelling and risk analysis for products with digital element
 
 The screenshots show a neutral demo model built from the library building blocks; `uv run python scripts/screenshots.py` regenerates them.
 
-**Contents:** [Install](#install) · [Usage](#usage) · [Docker](#docker-cli-and-pipelines) · [Hosting the GUI](#hosting-the-gui-container-or-server) · [Documentation](#documentation-german) · [Develop and contribute](#develop-and-contribute) · [License](#license)
+**Contents:** [Install](#install) · [Usage](#usage) · [Docker](#docker-cli-and-pipelines) · [Hosting the GUI](#hosting-the-gui-container-or-server) · [AI assistants](#editing-models-with-an-ai-assistant) · [Documentation](#documentation-german) · [Develop and contribute](#develop-and-contribute) · [License](#license)
 
 ## Use Threatwright
 
@@ -71,11 +71,11 @@ threatwright ci gitlab my-product                  # GitLab pipeline for this pr
 threatwright --help                                # all commands
 ```
 
-Started inside a project folder, `threatwright` opens that project directly. By default the GUI runs on `127.0.0.1` only, on a random port, protected by a per-start token and a strict Content Security Policy; nothing leaves your machine. The GUI follows your browser language (German or English).
+Started inside a project folder, `threatwright` opens that project directly. By default the GUI runs on `127.0.0.1` only, on a random port, is not reachable from other machines and needs no login; a strict Content Security Policy applies and nothing leaves your machine. The GUI follows your browser language (German or English). Projects created with an older release open in newer ones; their files are brought up to date on the next save ([details](#compatibility-and-releases)).
 
 ### Docker (CLI and pipelines)
 
-The image `ghcr.io/cpyix/threatwright:<version>` contains the CLI, the GUI, Git and LibreOffice (for PDF). The pipeline templates use it. Run it on a project in the current folder:
+The image `ghcr.io/cpyix/threatwright:<version>` contains the CLI, the GUI, Git and LibreOffice (for PDF). The pipeline templates use it. Tags: the exact version (e.g. `0.2.0`, recommended for pipelines), `0.2` (newest patch of that minor version) and `latest` (newest stable release); release candidates are only tagged with their version. Run it on a project in the current folder:
 
 ```
 # Linux / macOS
@@ -90,89 +90,108 @@ docker run --rm -v "${PWD}:/work" ghcr.io/cpyix/threatwright:<version> validate 
 
 ### Hosting the GUI (container or server)
 
-Three options and one variable control where the GUI listens ([ADR-0013](docs/adr/0013-self-hosted-gui.md)):
+Secure by default ([ADR-0013](docs/adr/0013-self-hosted-gui.md)): as soon as the GUI is reachable for others, it asks for a login. The local GUI on `127.0.0.1` has no login and is not reachable from other machines.
 
 | Option | Meaning |
 |---|---|
 | `--host 0.0.0.0` | Listen on all interfaces (needed inside a container). Default `127.0.0.1`. |
 | `--port 8080` | Fixed port. Default: random free port. |
 | `--allowed-host NAME` | Host name the browser uses (`localhost`, `threatwright.example.com`, …); accepted on any port. Repeatable. All other Host headers are rejected. |
-| `THREATWRIGHT_TOKEN` (env) | Fixed access token, at least 24 characters, so the link survives restarts. Default: new random token per start. |
+| `--workspace DIR` | Folder with the projects users may open, create and upload. Default: the working directory (`/work` in the image). |
+| `--auth basic` / `--auth none` | Login with HTTP Basic Auth, or none. Default: `basic` as soon as `--host` is not loopback or an `--allowed-host` is set (server mode); `none` for the local GUI. |
+| `--users-file FILE` | Users for Basic Auth, one `name:hash` line each (create lines with `threatwright hash-password <name>`). |
+| `THREATWRIGHT_USER`, `THREATWRIGHT_PASSWORD` (env) | One user without a users file. User defaults to `admin`. |
+
+#### Login
+
+In server mode the GUI always asks for a user name and password (HTTP Basic Auth), in this order of sources:
+
+1. `--users-file`: several users, passwords stored as PBKDF2 hashes. Create a line with `docker run --rm -it ghcr.io/cpyix/threatwright:<version> hash-password alice` and collect the lines in a file.
+2. `THREATWRIGHT_PASSWORD` (and optionally `THREATWRIGHT_USER`): one user.
+3. Neither set: Threatwright generates a password once and stores it in the workspace under `.threatwright/password` (readable by its owner only, ignored by Git, never written to the log). Read it with `docker exec <container> cat /work/.threatwright/password`. It is never open by accident.
+
+Switch the login off only with `--auth none`, and only when something in front of Threatwright already authenticates every request (e.g. a reverse proxy with SSO). Threatwright then prints a warning at start.
+
+Basic Auth sends the password with every request. Beyond your own machine, always put TLS in front (see the Compose example).
+
+#### Persistent storage
+
+Projects, generated documents and the version history (`.threatwright-history`) live in the workspace `/work` inside the container. **Without a volume they are gone when the container is deleted.** Always mount the workspace:
+
+- a host folder: `-v "$PWD/projects:/work"` (easy to back up and to use with Git), or
+- a named volume: `-v threatwright-data:/work` (survives `docker rm` and image updates).
+
+Back up that folder or volume like any other data, and commit the projects to Git.
 
 #### On your own machine with Docker
 
 ```
 # Linux / macOS
-docker run --rm -p 127.0.0.1:8080:8080 -v "$PWD/my-product:/work" --user "$(id -u):$(id -g)" \
-  ghcr.io/cpyix/threatwright:<version> --project /work --no-browser \
+docker run --rm -p 127.0.0.1:8080:8080 -v "$PWD/projects:/work" --user "$(id -u):$(id -g)" \
+  -e THREATWRIGHT_PASSWORD='choose-a-long-password' \
+  ghcr.io/cpyix/threatwright:<version> --no-browser \
   --host 0.0.0.0 --port 8080 --allowed-host localhost
 
 # Windows PowerShell
-docker run --rm -p 127.0.0.1:8080:8080 -v "${PWD}/my-product:/work" `
-  ghcr.io/cpyix/threatwright:<version> --project /work --no-browser `
+docker run --rm -p 127.0.0.1:8080:8080 -v "${PWD}/projects:/work" `
+  -e THREATWRIGHT_PASSWORD='choose-a-long-password' `
+  ghcr.io/cpyix/threatwright:<version> --no-browser `
   --host 0.0.0.0 --port 8080 --allowed-host localhost
 ```
 
-The container prints `open: http://localhost:8080/#token=…`; open that link. `-p 127.0.0.1:8080:8080` keeps the port on your machine only.
+Open `http://localhost:8080/` and log in as `admin`. `-p 127.0.0.1:8080:8080` keeps the port on your machine only. The start page lists the projects in `projects/`; you can open one, create a new one, upload a project from your computer as `.zip` and download the open project as `.zip`.
 
-#### On a server: Docker Compose behind a TLS proxy with login
+#### On a server: Docker Compose with TLS
 
-The proxy ([Caddy](https://caddyserver.com/)) provides HTTPS with an automatic certificate and a username/password login (HTTP Basic Auth) in front of the GUI. Threatwright itself is not published on any port.
+Threatwright asks for the login; the proxy ([Caddy](https://caddyserver.com/)) adds HTTPS with an automatic certificate. Threatwright itself is not published on any port.
 
 ```yaml
 # compose.yaml
 services:
   threatwright:
     image: ghcr.io/cpyix/threatwright:<version>
-    command: [--project, /work, --no-browser, --host, 0.0.0.0, --port, "8080",
-              --allowed-host, threatwright.example.com]
-    environment:
-      THREATWRIGHT_TOKEN: ${THREATWRIGHT_TOKEN}   # e.g. openssl rand -hex 32, in .env
+    command: [--no-browser, --host, 0.0.0.0, --port, "8080",
+              --allowed-host, threatwright.example.com, --users-file, /etc/threatwright/users]
     volumes:
-      - ./my-product:/work   # a Git checkout of the project
+      - ./projects:/work                          # persistent: projects and version history
+      - ./users:/etc/threatwright/users:ro        # lines from `threatwright hash-password <name>`
     restart: unless-stopped
   caddy:
     image: caddy:2
+    command: caddy reverse-proxy --from threatwright.example.com --to threatwright:8080
     ports: ["443:443", "80:80"]
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data
+      - caddy-data:/data                          # persistent: certificates
     restart: unless-stopped
 volumes:
   caddy-data:
 ```
 
-```
-# Caddyfile
-threatwright.example.com {
-	basic_auth {
-		# one line per user: name and bcrypt hash (see below)
-		alice $2a$14$replace-with-the-output-of-hash-password
-	}
-	reverse_proxy threatwright:8080
-}
-```
+Start with `docker compose up -d` and open `https://threatwright.example.com/`. The workspace must be writable by UID 10001 (`chown -R 10001 projects`), or set `user:` to the folder's owner. To add or remove users, edit `users` and run `docker compose restart threatwright`.
 
-Create a password hash for each user and paste it into the `Caddyfile`:
-
-```
-docker run --rm -it caddy:2 caddy hash-password
-```
-
-Start with `docker compose up -d`. Open `https://threatwright.example.com/#token=<THREATWRIGHT_TOKEN>`, log in with the user name and password, and bookmark the link. The project folder must be writable by UID 10001 (`chown -R 10001 my-product`), or set `user:` to the folder's owner. To add or remove users, edit the `Caddyfile` and run `docker compose restart caddy`.
-
-Any other reverse proxy works the same way: terminate TLS, require a login (Basic Auth, or your SSO via e.g. oauth2-proxy), forward to port 8080 and pass the original `Host` header.
+**With your company's login (SSO) instead:** put an authenticating proxy in front (e.g. oauth2-proxy, or a proxy with `basic_auth`), remove `--users-file` and add `--auth none`. Any proxy works: terminate TLS, authenticate, forward to port 8080 and pass the original `Host` header.
 
 #### On a server without Docker
 
-Run `threatwright --project my-product --no-browser --port 8080` (still bound to `127.0.0.1`) and reach it through an SSH tunnel: `ssh -L 8080:127.0.0.1:8080 server`, then open the printed link locally.
+Run `threatwright --project my-product --no-browser --port 8080` (bound to `127.0.0.1`, so not reachable from the network) and reach it through an SSH tunnel: `ssh -L 8080:127.0.0.1:8080 server`, then open `http://127.0.0.1:8080/` locally.
 
 #### Before you host it
 
-- **Put a login in front.** Threatwright itself only checks the token in the link; anyone with the link can read and change the model. Use the proxy login above (or VPN/SSO) and always TLS; never publish port 8080 directly on a network.
-- **One shared session per instance.** Everyone works on the same in-memory state; it suits one person or a coordinated team. Run one instance per project.
-- **Git stays with you.** The GUI saves files into the mounted folder; commit, push and merge requests happen outside, as with the local GUI.
-- **Confined to the project folder.** As soon as the GUI is reachable for others (`--host` other than loopback, or any `--allowed-host`), it only opens, creates and imports inside the `--project` folder (or the working directory). The folder dialog and "open build folder" are switched off; pass the project with `--project`.
+- **Login and TLS.** Keep the login on (default), use long passwords, and serve it over HTTPS beyond your own machine.
+- **One shared session per instance.** Everyone works on the same open project and in-memory state; it suits one person or a coordinated team. Run one instance per team if several people work in parallel.
+- **Persistent storage.** Mount `/work` (see above), or the data is lost with the container.
+- **Git stays with you.** The GUI saves files into the workspace; commit, push and merge requests happen outside, as with the local GUI.
+- **Confined to the workspace.** The GUI only opens, creates, uploads and imports inside the workspace. Uploaded archives are checked (size limit, no paths outside the target folder, no symlinks). The native folder dialog and "open build folder" are switched off.
+- **The local GUI** (no `--host`) is reachable from your own machine only and has no login; other users and programs on the same machine can reach it.
+
+### Editing models with an AI assistant
+
+Project files are plain YAML, so an AI assistant can create or change a model directly in the files. [`skills/threatwright-model/SKILL.md`](skills/threatwright-model/SKILL.md) tells it how: project layout, every file format with examples, the risk method values, the workflow from scope to measures, and the rules it must keep (stable ids, no invented facts, rule 3.3 decided per threat, `threatwright validate` after every change).
+
+- **Claude:** copy the folder `skills/threatwright-model` into your skills directory (e.g. `~/.claude/skills/`); the skill loads when you ask to build or edit a Threatwright model.
+- **Other assistants:** give them `SKILL.md` as instructions or context.
+
+Review what the assistant changed (e.g. with `git diff` or `threatwright diff`) before you rely on it.
 
 ### Documentation (German)
 
@@ -223,6 +242,17 @@ scripts/               repo maintenance (leak checks, library coverage)
 ```
 
 Architecture decisions (English): [`docs/adr/`](docs/adr/). Planned work: [ROADMAP.md](ROADMAP.md).
+
+### Compatibility and releases
+
+Projects from any earlier release open in later releases ([ADR-0015](docs/adr/0015-compatibility.md)): every file carries a `schema_version`, older files are upgraded on load and written on the next save (or with `threatwright migrate`), and files from a newer release are refused with a clear message. A change to the file format needs a migration step in `src/threatwright/model/migrations.py`.
+
+Release checklist:
+
+1. Version in `pyproject.toml`, `src/threatwright/__init__.py`, `app/package.json` (and `uv lock`, `npm install`).
+2. `uv run python scripts/compat_snapshot.py`: adds `tests/fixtures/compat/v<version>/`; commit it. CI then checks that every later release still opens it.
+3. Optionally `uv run python scripts/screenshots.py` for the README images.
+4. Merge, then tag `v<version>` on `main`; the release workflow builds and publishes everything.
 
 ### Contributing
 

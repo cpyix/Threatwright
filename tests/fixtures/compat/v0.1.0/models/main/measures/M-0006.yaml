@@ -1,0 +1,9 @@
+schema_version: 1
+id: M-0006
+uuid: 69533abf-1168-4c92-be43-5c75cd07e471
+title: Strong authentication
+description: All access to controller, HMI, web interface and engineering interface requires authentication with sufficiently strong passwords, PIN plus token or certificates. Minimum length and complexity are enforced technically. Unauthenticated access, even read access to diagnostic data, is avoided or explicitly justified.
+library_ref: lib:ot/measure/strong-authentication@1
+kind: technical
+evidence: Configuration export of the password policy, list of all access points with authentication method, test report.
+cra_refs: [AI-I-2-d]

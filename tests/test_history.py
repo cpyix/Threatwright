@@ -7,9 +7,7 @@ from fastapi.testclient import TestClient
 
 from threatwright import history
 from threatwright.model.store import Project
-from threatwright.server import TOKEN_HEADER, _snapshot, create_app
-
-TOKEN = "t"
+from threatwright.server import API_HEADER, _snapshot, create_app
 
 
 @pytest.fixture(autouse=True)
@@ -18,8 +16,8 @@ def config_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def client(project_dir: Path) -> TestClient:
-    app = create_app(TOKEN, None, project_dir)
-    return TestClient(app, base_url="http://127.0.0.1", headers={TOKEN_HEADER: TOKEN})
+    app = create_app(None, project_dir)
+    return TestClient(app, base_url="http://127.0.0.1", headers={API_HEADER: "1"})
 
 
 def measures(c: TestClient) -> list[str]:

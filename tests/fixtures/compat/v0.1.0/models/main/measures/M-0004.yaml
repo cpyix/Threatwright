@@ -1,0 +1,9 @@
+schema_version: 1
+id: M-0004
+uuid: a1e83ef2-fac5-4d33-9172-a03315d07475
+title: Separation of safety and standard control
+description: Safety functions (emergency stop, guard door monitoring, safely limited speed) are implemented in a dedicated safety controller or hardwired, not in the standard controller or on a PC. The standard controller can neither switch off safety functions nor change their parameters. Personal protection is thus maintained even if the standard controller is compromised.
+library_ref: lib:ot/measure/safety-separation@1
+kind: design
+evidence: Safety concept or electrical drawing with separate safety controller, validation report of the safety functions.
+cra_refs: [AI-I-2-k, AI-I-2-f]

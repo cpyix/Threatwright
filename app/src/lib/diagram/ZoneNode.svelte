@@ -1,10 +1,10 @@
 <script lang="ts">
   import type { NodeProps } from '@xyflow/svelte'
 
-  let { data }: NodeProps & { data: { title: string; width: number; height: number } } = $props()
+  let { data }: NodeProps & { data: { id: string; title: string; width: number; height: number } } = $props()
 </script>
 
-<div class="zone" style:width="{data.width}px" style:height="{data.height}px">
+<div class="zone" style:width="{data.width}px" style:height="{data.height}px" data-testid="zone-{data.id}">
   <span>{data.title}</span>
 </div>
 

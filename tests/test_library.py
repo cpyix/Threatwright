@@ -1,3 +1,4 @@
+import os
 import shutil
 from pathlib import Path
 
@@ -71,6 +72,22 @@ def test_project_library_overrides_and_outdated_refs(tmp_path: Path) -> None:
 
     out = runner.invoke(app, ["library", "update", str(root)]).stdout
     assert "main/E-0001" in out and "rev 2" in out
+
+
+def test_library_cache_follows_file_changes(tmp_path: Path) -> None:
+    root = tmp_path / "p"
+    shutil.copytree(FIXTURE, root)
+    own_library(root)
+    first = load_libraries(["ot", "own"], root)
+    assert load_libraries(["ot", "own"], root).elements.keys() == first.elements.keys()
+    first.elements.clear()  # callers get their own containers
+    assert load_libraries(["ot", "own"], root).elements
+
+    elements = next((root / "libraries" / "own").glob("elements*.yaml"))
+    text = elements.read_text(encoding="utf-8")
+    elements.write_text(text.replace("SPS (Hausstandard)", "SPS (geändert)"), encoding="utf-8")
+    os.utime(elements, ns=(elements.stat().st_atime_ns, elements.stat().st_mtime_ns + 10**9))
+    assert load_libraries(["ot", "own"], root).elements["plc"].name.de == "SPS (geändert)"
 
 
 def test_unknown_library_and_cra_ref(tmp_path: Path) -> None:

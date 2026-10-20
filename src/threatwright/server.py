@@ -24,7 +24,7 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import ValidationError
 
-from threatwright import __version__, assistant, history
+from threatwright import __version__, archive, assistant, history
 from threatwright.arc import ArcOverride, applicability, set_override
 from threatwright.branding import PRODUCT_NAME, PROJECT_FILE
 from threatwright.ci import render_ci
@@ -67,6 +67,7 @@ WEB_DIR = Path(__file__).parent / "web"
 TOKEN_HEADER = "X-Threatwright-Token"  # noqa: S105 - header name, not a secret
 MODEL_NAME = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 MAX_BODY = 1 << 20
+UPLOAD_PATH = "/api/project/upload"
 CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
     "font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; "
@@ -290,6 +291,11 @@ def create_app(
         if jail is not None:
             raise HTTPException(501, "not available when Threatwright runs as a server")
 
+    def server_only() -> Path:
+        if jail is None:
+            raise HTTPException(501, "only when Threatwright runs as a server")
+        return jail
+
     session = Session()
     app.state.session = session
     if project is not None:
@@ -315,7 +321,8 @@ def create_app(
             sent = request.headers.get(TOKEN_HEADER, "")
             if not secrets.compare_digest(sent, token):
                 return JSONResponse({"detail": "invalid session token"}, status_code=401)
-            if int(request.headers.get("content-length") or 0) > MAX_BODY:
+            limit = archive.MAX_UPLOAD if request.url.path == UPLOAD_PATH else MAX_BODY
+            if int(request.headers.get("content-length") or 0) > limit:
                 return JSONResponse({"detail": "request too large"}, status_code=413)
         response: Response = await call_next(request)
         response.headers.setdefault("Content-Security-Policy", CSP)
@@ -328,7 +335,51 @@ def create_app(
 
     @app.get("/api/app")
     def app_info() -> dict[str, Any]:
-        return {"product": PRODUCT_NAME, "version": __version__, "recent": _recent()}
+        return {
+            "product": PRODUCT_NAME,
+            "version": __version__,
+            "server": jail is not None,
+            # the recent list holds paths of this machine; on a server the workspace replaces it
+            "recent": [] if jail is not None else _recent(),
+        }
+
+    @app.get("/api/workspace")
+    def workspace() -> dict[str, Any]:
+        """Server mode: the projects in the folder this server works on."""
+        return {"projects": archive.projects_in(server_only())}
+
+    @app.post(UPLOAD_PATH)
+    async def upload_project(request: Request, folder: str) -> dict[str, Any]:
+        """Server mode: a project zipped on the user's machine becomes a folder in the workspace."""
+        server_only()
+        target = client_path(folder)
+        data = bytearray()
+        async for chunk in request.stream():  # also bounded without a content-length header
+            data += chunk
+            if len(data) > archive.MAX_UPLOAD:
+                raise HTTPException(413, f"archive larger than {archive.MAX_UPLOAD >> 20} MB")
+        with session.lock:
+            try:
+                archive.unpack(bytes(data), target)
+                session.open(target)
+            except (archive.ArchiveError, LoadError, OSError) as exc:
+                raise HTTPException(400, str(exc)) from exc
+            return project_info()
+
+    @app.get("/api/project/download")
+    def download_project() -> Response:
+        """The open project as .zip (the saved state), e.g. to continue locally."""
+        with session.lock:
+            if session.dirty:
+                raise HTTPException(409, "save your changes before downloading")
+            root = session.require().root
+            data = archive.pack(root)
+        name = f"{root.resolve().name}.zip"
+        return Response(
+            data,
+            media_type="application/zip",
+            headers={"Content-Disposition": f'attachment; filename="{name}"'},
+        )
 
     @app.post("/api/project/open")
     def open_project(body: dict[str, str]) -> dict[str, Any]:
@@ -972,6 +1023,7 @@ def serve(
     host: str = "127.0.0.1",
     port: int = 0,
     allowed_hosts: tuple[str, ...] = (),
+    workspace: Path | None = None,
 ) -> None:
     """Start the GUI server; default a random free localhost port."""
     import socket
@@ -987,7 +1039,10 @@ def serve(
     port = sock.getsockname()[1]
     # reachable by others (bound beyond loopback, or behind a proxy): confine client paths
     shared = bool(allowed_hosts) or host not in ("127.0.0.1", "::1", "localhost")
-    root = (project or Path.cwd()) if shared else None
+    # server mode works in a workspace folder holding any number of projects
+    root = (workspace or Path.cwd()).resolve() if shared else None
+    if root is not None and project is not None and not project.resolve().is_relative_to(root):
+        raise SystemExit(f"--project must be inside the workspace {root}")
     app = create_app(token, port, project, frozenset(allowed_hosts), root)
     shown = allowed_hosts[0] if allowed_hosts else "127.0.0.1"
     url = f"http://{shown}:{port}/#token={token}"

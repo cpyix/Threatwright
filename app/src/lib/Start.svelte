@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { api, ApiError } from '../api'
+  import { api, ApiError, download, upload } from '../api'
   import { PRODUCT_NAME } from '../branding'
   import { tr } from '../i18n'
   import { app, type View } from '../state.svelte'
@@ -38,6 +38,34 @@
     }
   }
 
+  // --- server mode: projects in the workspace, upload from the user's machine --------
+  let serverProjects = $state<{ path: string; name: string }[]>([])
+  let zip = $state<File | null>(null)
+  let zipFolder = $state('')
+
+  $effect(() => {
+    if (!app.server) return
+    void app.project // refresh after opening, creating or uploading
+    api<{ projects: { path: string; name: string }[] }>('GET', '/workspace')
+      .then((r) => (serverProjects = r.projects))
+      .catch(() => (serverProjects = []))
+  })
+
+  const importZip = () => {
+    const file = zip!
+    const folder = zipFolder.trim() || file.name.replace(/\.zip$/i, '')
+    return run(() => upload<ProjectInfo>(`/project/upload?folder=${encodeURIComponent(folder)}`, file))
+  }
+
+  async function downloadZip() {
+    error = ''
+    try {
+      await download('/project/download', `${app.project?.config.name ?? 'project'}.zip`)
+    } catch (e) {
+      error = e instanceof ApiError ? e.message : String(e)
+    }
+  }
+
   const open = (path: string) => run(() => api<ProjectInfo>('POST', '/project/open', { path }))
   const create = () =>
     run(() =>
@@ -56,6 +84,44 @@
   <h1>{PRODUCT_NAME} <span class="muted">{app.version}</span></h1>
   {#if error}<p class="error" role="alert">{error}</p>{/if}
 
+  {#if app.project}
+    <div class="card">
+      <h2>{tr(lang, 'current_project')}: {app.project.config.name}</h2>
+      <p class="muted">{tr(lang, 'download_help')}</p>
+      <button onclick={downloadZip} data-testid="download-project">{tr(lang, 'download_zip')}</button>
+    </div>
+  {/if}
+
+  {#if app.server}
+    <div class="card" data-testid="server-projects">
+      <h2>{tr(lang, 'server_projects')}</h2>
+      {#each serverProjects as p (p.path)}
+        <div class="row item">
+          <span class="grow">{p.path}</span>
+          <button onclick={() => open(p.path)} data-testid="open-server-{p.path}">{tr(lang, 'open')}</button>
+        </div>
+      {:else}
+        <p class="muted">{tr(lang, 'no_server_projects')}</p>
+      {/each}
+    </div>
+
+    <form onsubmit={(e) => { e.preventDefault(); importZip() }}>
+      <h2>{tr(lang, 'upload_project')}</h2>
+      <p class="muted">{tr(lang, 'upload_help')}</p>
+      <label for="zip-file">{tr(lang, 'zip_file')}</label>
+      <input
+        id="zip-file"
+        type="file"
+        accept=".zip,application/zip"
+        required
+        onchange={(e) => (zip = e.currentTarget.files?.[0] ?? null)}
+        data-testid="zip-file"
+      />
+      <label for="zip-folder">{tr(lang, 'folder_name')}</label>
+      <input id="zip-folder" bind:value={zipFolder} placeholder={zip?.name.replace(/\.zip$/i, '') ?? ''} />
+      <button class="primary" type="submit" disabled={!zip} data-testid="upload-project">{tr(lang, 'upload')}</button>
+    </form>
+  {:else}
   {#if app.recent.length}
     <h2>{tr(lang, 'recent')}</h2>
     <ul>
@@ -84,19 +150,23 @@
       <button class="primary" type="submit">{tr(lang, 'open')}</button>
     </div>
   </form>
+  {/if}
 
   <form onsubmit={(e) => { e.preventDefault(); create() }}>
     <h2>{tr(lang, 'new_project')}</h2>
-    <label for="new-path">{tr(lang, 'path')}</label>
+    <!-- on a server: just a folder name inside the workspace; locally: any folder -->
+    <label for="new-path">{tr(lang, app.server ? 'folder_name' : 'path')}</label>
     <div class="row">
       <input id="new-path" bind:value={newPath} required data-testid="new-path" />
-      <button
-        type="button"
-        data-testid="browse-new"
-        onclick={async () => {
-          newPath = (await browse(newPath)) ?? newPath
-        }}>{tr(lang, 'browse')}</button
-      >
+      {#if !app.server}
+        <button
+          type="button"
+          data-testid="browse-new"
+          onclick={async () => {
+            newPath = (await browse(newPath)) ?? newPath
+          }}>{tr(lang, 'browse')}</button
+        >
+      {/if}
     </div>
     <label for="new-name">{tr(lang, 'name')}</label>
     <input id="new-name" bind:value={newName} data-testid="new-name" />
@@ -114,6 +184,29 @@
     max-width: 40rem;
     display: grid;
     gap: 0.5rem;
+  }
+  .card {
+    display: grid;
+    gap: 0.35rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem 1rem;
+  }
+  .card > button {
+    justify-self: start;
+  }
+  .card p {
+    margin: 0;
+  }
+  .item {
+    align-items: center;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .grow {
+    flex: 1;
+    font-family: inherit;
   }
   form {
     display: grid;

@@ -83,6 +83,10 @@ def main(
         list[str] | None,
         typer.Option(help="Host name the browser uses, e.g. threatwright.example.com. Repeatable."),
     ] = None,
+    workspace: Annotated[
+        Path | None,
+        typer.Option(help="Server mode: folder with the projects users may open (default: cwd)."),
+    ] = None,
 ) -> None:
     """Without a command: start the GUI on a local port."""
     if version:
@@ -93,7 +97,7 @@ def main(
 
         if project is None and (Path(".") / PROJECT_FILE).exists():
             project = Path(".")
-        serve(project, browser, host, port, tuple(allowed_host or ()))
+        serve(project, browser, host, port, tuple(allowed_host or ()), workspace)
 
 
 @app.command("validate")

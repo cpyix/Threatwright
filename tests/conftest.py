@@ -92,15 +92,12 @@ def project_dir(tmp_path: Path) -> Path:
 # --- GUI end-to-end (tests/e2e): real server + built frontend ----------------------
 
 
-@pytest.fixture
-def gui(project_dir: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[str]:
-    monkeypatch.setenv("THREATWRIGHT_CONFIG_DIR", str(tmp_path / "config"))
+def _serve(project: Path | None, root: Path | None = None) -> Iterator[str]:
     sock = socket.socket()
     sock.bind(("127.0.0.1", 0))
     port = sock.getsockname()[1]
-    server = uvicorn.Server(
-        uvicorn.Config(create_app(E2E_TOKEN, port, project_dir), log_level="warning")
-    )
+    app = create_app(E2E_TOKEN, port, project, root=root)
+    server = uvicorn.Server(uvicorn.Config(app, log_level="warning"))
     thread = threading.Thread(target=server.run, kwargs={"sockets": [sock]}, daemon=True)
     thread.start()
     while not server.started:
@@ -108,6 +105,27 @@ def gui(project_dir: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> I
     yield f"http://127.0.0.1:{port}/#token={E2E_TOKEN}"
     server.should_exit = True
     thread.join(5)
+
+
+@pytest.fixture
+def gui(project_dir: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[str]:
+    monkeypatch.setenv("THREATWRIGHT_CONFIG_DIR", str(tmp_path / "config"))
+    yield from _serve(project_dir)
+
+
+@pytest.fixture
+def workspace(project_dir: Path, tmp_path: Path) -> Path:
+    """Server workspace holding one project, 'machine-a'."""
+    ws = tmp_path / "workspace"
+    shutil.copytree(project_dir, ws / "machine-a")
+    return ws
+
+
+@pytest.fixture
+def server_gui(workspace: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[str]:
+    """GUI in server mode (ADR-0013): no project open, workspace confined."""
+    monkeypatch.setenv("THREATWRIGHT_CONFIG_DIR", str(tmp_path / "config"))
+    yield from _serve(None, root=workspace)
 
 
 @pytest.fixture

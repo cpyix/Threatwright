@@ -90,30 +90,31 @@ docker run --rm -v "${PWD}:/work" ghcr.io/cpyix/threatwright:<version> validate 
 
 ### Hosting the GUI (container or server)
 
-Three options and one variable control where the GUI listens ([ADR-0013](docs/adr/0013-self-hosted-gui.md)):
+These options and one variable control where the GUI listens and what it may open ([ADR-0013](docs/adr/0013-self-hosted-gui.md)):
 
 | Option | Meaning |
 |---|---|
 | `--host 0.0.0.0` | Listen on all interfaces (needed inside a container). Default `127.0.0.1`. |
 | `--port 8080` | Fixed port. Default: random free port. |
 | `--allowed-host NAME` | Host name the browser uses (`localhost`, `threatwright.example.com`, …); accepted on any port. Repeatable. All other Host headers are rejected. |
+| `--workspace DIR` | Folder with the projects users may open, create and upload on a server. Default: the working directory (`/work` in the image). |
 | `THREATWRIGHT_TOKEN` (env) | Fixed access token, at least 24 characters, so the link survives restarts. Default: new random token per start. |
 
 #### On your own machine with Docker
 
 ```
 # Linux / macOS
-docker run --rm -p 127.0.0.1:8080:8080 -v "$PWD/my-product:/work" --user "$(id -u):$(id -g)" \
-  ghcr.io/cpyix/threatwright:<version> --project /work --no-browser \
+docker run --rm -p 127.0.0.1:8080:8080 -v "$PWD/projects:/work" --user "$(id -u):$(id -g)" \
+  ghcr.io/cpyix/threatwright:<version> --no-browser \
   --host 0.0.0.0 --port 8080 --allowed-host localhost
 
 # Windows PowerShell
-docker run --rm -p 127.0.0.1:8080:8080 -v "${PWD}/my-product:/work" `
-  ghcr.io/cpyix/threatwright:<version> --project /work --no-browser `
+docker run --rm -p 127.0.0.1:8080:8080 -v "${PWD}/projects:/work" `
+  ghcr.io/cpyix/threatwright:<version> --no-browser `
   --host 0.0.0.0 --port 8080 --allowed-host localhost
 ```
 
-The container prints `open: http://localhost:8080/#token=…`; open that link. `-p 127.0.0.1:8080:8080` keeps the port on your machine only.
+The container prints `open: http://localhost:8080/#token=…`; open that link. `-p 127.0.0.1:8080:8080` keeps the port on your machine only. The start page lists the projects in `projects/`; you can create new ones there, upload a project from your computer as `.zip` and download the open project as `.zip`.
 
 #### On a server: Docker Compose behind a TLS proxy with login
 
@@ -124,12 +125,12 @@ The proxy ([Caddy](https://caddyserver.com/)) provides HTTPS with an automatic c
 services:
   threatwright:
     image: ghcr.io/cpyix/threatwright:<version>
-    command: [--project, /work, --no-browser, --host, 0.0.0.0, --port, "8080",
+    command: [--no-browser, --host, 0.0.0.0, --port, "8080",
               --allowed-host, threatwright.example.com]
     environment:
       THREATWRIGHT_TOKEN: ${THREATWRIGHT_TOKEN}   # e.g. openssl rand -hex 32, in .env
     volumes:
-      - ./my-product:/work   # a Git checkout of the project
+      - ./projects:/work   # workspace: one folder per project (e.g. Git checkouts)
     restart: unless-stopped
   caddy:
     image: caddy:2
@@ -159,7 +160,7 @@ Create a password hash for each user and paste it into the `Caddyfile`:
 docker run --rm -it caddy:2 caddy hash-password
 ```
 
-Start with `docker compose up -d`. Open `https://threatwright.example.com/#token=<THREATWRIGHT_TOKEN>`, log in with the user name and password, and bookmark the link. The project folder must be writable by UID 10001 (`chown -R 10001 my-product`), or set `user:` to the folder's owner. To add or remove users, edit the `Caddyfile` and run `docker compose restart caddy`.
+Start with `docker compose up -d`. Open `https://threatwright.example.com/#token=<THREATWRIGHT_TOKEN>`, log in with the user name and password, and bookmark the link. The workspace must be writable by UID 10001 (`chown -R 10001 projects`), or set `user:` to the folder's owner. To add or remove users, edit the `Caddyfile` and run `docker compose restart caddy`.
 
 Any other reverse proxy works the same way: terminate TLS, require a login (Basic Auth, or your SSO via e.g. oauth2-proxy), forward to port 8080 and pass the original `Host` header.
 
@@ -170,9 +171,9 @@ Run `threatwright --project my-product --no-browser --port 8080` (still bound to
 #### Before you host it
 
 - **Put a login in front.** Threatwright itself only checks the token in the link; anyone with the link can read and change the model. Use the proxy login above (or VPN/SSO) and always TLS; never publish port 8080 directly on a network.
-- **One shared session per instance.** Everyone works on the same in-memory state; it suits one person or a coordinated team. Run one instance per project.
+- **One shared session per instance.** Everyone works on the same open project and in-memory state; it suits one person or a coordinated team. Run one instance per team if several people work in parallel.
 - **Git stays with you.** The GUI saves files into the mounted folder; commit, push and merge requests happen outside, as with the local GUI.
-- **Confined to the project folder.** As soon as the GUI is reachable for others (`--host` other than loopback, or any `--allowed-host`), it only opens, creates and imports inside the `--project` folder (or the working directory). The folder dialog and "open build folder" are switched off; pass the project with `--project`.
+- **Confined to the workspace.** As soon as the GUI is reachable for others (`--host` other than loopback, or any `--allowed-host`), it only opens, creates, uploads and imports inside the workspace. Uploaded archives are checked (size limit, no paths outside the target folder, no symlinks). The native folder dialog and "open build folder" are switched off; the start page lists the server's projects instead.
 
 ### Documentation (German)
 

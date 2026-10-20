@@ -31,13 +31,29 @@ const de = {
     'vernünftigerweise vorhersehbare Verwendung und Einsatzbedingungen zu stützen (Art. 13 Abs. 3). ' +
     'Diese Beschreibung erscheint im erzeugten Dokument.',
   product_questions: 'Leitfragen',
-  product_q: [
-    'Wofür wird das Produkt eingesetzt, und welche Fehlanwendung ist vorhersehbar?',
-    'Wer arbeitet damit: Bediener, Instandhaltung, Service des Herstellers, Fernwartung?',
-    'Wo steht es: Schaltschrank, Produktionshalle, frei zugänglich, Außenbereich?',
-    'Welche Schnittstellen hat es: Netzwerk, Feldbus, USB, Funk, Cloud?',
-    'Was gehört nicht dazu (Systemgrenze), z. B. das Netz des Betreibers?',
-  ],
+  add_library: 'Hinzufügen',
+  product_q: {
+    common: [
+      'Wofür wird das Produkt eingesetzt, und welche Fehlanwendung ist vorhersehbar?',
+      'Wer arbeitet damit, und wer administriert oder wartet es?',
+      'Was gehört nicht dazu (Systemgrenze), z. B. das Netz des Betreibers?',
+    ],
+    ot: [
+      'Wo steht es: Schaltschrank, Produktionshalle, frei zugänglich, Außenbereich?',
+      'Welche Schnittstellen hat es: Netzwerk, Feldbus, USB, Funk?',
+      'Gibt es Fernwartung durch Instandhaltung oder den Service des Herstellers?',
+    ],
+    iot: [
+      'Wo wird das Gerät aufgestellt: im Haushalt, im Außenbereich, öffentlich zugänglich?',
+      'Welche Funkschnittstellen hat es (WLAN, Bluetooth, Zigbee, Mobilfunk), und wie wird es gekoppelt?',
+      'Gibt es eine App oder einen Cloud-Dienst, und was kann das Gerät ohne Internet?',
+    ],
+    software: [
+      'Für welche Plattformen wird die Software gebaut: Windows, macOS, Linux, iOS, Android?',
+      'Wie wird sie ausgeliefert: Store, Installationsprogramm, eigener Updater?',
+      'Gibt es ein Backend oder eine API, und mit welchen Rechten laufen die Nutzer?',
+    ],
+  },
   model_title: 'Titel des Modells',
   description: 'Beschreibung (Zweck, Verwendung, Umgebung, Systemgrenze)',
   description_placeholder:
@@ -54,12 +70,14 @@ const de = {
     'Je Zone legen Sie fest, über welche Schnittstelle ein Angreifer hinkommt, wer physisch Zugang hat und wer das Gerät bedient. ' +
     'Daraus berechnet die Methode die Exposition (TR-03183-1 Anhang D); neue Bedrohungen übernehmen diese Werte als Vorbelegung.',
   zones_hint: 'Die vier vorgeschlagenen Zonen passen für die meisten Maschinen. Benennen Sie sie um oder ergänzen Sie eigene.',
+  zones_hint_other:
+    'Die vorgeschlagenen Zonen passen für die meisten vernetzten Geräte und Anwendungen. Benennen Sie sie um oder ergänzen Sie eigene.',
   add_zone: '+ Zone',
   zone_title: 'Bezeichnung',
   not_set: '– bitte wählen –',
 
   elements_text:
-    'Wählen Sie die Bausteine Ihres Produkts aus der OT-Bibliothek. Jeder Baustein bringt seine typischen Assets mit und ' +
+    'Wählen Sie die Bausteine Ihres Produkts aus der Bibliothek. Jeder Baustein bringt seine typischen Assets mit und ' +
     'liefert später passende Bedrohungsvorschläge. Externe Einheiten wie Servicelaptop oder USB-Stick gehören dazu, ' +
     'wenn sie mit dem Produkt kommunizieren.',
   elements_hint: 'Gleiche Bausteine mehrfach anlegen, wenn sie unterschiedlich angebunden sind (z. B. zwei Antriebe an verschiedenen Bussen).',
@@ -146,7 +164,7 @@ const de = {
   create_model: 'Teilmodell anlegen',
 }
 
-type Text = { [K in keyof typeof de]: (typeof de)[K] extends string[] ? string[] : string }
+type Text = { [K in keyof typeof de]: (typeof de)[K] extends string ? string : (typeof de)[K] }
 
 const en: Text = {
   title: 'Setup wizard',
@@ -177,13 +195,29 @@ const en: Text = {
     'Describe what is analysed. The CRA requires the risk assessment to be based on the intended purpose, ' +
     'reasonably foreseeable use and the conditions of use (Art. 13(3)). This description appears in the generated document.',
   product_questions: 'Guiding questions',
-  product_q: [
-    'What is the product used for, and which misuse is foreseeable?',
-    'Who works with it: operators, maintenance, manufacturer service, remote maintenance?',
-    'Where is it installed: control cabinet, production hall, publicly accessible, outdoors?',
-    'Which interfaces does it have: network, fieldbus, USB, wireless, cloud?',
-    'What is out of scope (system boundary), e.g. the operator’s network?',
-  ],
+  add_library: 'Add',
+  product_q: {
+    common: [
+      'What is the product used for, and which misuse is foreseeable?',
+      'Who works with it, and who administers or maintains it?',
+      'What is out of scope (system boundary), e.g. the operator’s network?',
+    ],
+    ot: [
+      'Where is it installed: control cabinet, production hall, publicly accessible, outdoors?',
+      'Which interfaces does it have: network, fieldbus, USB, wireless?',
+      'Is there remote maintenance by maintenance staff or the manufacturer’s service?',
+    ],
+    iot: [
+      'Where is the device placed: at home, outdoors, publicly accessible?',
+      'Which radio interfaces does it have (Wi-Fi, Bluetooth, Zigbee, cellular), and how is it paired?',
+      'Is there an app or a cloud service, and what can the device do without internet?',
+    ],
+    software: [
+      'Which platforms is the software built for: Windows, macOS, Linux, iOS, Android?',
+      'How is it distributed: store, installer, own updater?',
+      'Is there a backend or an API, and with which rights do the users run it?',
+    ],
+  },
   model_title: 'Model title',
   description: 'Description (purpose, use, environment, system boundary)',
   description_placeholder:
@@ -200,12 +234,14 @@ const en: Text = {
     'For each zone, set the interface an attacker uses, who has physical access and who operates the device. ' +
     'The method derives the exposure from this (TR-03183-1 Annex D); new threats take these values as defaults.',
   zones_hint: 'The four suggested zones fit most machines. Rename them or add your own.',
+  zones_hint_other:
+    'The suggested zones fit most connected devices and applications. Rename them or add your own.',
   add_zone: '+ Zone',
   zone_title: 'Name',
   not_set: '– please choose –',
 
   elements_text:
-    'Choose the building blocks of your product from the OT library. Each brings its typical assets and later ' +
+    'Choose the building blocks of your product from the library. Each brings its typical assets and later ' +
     'offers fitting threat suggestions. External entities such as a service laptop or USB stick belong here ' +
     'if they communicate with the product.',
   elements_hint: 'Add the same building block several times if the instances are connected differently (e.g. two drives on different buses).',

@@ -31,9 +31,15 @@
   const threats = $derived(app.objects('threats'))
   const elementTypes = $derived(types.filter((x) => x.kind !== 'flow'))
   const flowTypes = $derived(types.filter((x) => x.kind === 'flow'))
+  const libraries = $derived(app.project?.config.libraries ?? [])
+  const productQuestions = $derived([
+    ...t.product_q.common,
+    ...libraries.flatMap((id) => t.product_q[id as 'ot' | 'iot' | 'software'] ?? []),
+  ])
   const title = (id: string) => [...elements, ...flows, ...assets].find((o) => o.id === id)?.title ?? id
 
   $effect(() => {
+    void libraries // reload the building blocks when a library is added
     api<{ elements: ElementType[] }>('GET', '/library').then((r) => (types = r.elements)).catch(() => (types = []))
   })
 
@@ -73,6 +79,12 @@
       }
     }
     app.view = { kind: 'setup', step: n }
+  }
+
+  async function addLibrary(id: string) {
+    await guard(async () => {
+      app.project = await api<ProjectInfo>('POST', '/project/libraries', { add: [id] })
+    })
   }
 
   async function createModel() {
@@ -282,8 +294,20 @@
     <p>{t.product_text}</p>
     <details class="hint">
       <summary>{t.product_questions}</summary>
-      <ul>{#each t.product_q as q}<li>{q}</li>{/each}</ul>
+      <ul>{#each productQuestions as q}<li>{q}</li>{/each}</ul>
     </details>
+    <fieldset>
+      <legend>{tr(lang, 'product_type')}</legend>
+      {#each app.project?.product_libraries ?? [] as id (id)}
+        <label class="check">
+          <input type="checkbox" checked={libraries.includes(id)} disabled data-testid="setup-lib-{id}" />
+          {tr(lang, `lib_${id as 'ot' | 'iot' | 'software'}`)}
+        </label>
+        {#if !libraries.includes(id)}
+          <button type="button" onclick={() => addLibrary(id)} disabled={busy} data-testid="setup-add-lib-{id}">{t.add_library}</button>
+        {/if}
+      {/each}
+    </fieldset>
     <label for="setup-title">{t.model_title}</label>
     <input id="setup-title" bind:value={meta.title} data-testid="setup-title" />
     <label for="setup-description">{t.description}</label>
@@ -308,7 +332,7 @@
   {:else if step === 2}
     <h2>{t.s_zones} <Info term="zone" /></h2>
     <p>{t.zones_text}</p>
-    <p class="muted">{t.zones_hint}</p>
+    <p class="muted">{libraries.includes('ot') ? t.zones_hint : t.zones_hint_other}</p>
     {#each meta.zones ?? [] as zone, n}
       <fieldset class="card zone" data-testid="setup-zone-{zone.id}">
         <legend>{zone.id}</legend>

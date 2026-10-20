@@ -97,10 +97,19 @@ def test_setup_product_type(
 
     expect(page.get_by_test_id("setup")).to_be_visible()
     page.get_by_test_id("setup-start").click()
+    # product step: iot questions only, no OT wording; software can be added
+    page.get_by_text(re.compile("Leitfragen|Guiding questions")).click()
+    expect(page.get_by_text(re.compile("Funkschnittstellen|radio interfaces"))).to_be_visible()
+    expect(page.get_by_text(re.compile("Schaltschrank|control cabinet"))).to_have_count(0)
+    expect(page.get_by_test_id("setup-lib-iot")).to_be_checked()
+    page.get_by_test_id("setup-add-lib-software").click()
+    expect(page.get_by_test_id("setup-lib-software")).to_be_checked()
+    expect(page.get_by_text(re.compile("Backend|backend"))).to_be_visible()
     page.get_by_test_id("setup-next").click()  # product
     page.get_by_test_id("zone-Z-LAN-access").select_option("restricted")
     page.get_by_test_id("setup-next").click()  # zones
     expect(page.get_by_test_id("setup-type-iot-device")).to_be_visible()
+    expect(page.get_by_test_id("setup-type-desktop-app")).to_be_visible()
     assert "libraries: [iot]" in (tmp_path / "geraet" / "threatwright.yaml").read_text(
         encoding="utf-8"
     )

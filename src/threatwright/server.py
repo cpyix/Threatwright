@@ -64,7 +64,7 @@ from threatwright.render import (
     preview_html,
 )
 from threatwright.rules import relative, validate
-from threatwright.scaffold import ProjectExists, create_project
+from threatwright.scaffold import PRODUCT_LIBRARIES, ProjectExists, create_project
 from threatwright.vcs import VcsError, changed_objects, release_tags
 
 WEB_DIR = Path(__file__).parent / "web"
@@ -296,6 +296,10 @@ class NewProject(BaseModel):
     libraries: list[str] | None = None
 
 
+class AddLibraries(BaseModel):
+    add: list[str]
+
+
 def create_app(
     port: int | None = None,
     project: Path | None = None,
@@ -484,10 +488,26 @@ def create_app(
                     }
                     for name, sub in project.models.items()
                 },
+                "product_libraries": list(PRODUCT_LIBRARIES),
                 "dirty": session.dirty,
                 "can_undo": bool(session.undo),
                 "can_redo": bool(session.redo),
             }
+
+    @app.post("/api/project/libraries")
+    def add_libraries(body: AddLibraries) -> dict[str, Any]:
+        unknown = [name for name in body.add if name not in PRODUCT_LIBRARIES]
+        if unknown:
+            raise HTTPException(422, f"unknown libraries: {', '.join(unknown)}")
+        with session.lock:
+            project = session.require()
+            config = project.config
+            missing = [n for n in PRODUCT_LIBRARIES if n in body.add and n not in config.libraries]
+            if missing:  # add-only: existing entries (own libraries too) keep their place
+                config.libraries = [*config.libraries, *missing]
+                session.libs = load_libraries(config.libraries, project.root)
+                session.changed()
+            return project_info()
 
     @app.get("/api/method")
     def method_info() -> dict[str, Any]:

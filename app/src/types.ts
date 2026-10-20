@@ -10,6 +10,7 @@ export interface ProjectInfo {
   config: { name: string; language: Lang; method: string; libraries: string[]; lifecycle: string }
   custom_fields: { fields: Record<string, CustomField[]> }
   models: Record<string, { title: string; counts: Record<Collection, number> }>
+  product_libraries: string[]
   dirty: boolean
   can_undo: boolean
   can_redo: boolean

@@ -20,40 +20,24 @@ Local-first threat modelling and risk analysis for products with digital element
 - **CI:** the same checks as the GUI in GitLab or GitHub pipelines, template pre-filled per project ([CI](docs/ci.md)).
 - **Interop:** OSCAL import (catalogs such as Grundschutz++, profiles, component definitions), Threat Dragon and CSV import, CSV/JSON/XLSX export.
 
-## Documentation (German)
+**Contents:** [Install](#install) · [Usage](#usage) · [Docker](#docker-cli-and-pipelines) · [Hosting the GUI](#hosting-the-gui-container-or-server) · [Documentation](#documentation-german) · [Develop and contribute](#develop-and-contribute) · [License](#license)
 
-[Schnellstart](docs/schnellstart.md) · [Tutorial](docs/tutorial.md) · [Methodik](docs/methodik.md) · [Prüfregeln](docs/pruefregeln.md) · [Ist das ein Cyberrisiko?](docs/faq-cyberrisiko.md) · [Bibliotheksformat](docs/bibliotheksformat.md) · [Vorlagenreferenz](docs/vorlagenreferenz.md) · [Git-Arbeitsweise](docs/git-arbeitsweise.md) · [OSCAL](docs/oscal.md) · [CI](docs/ci.md) · [Offene Prüfpunkte](docs/VERIFY.md) · [CRA-Selbstbewertung](docs/cra-self-assessment.md)
+## Use Threatwright
 
-Architecture decisions (English): [`docs/adr/`](docs/adr/).
+### Install
 
-## Install and run
+**Portable download (no Python, no admin rights).** From the [releases](https://github.com/cpyix/threatwright/releases) download `threatwright-<version>-windows-amd64.zip` or `threatwright-<version>-linux-x86_64.tar.gz`, unpack it anywhere (e.g. your user folder or a USB stick) and run `threatwright.exe` (Windows) or `./threatwright` (Linux). Without arguments the GUI opens in your default browser. Verify downloads with `SHA256SUMS` (see [SECURITY.md](SECURITY.md)).
 
-### Option 1: portable download (no Python, no admin rights)
-
-From the [releases](https://github.com/cpyix/threatwright/releases) download `threatwright-<version>-windows-amd64.zip` or `threatwright-<version>-linux-x86_64.tar.gz`, unpack it anywhere (e.g. your user folder or a USB stick) and run `threatwright.exe` (Windows) or `./threatwright` (Linux). Without arguments the GUI opens in your default browser. Verify downloads with `SHA256SUMS` (see [SECURITY.md](SECURITY.md)).
-
-### Option 2: with Python (3.12+)
+**With Python (3.12+):**
 
 ```
 pipx install threatwright
 threatwright
 ```
 
-### Option 3: from source
+Optional: Git (change evidence between releases), LibreOffice (PDF output). To build from source, see [Develop and contribute](#develop-and-contribute).
 
-Requirements: Python 3.12+, [uv](https://docs.astral.sh/uv/), Node.js 24 (only to build the GUI bundle). Optional: Git (change evidence), LibreOffice (PDF output).
-
-```
-git clone https://github.com/cpyix/threatwright.git
-cd threatwright
-uv sync
-cd app && npm ci && npm run build && cd ..    # builds the GUI into src/threatwright/web
-uv run threatwright                           # start the GUI
-```
-
-Build the portable bundle yourself: `uv run python packaging/build.py` (output in `dist/`).
-
-## Usage
+### Usage
 
 ```
 threatwright init my-product --name "My product"   # new project (TR-03183-1 standard)
@@ -66,34 +50,26 @@ threatwright ci gitlab my-product                  # GitLab pipeline for this pr
 threatwright --help                                # all commands
 ```
 
-Started inside a project folder, `threatwright` opens that project directly. By default the GUI runs on `127.0.0.1` only, on a random port, protected by a per-start token and a strict Content Security Policy; nothing leaves your machine. To host it in a container or on a server, see [Hosting the GUI](#hosting-the-gui-container-or-server).
+Started inside a project folder, `threatwright` opens that project directly. By default the GUI runs on `127.0.0.1` only, on a random port, protected by a per-start token and a strict Content Security Policy; nothing leaves your machine. The GUI follows your browser language (German or English).
 
-## Docker
+### Docker (CLI and pipelines)
 
-The image contains the CLI, the GUI, Git and LibreOffice (for PDF). Use it in pipelines and batch jobs, or to host the GUI.
-
-Build the image locally from the repository root (the frontend is built inside the image, no local Node.js needed):
-
-```
-docker build -t threatwright:local .
-```
-
-Run it on a project in the current folder:
+The image `ghcr.io/cpyix/threatwright:<version>` contains the CLI, the GUI, Git and LibreOffice (for PDF). The pipeline templates use it. Run it on a project in the current folder:
 
 ```
 # Linux / macOS
-docker run --rm -v "$PWD:/work" --user "$(id -u):$(id -g)" threatwright:local validate .
-docker run --rm -v "$PWD:/work" --user "$(id -u):$(id -g)" threatwright:local build . --format pdf
+docker run --rm -v "$PWD:/work" --user "$(id -u):$(id -g)" ghcr.io/cpyix/threatwright:<version> validate .
+docker run --rm -v "$PWD:/work" --user "$(id -u):$(id -g)" ghcr.io/cpyix/threatwright:<version> build . --format pdf
 
 # Windows PowerShell
-docker run --rm -v "${PWD}:/work" threatwright:local validate .
+docker run --rm -v "${PWD}:/work" ghcr.io/cpyix/threatwright:<version> validate .
 ```
 
-`--user` makes generated files belong to you instead of the container user. Released images are published as `ghcr.io/cpyix/threatwright:<version>`; the pipeline templates use them.
+`--user` makes generated files belong to you instead of the container user.
 
 ### Hosting the GUI (container or server)
 
-Three options control where the GUI listens ([ADR-0013](docs/adr/0013-self-hosted-gui.md)):
+Three options and one variable control where the GUI listens ([ADR-0013](docs/adr/0013-self-hosted-gui.md)):
 
 | Option | Meaning |
 |---|---|
@@ -102,7 +78,7 @@ Three options control where the GUI listens ([ADR-0013](docs/adr/0013-self-hoste
 | `--allowed-host NAME` | Host name the browser uses (`localhost`, `threatwright.example.com`, …); accepted on any port. Repeatable. All other Host headers are rejected. |
 | `THREATWRIGHT_TOKEN` (env) | Fixed access token, at least 24 characters, so the link survives restarts. Default: new random token per start. |
 
-**On your own machine with Docker:**
+#### On your own machine with Docker
 
 ```
 # Linux / macOS
@@ -118,7 +94,7 @@ docker run --rm -p 127.0.0.1:8080:8080 -v "${PWD}/my-product:/work" `
 
 The container prints `open: http://localhost:8080/#token=…`; open that link. `-p 127.0.0.1:8080:8080` keeps the port on your machine only.
 
-**On a server (Docker Compose behind a TLS proxy with login):**
+#### On a server: Docker Compose behind a TLS proxy with login
 
 The proxy ([Caddy](https://caddyserver.com/)) provides HTTPS with an automatic certificate and a username/password login (HTTP Basic Auth) in front of the GUI. Threatwright itself is not published on any port.
 
@@ -166,24 +142,46 @@ Start with `docker compose up -d`. Open `https://threatwright.example.com/#token
 
 Any other reverse proxy works the same way: terminate TLS, require a login (Basic Auth, or your SSO via e.g. oauth2-proxy), forward to port 8080 and pass the original `Host` header.
 
-**Without Docker on a server:** run `threatwright --project my-product --no-browser --port 8080` (still bound to `127.0.0.1`) and reach it through an SSH tunnel: `ssh -L 8080:127.0.0.1:8080 server`, then open the printed link locally.
+#### On a server without Docker
 
-Before you host it, note:
+Run `threatwright --project my-product --no-browser --port 8080` (still bound to `127.0.0.1`) and reach it through an SSH tunnel: `ssh -L 8080:127.0.0.1:8080 server`, then open the printed link locally.
+
+#### Before you host it
 
 - **Put a login in front.** Threatwright itself only checks the token in the link; anyone with the link can read and change the model. Use the proxy login above (or VPN/SSO) and always TLS; never publish port 8080 directly on a network.
 - **One shared session per instance.** Everyone works on the same in-memory state; it suits one person or a coordinated team. Run one instance per project.
 - **Git stays with you.** The GUI saves files into the mounted folder; commit, push and merge requests happen outside, as with the local GUI.
 - **Confined to the project folder.** As soon as the GUI is reachable for others (`--host` other than loopback, or any `--allowed-host`), it only opens, creates and imports inside the `--project` folder (or the working directory). The folder dialog and "open build folder" are switched off; pass the project with `--project`.
 
-## Development
+### Documentation (German)
+
+[Schnellstart](docs/schnellstart.md) · [Tutorial](docs/tutorial.md) · [Methodik](docs/methodik.md) · [Prüfregeln](docs/pruefregeln.md) · [Ist das ein Cyberrisiko?](docs/faq-cyberrisiko.md) · [Bibliotheksformat](docs/bibliotheksformat.md) · [Vorlagenreferenz](docs/vorlagenreferenz.md) · [Git-Arbeitsweise](docs/git-arbeitsweise.md) · [OSCAL](docs/oscal.md) · [CI](docs/ci.md) · [Offene Prüfpunkte](docs/VERIFY.md) · [CRA-Selbstbewertung](docs/cra-self-assessment.md)
+
+## Develop and contribute
+
+### Build from source
+
+Requirements: Python 3.12+, [uv](https://docs.astral.sh/uv/), Node.js 24 (only to build the GUI bundle).
 
 ```
-uv run pytest                                # incl. GUI end-to-end and accessibility tests
+git clone https://github.com/cpyix/threatwright.git
+cd threatwright
+uv sync
+cd app && npm ci && npm run build && cd ..    # builds the GUI into src/threatwright/web
+uv run threatwright                           # start the GUI
+```
+
+Portable bundle: `uv run python packaging/build.py` (output in `dist/`). Docker image: `docker build -t threatwright:local .` from the repository root (the frontend is built inside the image, no local Node.js needed).
+
+### Checks
+
+```
+uv run pytest                                # incl. GUI end-to-end and accessibility tests (German and English)
 uv run ruff check . && uv run mypy           # lint and strict typing
 cd app && npm run check                      # frontend type check
 ```
 
-## Repository layout
+### Repository layout
 
 ```
 src/threatwright/      Python core: model, method, rules, library, assistant, render, oscal, vcs, interop, cli, server
@@ -203,15 +201,17 @@ packaging/             PyInstaller build (portable, no admin rights)
 scripts/               repo maintenance (leak checks, library coverage)
 ```
 
-## Contributing
+Architecture decisions (English): [`docs/adr/`](docs/adr/). Planned work: [ROADMAP.md](ROADMAP.md).
+
+### Contributing
 
 ```
 pip install pre-commit && pre-commit install
 ```
 
-Hooks run gitleaks and a forbidden-files check; CI repeats both over the full history. Security issues: see [SECURITY.md](SECURITY.md).
+Hooks run gitleaks and a forbidden-files check; CI repeats both over the full history. Changes go through pull requests. Security issues: see [SECURITY.md](SECURITY.md).
 
-## AI-assisted development
+### AI-assisted development
 
 Large parts of the code, tests and documentation in this repository were written with AI coding assistants ("vibe coding"), directed and reviewed by the maintainer. This is deliberate, and contributions made with AI assistance are explicitly welcome, under the same rules as any other contribution.
 

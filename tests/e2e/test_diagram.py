@@ -31,8 +31,10 @@ def test_diagram_assistant_coverage(
     expect(page.locator(".palette li")).to_have_count(0)
     search.fill("")
 
+    # Drop inside the pane (it is ~380 px wide), below E-0001: off-pane drops land at the edge,
+    # where connect auto-pan keeps the handle moving and the new edge can cover the node
     page.drag_and_drop(
-        "[data-testid=palette-drive]", ".svelte-flow__pane", target_position={"x": 500, "y": 420}
+        "[data-testid=palette-drive]", ".svelte-flow__pane", target_position={"x": 200, "y": 330}
     )
     expect(page.get_by_test_id("node-E-0004")).to_be_visible()
 

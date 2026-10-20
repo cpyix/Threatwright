@@ -92,13 +92,14 @@ class AppState {
   }
 
   async init(): Promise<void> {
+    // Loading takes a moment; if the user navigated meanwhile (e.g. created a new project
+    // from the start page), their view wins over the landing view. Taken before the first
+    // request, so a click during /app counts as navigation too.
+    const before = this.view
     const info = await api<{ version: string; recent: string[]; server: boolean }>('GET', '/app')
     this.version = info.version
     this.recent = info.recent
     this.server = info.server
-    // Loading takes a moment; if the user navigated meanwhile (e.g. created a new project
-    // from the start page), their view wins over the landing view.
-    const before = this.view
     try {
       await this.loadProject(await api<ProjectInfo>('GET', '/project'))
       // on a server the start page with the project overview comes first

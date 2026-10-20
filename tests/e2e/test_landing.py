@@ -15,9 +15,16 @@ def test_slow_initial_load_keeps_user_navigation(gui: str, page: Page) -> None:
         route.continue_()
 
     page.route("**/api/catalog/cra", slow_first)
-    page.goto(gui)
-    page.get_by_test_id("nav-start").click()  # project info is there, the load still runs
-    page.wait_for_timeout(2500)  # initial load has finished by now
+    # The click must also count while /app is still pending. Delayed in the page: a sleep in a
+    # route handler would block this thread and send the click only afterwards.
+    page.add_init_script(
+        "const f = window.fetch; window.fetch = (u, ...a) => String(u).endsWith('/api/app')"
+        " ? new Promise((r) => setTimeout(r, 1000)).then(() => f(u, ...a)) : f(u, ...a)"
+    )
+    with page.expect_response("**/api/history"):  # the last request of the initial load
+        page.goto(gui)
+        page.get_by_test_id("nav-start").click()  # project info is there, the load still runs
+    page.wait_for_timeout(500)  # the landing view would be applied right after it
     expect(page.get_by_test_id("create-project")).to_be_visible()
     assert delayed
 

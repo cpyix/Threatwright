@@ -72,6 +72,17 @@ def test_suggestions_adopt_and_measure_reuse(loaded) -> None:  # type: ignore[no
     assert reloaded.save() == []
 
 
+def test_untyped_flow_gets_no_protocol_templates(loaded) -> None:  # type: ignore[no-untyped-def]
+    project, libs, method = loaded
+    sub = project.models["main"]
+    generic = assistant.add_flow(sub, libs, project.config, "E-0001", "E-0002")
+    cats = assistant.suggestions(sub, libs, method, project.config, generic.id)
+    assert not any(cats[s].suggestions for s in "STRIDE")
+    typed = assistant.add_flow(sub, libs, project.config, "E-0001", "E-0002", "fieldbus-ethercat")
+    cats = assistant.suggestions(sub, libs, method, project.config, typed.id)
+    assert any(s.template_id == "fieldbus-rogue-master" for s in cats["S"].suggestions)
+
+
 def test_coverage_and_svg(loaded) -> None:  # type: ignore[no-untyped-def]
     project, _, method = loaded
     sub = project.models["main"]

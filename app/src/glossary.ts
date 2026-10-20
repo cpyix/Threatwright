@@ -179,6 +179,26 @@ export const GLOSSARY = {
 
 export type Term = keyof typeof GLOSSARY
 
+/** The question behind each STRIDE letter, shown next to the category. */
+export const STRIDE_QUESTIONS: Record<Lang, Record<string, string>> = {
+  de: {
+    S: 'Kann sich jemand als dieses Element ausgeben?',
+    T: 'Kann jemand Daten, Befehle oder Software verändern?',
+    R: 'Kann jemand eine Aktion abstreiten, weil sie nicht nachweisbar ist?',
+    I: 'Können Daten abfließen?',
+    D: 'Kann jemand die Funktion stören oder lahmlegen?',
+    E: 'Kann jemand mehr Rechte erlangen, als er haben darf?',
+  },
+  en: {
+    S: 'Can someone pretend to be this element?',
+    T: 'Can someone change data, commands or software?',
+    R: 'Can someone deny an action because it is not traceable?',
+    I: 'Can data leak?',
+    D: 'Can someone disrupt or stop the function?',
+    E: 'Can someone gain more rights than allowed?',
+  },
+}
+
 /** Form field keys that share an explanation with a glossary term. */
 const FIELD_TERMS: Record<string, Term> = {
   zone: 'zone',

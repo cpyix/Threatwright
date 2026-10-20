@@ -105,13 +105,16 @@ const de = {
     'Zu jeder übernommenen Bedrohung fragt die TR, ob die Ursache ein Angriff auf das digitale Produkt ist (Regel 3.3). ' +
     'Nur dann ist es ein Cyberrisiko; sonst wird die Bedrohung mit Begründung verworfen.',
   adopt_selected: 'Ausgewählte übernehmen',
-  select_all: 'alle auswählen',
   adopted: 'übernommen',
+  adopted_of: 'übernommen',
+  more: 'Weitere Vorschläge',
   no_suggestions: 'Keine Vorschläge für diesen Baustein.',
+  flow_needs_type:
+    'Für eine allgemeine Verbindung gibt es keine Vorlagen. Wählen Sie im Schritt „Verbindungen“ den Typ (z. B. EtherCAT, IP-Netz), dann erscheinen passende Vorschläge.',
   open_cyber: 'Offene Frage: Ist die Ursache ein Angriff auf das digitale Produkt?',
+  open_cyber_help: 'Lesen Sie das Szenario und entscheiden Sie einzeln. Bei „Nein“ wird die Bedrohung mit Begründung verworfen.',
   yes: 'Ja, Cyberrisiko',
   no: 'Nein …',
-  all_yes: 'Alle mit „Ja“ beantworten',
   loading: 'Lädt …',
 
   finish_text:
@@ -243,13 +246,16 @@ const en: Text = {
     'For every adopted threat the TR asks whether the cause is an attack on the digital product (rule 3.3). ' +
     'Only then is it a cyber risk; otherwise the threat is rejected with a rationale.',
   adopt_selected: 'Adopt selected',
-  select_all: 'select all',
   adopted: 'adopted',
+  adopted_of: 'adopted',
+  more: 'More suggestions',
   no_suggestions: 'No suggestions for this building block.',
+  flow_needs_type:
+    'A generic connection has no templates. Choose its type (e.g. EtherCAT, IP network) in the "Connections" step to get matching suggestions.',
   open_cyber: 'Open question: is the cause an attack on the digital product?',
+  open_cyber_help: 'Read the scenario and decide for each one. "No" rejects the threat with a rationale.',
   yes: 'Yes, cyber risk',
   no: 'No …',
-  all_yes: 'Answer all with “yes”',
   loading: 'Loading …',
 
   finish_text: 'The basic structure is in place. From here, continue in the regular views:',

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import Info from './Info.svelte'
   // Guided initial setup of a model: product, zones, components, connections, assets, threats.
   // Every step works on the regular model through the existing API (undo and save as usual).
   import { api, ApiError } from '../api'
@@ -7,6 +6,7 @@
   import { ASSET_CLASSES, CATEGORIES, SETUP } from '../setup-text'
   import { app } from '../state.svelte'
   import type { Category, ElementType, ModelPayload, Obj, ProjectInfo } from '../types'
+  import Info from './Info.svelte'
   import MultiSelect from './MultiSelect.svelte'
 
   let { step }: { step: number } = $props()
@@ -190,18 +190,22 @@
     suggestions[id] = r.categories
   }
 
+  const TOP = 5 // shown per target before "more"; a long list invites adopting everything
+  let expanded = $state<Record<string, boolean>>({})
+
   function suggestionList(id: string) {
     const seen = new Set<string>()
-    const out: { template_id: string; title: string; scenario: string; adopted: boolean; stride: string }[] = []
+    const out: { template_id: string; title: string; scenario: string; adopted: boolean; stride: string; impact: number }[] = []
     for (const [s, cat] of Object.entries(suggestions[id] ?? {})) {
       if (!cat.relevant) continue
       for (const sg of cat.suggestions) {
         if (seen.has(sg.template_id)) continue
         seen.add(sg.template_id)
-        out.push({ template_id: sg.template_id, title: sg.title, scenario: sg.scenario, adopted: sg.adopted, stride: s })
+        out.push({ template_id: sg.template_id, title: sg.title, scenario: sg.scenario, adopted: sg.adopted, stride: s, impact: sg.impact ?? 0 })
       }
     }
-    return out
+    // ponytail: "relevance" = template impact; replace with a real score once libraries carry one
+    return out.sort((a, b) => b.impact - a.impact)
   }
 
   async function adopt(id: string) {
@@ -214,16 +218,6 @@
       await app.afterChange(model)
       chosen[id] = []
       await loadSuggestions(id)
-    })
-  }
-
-  async function answerAllYes() {
-    await guard(async () => {
-      let model: ModelPayload | undefined
-      for (const x of openCyber) {
-        model = (await api<{ model: ModelPayload }>('PUT', path(`/threats/${x.id}`), { ...$state.snapshot(x), cyber_cause: true })).model
-      }
-      await app.afterChange(model)
     })
   }
 
@@ -408,14 +402,24 @@
       <form class="card grid4" onsubmit={(e) => { e.preventDefault(); addFlow() }}>
         <div>
           <label for="setup-src">{t.source}</label>
-          <select id="setup-src" bind:value={source} required data-testid="setup-flow-source">
+          <!-- value + onchange, not bind: the target options depend on the source (bind lost the pick) -->
+          <select
+            id="setup-src"
+            value={source}
+            onchange={(e) => {
+              source = e.currentTarget.value
+              if (target === source) target = ''
+            }}
+            required
+            data-testid="setup-flow-source"
+          >
             <option value=""></option>
             {#each elements as e}<option value={e.id}>{e.id} {e.title}</option>{/each}
           </select>
         </div>
         <div>
           <label for="setup-tgt">{t.target}</label>
-          <select id="setup-tgt" bind:value={target} required data-testid="setup-flow-target">
+          <select id="setup-tgt" value={target} onchange={(e) => (target = e.currentTarget.value)} required data-testid="setup-flow-target">
             <option value=""></option>
             {#each elements.filter((e) => e.id !== source) as e}<option value={e.id}>{e.id} {e.title}</option>{/each}
           </select>
@@ -508,20 +512,22 @@
         }}
         data-testid="setup-target-{o.id}"
       >
-        <summary><strong>{o.id}</strong> {o.title}</summary>
+        <summary>
+          <strong>{o.id}</strong> {o.title}
+          {#if suggestions[o.id]}
+            {@const all = suggestionList(o.id)}
+            {#if all.length}<span class="muted small">· {all.filter((s) => s.adopted).length}/{all.length} {t.adopted_of}</span>{/if}
+          {/if}
+        </summary>
         {#if !suggestions[o.id]}
           <p class="muted">{t.loading}</p>
         {:else}
           {@const list = suggestionList(o.id)}
           {#if list.length === 0}
-            <p class="muted">{t.no_suggestions}</p>
+            <p class="muted">{o.source && !o.library_ref ? t.flow_needs_type : t.no_suggestions}</p>
           {:else}
-            <button
-              class="link"
-              onclick={() => (chosen[o.id] = list.filter((s) => !s.adopted).map((s) => s.template_id))}>{t.select_all}</button
-            >
             <ul class="plain">
-              {#each list as s (s.template_id)}
+              {#each expanded[o.id] ? list : list.slice(0, TOP) as s (s.template_id)}
                 <li class="suggestion">
                   <label>
                     <input
@@ -543,6 +549,11 @@
                 </li>
               {/each}
             </ul>
+            {#if !expanded[o.id] && list.length > TOP}
+              <button class="link" onclick={() => (expanded[o.id] = true)} data-testid="setup-more-{o.id}">
+                {t.more} ({list.length - TOP})
+              </button>
+            {/if}
             <button class="primary" disabled={busy || !(chosen[o.id] ?? []).length} onclick={() => adopt(o.id)} data-testid="setup-adopt-{o.id}">
               {t.adopt_selected} ({(chosen[o.id] ?? []).length})
             </button>
@@ -553,11 +564,14 @@
 
     {#if openCyber.length}
       <h3>{t.open_cyber} <Info term="cyber_cause" /></h3>
-      <button onclick={answerAllYes} disabled={busy} data-testid="setup-cyber-all">{t.all_yes}</button>
+      <p class="muted">{t.open_cyber_help}</p>
       {#each openCyber as x (x.id)}
-        <div class="row item">
-          <span class="grow"><strong>{x.id}</strong> {x.title}</span>
-          <button onclick={() => update('threats', x, { cyber_cause: true })} disabled={busy}>{t.yes}</button>
+        <div class="row item cyber" data-testid="setup-cyber-{x.id}">
+          <span class="grow">
+            <strong>{x.id}</strong> {x.title}
+            {#if x.scenario}<span class="muted small block">{x.scenario}</span>{/if}
+          </span>
+          <button onclick={() => update('threats', x, { cyber_cause: true })} disabled={busy} data-testid="setup-cyber-yes-{x.id}">{t.yes}</button>
           <button onclick={() => (app.cyberCheck = x.id)}>{t.no}</button>
         </div>
       {/each}

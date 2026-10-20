@@ -114,6 +114,10 @@ const de = {
   auto_layout: 'Automatisch anordnen',
   legend: 'Legende',
   explain: 'Erklärung',
+  existing_short: 'vorhanden',
+  suggestions_short: 'Vorschläge',
+  flow_needs_type:
+    'Für einen allgemeinen Datenfluss gibt es keine Vorlagen. Wählen Sie im Diagramm oder unter Datenflüsse einen Typ (z. B. EtherCAT, IP-Netz), dann erscheinen passende Vorschläge.',
   environment: 'Umgebung',
   close: 'Schließen',
   legend_zone: 'Zone (Vertrauensbereich)',
@@ -305,6 +309,10 @@ const en: Record<Key, string> = {
   auto_layout: 'Auto layout',
   legend: 'Legend',
   explain: 'Explanation',
+  existing_short: 'existing',
+  suggestions_short: 'suggestions',
+  flow_needs_type:
+    'A generic data flow has no templates. Give it a type (e.g. EtherCAT, IP network) in the diagram or under data flows to get matching suggestions.',
   environment: 'Environment',
   close: 'Close',
   legend_zone: 'Zone (trust boundary)',

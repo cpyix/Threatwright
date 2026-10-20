@@ -36,7 +36,8 @@ def test_setup_wizard(gui: str, page: Page, offline: list[str], tmp_path: Path) 
     expect(page.get_by_text("E-0002")).to_be_visible()
     page.get_by_test_id("setup-next").click()
 
-    # 4 connections
+    # 4 connections; changing the source after a pick must not lose the target
+    page.get_by_test_id("setup-flow-source").select_option("E-0001")
     page.get_by_test_id("setup-flow-source").select_option("E-0002")
     page.get_by_test_id("setup-flow-target").select_option("E-0001")
     page.get_by_test_id("setup-flow-add").click()
@@ -51,12 +52,24 @@ def test_setup_wizard(gui: str, page: Page, offline: list[str], tmp_path: Path) 
     expect(page.get_by_role("cell", name=re.compile(r"^A-\d+ Rezepturen$"))).to_be_visible()
     page.get_by_test_id("setup-next").click()
 
-    # 6 threats: adopt all suggestions for the PLC, answer rule 3.3
-    page.get_by_test_id("setup-target-E-0001").locator("summary").click()
-    page.get_by_role("button", name="alle auswählen").click()
+    # 6 threats: top suggestions only, then answer rule 3.3 one by one (no "all yes")
+    target_box = page.get_by_test_id("setup-target-E-0001")
+    target_box.locator("summary").click()
+    boxes = target_box.locator("input[type=checkbox]")
+    expect(boxes).to_have_count(5)
+    boxes.nth(0).check()
+    boxes.nth(1).check()
     page.get_by_test_id("setup-adopt-E-0001").click()
-    page.get_by_test_id("setup-cyber-all").click()
-    expect(page.get_by_test_id("setup-cyber-all")).to_have_count(0)
+    expect(target_box.locator("summary")).to_contain_text("2/")
+    yes = page.locator("[data-testid^=setup-cyber-yes-]")
+    expect(yes).to_have_count(2)
+    yes.first.click()
+    expect(yes).to_have_count(1)
+    yes.first.click()
+    expect(yes).to_have_count(0)
+    # the untyped connection explains why it has no suggestions
+    page.get_by_test_id("setup-target-F-0001").locator("summary").click()
+    expect(page.get_by_test_id("setup-target-F-0001")).to_contain_text("allgemeine Verbindung")
     page.get_by_test_id("setup-next").click()
 
     # 7 finish

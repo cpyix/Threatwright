@@ -54,7 +54,7 @@ def test_setup_wizard(
     expect(page.get_by_role("cell", name=re.compile(r"^A-\d+ Rezepturen$"))).to_be_visible()
     page.get_by_test_id("setup-next").click()
 
-    # 6 threats: top suggestions only, then answer rule 3.3 one by one (no "all yes")
+    # 6 threats: top suggestions only; templates answer rule 3.3, nothing left open
     target_box = page.get_by_test_id("setup-target-E-0001")
     target_box.locator("summary").click()
     boxes = target_box.locator("input[type=checkbox]")
@@ -63,12 +63,7 @@ def test_setup_wizard(
     boxes.nth(1).check()
     page.get_by_test_id("setup-adopt-E-0001").click()
     expect(target_box.locator("summary")).to_contain_text("2/")
-    yes = page.locator("[data-testid^=setup-cyber-yes-]")
-    expect(yes).to_have_count(2)
-    yes.first.click()
-    expect(yes).to_have_count(1)
-    yes.first.click()
-    expect(yes).to_have_count(0)
+    expect(page.locator("[data-testid^=setup-cyber-yes-]")).to_have_count(0)
     # the untyped connection explains why it has no suggestions
     page.get_by_test_id("setup-target-F-0001").locator("summary").click()
     expect(page.get_by_test_id("setup-target-F-0001")).to_contain_text(ui["generic_connection"])

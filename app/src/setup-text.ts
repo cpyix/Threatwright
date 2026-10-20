@@ -105,8 +105,8 @@ const de = {
     'Übernehmen Sie, was für Ihr Produkt zutrifft; die vorgeschlagenen Maßnahmen kommen automatisch mit. ' +
     'Unpassendes lassen Sie weg, die Abdeckungsmatrix erinnert später an Lücken.',
   threats_cyber:
-    'Zu jeder übernommenen Bedrohung fragt die TR, ob die Ursache ein Angriff auf das digitale Produkt ist (Regel 3.3). ' +
-    'Nur dann ist es ein Cyberrisiko; sonst wird die Bedrohung mit Begründung verworfen.',
+    'Die TR zählt nur Bedrohungen, deren Ursache ein Angriff auf das digitale Produkt ist (Regel 3.3). ' +
+    'Jede Vorlage beschreibt einen solchen Angriff, übernommene Vorschläge gelten deshalb als Cyberrisiko. Passt eine nicht, verwerfen Sie sie unter „Bedrohungen“ mit Begründung.',
   adopt_selected: 'Ausgewählte übernehmen',
   adopted: 'übernommen',
   adopted_of: 'übernommen',
@@ -249,8 +249,8 @@ const en: Text = {
     'product; the suggested measures are added automatically. Leave out what does not fit; the coverage matrix will ' +
     'remind you of gaps later.',
   threats_cyber:
-    'For every adopted threat the TR asks whether the cause is an attack on the digital product (rule 3.3). ' +
-    'Only then is it a cyber risk; otherwise the threat is rejected with a rationale.',
+    'The TR only counts threats caused by an attack on the digital product (rule 3.3). ' +
+    'Every template describes such an attack, so adopted suggestions count as cyber risks. If one does not fit, reject it under "Threats" with a rationale.',
   adopt_selected: 'Adopt selected',
   adopted: 'adopted',
   adopted_of: 'adopted',

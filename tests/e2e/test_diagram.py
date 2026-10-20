@@ -42,10 +42,8 @@ def test_diagram_assistant_coverage(
     page.get_by_test_id("open-assistant").click()
     expect(page.get_by_test_id("assistant-target")).to_have_value("E-0004")
     page.locator("[data-testid^=adopt-]").first.click()
-    dialog = page.get_by_test_id("cyber-dialog")
-    expect(dialog).to_be_visible()
-    dialog.get_by_test_id("cyber-yes").click()
-    expect(dialog).to_be_hidden()
+    expect(page.get_by_test_id("cyber-dialog")).to_be_hidden()  # rule 3.3 answered by the template
+    expect(page.locator("span.ok").first).to_be_visible()  # adopted
 
     page.get_by_test_id("nav-coverage").click()
     expect(page.get_by_test_id("coverage")).to_contain_text("E-0004")

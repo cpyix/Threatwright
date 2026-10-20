@@ -31,7 +31,7 @@ Der Standardbrowser öffnet sich. Die Oberfläche läuft nur auf Ihrem Rechner u
 
 ## 4. Modell aufbauen
 
-**Mit dem Einrichtungsassistenten (empfohlen für den Einstieg):** Ein in der Oberfläche neu angelegtes Projekt öffnet direkt den Assistenten. Bei bestehenden Projekten erreichen Sie ihn über **Einrichtung** in der Navigation. Er führt in sieben Schritten durch Produktbeschreibung und Einsatzzweck, Zonen mit Schnittstelle, Zugang und Nutzer, Komponenten aus der Bibliothek, Verbindungen, Assets mit TR-Klasse, Bedrohungsvorschläge samt Ursachenfrage (Regel 3.3) und eine Abschlussübersicht. Alles landet als normaler Modellinhalt im Projekt; Rückgängig und Speichern funktionieren wie überall.
+**Mit dem Einrichtungsassistenten (empfohlen für den Einstieg):** Ein in der Oberfläche neu angelegtes Projekt öffnet direkt den Assistenten. Bei bestehenden Projekten erreichen Sie ihn über **Einrichtung** in der Navigation. Er führt in sieben Schritten durch Produktbeschreibung und Einsatzzweck, Zonen mit Schnittstelle, Zugang und Nutzer, Komponenten aus der Bibliothek, Verbindungen, Assets mit TR-Klasse, Bedrohungsvorschläge (gelten als Cyberrisiko nach Regel 3.3) und eine Abschlussübersicht. Alles landet als normaler Modellinhalt im Projekt; Rückgängig und Speichern funktionieren wie überall.
 
 **Von Hand** in den einzelnen Ansichten:
 

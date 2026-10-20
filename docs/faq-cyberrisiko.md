@@ -1,6 +1,6 @@
 # FAQ: Ist das ein Cyberrisiko?
 
-Der CRA verlangt eine Bewertung der **Cybersicherheitsrisiken**. Viele Einträge, die bei einer ersten Sammlung entstehen, gehören jedoch in die funktionale Sicherheit oder die Qualitätssicherung. Das Werkzeug stellt deshalb bei jeder neuen Bedrohung dieselbe Prüffrage.
+Der CRA verlangt eine Bewertung der **Cybersicherheitsrisiken**. Viele Einträge, die bei einer ersten Sammlung entstehen, gehören jedoch in die funktionale Sicherheit oder die Qualitätssicherung. Das Werkzeug stellt deshalb bei jeder selbst angelegten Bedrohung dieselbe Prüffrage. Vorschläge aus der Bibliothek beschreiben immer einen Angriff; sie gelten beim Übernehmen als Cyberrisiko und lassen sich bei Bedarf mit Begründung verwerfen.
 
 ## Die Regel
 

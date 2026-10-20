@@ -178,6 +178,8 @@ def adopt_threat(
         scenario=fill(getattr(template.scenario, lang)),
         consequence=fill(getattr(template.consequence, lang)),
         safety_related=template.safety_related,
+        # rule 3.3: every library template describes an attack, adopting it is the decision
+        cyber_cause=True,
         assessment=Assessment(
             interface=env.interface or zone.interface,
             access=zone.access or env.access,

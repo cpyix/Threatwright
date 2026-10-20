@@ -1,0 +1,9 @@
+schema_version: 1
+id: M-0014
+uuid: d2a701cc-70a8-4e0d-837e-e36948a708d3
+title: Remote access on demand only
+description: The remote maintenance connection is disconnected by default and is activated by the operator on site only for a specific service job, e.g. via key switch, digital input or confirmation on the HMI. After the session ends or after a defined time, the connection is closed automatically.
+library_ref: lib:ot/measure/remote-access-on-demand@1
+kind: technical
+evidence: Electrical drawing or configuration of activation, test report with automatic disconnection, log extract.
+cra_refs: [AI-I-2-d, AI-I-2-j]

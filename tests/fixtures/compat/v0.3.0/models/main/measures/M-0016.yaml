@@ -1,0 +1,9 @@
+schema_version: 1
+id: M-0016
+uuid: 1b8e4dc6-fc76-40e5-86cf-f9378df2028c
+title: Local remote access kill switch
+description: The operator can interrupt any remote connection on site at any time, e.g. via an easily accessible switch that de-energises the remote maintenance module or disconnects the uplink. Disconnection works independently of software and is shown on the HMI.
+library_ref: lib:ot/measure/remote-access-kill-switch@1
+kind: design
+evidence: Electrical drawing with disconnect switch, test report of disconnection during a session.
+cra_refs: [AI-I-2-d, AI-I-2-k]

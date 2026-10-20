@@ -1,0 +1,5 @@
+schema_version: 1
+id: A-0006
+uuid: 3371323d-5f16-4192-9457-6c15ad4de1a6
+title: Input and output data (Remote I/O)
+asset_class: Functions.CommunicationLocal

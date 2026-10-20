@@ -1,0 +1,5 @@
+schema_version: 1
+id: A-0013
+uuid: fbdaa076-6b29-4e2c-bef7-1bc472fded5f
+title: Access function to the machine (Remote service gateway)
+asset_class: Security.Mechanism

@@ -131,6 +131,7 @@ const de = {
   c_threats: 'Bedrohungen übernommen',
   c_cyber: 'Ursachenfrage beantwortet',
   c_errors: 'Fehler in der Prüfung',
+  show_errors: 'Fehler ansehen →',
   next_steps: 'Nächste Schritte',
   n_assess: 'Bedrohungen bewerten: Schnittstelle, Zugang und Nutzer prüfen, Impact setzen und begründen.',
   n_coverage: 'Abdeckung prüfen: Lücken schließen oder als „nicht relevant“ begründen.',
@@ -273,6 +274,7 @@ const en: Text = {
   c_threats: 'Threats adopted',
   c_cyber: 'Cause question answered',
   c_errors: 'Errors in the validation',
+  show_errors: 'Show errors →',
   next_steps: 'Next steps',
   n_assess: 'Assess threats: check interface, access and user, set and justify the impact.',
   n_coverage: 'Check coverage: close gaps or justify them as “not relevant”.',
@@ -313,6 +315,10 @@ export const CATEGORIES: Record<Lang, Record<string, string>> = {
 }
 
 // Short own-words explanation of the TR-03183-1 asset classes (Tables 1-3).
+/** Readable option text for an asset class: the description without its example. */
+export const assetClassLabel = (lang: Lang, cls: string): string =>
+  ASSET_CLASSES[lang][cls]?.split(' (')[0] ?? cls
+
 export const ASSET_CLASSES: Record<Lang, Record<string, string>> = {
   de: {
     'PII.TechnicalNecessary': 'Personenbezogene Daten, die nur technisch nötig sind (z. B. Benutzerkennung im Protokoll)',

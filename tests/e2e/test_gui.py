@@ -15,7 +15,7 @@ def test_create_assess_link_save(
     form = page.get_by_test_id("object-form")
     form.get_by_test_id("field-title").fill("Fremdes Gerät liest Prozessdaten mit")
     form.get_by_test_id("field-cyber_cause").select_option("yes")
-    form.get_by_role("checkbox", name="I", exact=True).check()
+    form.get_by_role("checkbox", name="I – Information Disclosure").check()
     form.get_by_role("checkbox", name="E-0002 Remote I/O module").check()
     # environment is pre-filled from the zone of the target element
     expect(form.get_by_test_id("assessment-interface")).to_have_value("local")

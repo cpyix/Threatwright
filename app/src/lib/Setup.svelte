@@ -3,7 +3,7 @@
   // Every step works on the regular model through the existing API (undo and save as usual).
   import { api, ApiError } from '../api'
   import { label, tr } from '../i18n'
-  import { ASSET_CLASSES, CATEGORIES, SETUP } from '../setup-text'
+  import { ASSET_CLASSES, assetClassLabel, CATEGORIES, SETUP } from '../setup-text'
   import { app } from '../state.svelte'
   import type { Category, ElementType, ModelPayload, Obj, ProjectInfo } from '../types'
   import { SvelteFlowProvider } from '@xyflow/svelte'
@@ -480,7 +480,7 @@
                 onchange={(e) => update('assets', a, { asset_class: e.currentTarget.value })}
               >
                 <option value=""></option>
-                {#each classes as c}<option value={c}>{c}</option>{/each}
+                {#each classes as c}<option value={c}>{assetClassLabel(lang, c)}</option>{/each}
               </select>
               <p class="muted small">{ASSET_CLASSES[lang][a.asset_class] ?? ''}</p>
               {#if String(a.asset_class).startsWith('Security.')}
@@ -509,7 +509,7 @@
         <label for="setup-asset-class">{t.asset_class}</label>
         <select id="setup-asset-class" bind:value={assetClass} required data-testid="setup-asset-class">
           <option value=""></option>
-          {#each classes as c}<option value={c}>{c}</option>{/each}
+          {#each classes as c}<option value={c}>{assetClassLabel(lang, c)}</option>{/each}
         </select>
         {#if assetClass}<p class="muted small">{ASSET_CLASSES[lang][assetClass] ?? ''}</p>{/if}
       </div>
@@ -599,7 +599,10 @@
       {#each checks as [text, ok, count]}
         <li><span class={ok ? 'ok' : 'warning'}>{ok ? '✓' : '•'}</span> {text}{count != null ? `: ${count}` : ''}</li>
       {/each}
-      <li><span class={errors ? 'error' : 'ok'}>{errors ? '•' : '✓'}</span> {t.c_errors}: {errors}</li>
+      <li>
+        <span class={errors ? 'error' : 'ok'}>{errors ? '•' : '✓'}</span> {t.c_errors}: {errors}
+        {#if errors}<button class="link" onclick={() => (app.view = { kind: 'validation' })} data-testid="setup-show-errors">{t.show_errors}</button>{/if}
+      </li>
     </ul>
     <h3>{t.next_steps}</h3>
     <ol>

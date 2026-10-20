@@ -16,7 +16,7 @@ def project_dir(project_dir: Path) -> Path:
 
 
 def test_diagram_assistant_coverage(
-    gui: str, page: Page, offline: list[str], project_dir: Path
+    ui: dict[str, str], gui: str, page: Page, offline: list[str], project_dir: Path
 ) -> None:
     errors: list[str] = []
     page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
@@ -52,7 +52,7 @@ def test_diagram_assistant_coverage(
 
     page.keyboard.press("Control+s")
     # Save can exceed the 5 s default on slow Windows CI runners
-    expect(page.get_by_test_id("toast")).to_contain_text("Gespeichert", timeout=15_000)
+    expect(page.get_by_test_id("toast")).to_contain_text(ui["saved"], timeout=15_000)
     project = Project.load(project_dir)
     sub = project.models["main"]
     assert sub.objects["elements"]["E-0004"].library_ref == "lib:ot/element/drive@1"

@@ -1,5 +1,23 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
+  import ArrowRightLeft from '@lucide/svelte/icons/arrow-right-left'
+  import Box from '@lucide/svelte/icons/box'
+  import CircleCheckBig from '@lucide/svelte/icons/circle-check-big'
+  import FileText from '@lucide/svelte/icons/file-text'
+  import FolderOpen from '@lucide/svelte/icons/folder-open'
+  import Gem from '@lucide/svelte/icons/gem'
+  import Grid3x3 from '@lucide/svelte/icons/grid-3x3'
+  import LayoutDashboard from '@lucide/svelte/icons/layout-dashboard'
+  import ListChecks from '@lucide/svelte/icons/list-checks'
+  import MessageCircleQuestion from '@lucide/svelte/icons/message-circle-question'
+  import PanelLeftClose from '@lucide/svelte/icons/panel-left-close'
+  import PanelLeftOpen from '@lucide/svelte/icons/panel-left-open'
+  import Settings from '@lucide/svelte/icons/settings'
+  import ShieldAlert from '@lucide/svelte/icons/shield-alert'
+  import ShieldCheck from '@lucide/svelte/icons/shield-check'
+  import ShieldQuestion from '@lucide/svelte/icons/shield-question'
+  import Wand from '@lucide/svelte/icons/wand-sparkles'
+  import Workflow from '@lucide/svelte/icons/workflow'
+  import { onMount, type Component } from 'svelte'
   import { PRODUCT_NAME } from './branding'
   import { tr, type Key } from './i18n'
   import Assistant from './lib/Assistant.svelte'
@@ -10,15 +28,19 @@
   import Documents from './lib/Documents.svelte'
   import Objects from './lib/Objects.svelte'
   import Overview from './lib/Overview.svelte'
-  import Settings from './lib/Settings.svelte'
+  import SettingsView from './lib/Settings.svelte'
   import Setup from './lib/Setup.svelte'
   import Start from './lib/Start.svelte'
   import Validation from './lib/Validation.svelte'
-  import { app } from './state.svelte'
-  import { COLLECTIONS } from './types'
+  import { app, type View } from './state.svelte'
+  import type { Collection } from './types'
 
   const lang = $derived(app.lang)
   const errors = $derived(app.issues.filter((i) => i.severity === 'error').length)
+
+  $effect(() => {
+    document.documentElement.lang = lang // screen readers and hyphenation follow the UI language
+  })
 
   onMount(() => {
     app.init()
@@ -54,6 +76,71 @@
     app.modelName = name
     await app.refreshModel()
   }
+
+  type Item = { key: Key; icon: Component; view: () => View; active: (v: View) => boolean; testid?: string }
+  const simple = (key: Key & View['kind'], icon: Component, view: () => View = () => ({ kind: key }) as View): Item => ({
+    key,
+    icon,
+    view,
+    active: (v) => v.kind === key,
+  })
+  const collection = (c: Collection, icon: Component): Item => ({
+    key: c,
+    icon,
+    view: () => ({ kind: 'objects', collection: c, selected: null }),
+    active: (v) => v.kind === 'objects' && v.collection === c,
+  })
+  // Four groups instead of 16 flat entries: build the model, analyse it, check and hand over, project.
+  const groups = $derived<{ title: Key; items: Item[] }[]>(
+    app.project
+      ? [
+          {
+            title: 'nav_model',
+            items: [
+              simple('setup', Wand, () => ({ kind: 'setup', step: 0 })),
+              simple('diagram', Workflow),
+              simple('overview', LayoutDashboard),
+              collection('elements', Box),
+              collection('flows', ArrowRightLeft),
+              collection('assets', Gem),
+            ],
+          },
+          {
+            title: 'nav_analyse',
+            items: [
+              simple('assistant', ShieldQuestion, () => ({ kind: 'assistant', target: null })),
+              simple('coverage', Grid3x3),
+              collection('threats', ShieldAlert),
+              collection('measures', ShieldCheck),
+              collection('questions', MessageCircleQuestion),
+            ],
+          },
+          {
+            title: 'nav_check',
+            items: [simple('validation', CircleCheckBig), simple('documents', FileText), simple('controls', ListChecks)],
+          },
+          { title: 'nav_project', items: [simple('start', FolderOpen), simple('settings', Settings)] },
+        ]
+      : [{ title: 'nav_project', items: [simple('start', FolderOpen)] }],
+  )
+
+  // per-browser convenience only; storage may be unavailable
+  let collapsed = $state(readCollapsed())
+  function readCollapsed(): boolean {
+    try {
+      return localStorage.getItem('tw-nav-collapsed') === '1'
+    } catch {
+      return false
+    }
+  }
+  function toggleNav() {
+    collapsed = !collapsed
+    try {
+      localStorage.setItem('tw-nav-collapsed', collapsed ? '1' : '0')
+    } catch {
+      /* ignore */
+    }
+  }
 </script>
 
 <svelte:window {onkeydown} {onbeforeunload} />
@@ -80,7 +167,7 @@
   {:else}
     <span class="spacer"></span>
   {/if}
-  <button onclick={() => (app.lang = lang === 'de' ? 'en' : 'de')} aria-label="Sprache / language">
+  <button onclick={() => app.setLang(lang === 'de' ? 'en' : 'de')} aria-label="Sprache / language">
     {lang === 'de' ? 'EN' : 'DE'}
   </button>
 </header>
@@ -94,28 +181,35 @@
 {/if}
 
 <div class="layout">
-  <nav aria-label="Navigation">
-    <button class:active={app.view.kind === 'start'} onclick={() => (app.view = { kind: 'start' })}>{tr(lang, 'start')}</button>
-    {#if app.project}
-      <button class:active={app.view.kind === 'setup'} onclick={() => (app.view = { kind: 'setup', step: 0 })} data-testid="nav-setup">{tr(lang, 'setup')}</button>
-      <button class:active={app.view.kind === 'overview'} onclick={() => (app.view = { kind: 'overview' })}>{tr(lang, 'overview')}</button>
-      <button class:active={app.view.kind === 'diagram'} onclick={() => (app.view = { kind: 'diagram' })} data-testid="nav-diagram">{tr(lang, 'diagram')}</button>
-      <button class:active={app.view.kind === 'assistant'} onclick={() => (app.view = { kind: 'assistant', target: null })} data-testid="nav-assistant">{tr(lang, 'assistant')}</button>
-      <button class:active={app.view.kind === 'coverage'} onclick={() => (app.view = { kind: 'coverage' })} data-testid="nav-coverage">{tr(lang, 'coverage')}</button>
-      {#each COLLECTIONS as c}
-        <button
-          class:active={app.view.kind === 'objects' && app.view.collection === c}
-          onclick={() => (app.view = { kind: 'objects', collection: c, selected: null })}
-          data-testid="nav-{c}">{tr(lang, c as Key)}</button
-        >
-      {/each}
-      <button class:active={app.view.kind === 'validation'} onclick={() => (app.view = { kind: 'validation' })} data-testid="nav-validation">
-        {tr(lang, 'validation')} {#if errors}<span class="count error">{errors}</span>{/if}
-      </button>
-      <button class:active={app.view.kind === 'documents'} onclick={() => (app.view = { kind: 'documents' })} data-testid="nav-documents">{tr(lang, 'documents')}</button>
-      <button class:active={app.view.kind === 'controls'} onclick={() => (app.view = { kind: 'controls' })} data-testid="nav-controls">{tr(lang, 'controls')}</button>
-      <button class:active={app.view.kind === 'settings'} onclick={() => (app.view = { kind: 'settings' })} data-testid="nav-settings">{tr(lang, 'settings')}</button>
-    {/if}
+  <nav aria-label="Navigation" class:collapsed>
+    <button
+      class="toggle"
+      onclick={toggleNav}
+      aria-expanded={!collapsed}
+      title={tr(lang, collapsed ? 'nav_expand' : 'nav_collapse')}
+      aria-label={tr(lang, collapsed ? 'nav_expand' : 'nav_collapse')}
+    >
+      {#if collapsed}<PanelLeftOpen size={18} aria-hidden="true" />{:else}<PanelLeftClose size={18} aria-hidden="true" />{/if}
+    </button>
+    {#each groups as g (g.title)}
+      <div class="group" role="group" aria-label={tr(lang, g.title)}>
+        <span class="group-title">{tr(lang, g.title)}</span>
+        {#each g.items as item (item.key)}
+          {@const Icon = item.icon}
+          <button
+            class:active={item.active(app.view)}
+            onclick={() => (app.view = item.view())}
+            title={collapsed ? tr(lang, item.key) : undefined}
+            aria-current={item.active(app.view) ? 'page' : undefined}
+            data-testid="nav-{item.testid ?? item.key}"
+          >
+            <Icon size={17} strokeWidth={1.75} aria-hidden="true" />
+            <span class="label">{tr(lang, item.key)}</span>
+            {#if item.key === 'validation' && errors}<span class="count error">{errors}</span>{/if}
+          </button>
+        {/each}
+      </div>
+    {/each}
   </nav>
 
   <main>
@@ -136,7 +230,7 @@
     {:else if app.view.kind === 'coverage'}
       <Coverage />
     {:else if app.view.kind === 'settings'}
-      <Settings />
+      <SettingsView />
     {:else if app.view.kind === 'controls'}
       <Controls />
     {:else if app.view.kind === 'documents'}
@@ -184,25 +278,78 @@
   }
   .layout {
     display: grid;
-    grid-template-columns: 12rem 1fr;
+    grid-template-columns: auto minmax(0, 1fr);
     min-height: calc(100vh - 3rem);
   }
   nav {
+    width: 13rem;
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
-    padding: 0.75rem 0.5rem;
+    gap: 0.9rem;
+    padding: 0.5rem 0.5rem 1rem;
     border-right: 1px solid var(--border);
   }
+  nav.collapsed {
+    width: 3.25rem;
+  }
+  .group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+  .group-title {
+    padding: 0 0.6rem 0.15rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+  }
   nav button {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
     text-align: left;
     border: none;
     background: none;
     padding: 0.4rem 0.6rem;
+    border-radius: var(--radius);
+  }
+  nav button:hover {
+    background: var(--surface-2);
   }
   nav button.active {
     background: var(--surface-2);
     font-weight: 600;
+    color: var(--accent);
+  }
+  nav .toggle {
+    align-self: flex-end;
+    color: var(--muted);
+  }
+  nav.collapsed .toggle {
+    align-self: center;
+  }
+  nav.collapsed .group-title,
+  nav.collapsed .label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  nav.collapsed button {
+    justify-content: center;
+    position: relative;
+  }
+  nav.collapsed .count {
+    position: absolute;
+    top: 0;
+    right: 2px;
+    font-size: 0.7rem;
+  }
+  nav.collapsed .group + .group {
+    border-top: 1px solid var(--border);
+    padding-top: 0.6rem;
   }
   .count {
     font-weight: 700;

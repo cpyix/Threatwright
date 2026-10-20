@@ -6,7 +6,9 @@ from pathlib import Path
 from playwright.sync_api import Page, expect
 
 
-def test_setup_wizard(gui: str, page: Page, offline: list[str], tmp_path: Path) -> None:
+def test_setup_wizard(
+    ui: dict[str, str], gui: str, page: Page, offline: list[str], tmp_path: Path
+) -> None:
     target = tmp_path / "neu"
     page.goto(gui)
     page.get_by_role("button", name="Start", exact=True).click()
@@ -23,7 +25,7 @@ def test_setup_wizard(gui: str, page: Page, offline: list[str], tmp_path: Path) 
 
     # 2 zones: complete the plant network zone
     page.get_by_test_id("zone-Z-PLANT-access").select_option("restricted")
-    expect(page.get_by_test_id("setup-zone-Z-PLANT")).to_contain_text("bekannter Personenkreis")
+    expect(page.get_by_test_id("setup-zone-Z-PLANT")).to_contain_text(ui["known_group"])
     page.get_by_test_id("setup-next").click()
 
     # 3 components
@@ -45,7 +47,7 @@ def test_setup_wizard(gui: str, page: Page, offline: list[str], tmp_path: Path) 
     page.get_by_test_id("setup-next").click()
 
     # 5 assets: the PLC brought its typical assets; add an own one
-    expect(page.get_by_text("Steuerungsprogramm (Hauptsteuerung)")).to_be_visible()
+    expect(page.get_by_text(f"{ui['control_program']} (Hauptsteuerung)")).to_be_visible()
     page.get_by_test_id("setup-asset-title").fill("Rezepturen")
     page.get_by_test_id("setup-asset-class").select_option("BusinessData.Important")
     page.get_by_test_id("setup-asset-add").click()
@@ -69,15 +71,15 @@ def test_setup_wizard(gui: str, page: Page, offline: list[str], tmp_path: Path) 
     expect(yes).to_have_count(0)
     # the untyped connection explains why it has no suggestions
     page.get_by_test_id("setup-target-F-0001").locator("summary").click()
-    expect(page.get_by_test_id("setup-target-F-0001")).to_contain_text("allgemeine Verbindung")
+    expect(page.get_by_test_id("setup-target-F-0001")).to_contain_text(ui["generic_connection"])
     page.get_by_test_id("setup-next").click()
 
     # 7 finish
     checks = page.get_by_test_id("setup-checks")
-    expect(checks).to_contain_text("Komponenten angelegt: 2")
-    expect(checks).to_contain_text("✓ Ursachenfrage beantwortet")
+    expect(checks).to_contain_text(f"{ui['components_added']}: 2")
+    expect(checks).to_contain_text(f"✓ {ui['cause_answered']}")
     page.get_by_test_id("setup-save").click()
-    expect(page.get_by_test_id("toast")).to_contain_text("Gespeichert", timeout=15_000)
+    expect(page.get_by_test_id("toast")).to_contain_text(ui["saved"], timeout=15_000)
 
     model = target / "models" / "main"
     assert "Testanlage zum Verpacken" in (model / "model.yaml").read_text(encoding="utf-8")

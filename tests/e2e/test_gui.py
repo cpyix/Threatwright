@@ -6,7 +6,7 @@ from playwright.sync_api import Page, expect
 
 
 def test_create_assess_link_save(
-    gui: str, page: Page, offline: list[str], project_dir: Path
+    ui: dict[str, str], gui: str, page: Page, offline: list[str], project_dir: Path
 ) -> None:
     page.goto(gui)
     page.get_by_test_id("nav-threats").click()
@@ -32,10 +32,10 @@ def test_create_assess_link_save(
 
     page.keyboard.press("Control+s")
     target = project_dir / "models/main/threats/T-0002.yaml"
-    expect(page.get_by_test_id("toast")).to_contain_text("Gespeichert", timeout=15_000)
+    expect(page.get_by_test_id("toast")).to_contain_text(ui["saved"], timeout=15_000)
     text = target.read_text(encoding="utf-8")
     assert "impact: 4" in text and "M-0001" in text and "status: treated" in text
 
     page.get_by_test_id("nav-validation").click()
-    expect(page.get_by_role("heading", name="Prüfung")).to_be_visible()
+    expect(page.get_by_role("heading", name=ui["validation"])).to_be_visible()
     assert offline == [], f"unexpected outbound requests: {offline}"

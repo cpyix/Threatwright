@@ -32,6 +32,49 @@ def _guarded_connect(self: socket.socket, address: object) -> None:
     _real_connect(self, address)  # type: ignore[arg-type]
 
 
+# Texts the E2E tests assert, per UI language. The UI language follows the browser
+# locale, so every GUI test runs once in German and once in English.
+UI_TEXT = {
+    "de": {
+        "saved": "Gespeichert",
+        "validation": "Prüfung",
+        "known_group": "bekannter Personenkreis",
+        "control_program": "Steuerungsprogramm",
+        "generic_connection": "allgemeine Verbindung",
+        "components_added": "Komponenten angelegt",
+        "cause_answered": "Ursachenfrage beantwortet",
+        "configurations_info": "Varianten desselben Produkts",
+    },
+    "en": {
+        "saved": "Saved",
+        "validation": "Validation",
+        "known_group": "known group of people",
+        "control_program": "Control program",
+        "generic_connection": "generic connection",
+        "components_added": "Components added",
+        "cause_answered": "Cause question answered",
+        "configurations_info": "Variants of the same product",
+    },
+}
+
+
+@pytest.fixture(params=["de", "en"])
+def ui_lang(request: pytest.FixtureRequest) -> str:
+    return str(request.param)
+
+
+@pytest.fixture
+def browser_context_args(
+    browser_context_args: dict[str, object], ui_lang: str
+) -> dict[str, object]:
+    return {**browser_context_args, "locale": "de-DE" if ui_lang == "de" else "en-GB"}
+
+
+@pytest.fixture
+def ui(ui_lang: str) -> dict[str, str]:
+    return UI_TEXT[ui_lang]
+
+
 @pytest.fixture(autouse=True)
 def no_network(monkeypatch: pytest.MonkeyPatch) -> None:
     """ADR-0007: the tool must never open outbound connections."""

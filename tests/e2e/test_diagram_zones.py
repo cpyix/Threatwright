@@ -22,7 +22,9 @@ def _overlap(a: dict[str, float], b: dict[str, float]) -> bool:
     )
 
 
-def test_auto_layout_and_zone_assignment(gui: str, page: Page, project_dir: Path) -> None:
+def test_auto_layout_and_zone_assignment(
+    ui: dict[str, str], gui: str, page: Page, project_dir: Path
+) -> None:
     page.goto(gui)
     page.get_by_test_id("nav-diagram").click()
     page.get_by_test_id("auto-layout").click()
@@ -35,11 +37,13 @@ def test_auto_layout_and_zone_assignment(gui: str, page: Page, project_dir: Path
     node = _box(page, "node-E-0001")
     page.mouse.move(node["x"] + node["width"] / 2, node["y"] + node["height"] / 2)
     page.mouse.down()
-    page.mouse.move(field["x"] + 30 + node["width"] / 2, field["y"] + field["height"] - 30, steps=10)
+    page.mouse.move(
+        field["x"] + 30 + node["width"] / 2, field["y"] + field["height"] - 30, steps=10
+    )
     page.mouse.up()
     expect(page.get_by_test_id("zone-Z-CABINET")).to_have_count(0)  # no members left
 
     page.keyboard.press("Control+s")
-    expect(page.get_by_test_id("toast")).to_contain_text("Gespeichert", timeout=15_000)
+    expect(page.get_by_test_id("toast")).to_contain_text(ui["saved"], timeout=15_000)
     sub = Project.load(project_dir).models["main"]
     assert sub.objects["elements"]["E-0001"].zone == "Z-FIELD"

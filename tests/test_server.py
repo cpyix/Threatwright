@@ -61,6 +61,11 @@ def test_server_mode_confines_client_paths(project_dir: Path, tmp_path: Path) ->
     assert c.post("/api/project/open", json={"path": project_dir.name}).status_code == 200
     assert c.post("/api/pick-folder", json={}).status_code == 501
     assert c.post("/api/open-build-folder").status_code == 501
+    (project_dir / "build").mkdir(exist_ok=True)
+    (project_dir / "build" / "main-x.html").write_text("doc", encoding="utf-8")
+    assert c.get("/api/build/main-x.html").content == b"doc"  # downloaded instead of opened
+    assert c.get("/api/build/..%2Fthreatwright.yaml").status_code == 404
+    assert c.get("/api/build/missing.pdf").status_code == 404
 
 
 def test_layout_notes(client: TestClient) -> None:
@@ -85,6 +90,8 @@ def test_open_build_folder_refuses_symlink(
         pytest.skip("symlinks not permitted")
     assert client.post("/api/open-build-folder").status_code == 409
     assert opened == []
+    (tmp_path / "secret.txt").write_text("x", encoding="utf-8")
+    assert client.get("/api/build/secret.txt").status_code == 404
 
 
 def test_frontend_does_not_serve_files_outside_web_dir(client: TestClient) -> None:

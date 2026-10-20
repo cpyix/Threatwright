@@ -861,6 +861,23 @@ def create_app(
             raise HTTPException(422, str(exc)) from exc
         return {"written": [p.relative_to(root).as_posix() for p in written]}
 
+    @app.get("/api/build/{name}")
+    def build_file(name: str) -> Response:
+        """A built document from <project>/build, e.g. for the browser in server mode."""
+        with session.lock:
+            folder = session.require().root.resolve() / "build"
+        path = folder / name
+        # only plain files directly in a plain build folder: no "..", subfolders or symlinks
+        # (of the file or of build itself) out of the project
+        if (
+            name != Path(name).name
+            or folder.is_symlink()
+            or path.is_symlink()
+            or not path.is_file()
+        ):
+            raise HTTPException(404, "no such document")
+        return Response(path.read_bytes(), media_type="application/octet-stream")
+
     @app.post("/api/open-build-folder")
     def open_build_folder() -> dict[str, str]:
         """Open <project>/build in the file manager of the local machine."""

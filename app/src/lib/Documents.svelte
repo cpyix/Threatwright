@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { api, ApiError } from '../api'
+  import { api, ApiError, download } from '../api'
   import { tr } from '../i18n'
   import { app } from '../state.svelte'
   import type { I18n } from '../types'
@@ -59,6 +59,8 @@
         format,
       })
       written = r.written
+      // on a server the build folder is not on this machine: hand the files to the browser
+      if (app.server) for (const p of r.written) await download(`/build/${encodeURIComponent(p.split('/').pop()!)}`, p.split('/').pop()!)
     })
 </script>
 
@@ -96,7 +98,9 @@
               {f.toUpperCase()}
             </button>
           {/each}
-          <button onclick={() => run(() => api('POST', '/open-build-folder'))}>{tr(lang, 'open_folder')}</button>
+          {#if !app.server}
+            <button onclick={() => run(() => api('POST', '/open-build-folder'))}>{tr(lang, 'open_folder')}</button>
+          {/if}
         </div>
         {#if error}<pre class="error" role="alert">{error}</pre>{/if}
         {#if written.length}

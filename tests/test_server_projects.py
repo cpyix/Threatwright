@@ -93,5 +93,13 @@ def test_new_project_libraries(workspace: Path) -> None:
     c = server(workspace)
     r = c.post("/api/project/new", json={"path": "dev", "libraries": ["iot"]})
     assert r.json()["config"]["libraries"] == ["iot"]
-    for bad in ([], ["foo"], "iot"):
-        assert c.post("/api/project/new", json={"path": "x", "libraries": bad}).status_code == 422
+    for body in (
+        {"libraries": []},
+        {"libraries": ["foo"]},
+        {"libraries": "iot"},
+        {"name": 123},
+        {"path": 5},
+    ):
+        body = {"path": "x", **body}
+        assert c.post("/api/project/new", json=body).status_code == 422, body
+        assert not (workspace / "x").exists(), body

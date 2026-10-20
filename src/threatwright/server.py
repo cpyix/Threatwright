@@ -21,11 +21,11 @@ import threading
 import time
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, JSONResponse
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from threatwright import __version__, archive, assistant, history
 from threatwright.arc import ArcOverride, applicability, set_override
@@ -288,6 +288,14 @@ def pick_folder(title: str, initial: str | None = None) -> str | None:
     return path or None
 
 
+class NewProject(BaseModel):
+    path: str = ""
+    name: str | None = None
+    template: Literal["tr", "empty"] = "tr"
+    language: Literal["de", "en"] = "de"
+    libraries: list[str] | None = None
+
+
 def create_app(
     port: int | None = None,
     project: Path | None = None,
@@ -437,24 +445,20 @@ def create_app(
             dialog_lock.release()
 
     @app.post("/api/project/new")
-    def new_project(body: dict[str, Any]) -> dict[str, Any]:
-        template = body.get("template", "tr")
-        language = body.get("language", "de")
-        if template not in ("tr", "empty") or language not in ("de", "en"):
-            raise HTTPException(422, "template: tr|empty, language: de|en")
-        libraries = body.get("libraries")
-        if libraries is not None and not (
-            isinstance(libraries, list) and all(isinstance(x, str) for x in libraries)
-        ):
-            raise HTTPException(422, "libraries: list of strings")
-        path = client_path(body.get("path", ""))
+    def new_project(body: NewProject) -> dict[str, Any]:
+        path = client_path(body.path)
         with session.lock:
             try:
-                create_project(path, template, body.get("name") or None, language, libraries)
-                session.open(path)
+                create_project(
+                    path, body.template, body.name or None, body.language, body.libraries
+                )
             except ValueError as exc:
                 raise HTTPException(422, str(exc)) from exc
-            except (ProjectExists, LoadError, OSError) as exc:
+            except (ProjectExists, OSError) as exc:
+                raise HTTPException(400, str(exc)) from exc
+            try:
+                session.open(path)
+            except (LoadError, OSError) as exc:
                 raise HTTPException(400, str(exc)) from exc
             _recent(path)
             return project_info()

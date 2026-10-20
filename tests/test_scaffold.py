@@ -4,9 +4,9 @@ import pytest
 from typer.testing import CliRunner
 
 from threatwright.branding import PROJECT_FILE
-from threatwright.cli import app
+from threatwright.cli import ProductType, app
 from threatwright.model.store import Project
-from threatwright.scaffold import create_project
+from threatwright.scaffold import PRODUCT_LIBRARIES, create_project
 
 
 def zone_ids(path: Path) -> list[str]:
@@ -34,3 +34,7 @@ def test_init_library_option(tmp_path: Path) -> None:
     assert r.exit_code == 0, r.output
     assert Project.load(tmp_path / "p").config.libraries == ["iot", "software"]
     assert CliRunner().invoke(app, ["init", str(tmp_path / "q"), "--library", "foo"]).exit_code != 0
+
+
+def test_cli_product_types_match_scaffold() -> None:
+    assert [t.value for t in ProductType] == list(PRODUCT_LIBRARIES)

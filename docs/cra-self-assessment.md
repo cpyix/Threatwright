@@ -28,7 +28,7 @@ Dienstleistungen einbaut, ist für diese selbst Hersteller und prüft eigenstän
 |---|---|
 | SBOM | CycloneDX für Python-Abhängigkeiten (aus `uv.lock`) und für das Frontend (npm) an jedem Release; zusätzlich SBOM-Attestierung am Container-Image |
 | Schwachstellen zeitnah beheben | Prozess und Zielzeiten in `SECURITY.md` |
-| Regelmäßige Tests | CI auf Windows und Linux, Typprüfung, Linting, Ende-zu-Ende-Tests; Abhängigkeits-Audit wöchentlich |
+| Regelmäßige Tests | CI auf Windows, Linux und macOS, Typprüfung, Linting, Ende-zu-Ende-Tests; Abhängigkeits-Audit wöchentlich |
 | Offenlegung behobener Schwachstellen | GitHub Security Advisories mit CVE, zusammen mit dem Fix-Release |
 | Richtlinie zur koordinierten Offenlegung | `SECURITY.md`; Vorlage `docs/security.txt` (RFC 9116) |
 | Kontaktstelle für Meldungen | GitHub Private Vulnerability Reporting (keine persönlichen E-Mail-Adressen) |

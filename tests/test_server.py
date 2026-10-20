@@ -63,6 +63,20 @@ def test_server_mode_confines_client_paths(project_dir: Path, tmp_path: Path) ->
     assert c.post("/api/open-build-folder").status_code == 501
 
 
+def test_open_build_folder_refuses_symlink(
+    client: TestClient, project_dir: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    opened: list[object] = []
+    monkeypatch.setattr(server.subprocess, "Popen", opened.append)
+    monkeypatch.setattr(server.os, "startfile", opened.append, raising=False)
+    try:
+        (project_dir / "build").symlink_to(tmp_path, target_is_directory=True)
+    except OSError:
+        pytest.skip("symlinks not permitted")
+    assert client.post("/api/open-build-folder").status_code == 409
+    assert opened == []
+
+
 def test_frontend_does_not_serve_files_outside_web_dir(client: TestClient) -> None:
     leaked = client.get("/..%2Fserver.py")
     assert leaked.status_code in (200, 503) and "create_app" not in leaked.text
@@ -238,3 +252,20 @@ def test_pick_folder(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> Non
 
     monkeypatch.setattr(server, "pick_folder", headless)
     assert client.post("/api/pick-folder", json={}).status_code == 501
+
+
+def test_pick_folder_macos(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[list[str]] = []
+
+    def run(cmd: list[str], **kwargs: object) -> object:
+        calls.append(cmd)
+        return type("Result", (), {"stdout": stdout})()
+
+    monkeypatch.setattr(server.sys, "platform", "darwin")
+    monkeypatch.setattr(server.subprocess, "run", run)
+    stdout = f"{tmp_path}/picked/\n"
+    assert server.pick_folder("T", str(tmp_path)) == str(tmp_path / "picked")
+    assert calls[-1][0] == "/usr/bin/osascript"
+    assert calls[-1][-2:] == ["T", str(tmp_path)]  # as argv, not inside the script
+    stdout = ""  # cancelled
+    assert server.pick_folder("T", str(tmp_path)) is None

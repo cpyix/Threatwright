@@ -27,6 +27,10 @@ def find_soffice() -> Path | None:
             for candidate in sorted(Path(base).glob("LibreOffice*/program/soffice.exe")):
                 if candidate.is_file():
                     return candidate
+    if sys.platform == "darwin":
+        app = Path("/Applications/LibreOffice.app/Contents/MacOS/soffice")
+        if app.is_file():
+            return app
     return None
 
 
@@ -35,7 +39,8 @@ def convert(source: Path, target: Path, timeout: int = TIMEOUT) -> None:
     if soffice is None:
         raise PdfError(
             "PDF output needs LibreOffice, which was not found (looked for soffice/libreoffice "
-            "on PATH and in Program Files). Install LibreOffice or build DOCX/ODT instead."
+            "on PATH, in Program Files and /Applications). Install LibreOffice or build DOCX/ODT "
+            "instead."
         )
     with tempfile.TemporaryDirectory(prefix="tw-pdf-") as tmp:
         profile = (Path(tmp) / "profile").as_uri()

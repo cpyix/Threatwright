@@ -192,7 +192,7 @@ HTML ist zugleich die Vorschau in der Oberfläche. Die Datei ist in sich geschlo
 
 ### PDF
 
-PDF wird aus dem DOCX- (sonst ODT-) Dokument mit einem lokal installierten **LibreOffice** erzeugt (`--format pdf`). Gesucht wird `soffice`/`libreoffice` im `PATH` sowie unter Windows in `Program Files` und `Program Files (x86)`. Fehlt LibreOffice, bricht `build` mit einem Hinweis ab; DOCX und ODT funktionieren weiterhin. Die Umwandlung läuft mit einem temporären LibreOffice-Profil und Zeitlimit. Das Werkzeug lädt nichts aus dem Netz.
+PDF wird aus dem DOCX- (sonst ODT-) Dokument mit einem lokal installierten **LibreOffice** erzeugt (`--format pdf`). Gesucht wird `soffice`/`libreoffice` im `PATH` sowie unter Windows in `Program Files` und `Program Files (x86)`, unter macOS in `/Applications/LibreOffice.app`. Fehlt LibreOffice, bricht `build` mit einem Hinweis ab; DOCX und ODT funktionieren weiterhin. Die Umwandlung läuft mit einem temporären LibreOffice-Profil und Zeitlimit. Das Werkzeug lädt nichts aus dem Netz.
 
 ## Datenmodell
 

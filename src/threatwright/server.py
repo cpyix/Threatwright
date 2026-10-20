@@ -357,8 +357,7 @@ def create_app(
     @app.post(UPLOAD_PATH)
     async def upload_project(request: Request, folder: str) -> dict[str, Any]:
         """Server mode: a project zipped on the user's machine becomes a folder in the workspace."""
-        server_only()
-        target = client_path(folder)
+        workspace_root = server_only()
         data = bytearray()
         async for chunk in request.stream():  # also bounded without a content-length header
             data += chunk
@@ -366,8 +365,8 @@ def create_app(
                 raise HTTPException(413, f"archive larger than {archive.MAX_UPLOAD >> 20} MB")
         with session.lock:
             try:
-                archive.unpack(bytes(data), target)
-                session.open(target)
+                # unpack confines the folder to the workspace itself
+                session.open(archive.unpack(bytes(data), workspace_root, folder))
             except (archive.ArchiveError, LoadError, OSError) as exc:
                 raise HTTPException(400, str(exc)) from exc
             return project_info()
@@ -1043,29 +1042,25 @@ def serve(
     # reachable by others (bound beyond loopback, or behind a proxy): server mode
     shared = bool(allowed_hosts) or host not in ("127.0.0.1", "::1", "localhost")
     auth = auth or ("basic" if shared else "none")
+    # server mode works in a workspace folder holding any number of projects
+    root = (workspace or Path.cwd()).resolve() if shared else None
+    if root is not None and project is not None and not project.resolve().is_relative_to(root):
+        raise SystemExit(f"--project must be inside the workspace {root}")
     users = None
     if auth == "basic":
         try:
-            users, generated = users_from(users_file, os.environ)
+            users, password_file = users_from(users_file, os.environ, root or Path.cwd())
         except (OSError, ValueError) as exc:
             raise SystemExit(f"error: {exc}") from exc
-        if generated:
-            name, password = generated
-            print(f"login: user '{name}', password '{password}'", flush=True)
-            print(
-                "  (generated for this start; set THREATWRIGHT_PASSWORD or --users-file)",
-                flush=True,
-            )
+        if password_file:  # the password itself never goes to the log
+            print(f"login: user '{next(iter(users))}', password in {password_file}", flush=True)
+            print("  (set THREATWRIGHT_PASSWORD or --users-file for your own)", flush=True)
     elif shared:
         print("WARNING: --auth none: anyone who reaches this port can read and change", flush=True)
         print("  the models. Put a login in front (reverse proxy with authentication).", flush=True)
     sock = socket.socket(socket.AF_INET6 if ":" in host else socket.AF_INET)
     sock.bind((host, port))
     port = sock.getsockname()[1]
-    # server mode works in a workspace folder holding any number of projects
-    root = (workspace or Path.cwd()).resolve() if shared else None
-    if root is not None and project is not None and not project.resolve().is_relative_to(root):
-        raise SystemExit(f"--project must be inside the workspace {root}")
     app = create_app(port, project, frozenset(allowed_hosts), root, users)
     shown = allowed_hosts[0] if allowed_hosts else "127.0.0.1"
     url = f"http://{shown}:{port}/"

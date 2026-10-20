@@ -9,6 +9,7 @@ import base64
 import binascii
 import hashlib
 import hmac
+import os
 import secrets
 from collections.abc import Mapping
 from pathlib import Path
@@ -16,6 +17,8 @@ from pathlib import Path
 ITERATIONS = 600_000  # OWASP 2023 recommendation for PBKDF2-HMAC-SHA256
 SCHEME = "pbkdf2_sha256"
 DEFAULT_USER = "admin"
+# folder in the workspace for a generated login; ignores itself in Git, never logged
+STATE_DIR = ".threatwright"
 REALM = 'Basic realm="Threatwright", charset="UTF-8"'
 
 
@@ -57,21 +60,30 @@ def load_users(path: Path) -> dict[str, str]:
 
 
 def users_from(
-    users_file: Path | None, env: Mapping[str, str]
-) -> tuple[dict[str, str], tuple[str, str] | None]:
+    users_file: Path | None, env: Mapping[str, str], state_dir: Path
+) -> tuple[dict[str, str], Path | None]:
     """Users file, else THREATWRIGHT_USER/THREATWRIGHT_PASSWORD, else a generated password.
 
-    Returns the users and, when a password was generated, (name, password) to print once.
+    A generated password is stored in `state_dir/.threatwright/password` (owner-only,
+    folder ignored by Git) and reused on later starts; it is never logged. Returns the
+    users and that file when it is used, so the caller can point to it.
     """
     if users_file is not None:
         return load_users(users_file), None
     name = env.get("THREATWRIGHT_USER") or DEFAULT_USER
     password = env.get("THREATWRIGHT_PASSWORD")
-    generated = None
-    if not password:
-        password = secrets.token_urlsafe(18)
-        generated = (name, password)
-    return {name: hash_password(password)}, generated
+    if password:
+        return {name: hash_password(password)}, None
+    folder = state_dir / STATE_DIR
+    if not folder.exists():
+        folder.mkdir()
+        (folder / ".gitignore").write_text("*\n", encoding="utf-8")  # never committed
+    stored = folder / "password"
+    if not stored.exists():
+        fd = os.open(stored, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(secrets.token_urlsafe(18) + "\n")
+    return {name: hash_password(stored.read_text(encoding="utf-8").strip())}, stored
 
 
 class BasicAuth:

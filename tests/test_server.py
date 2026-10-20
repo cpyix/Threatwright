@@ -1,4 +1,5 @@
 import base64
+import os
 from pathlib import Path
 
 import pytest
@@ -91,18 +92,30 @@ def test_users_from_file_env_or_generated(tmp_path: Path) -> None:
     line = f"carol:{hash_password('a long passphrase', iterations=1000)}\n"
     users_file = tmp_path / "users"
     users_file.write_text("# team\n" + line, encoding="utf-8")
-    assert list(users_from(users_file, {})[0]) == ["carol"]
+    assert list(users_from(users_file, {}, tmp_path)[0]) == ["carol"]
     (tmp_path / "bad").write_text("carol:plaintext\n", encoding="utf-8")
     with pytest.raises(ValueError, match="name:pbkdf2"):
-        users_from(tmp_path / "bad", {})
-    users, generated = users_from(None, {"THREATWRIGHT_PASSWORD": "secret pass"})
-    assert list(users) == ["admin"] and generated is None
+        users_from(tmp_path / "bad", {}, tmp_path)
+    users, stored = users_from(None, {"THREATWRIGHT_PASSWORD": "secret pass"}, tmp_path)
+    assert list(users) == ["admin"] and stored is None
     assert verify_password("secret pass", users["admin"])
-    users, generated = users_from(None, {})  # secure by default: never open
-    assert generated is not None and verify_password(generated[1], users[generated[0]])
+
+    # secure by default: never open; a generated password goes to a file, not to the log
+    users, stored = users_from(None, {}, tmp_path)
+    assert stored == tmp_path / ".threatwright" / "password"
+    assert (stored.parent / ".gitignore").read_text(encoding="utf-8") == "*\n"  # never committed
+    password = stored.read_text(encoding="utf-8").strip()
+    assert verify_password(password, users["admin"])
+    again, _ = users_from(None, {}, tmp_path)  # reused on the next start
+    assert verify_password(password, again["admin"])
+    if os.name == "posix":
+        assert stored.stat().st_mode & 0o077 == 0  # owner only
 
 
-def test_server_mode_defaults_to_basic_auth(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_server_mode_defaults_to_basic_auth(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.chdir(tmp_path)  # the workspace defaults to the working directory
     seen: dict[str, object] = {}
 
     def fake_create_app(*args: object, **kwargs: object) -> object:
@@ -114,6 +127,8 @@ def test_server_mode_defaults_to_basic_auth(monkeypatch: pytest.MonkeyPatch) -> 
     with pytest.raises(SystemExit):
         server.serve(None, open_browser=False, host="127.0.0.1", allowed_hosts=("tw.example",))
     assert seen["users"]  # shared -> login on
+    password = (tmp_path / ".threatwright" / "password").read_text(encoding="utf-8").strip()
+    assert password not in capsys.readouterr().out  # never in the log
     with pytest.raises(SystemExit):
         server.serve(None, open_browser=False)
     assert seen["users"] is None  # local GUI -> no login

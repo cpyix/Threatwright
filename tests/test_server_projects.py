@@ -77,7 +77,7 @@ def test_upload_rejects_bad_archives(workspace: Path) -> None:
     assert r.status_code == 400 and "unsafe path" in r.text
     assert not (workspace.parent / "escape.txt").exists()
     outside = c.post("/api/project/upload?folder=../elsewhere", content=no_project)
-    assert outside.status_code == 403
+    assert outside.status_code == 400 and "inside the workspace" in outside.text
 
 
 def test_server_features_are_off_locally(project_dir: Path) -> None:

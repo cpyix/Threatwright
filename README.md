@@ -108,7 +108,7 @@ In server mode the GUI always asks for a user name and password (HTTP Basic Auth
 
 1. `--users-file`: several users, passwords stored as PBKDF2 hashes. Create a line with `docker run --rm -it ghcr.io/cpyix/threatwright:<version> hash-password alice` and collect the lines in a file.
 2. `THREATWRIGHT_PASSWORD` (and optionally `THREATWRIGHT_USER`): one user.
-3. Neither set: Threatwright generates a password at every start and prints it once (`docker logs <container>`). It is never open by accident.
+3. Neither set: Threatwright generates a password once and stores it in the workspace under `.threatwright/password` (readable by its owner only, ignored by Git, never written to the log). Read it with `docker exec <container> cat /work/.threatwright/password`. It is never open by accident.
 
 Switch the login off only with `--auth none`, and only when something in front of Threatwright already authenticates every request (e.g. a reverse proxy with SSO). Threatwright then prints a warning at start.
 

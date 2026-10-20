@@ -39,3 +39,16 @@ def test_server_projects_upload_download(
 
     page.reload()  # a later visit starts on the overview, the open project is marked
     expect(page.get_by_test_id("open-server-machine-a")).to_have_class(re.compile(r"\bcurrent\b"))
+
+
+def test_server_oscal_import_with_file_picker(server_gui: str, page: Page) -> None:
+    """The catalog file comes from the browser's machine; no server path to type in."""
+    catalog = Path(__file__).parents[1] / "fixtures" / "oscal" / "synthetic-arc-catalog.json"
+    page.goto(server_gui)
+    page.get_by_test_id("open-server-machine-a").click()
+    expect(page.get_by_test_id("nav-diagram")).to_have_attribute("aria-current", "page")
+    page.get_by_test_id("nav-settings").click()
+    page.get_by_test_id("oscal-file").set_input_files(catalog)
+    page.get_by_test_id("oscal-import").click()
+    expect(page.locator("pre.note")).to_contain_text("libraries/")
+    expect(page.locator("table")).to_contain_text("synthetic")

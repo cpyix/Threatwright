@@ -16,6 +16,7 @@ import secrets
 import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from dataclasses import asdict
@@ -71,6 +72,7 @@ API_HEADER = "X-Threatwright"  # any value; its presence forces a CORS preflight
 MODEL_NAME = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 MAX_BODY = 1 << 20
 UPLOAD_PATH = "/api/project/upload"
+OSCAL_UPLOAD_PATH = "/api/oscal/upload"
 CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
     "font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; "
@@ -349,7 +351,8 @@ def create_app(
         if request.url.path.startswith("/api/"):
             if API_HEADER.lower() not in request.headers:  # cross-site requests cannot set it
                 return JSONResponse({"detail": f"missing {API_HEADER} header"}, status_code=403)
-            limit = archive.MAX_UPLOAD if request.url.path == UPLOAD_PATH else MAX_BODY
+            uploads = (UPLOAD_PATH, OSCAL_UPLOAD_PATH)
+            limit = archive.MAX_UPLOAD if request.url.path in uploads else MAX_BODY
             if int(request.headers.get("content-length") or 0) > limit:
                 return JSONResponse({"detail": "request too large"}, status_code=413)
         response: Response = await call_next(request)
@@ -758,9 +761,7 @@ def create_app(
             for item in imported_libraries(root)
         ]
 
-    @app.post("/api/oscal/import")
-    def oscal_import(body: dict[str, str]) -> dict[str, Any]:
-        kind = body.get("as", "catalog")
+    def import_oscal(file: Path, kind: str) -> dict[str, Any]:
         if kind not in ("catalog", "profile", "component"):
             raise HTTPException(422, "as: catalog|profile|component")
         with session.lock:
@@ -768,13 +769,34 @@ def create_app(
             if session.dirty:
                 raise HTTPException(409, "save your changes before importing")
             try:
-                written = import_into_project(root, client_path(body.get("path", "")), kind)  # type: ignore[arg-type]
+                written = import_into_project(root, file, kind)  # type: ignore[arg-type]
             except OscalError as exc:
                 raise HTTPException(422, "\n".join(str(i) for i in exc.issues) or str(exc)) from exc
             except (ValueError, OSError) as exc:
                 raise HTTPException(400, str(exc)) from exc
             session.open(root)
-            return {"written": str(written)}
+            # relative: on a server the absolute path means nothing to the user
+            return {"written": Path(written).resolve().relative_to(root.resolve()).as_posix()}
+
+    @app.post("/api/oscal/import")
+    def oscal_import(body: dict[str, str]) -> dict[str, Any]:
+        """Import from a path on the machine running Threatwright (CLI, scripts)."""
+        return import_oscal(client_path(body.get("path", "")), body.get("as", "catalog"))
+
+    @app.post(OSCAL_UPLOAD_PATH)
+    async def oscal_upload(request: Request, name: str, kind: str = "catalog") -> dict[str, Any]:
+        """Import a file picked in the browser; works locally and on a server alike."""
+        data = bytearray()
+        async for chunk in request.stream():  # also bounded without a content-length header
+            data += chunk
+            if len(data) > archive.MAX_UPLOAD:
+                raise HTTPException(413, f"file larger than {archive.MAX_UPLOAD >> 20} MB")
+        # keep only the base name: the importer reads the suffix (JSON only) and the stem
+        base = Path(name).name
+        with tempfile.TemporaryDirectory() as tmp:
+            file = Path(tmp) / (base if base not in ("", ".", "..") else "upload.json")
+            file.write_bytes(bytes(data))
+            return import_oscal(file, kind)
 
     @app.get("/api/models/{name}/controls")
     def controls(name: str) -> list[dict[str, Any]]:

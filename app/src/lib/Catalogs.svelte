@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { api, ApiError } from '../api'
+  import { api, ApiError, upload } from '../api'
   import { tr } from '../i18n'
   import { app } from '../state.svelte'
 
   type Imported = { library: string; title: string; version: string; source: string; entries: number }
 
   let items = $state<Imported[]>([])
-  let path = $state('')
+  let files = $state<FileList>()
   let kind = $state<'catalog' | 'profile' | 'component'>('catalog')
   let note = $state('')
   const lang = $derived(app.lang)
@@ -23,7 +23,10 @@
   async function run() {
     note = ''
     try {
-      const r = await api<{ written: string; issues: string[] }>('POST', '/oscal/import', { path, as: kind })
+      const file = files?.[0]
+      if (!file) return
+      const query = new URLSearchParams({ name: file.name, kind })
+      const r = await upload<{ written: string }>(`/oscal/upload?${query}`, file)
       note = `${tr(lang, 'imported')}: ${r.written}`
       await app.loadProject(await api('GET', '/project'))
       await load()
@@ -46,13 +49,13 @@
   </table>
 {/if}
 <form class="row" onsubmit={(e) => { e.preventDefault(); run() }}>
-  <input placeholder={tr(lang, 'catalog_path')} bind:value={path} required aria-label={tr(lang, 'catalog_path')} />
+  <input type="file" accept=".json,application/json" bind:files required aria-label={tr(lang, 'catalog_file')} data-testid="oscal-file" />
   <select bind:value={kind} aria-label={tr(lang, 'import_as')}>
     <option value="catalog">Catalog</option>
     <option value="profile">Profile</option>
     <option value="component">Component Definition</option>
   </select>
-  <button type="submit">{tr(lang, 'import')}</button>
+  <button type="submit" data-testid="oscal-import">{tr(lang, 'import')}</button>
 </form>
 {#if note}<pre class="note" role="status">{note}</pre>{/if}
 

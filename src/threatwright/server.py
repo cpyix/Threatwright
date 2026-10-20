@@ -400,8 +400,9 @@ def create_app(token: str, port: int | None = None, project: Path | None = None)
                 meta = ModelMeta.model_validate(body)
             except ValidationError as exc:
                 raise HTTPException(422, json.loads(exc.json(include_url=False))) from exc
-            session.checkpoint()
-            sub.meta = meta
+            if meta != sub.meta:
+                session.checkpoint()
+                sub.meta = meta
             return model_payload(sub)
 
     @app.post("/api/models/{name}/evaluate")
@@ -516,6 +517,7 @@ def create_app(token: str, port: int | None = None, project: Path | None = None)
                     libs(),
                     session.require().config,
                     body["type"],
+                    title=body.get("title") or None,
                     zone=body.get("zone"),
                     position=(float(body.get("x", 0)), float(body.get("y", 0))),
                 )

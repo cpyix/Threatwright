@@ -3,6 +3,7 @@
 elements:
   # --- controllers -------------------------------------------------------------
   - id: plc
+    category: controllers
     name: {de: SPS, en: PLC}
     kind: device
     icon: plc
@@ -18,6 +19,7 @@ elements:
       - title: {de: Maschinenparameter, en: Machine parameters}
         asset_class: Other.Configuration
   - id: safety-plc
+    category: controllers
     name: {de: Sicherheitssteuerung, en: Safety controller}
     kind: device
     icon: safety-plc
@@ -31,6 +33,7 @@ elements:
         asset_class: Other.Configuration
         rationale: {de: 'Integrität hochstufen, Manipulation wirkt auf Schutzfunktion', en: Raise integrity; manipulation affects protection}
   - id: ipc-linux
+    category: controllers
     name: {de: Steuerungsrechner Linux, en: Industrial PC Linux}
     kind: device
     icon: ipc
@@ -45,6 +48,7 @@ elements:
       - title: {de: Systemkonfiguration, en: System configuration}
         asset_class: Other.Configuration
   - id: ipc-windows
+    category: controllers
     name: {de: Steuerungsrechner Windows, en: Industrial PC Windows}
     kind: device
     icon: ipc
@@ -57,6 +61,7 @@ elements:
       - title: {de: Prozess- und Produktionsdaten, en: Process and production data}
         asset_class: BusinessData.Important
   - id: soft-plc
+    category: controllers
     name: {de: Soft-SPS, en: Soft PLC}
     kind: process
     icon: soft-plc
@@ -69,6 +74,7 @@ elements:
       - title: {de: Echtzeit-Steuerungsfunktion, en: Real-time control function}
         asset_class: Functions.Essential
   - id: edge-device
+    category: controllers
     name: {de: Edge-Gerät, en: Edge device}
     kind: device
     icon: edge
@@ -83,6 +89,7 @@ elements:
 
   # --- operation ---------------------------------------------------------------
   - id: hmi
+    category: operation
     name: {de: HMI / Bedienpanel, en: HMI / operator panel}
     kind: device
     icon: hmi
@@ -97,6 +104,7 @@ elements:
       - title: {de: Rezepte und Sollwerte, en: Recipes and set points}
         asset_class: BusinessData.Important
   - id: engineering-workstation
+    category: operation
     name: {de: Engineering-Workstation, en: Engineering workstation}
     kind: device
     icon: workstation
@@ -109,6 +117,7 @@ elements:
       - title: {de: Zugangsdaten zu Steuerungen, en: Controller credentials}
         asset_class: Security.Secrets
   - id: service-laptop
+    category: operation
     name: {de: Service-Laptop, en: Service laptop}
     kind: external
     icon: laptop
@@ -119,6 +128,7 @@ elements:
       - title: {de: Service-Werkzeuge und Projektstände, en: Service tools and project versions}
         asset_class: BusinessData.Important
   - id: mobile-panel
+    category: operation
     name: {de: Mobiles Bediengerät, en: Mobile operator panel}
     kind: device
     icon: tablet
@@ -133,6 +143,7 @@ elements:
 
   # --- drives and field level -------------------------------------------------------
   - id: drive
+    category: field
     name: {de: Antriebsregler / Servoverstärker, en: Drive controller / servo amplifier}
     kind: device
     icon: drive
@@ -146,6 +157,7 @@ elements:
       - title: {de: Antriebsfunktion, en: Drive function}
         asset_class: Functions.Essential
   - id: remote-io
+    category: field
     name: {de: Remote-I/O / Buskoppler, en: Remote I/O / bus coupler}
     kind: device
     icon: io
@@ -156,6 +168,7 @@ elements:
       - title: {de: Ein- und Ausgangsdaten, en: Input and output data}
         asset_class: Functions.CommunicationLocal
   - id: smart-field-device
+    category: field
     name: {de: Sensor/Aktor mit Firmware, en: Sensor/actuator with firmware}
     kind: device
     icon: sensor
@@ -168,6 +181,7 @@ elements:
       - title: {de: Geräteparameter, en: Device parameters}
         asset_class: Other.Configuration
   - id: vision-system
+    category: field
     name: {de: Kamera / Bildverarbeitung, en: Camera / vision system}
     kind: device
     icon: camera
@@ -181,6 +195,7 @@ elements:
         asset_class: BusinessData.Generic
         rationale: {de: 'Kann Personen abbilden, dann PII.Generic', en: 'May show persons, then PII.Generic'}
   - id: process-device
+    category: field
     name: {de: Prozessgerät (z. B. Schweißstromquelle), en: Process device (e.g. welding power source)}
     kind: device
     icon: process-device
@@ -274,6 +289,7 @@ elements:
       - title: {de: Übertragene Daten, en: Transmitted data}
         asset_class: Functions.CommunicationNetwork
   - id: industrial-switch
+    category: network
     name: {de: Industrie-Switch, en: Industrial switch}
     kind: device
     icon: switch
@@ -286,6 +302,7 @@ elements:
       - title: {de: 'Switch-Konfiguration (VLAN, Ports)', en: 'Switch configuration (VLAN, ports)'}
         asset_class: Security.PublicConfiguration
   - id: router-firewall
+    category: network
     name: {de: Router / Firewall, en: Router / firewall}
     kind: device
     icon: firewall
@@ -298,6 +315,7 @@ elements:
       - title: {de: Weiterleitungsfunktion, en: Forwarding function}
         asset_class: Functions.CommunicationNetwork
   - id: wireless-module
+    category: network
     name: {de: WLAN-Adapter / Funkmodul, en: WLAN adapter / radio module}
     kind: device
     icon: wireless
@@ -308,6 +326,7 @@ elements:
       - title: {de: Funkschlüssel, en: Wireless keys}
         asset_class: Security.Secrets
   - id: opcua-server
+    category: network
     name: {de: OPC-UA-Server, en: OPC UA server}
     kind: process
     icon: opcua
@@ -322,6 +341,7 @@ elements:
       - title: {de: Server-Zertifikat und Schlüssel, en: Server certificate and key}
         asset_class: Security.Secrets
   - id: opcua-client
+    category: network
     name: {de: OPC-UA-Client, en: OPC UA client}
     kind: process
     icon: opcua
@@ -332,6 +352,7 @@ elements:
       - title: {de: Client-Zertifikat und Zugangsdaten, en: Client certificate and credentials}
         asset_class: Security.Secrets
   - id: mqtt-broker
+    category: network
     name: {de: MQTT-Broker, en: MQTT broker}
     kind: process
     icon: mqtt
@@ -344,6 +365,7 @@ elements:
 
   # --- remote access and services ------------------------------------------------
   - id: remote-access-gateway
+    category: remote
     name: {de: Fernwartungsgateway / VPN-Router, en: Remote maintenance gateway / VPN router}
     kind: device
     icon: gateway
@@ -356,6 +378,7 @@ elements:
       - title: {de: Zugangsfunktion zur Maschine, en: Access function to the machine}
         asset_class: Security.Mechanism
   - id: vendor-jumphost
+    category: remote
     name: {de: Zentraler Jumphost des Herstellers, en: Manufacturer central jump host}
     kind: process
     icon: server
@@ -371,6 +394,7 @@ elements:
       - title: {de: Kundendaten und Verbindungsprotokolle, en: Customer data and connection logs}
         asset_class: PII.Generic
   - id: cloud-service
+    category: remote
     name: {de: Cloud-Dienst / Datenfernverarbeitung, en: Cloud service / remote data processing}
     kind: process
     icon: cloud
@@ -383,6 +407,7 @@ elements:
       - title: {de: Benutzerkonten, en: User accounts}
         asset_class: PII.Generic
   - id: update-server
+    category: remote
     name: {de: Update-Server, en: Update server}
     kind: process
     icon: server
@@ -395,6 +420,7 @@ elements:
       - title: {de: Signaturschlüssel, en: Signing key}
         asset_class: Security.Secrets
   - id: license-server
+    category: remote
     name: {de: Lizenzserver / Dongle, en: License server / dongle}
     kind: process
     icon: key
@@ -406,6 +432,7 @@ elements:
 
   # --- data -----------------------------------------------------------------------
   - id: recipe-store
+    category: data
     name: {de: Rezept- und Parameterspeicher, en: Recipe and parameter store}
     kind: datastore
     icon: database
@@ -413,6 +440,7 @@ elements:
       - title: {de: Rezepte und Parameter, en: Recipes and parameters}
         asset_class: BusinessData.Important
   - id: log-store
+    category: data
     name: {de: Protokolle / Logs, en: Logs}
     kind: datastore
     icon: log
@@ -420,6 +448,7 @@ elements:
       - title: {de: Sicherheitsprotokolle, en: Security logs}
         asset_class: Security.Logs
   - id: key-store
+    category: data
     name: {de: Zertifikats- und Schlüsselspeicher, en: Certificate and key store}
     kind: datastore
     icon: key
@@ -427,6 +456,7 @@ elements:
       - title: {de: Private Schlüssel und Zertifikate, en: Private keys and certificates}
         asset_class: Security.Secrets
   - id: historian
+    category: data
     name: {de: Historian / Prozessdatenarchiv, en: Historian / process data archive}
     kind: datastore
     icon: database
@@ -436,6 +466,7 @@ elements:
 
   # --- safety interface ------------------------------------------------------------
   - id: safety-relevant-outputs
+    category: safety
     name: {de: Ausgänge mit Sicherheitswirkung, en: Outputs with safety effect}
     kind: process
     icon: safety-output
@@ -447,6 +478,7 @@ elements:
       - title: {de: Wirksamkeit der Schutzfunktion, en: Effectiveness of the protective function}
         asset_class: Functions.Safety
   - id: safety-devices
+    category: safety
     name: {de: Not-Halt- und Schutzeinrichtungen, en: Emergency stop and protective devices}
     kind: external
     icon: estop
@@ -459,6 +491,7 @@ elements:
 
   # --- removable media ---------------------------------------------------------------
   - id: removable-media
+    category: media
     name: {de: Wechseldatenträger / USB, en: Removable media / USB}
     kind: external
     icon: usb

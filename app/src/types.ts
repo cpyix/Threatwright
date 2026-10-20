@@ -43,6 +43,7 @@ export interface ModelPayload {
   name: string
   meta: {
     title: string
+    description: string | null
     zones: { id: string; title: string; environment: Record<string, string | null> }[]
     configurations: { id: string; title: string }[]
   }
@@ -77,6 +78,10 @@ export interface ElementType {
   name: I18n
   kind: 'process' | 'device' | 'datastore' | 'external' | 'flow'
   icon: string | null
+  category: string | null
+  description: I18n | null
+  environment: { interface: string | null; access: string | null; user: string | null }
+  assets: { title: I18n; asset_class: string }[]
 }
 
 export interface Suggestion {

@@ -57,7 +57,7 @@ Klicken Sie den ersten EtherCAT-Datenfluss an und öffnen Sie **STRIDE-Assistent
 - EoE-Tunnel
 - Überlast des Feldbusses
 
-Beantworten Sie jedes Mal die Frage **„Ist die Ursache ein Angriff auf das digitale Produkt?“**. Für alle genannten Vorschläge lautet die Antwort „ja“.
+Jeder Vorschlag beschreibt einen Angriff und gilt deshalb beim Übernehmen als Cyberrisiko (Regel 3.3). Passt einer doch nicht, verwerfen Sie ihn unter **Bedrohungen** mit Begründung.
 
 Wiederholen Sie das für die Antriebsregler (Parametermanipulation, Firmware-Download über den Bus) und für die Ausgänge mit Sicherheitswirkung. Die übernommenen Maßnahmen tauchen unter **Maßnahmen** nur einmal auf, auch wenn mehrere Bedrohungen sie vorschlagen.
 

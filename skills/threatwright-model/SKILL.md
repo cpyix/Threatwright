@@ -15,7 +15,7 @@ Threatwright is a local-first tool for threat modelling and risk analysis of pro
 4. **Never change an existing `id` or `uuid`** by hand. A new object gets a new, unused id (next free number of its prefix) and a fresh random UUID v4.
 5. Every file starts with `schema_version: 1`. Do not raise it; `threatwright migrate` handles format upgrades.
 6. **Do not invent facts.** No made-up CRA references, evidence, owners, approvals or acceptance decisions. Leave a field empty or create an open question (`questions/Q-…`) instead.
-7. **Rule 3.3 (cyber cause):** a threat is a cybersecurity risk only if its cause is an attack on the digital product (unauthorised access; manipulation of data, commands, configuration or software; data leakage; disruption by digital means). Decide per threat and explain in `scenario`; never set `cyber_cause: true` in bulk. Not a cyber risk: set `cyber_cause: false`, `status: rejected` and a `rejection` with rationale.
+7. **Rule 3.3 (cyber cause):** a threat is a cybersecurity risk only if its cause is an attack on the digital product (unauthorised access; manipulation of data, commands, configuration or software; data leakage; disruption by digital means). Decide per threat and explain in `scenario`; never set `cyber_cause: true` in bulk on threats you wrote yourself. A threat adopted from a library template gets `cyber_cause: true`: every template describes an attack, and adopting it (also several at once) is the per-threat decision. Reject it instead if the template does not fit the product. Not a cyber risk: set `cyber_cause: false`, `status: rejected` and a `rejection` with rationale.
 8. Do not edit `.threatwright-history/` (local autosave versions) or `build/` (generated documents). `diagram.layout.yaml` only holds positions; new elements may stay out of it (the GUI places them).
 9. Write UTF-8, keep YAML comments, and keep the user's language (`language` in `threatwright.yaml`) for titles and texts.
 
@@ -205,7 +205,7 @@ threats: [T-0004]
 
 Projects with `libraries: [ot]` use the bundled OT library: element types, threat and measure templates. In an installed Threatwright the files are in the package folder `threatwright/libraries/ot/` (`elements.yaml`, `threats/*.yaml`, `measures/*.yaml`). A template has `id`, `rev`, `stride`, `applies_to` (element types), bilingual `title`/`scenario`/`consequence` with an `{element}` placeholder, `impact`, `measures` and `cra_refs`.
 
-When you adopt a template, copy its texts in the project language, replace `{element}` with the target's title, set `library_ref: lib:ot/threat/<id>@<rev>` (elements: `lib:ot/element/<id>@<rev>`, measures: `lib:ot/measure/<id>@<rev>`) and still decide rule 3.3 and the assessment for this product. `threatwright library update <project>` lists objects whose template has a newer revision.
+When you adopt a template, copy its texts in the project language, replace `{element}` with the target's title, set `library_ref: lib:ot/threat/<id>@<rev>` (elements: `lib:ot/element/<id>@<rev>`, measures: `lib:ot/measure/<id>@<rev>`) set `cyber_cause: true` (see rule 7) and still decide the assessment for this product. `threatwright library update <project>` lists objects whose template has a newer revision.
 
 ## Renaming and deleting
 

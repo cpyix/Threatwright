@@ -14,7 +14,6 @@
   let open = $state<Record<string, boolean>>({})
   let openFor: string | null = null
   let chosen = $state<string[]>([]) // template ids selected for adoption
-  let adoptedNow = $state<string[]>([]) // threats adopted in one go: rule 3.3 answered inline
   const lang = $derived(app.lang)
   const targets = $derived([...app.objects('elements'), ...app.objects('flows')])
   const threatTitle = (id: string) => app.objects('threats').find((t) => t.id === id)?.title ?? ''
@@ -27,9 +26,6 @@
         .flatMap((c) => c.suggestions.filter((s) => !s.adopted).map((s) => s.template_id)),
     ),
   ])
-  const openCyber = $derived(
-    app.objects('threats').filter((t) => adoptedNow.includes(t.id) && t.cyber_cause == null && t.status !== 'rejected'),
-  )
 
   async function load() {
     const t = target
@@ -41,7 +37,6 @@
     if (t !== openFor) {
       openFor = t
       chosen = []
-      adoptedNow = []
       open = Object.fromEntries(Object.entries(cats ?? {}).map(([s, c]) => [s, c.relevant && c.existing.length === 0]))
     }
   }
@@ -59,7 +54,6 @@
   async function adopt(templates: string[]) {
     busy = true
     try {
-      const ids: string[] = []
       let model: ModelPayload | undefined
       for (const template of templates) {
         const r = await api<{ id: string; model: ModelPayload }>(
@@ -67,27 +61,15 @@
           `/models/${app.modelName}/assistant/${target}`,
           { template },
         )
-        ids.push(r.id)
         model = r.model
       }
       await app.afterChange(model)
       chosen = chosen.filter((x) => !templates.includes(x))
-      if (ids.length === 1) app.cyberCheck = ids[0]
-      else adoptedNow = [...adoptedNow, ...ids]
     } finally {
       busy = false
     }
   }
 
-  async function answerCyber(id: string) {
-    const threat = app.objects('threats').find((t) => t.id === id)
-    if (!threat) return
-    const r = await api<{ model: ModelPayload }>('PUT', `/models/${app.modelName}/threats/${id}`, {
-      ...$state.snapshot(threat),
-      cyber_cause: true,
-    })
-    await app.afterChange(r.model)
-  }
 </script>
 
 <section>
@@ -103,21 +85,6 @@
     {#each targets as o}<option value={o.id}>{o.id} {o.title}</option>{/each}
   </select>
 
-  {#if openCyber.length}
-    <div class="cyber" role="region" aria-label={tr(lang, 'cyber_open_title')} data-testid="assistant-cyber">
-      <h2>{tr(lang, 'cyber_open_title')} <Info term="cyber_cause" /></h2>
-      {#each openCyber as t (t.id)}
-        <div class="cyber-row">
-          <div>
-            <strong>{t.id}</strong> {t.title}
-            {#if t.scenario}<p class="muted">{t.scenario}</p>{/if}
-          </div>
-          <button onclick={() => answerCyber(t.id)} data-testid="cyber-yes-{t.id}">{tr(lang, 'cyber_yes')}</button>
-          <button onclick={() => (app.cyberCheck = t.id)}>{tr(lang, 'cyber_no')}</button>
-        </div>
-      {/each}
-    </div>
-  {/if}
 
   {#if categories}
     {#if untypedFlow}<p class="warning" data-testid="assistant-untyped-flow">{tr(lang, 'flow_needs_type')}</p>{/if}
@@ -265,30 +232,6 @@
     border: 1px solid var(--accent);
     border-radius: var(--radius);
     box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
-  }
-  .cyber {
-    border: 1px solid var(--warning);
-    border-radius: var(--radius);
-    background: var(--surface);
-    padding: 0.6rem 0.9rem;
-    margin-bottom: 1rem;
-  }
-  .cyber h2 {
-    font-size: 1rem;
-    margin: 0 0 0.4rem;
-  }
-  .cyber-row {
-    display: flex;
-    gap: 0.6rem;
-    align-items: start;
-    border-top: 1px solid var(--border);
-    padding: 0.45rem 0;
-  }
-  .cyber-row > div {
-    flex: 1;
-  }
-  .cyber-row p {
-    margin: 0.2rem 0 0;
   }
   .suggestion p {
     margin: 0.2rem 0 0;

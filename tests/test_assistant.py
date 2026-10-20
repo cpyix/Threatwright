@@ -51,6 +51,7 @@ def test_suggestions_adopt_and_measure_reuse(loaded) -> None:  # type: ignore[no
     assert "{element}" not in first.title
     t1 = assistant.adopt_threat(sub, libs, project.config, first.template_id, plc.id)
     assert isinstance(t1, Threat) and t1.targets == [plc.id] and t1.measures
+    assert t1.cyber_cause is True  # rule 3.3: templates describe attacks
     assert t1.library_ref and t1.library_ref.startswith(f"lib:ot/threat/{first.template_id}@")
     tpl = libs.threats[first.template_id]
     assert t1.assessment.interface == (tpl.environment.interface or "local")

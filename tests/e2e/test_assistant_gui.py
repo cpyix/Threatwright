@@ -31,9 +31,8 @@ def test_adopt_single_then_all(gui: str, page: Page, project_dir: Path) -> None:
     expect(first).to_be_visible()  # suggestions loaded
     open_before = page.locator("details[open]").count()
     first.click()
-    dialog = page.get_by_test_id("cyber-dialog")  # one threat: the dialog asks rule 3.3
-    dialog.get_by_test_id("cyber-yes").click()
-    expect(dialog).to_be_hidden()
+    expect(page.get_by_test_id("cyber-dialog")).to_be_hidden()  # rule 3.3 answered by the template
+    expect(page.locator("span.ok").first).to_be_visible()  # adopted
     expect(page.locator("details[open]")).to_have_count(open_before)  # nothing collapsed
 
     # pick two by hand, then take everything that is left
@@ -46,15 +45,6 @@ def test_adopt_single_then_all(gui: str, page: Page, project_dir: Path) -> None:
     count = int(remaining.rsplit("(", 1)[1].rstrip(")"))
     expect(page.get_by_test_id("adopt-bar")).to_contain_text(str(count))
     page.get_by_test_id("adopt-chosen").click()
-
-    # several at once: no dialog storm, an inline list asks rule 3.3 per threat
-    cyber = page.get_by_test_id("assistant-cyber")
-    yes = cyber.locator("[data-testid^=cyber-yes-]")
-    expect(yes).to_have_count(count)
-    for left in range(count - 1, -1, -1):
-        yes.first.click()
-        expect(yes).to_have_count(left)
-    expect(cyber).to_have_count(0)
     expect(page.get_by_test_id("select-all-suggestions")).to_have_count(0)  # all adopted
 
     page.keyboard.press("Control+s")

@@ -42,12 +42,12 @@ const de = {
   description: 'Beschreibung (Zweck, Verwendung, Umgebung, Systemgrenze)',
   description_placeholder:
     'Zweck: …\nVorhersehbare Verwendung und Fehlanwendung: …\nEinsatzumgebung: …\nNutzergruppen: …\nSystemgrenze: …',
-  configurations: 'Varianten und Ausbaustufen',
+  configurations: 'Ausbaustufen / Varianten',
   configurations_help:
     'Gibt es das Produkt in Varianten mit unterschiedlichen Schnittstellen (z. B. mit oder ohne Fernwartung)? ' +
-    'Legen Sie je Variante eine Ausbaustufe an. Elemente und Bedrohungen lassen sich später darauf einschränken. ' +
+    'Legen Sie je Ausbaustufe / Variante einen Eintrag an. Elemente und Bedrohungen lassen sich später darauf einschränken. ' +
     'Ohne Varianten genügt „Standard“.',
-  add_configuration: '+ Ausbaustufe',
+  add_configuration: '+ Ausbaustufe / Variante',
 
   zones_text:
     'Zonen fassen Komponenten mit gleicher Erreichbarkeit zusammen; jede Grenze zwischen Zonen ist eine Vertrauensgrenze. ' +

@@ -17,11 +17,11 @@ export const GLOSSARY = {
   },
   configurations: {
     de: {
-      title: 'Ausbaustufen',
-      text: 'Varianten desselben Produkts, die Sie getrennt verkaufen oder ausliefern, z. B. „Standard“ und „mit Fernwartung“. Ein Element oder Datenfluss, der nur in einer Variante vorkommt, ordnen Sie dieser Ausbaustufe zu. Ohne Zuordnung gilt es für alle. So sehen Sie im Diagramm und im Bericht, welche Bedrohungen nur eine Variante betreffen.',
+      title: 'Ausbaustufen / Varianten',
+      text: 'Varianten desselben Produkts, die Sie getrennt verkaufen oder ausliefern, z. B. „Standard“ und „mit Fernwartung“. Ein Element oder Datenfluss, der nur in einer Variante vorkommt, ordnen Sie dieser Ausbaustufe / Variante zu. Ohne Zuordnung gilt es für alle. So sehen Sie im Diagramm und im Bericht, welche Bedrohungen nur eine Variante betreffen.',
     },
     en: {
-      title: 'Configurations',
+      title: 'Configurations / variants',
       text: 'Variants of the same product that you sell or ship separately, e.g. "standard" and "with remote service". Assign an element or data flow that only exists in one variant to that configuration; without an assignment it applies to all. The diagram and the report then show which threats only affect one variant.',
     },
   },

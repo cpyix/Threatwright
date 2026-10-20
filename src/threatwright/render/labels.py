@@ -94,7 +94,7 @@ LABELS: dict[str, tuple[str, str]] = {
     "date": ("Stand", "Date"),
     "method": ("Methode", "Method"),
     "lifecycle": ("Lebenszyklusphase", "Lifecycle phase"),
-    "configurations": ("Konfigurationen (Ausbaustufen)", "Configurations"),
+    "configurations": ("Ausbaustufen / Varianten", "Configurations / variants"),
     "zones": ("Zonen", "Zones"),
     "elements": ("Elemente", "Elements"),
     "flows": ("Datenflüsse", "Data flows"),

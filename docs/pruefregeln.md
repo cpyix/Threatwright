@@ -19,7 +19,7 @@ Die Oberfläche zeigt dieselben Meldungen, weil sie dieselbe Prüfung aufruft.
 | `duplicate-uuid` | UUID kommt mehrfach vor (z. B. Datei kopiert) |
 | `unresolved-ref` | Verweis auf eine ID, die es nicht gibt |
 | `unresolved-text-ref` | ID im Fließtext (z. B. „siehe M-0042“), die es nicht gibt |
-| `unknown-configuration` | Ausbaustufe ist im Modell nicht definiert |
+| `unknown-configuration` | Ausbaustufe / Variante ist im Modell nicht definiert |
 | `unknown-zone` | Zone ist im Modell nicht definiert |
 | `unknown-asset-class` | Asset-Klasse gibt es in der Methode nicht |
 | `unknown-indicator-value` | Wert für Schnittstelle, Zugang oder Nutzer gibt es in der Methode nicht |

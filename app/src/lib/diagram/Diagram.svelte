@@ -5,6 +5,7 @@
   import { tr } from '../../i18n'
   import { app } from '../../state.svelte'
   import type { ElementType } from '../../types'
+  import { iconFor } from '../icons'
   import ObjectForm from '../ObjectForm.svelte'
   import Canvas from './Canvas.svelte'
 
@@ -36,12 +37,17 @@
     <p class="muted">{tr(lang, 'palette_help')}</p>
     <ul>
       {#each elementTypes as t (t.id)}
-        <li
-          draggable="true"
-          ondragstart={(e) => e.dataTransfer?.setData('application/x-threatwright-type', t.id)}
-          data-testid="palette-{t.id}"
-        >
-          <span class="kind kind-{t.kind}"></span>{t.name[lang]}
+        {@const Icon = iconFor(t.icon, t.kind)}
+        <li>
+          <button
+            draggable="true"
+            ondragstart={(e) => e.dataTransfer?.setData('application/x-threatwright-type', t.id)}
+            onclick={() => canvas?.addElement(t.id)}
+            title={tr(lang, 'palette_add')}
+            data-testid="palette-{t.id}"
+          >
+            <span class="kind kind-{t.kind}"><Icon size={16} strokeWidth={1.75} aria-hidden="true" /></span>{t.name[lang]}
+          </button>
         </li>
       {/each}
     </ul>
@@ -68,7 +74,7 @@
       <button onclick={exportSvg}>{tr(lang, 'export_svg')}</button>
     </div>
     <SvelteFlowProvider>
-      <Canvas bind:this={canvas} {flowType} {configuration} onselect={select} />
+      <Canvas bind:this={canvas} {flowType} {configuration} types={elementTypes} onselect={select} />
     </SvelteFlowProvider>
   </div>
 
@@ -104,7 +110,8 @@
     display: grid;
     gap: 0.25rem;
   }
-  .palette li {
+  .palette button {
+    width: 100%;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: var(--surface);
@@ -113,25 +120,16 @@
     display: flex;
     gap: 0.5rem;
     align-items: center;
+    text-align: left;
+  }
+  .palette button:hover {
+    border-color: var(--accent);
   }
   .kind {
-    width: 14px;
-    height: 10px;
-    border: 1.5px solid var(--text);
-    border-radius: 2px;
+    display: grid;
+    place-items: center;
     flex: none;
-  }
-  .kind-process {
-    border-radius: 6px;
-  }
-  .kind-external {
-    border-width: 2.5px;
-    border-radius: 0;
-  }
-  .kind-datastore {
-    border-left: none;
-    border-right: none;
-    border-radius: 0;
+    color: var(--muted);
   }
   .main {
     display: grid;

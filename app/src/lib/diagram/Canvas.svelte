@@ -11,17 +11,20 @@
   } from '@xyflow/svelte'
   import { api } from '../../api'
   import { app } from '../../state.svelte'
-  import type { ModelPayload } from '../../types'
+  import type { ElementType, ModelPayload } from '../../types'
+  import Legend from './Legend.svelte'
   import ElementNode from './ElementNode.svelte'
   import ZoneNode from './ZoneNode.svelte'
 
   let {
     flowType,
     configuration,
+    types,
     onselect,
   }: {
     flowType: string
     configuration: string
+    types: ElementType[]
     onselect: (collection: 'elements' | 'flows', id: string | null) => void
   } = $props()
 
@@ -72,11 +75,21 @@
       const p = model.layout.nodes[e.id]
       positions.set(e.id, p ? { x: p.x, y: p.y } : { x: 40 + (free % 4) * 250, y: 40 + Math.floor(free++ / 4) * 160 })
     }
+    const icons = new Map(types.map((t) => [t.id, t.icon]))
+    const threats = new Map<string, number>()
+    for (const t of app.objects('threats')) for (const id of t.targets ?? []) threats.set(id, (threats.get(id) ?? 0) + 1)
     const elementNodes: Node[] = app.objects('elements').map((e) => ({
       id: e.id,
       type: 'element',
       position: positions.get(e.id)!,
-      data: { id: e.id, title: e.title, kind: e.kind, risk: model.max_risks[e.id] ?? 0 },
+      data: {
+        id: e.id,
+        title: e.title,
+        kind: e.kind,
+        risk: model.max_risks[e.id] ?? 0,
+        icon: icons.get(/element\/([^@]+)@/.exec(e.library_ref ?? '')?.[1] ?? '') ?? null,
+        threats: threats.get(e.id) ?? 0,
+      },
       hidden: !visible(e.configurations),
     }))
     nodes = [...zoneNodes(positions), ...elementNodes]
@@ -125,6 +138,7 @@
   $effect(() => {
     void app.model
     void configuration
+    void types
     build()
   })
 
@@ -154,11 +168,38 @@
     onselect('flows', r.id)
   }
 
+  let host: HTMLDivElement | undefined = $state()
+
   async function ondrop(event: DragEvent) {
     event.preventDefault()
     const type = event.dataTransfer?.getData('application/x-threatwright-type')
-    if (!type) return
-    const p = screenToFlowPosition({ x: event.clientX, y: event.clientY })
+    if (type) await addAt(type, screenToFlowPosition({ x: event.clientX, y: event.clientY }))
+  }
+
+  /** Palette click / keyboard: place in the middle of the visible canvas. */
+  export async function addElement(type: string) {
+    const box = host!.getBoundingClientRect()
+    const c = screenToFlowPosition({ x: box.left + box.width / 2, y: box.top + box.height / 2 })
+    await addAt(type, freeSpot(c))
+  }
+
+  /** Nearest grid cell around `c` whose element-sized box overlaps no element. */
+  function freeSpot(c: { x: number; y: number }) {
+    const taken = nodes.filter((n) => n.type === 'element' && !n.hidden).map((n) => n.position)
+    const free = (x: number, y: number) =>
+      taken.every((p) => Math.abs(p.x - (x - W / 2)) >= W + 30 || Math.abs(p.y - (y - H / 2)) >= H + 30)
+    for (let ring = 0; ring < 12; ring++)
+      for (let dx = -ring; dx <= ring; dx++)
+        for (let dy = -ring; dy <= ring; dy++) {
+          if (Math.max(Math.abs(dx), Math.abs(dy)) !== ring) continue
+          const x = c.x + dx * (W + 40)
+          const y = c.y + dy * (H + 40)
+          if (free(x, y)) return { x, y }
+        }
+    return c
+  }
+
+  async function addAt(type: string, p: { x: number; y: number }) {
     const r = await api<{ id: string; model: ModelPayload }>('POST', `/models/${app.modelName}/add/element`, {
       type,
       zone: zoneAt(p.x, p.y) ?? undefined,
@@ -204,11 +245,11 @@
       for (const g of c.children ?? []) layout[g.id] = { x: Math.round(ox + (g.x ?? 0)), y: Math.round(oy + (g.y ?? 0)) }
     }
     await saveLayout(layout)
-    fitView()
+    fitView({ maxZoom: 1 })
   }
 </script>
 
-<div class="canvas" role="application" ondragover={(e) => e.preventDefault()} {ondrop}>
+<div class="canvas" role="application" bind:this={host} ondragover={(e) => e.preventDefault()} {ondrop}>
   <SvelteFlow
     bind:nodes
     bind:edges
@@ -216,6 +257,7 @@
     connectionMode={ConnectionMode.Loose}
     deleteKey={null}
     fitView
+    fitViewOptions={{ maxZoom: 1 }}
     onnodedragstop={ondragstop}
     onnodeclick={({ node }) => node.type === 'element' && onselect('elements', node.id)}
     onedgeclick={({ edge }) => onselect('flows', edge.id)}
@@ -224,6 +266,7 @@
   >
     <Background />
     <Controls />
+    <Legend />
   </SvelteFlow>
 </div>
 

@@ -40,7 +40,7 @@
   const title = (id: string) => [...elements, ...flows, ...assets].find((o) => o.id === id)?.title ?? id
 
   $effect(() => {
-    void libraries // reload the building blocks when a library is added
+    void libraries.join(',') // stable key: the array is rebuilt on every project refresh; reload the building blocks when a library is added
     api<{ elements: ElementType[] }>('GET', '/library').then((r) => (types = r.elements)).catch(() => (types = []))
   })
 
@@ -89,6 +89,7 @@
   async function addLibrary(id: string) {
     await guard(async () => {
       app.project = await api<ProjectInfo>('POST', '/project/libraries', { add: [id] })
+      await app.afterChange() // new library: refresh the issue list
     })
   }
 

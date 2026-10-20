@@ -504,8 +504,10 @@ def create_app(
             config = project.config
             missing = [n for n in PRODUCT_LIBRARIES if n in body.add and n not in config.libraries]
             if missing:  # add-only: existing entries (own libraries too) keep their place
-                config.libraries = [*config.libraries, *missing]
-                session.libs = load_libraries(config.libraries, project.root)
+                libraries = [*config.libraries, *missing]
+                libs = load_libraries(libraries, project.root)  # may raise: assign only afterwards
+                config.libraries = libraries
+                session.libs = libs
                 session.changed()
             return project_info()
 

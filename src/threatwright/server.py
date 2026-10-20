@@ -1,7 +1,8 @@
 """Local web server for the GUI (ADR-0003, ADR-0007).
 
-Binds to 127.0.0.1 only, requires a per-start session token on every API
-call, rejects foreign Host headers (DNS rebinding) and sends a strict CSP.
+Binds to 127.0.0.1 by default (`--host` for containers/servers), requires a
+session token on every API call, rejects Host headers not explicitly allowed
+(DNS rebinding) and sends a strict CSP.
 The server holds exactly one open project in memory; files are written only
 on an explicit save.
 """
@@ -233,7 +234,13 @@ def pick_folder(title: str, initial: str | None = None) -> str | None:
     return path or None
 
 
-def create_app(token: str, port: int | None = None, project: Path | None = None) -> FastAPI:
+def create_app(
+    token: str,
+    port: int | None = None,
+    project: Path | None = None,
+    hosts: frozenset[str] = frozenset(),
+) -> FastAPI:
+    """`hosts`: extra host names accepted on any port (server/container use)."""
     app = FastAPI(title=PRODUCT_NAME, docs_url=None, redoc_url=None, openapi_url=None)
     session = Session()
     app.state.session = session
@@ -254,7 +261,7 @@ def create_app(token: str, port: int | None = None, project: Path | None = None)
         )
         if port is None:
             host = host.split(":")[0]
-        if host not in allowed:
+        if host not in allowed and host.rsplit(":", 1)[0] not in hosts:
             return JSONResponse({"detail": "forbidden host"}, status_code=403)
         if request.url.path.startswith("/api/"):
             sent = request.headers.get(TOKEN_HEADER, "")
@@ -866,21 +873,33 @@ def _step(
         return {"ok": True}
 
 
-def serve(project: Path | None, open_browser: bool = True) -> None:
-    """Start the GUI server on a random free localhost port."""
+MIN_TOKEN = 24
+
+
+def serve(
+    project: Path | None,
+    open_browser: bool = True,
+    host: str = "127.0.0.1",
+    port: int = 0,
+    allowed_hosts: tuple[str, ...] = (),
+) -> None:
+    """Start the GUI server; default a random free localhost port."""
     import socket
     import webbrowser
 
     import uvicorn
 
-    token = secrets.token_urlsafe(32)
-    sock = socket.socket()
-    sock.bind(("127.0.0.1", 0))
+    token = os.environ.get("THREATWRIGHT_TOKEN") or secrets.token_urlsafe(32)
+    if len(token) < MIN_TOKEN:
+        raise SystemExit(f"THREATWRIGHT_TOKEN must be at least {MIN_TOKEN} characters")
+    sock = socket.socket(socket.AF_INET6 if ":" in host else socket.AF_INET)
+    sock.bind((host, port))
     port = sock.getsockname()[1]
-    app = create_app(token, port, project)
-    url = f"http://127.0.0.1:{port}/#token={token}"
+    app = create_app(token, port, project, frozenset(allowed_hosts))
+    shown = allowed_hosts[0] if allowed_hosts else "127.0.0.1"
+    url = f"http://{shown}:{port}/#token={token}"
     print(
-        f"{PRODUCT_NAME} {__version__} running at http://127.0.0.1:{port}/ (Ctrl+C to stop)",
+        f"{PRODUCT_NAME} {__version__} running at http://{shown}:{port}/ (Ctrl+C to stop)",
         flush=True,
     )
     if open_browser:

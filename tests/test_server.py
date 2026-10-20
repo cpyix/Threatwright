@@ -33,6 +33,26 @@ def test_token_host_and_security_headers(project_dir: Path) -> None:
     assert r.headers["x-content-type-options"] == "nosniff"
 
 
+def test_allowed_hosts_for_server_use(project_dir: Path) -> None:
+    app = create_app(TOKEN, 8080, project_dir, frozenset({"tw.example.com"}))
+
+    def status(base: str) -> int:
+        c = TestClient(app, base_url=base, headers={TOKEN_HEADER: TOKEN})
+        return c.get("/api/project").status_code
+
+    assert status("https://tw.example.com") == 200  # behind a proxy, any port
+    assert status("http://tw.example.com:9000") == 200
+    assert status("http://127.0.0.1:8080") == 200
+    assert status("http://127.0.0.1:9000") == 403
+    assert status("http://evil.example:8080") == 403
+
+
+def test_short_env_token_refused(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("THREATWRIGHT_TOKEN", "short")
+    with pytest.raises(SystemExit, match="at least"):
+        server.serve(None, open_browser=False)
+
+
 def test_create_assess_link_save_flow(client: TestClient, project_dir: Path) -> None:
     measure = client.post("/api/models/main/measures", json={"title": "Port verschließen"}).json()
     mid = measure["object"]["id"]

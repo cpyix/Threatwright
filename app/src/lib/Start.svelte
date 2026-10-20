@@ -12,11 +12,11 @@
   let error = $state('')
   const lang = $derived(app.lang)
 
-  async function run(fn: () => Promise<ProjectInfo>, view: View = { kind: 'overview' }) {
+  async function run(fn: () => Promise<ProjectInfo>, view?: View) {
     error = ''
     try {
       await app.loadProject(await fn())
-      app.view = view
+      app.view = view ?? app.home()
     } catch (e) {
       app.view = { kind: 'start' }
       error = e instanceof ApiError ? e.message : String(e)

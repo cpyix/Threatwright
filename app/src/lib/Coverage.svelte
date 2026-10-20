@@ -3,6 +3,7 @@
   import { label, tr } from '../i18n'
   import { app } from '../state.svelte'
   import type { CoverageRow, ModelPayload } from '../types'
+  import Info from './Info.svelte'
 
   let rows = $state<CoverageRow[]>([])
   let marking = $state<{ id: string; s: string } | null>(null)
@@ -32,12 +33,18 @@
 </script>
 
 <section>
-  <h1>{tr(lang, 'coverage')}</h1>
+  <h1>{tr(lang, 'coverage')} <Info term="coverage" /> <Info term="stride" /></h1>
+  <ul class="legend" aria-label={tr(lang, 'legend')}>
+    <li><span class="count">2</span> {tr(lang, 'cov_threats')}</li>
+    <li><span class="gap-swatch"></span> {tr(lang, 'cov_gap')}</li>
+    <li><strong>{tr(lang, 'not_relevant_short')}</strong> {tr(lang, 'not_relevant')}</li>
+    <li><span class="muted">·</span> {tr(lang, 'not_applicable')}</li>
+  </ul>
   <table class="matrix" data-testid="coverage">
     <thead>
       <tr>
         <th>{tr(lang, 'elements')} / {tr(lang, 'flows')}</th>
-        {#each 'STRIDE' as s}<th title={label(lang, s)}>{s}</th>{/each}
+        {#each 'STRIDE' as s}<th title={label(lang, s)}><abbr title={label(lang, s)}>{s}</abbr></th>{/each}
       </tr>
     </thead>
     <tbody>
@@ -60,8 +67,18 @@
                   <button type="submit" class="mini">✓</button>
                 </form>
               {:else}
-                <button class="mini" onclick={() => (app.view = { kind: 'assistant', target: row.id })} title={tr(lang, 'open_assistant')}>+</button>
-                <button class="mini" onclick={() => (marking = { id: row.id, s })} title={tr(lang, 'mark_not_relevant')}>{tr(lang, 'not_relevant_short')}</button>
+                <button
+                  class="mini"
+                  onclick={() => (app.view = { kind: 'assistant', target: row.id })}
+                  title={tr(lang, 'open_assistant')}
+                  aria-label="{tr(lang, 'open_assistant')}: {row.id} {label(lang, s)}">+</button
+                >
+                <button
+                  class="mini"
+                  onclick={() => (marking = { id: row.id, s })}
+                  title={tr(lang, 'mark_not_relevant')}
+                  aria-label="{tr(lang, 'mark_not_relevant')}: {row.id} {label(lang, s)}">{tr(lang, 'not_relevant_short')}</button
+                >
               {/if}
             </td>
           {/each}
@@ -87,6 +104,30 @@
   }
   td.gap {
     background: var(--risk-3);
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.25rem;
+    list-style: none;
+    padding: 0;
+    margin: 0 0 0.75rem;
+    font-size: 0.9em;
+  }
+  .legend li {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .gap-swatch {
+    width: 1.1rem;
+    height: 0.9rem;
+    border-radius: 3px;
+    background: var(--risk-3);
+    border: 1px solid var(--border);
+  }
+  abbr {
+    text-decoration: none;
   }
   .count {
     font-weight: 700;

@@ -81,7 +81,12 @@
   <ul class="status">
     {#each status as [text, done, total]}
       <li>
-        <span class={done === total ? 'ok' : 'warning'}>{done === total ? '✓' : '•'}</span>
+        <!-- nothing to check yet is not "done": an empty model must not look green -->
+        {#if total === 0}
+          <span class="muted">–</span>
+        {:else}
+          <span class={done === total ? 'ok' : 'warning'}>{done === total ? '✓' : '•'}</span>
+        {/if}
         {text}: {done}/{total}
       </li>
     {/each}

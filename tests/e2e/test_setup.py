@@ -6,7 +6,9 @@ from pathlib import Path
 from playwright.sync_api import Page, expect
 
 
-def test_setup_wizard(gui: str, page: Page, offline: list[str], tmp_path: Path) -> None:
+def test_setup_wizard(
+    ui: dict[str, str], gui: str, page: Page, offline: list[str], tmp_path: Path
+) -> None:
     target = tmp_path / "neu"
     page.goto(gui)
     page.get_by_role("button", name="Start", exact=True).click()
@@ -23,48 +25,61 @@ def test_setup_wizard(gui: str, page: Page, offline: list[str], tmp_path: Path) 
 
     # 2 zones: complete the plant network zone
     page.get_by_test_id("zone-Z-PLANT-access").select_option("restricted")
-    expect(page.get_by_test_id("setup-zone-Z-PLANT")).to_contain_text("bekannter Personenkreis")
+    expect(page.get_by_test_id("setup-zone-Z-PLANT")).to_contain_text(ui["known_group"])
     page.get_by_test_id("setup-next").click()
 
     # 3 components
     page.get_by_test_id("setup-type-plc").click()
     page.get_by_test_id("setup-el-title").fill("Hauptsteuerung")
     page.get_by_test_id("setup-el-add").click()
-    expect(page.get_by_text("E-0001")).to_be_visible()
+    expect(page.locator("strong", has_text="E-0001")).to_be_visible()
     page.get_by_test_id("setup-type-hmi").click()
     page.get_by_test_id("setup-el-add").click()
-    expect(page.get_by_text("E-0002")).to_be_visible()
+    expect(page.locator("strong", has_text="E-0002")).to_be_visible()
     page.get_by_test_id("setup-next").click()
 
-    # 4 connections
+    # 4 connections; changing the source after a pick must not lose the target
+    page.get_by_test_id("setup-flow-source").select_option("E-0001")
     page.get_by_test_id("setup-flow-source").select_option("E-0002")
     page.get_by_test_id("setup-flow-target").select_option("E-0001")
     page.get_by_test_id("setup-flow-add").click()
-    expect(page.get_by_text("F-0001")).to_be_visible()
+    expect(page.locator("strong", has_text="F-0001")).to_be_visible()
     page.get_by_test_id("setup-next").click()
 
     # 5 assets: the PLC brought its typical assets; add an own one
-    expect(page.get_by_text("Steuerungsprogramm (Hauptsteuerung)")).to_be_visible()
+    expect(page.get_by_text(f"{ui['control_program']} (Hauptsteuerung)")).to_be_visible()
     page.get_by_test_id("setup-asset-title").fill("Rezepturen")
     page.get_by_test_id("setup-asset-class").select_option("BusinessData.Important")
     page.get_by_test_id("setup-asset-add").click()
     expect(page.get_by_role("cell", name=re.compile(r"^A-\d+ Rezepturen$"))).to_be_visible()
     page.get_by_test_id("setup-next").click()
 
-    # 6 threats: adopt all suggestions for the PLC, answer rule 3.3
-    page.get_by_test_id("setup-target-E-0001").locator("summary").click()
-    page.get_by_role("button", name="alle auswählen").click()
+    # 6 threats: top suggestions only, then answer rule 3.3 one by one (no "all yes")
+    target_box = page.get_by_test_id("setup-target-E-0001")
+    target_box.locator("summary").click()
+    boxes = target_box.locator("input[type=checkbox]")
+    expect(boxes).to_have_count(5)
+    boxes.nth(0).check()
+    boxes.nth(1).check()
     page.get_by_test_id("setup-adopt-E-0001").click()
-    page.get_by_test_id("setup-cyber-all").click()
-    expect(page.get_by_test_id("setup-cyber-all")).to_have_count(0)
+    expect(target_box.locator("summary")).to_contain_text("2/")
+    yes = page.locator("[data-testid^=setup-cyber-yes-]")
+    expect(yes).to_have_count(2)
+    yes.first.click()
+    expect(yes).to_have_count(1)
+    yes.first.click()
+    expect(yes).to_have_count(0)
+    # the untyped connection explains why it has no suggestions
+    page.get_by_test_id("setup-target-F-0001").locator("summary").click()
+    expect(page.get_by_test_id("setup-target-F-0001")).to_contain_text(ui["generic_connection"])
     page.get_by_test_id("setup-next").click()
 
     # 7 finish
     checks = page.get_by_test_id("setup-checks")
-    expect(checks).to_contain_text("Komponenten angelegt: 2")
-    expect(checks).to_contain_text("✓ Ursachenfrage beantwortet")
+    expect(checks).to_contain_text(f"{ui['components_added']}: 2")
+    expect(checks).to_contain_text(f"✓ {ui['cause_answered']}")
     page.get_by_test_id("setup-save").click()
-    expect(page.get_by_test_id("toast")).to_contain_text("Gespeichert")
+    expect(page.get_by_test_id("toast")).to_contain_text(ui["saved"], timeout=15_000)
 
     model = target / "models" / "main"
     assert "Testanlage zum Verpacken" in (model / "model.yaml").read_text(encoding="utf-8")

@@ -1,7 +1,8 @@
 """Local web server for the GUI (ADR-0003, ADR-0007).
 
-Binds to 127.0.0.1 only, requires a per-start session token on every API
-call, rejects foreign Host headers (DNS rebinding) and sends a strict CSP.
+Binds to 127.0.0.1 by default (`--host` for containers/servers), requires a
+session token on every API call, rejects Host headers not explicitly allowed
+(DNS rebinding) and sends a strict CSP.
 The server holds exactly one open project in memory; files are written only
 on an explicit save.
 """
@@ -200,7 +201,8 @@ def pick_folder(title: str, initial: str | None = None) -> str | None:
     Linux prefers zenity/kdialog (desktop-native), otherwise Tk, which uses the
     Explorer dialog on Windows. Raises RuntimeError without a desktop (container, SSH).
     """
-    start = initial or str(Path.home())
+    # absolute, so a value like "--help" can never be read as a dialog option
+    start = os.path.abspath(initial or Path.home())
     if sys.platform.startswith("linux"):
         for cmd in (
             [
@@ -233,8 +235,36 @@ def pick_folder(title: str, initial: str | None = None) -> str | None:
     return path or None
 
 
-def create_app(token: str, port: int | None = None, project: Path | None = None) -> FastAPI:
+def create_app(
+    token: str,
+    port: int | None = None,
+    project: Path | None = None,
+    hosts: frozenset[str] = frozenset(),
+    root: Path | None = None,
+) -> FastAPI:
+    """`hosts`: extra host names accepted on any port (server/container use).
+    `root`: server mode; project and import paths from clients must stay inside it."""
     app = FastAPI(title=PRODUCT_NAME, docs_url=None, redoc_url=None, openapi_url=None)
+    jail = root.resolve() if root is not None else None
+
+    def client_path(raw: str) -> Path:
+        """Locally the user may pick any folder; on a server only inside `root` (ADR-0013)."""
+        if jail is None:
+            return Path(raw)
+        # realpath resolves ".." and symlinks; relative paths count from root, absolute ones
+        # replace it. One prefix check on the result, before any use of the path.
+        base = str(jail)
+        candidate = os.path.realpath(os.path.join(base, raw))
+        if candidate == base:
+            return jail
+        if not candidate.startswith(base + os.sep):
+            raise HTTPException(403, "path is outside the folder this server works on")
+        return Path(candidate)
+
+    def local_only() -> None:
+        if jail is not None:
+            raise HTTPException(501, "not available when Threatwright runs as a server")
+
     session = Session()
     app.state.session = session
     if project is not None:
@@ -254,7 +284,7 @@ def create_app(token: str, port: int | None = None, project: Path | None = None)
         )
         if port is None:
             host = host.split(":")[0]
-        if host not in allowed:
+        if host not in allowed and host.rsplit(":", 1)[0] not in hosts:
             return JSONResponse({"detail": "forbidden host"}, status_code=403)
         if request.url.path.startswith("/api/"):
             sent = request.headers.get(TOKEN_HEADER, "")
@@ -277,7 +307,7 @@ def create_app(token: str, port: int | None = None, project: Path | None = None)
 
     @app.post("/api/project/open")
     def open_project(body: dict[str, str]) -> dict[str, Any]:
-        path = Path(body.get("path", ""))
+        path = client_path(body.get("path", ""))
         with session.lock:
             try:
                 session.open(path)
@@ -290,6 +320,7 @@ def create_app(token: str, port: int | None = None, project: Path | None = None)
 
     @app.post("/api/pick-folder")
     def pick_folder_endpoint(body: dict[str, str]) -> dict[str, str | None]:
+        local_only()  # would open a dialog on the server's desktop
         if not dialog_lock.acquire(blocking=False):
             raise HTTPException(409, "a folder dialog is already open")
         try:
@@ -305,7 +336,7 @@ def create_app(token: str, port: int | None = None, project: Path | None = None)
         language = body.get("language", "de")
         if template not in ("tr", "empty") or language not in ("de", "en"):
             raise HTTPException(422, "template: tr|empty, language: de|en")
-        path = Path(body.get("path", ""))
+        path = client_path(body.get("path", ""))
         with session.lock:
             try:
                 create_project(path, template, body.get("name") or None, language)  # type: ignore[arg-type]
@@ -592,8 +623,8 @@ def create_app(token: str, port: int | None = None, project: Path | None = None)
         try:
             changed = changed_objects(root, since or None)
             tags = [asdict(t) for t in release_tags(root)]
-        except VcsError as exc:
-            return {"available": False, "error": str(exc), "models": {}, "tags": []}
+        except VcsError:
+            return {"available": False, "models": {}, "tags": []}
         return {
             "available": True,
             "models": {m: sorted(ids) for m, ids in changed.items()},
@@ -631,7 +662,7 @@ def create_app(token: str, port: int | None = None, project: Path | None = None)
             if session.dirty:
                 raise HTTPException(409, "save your changes before importing")
             try:
-                written = import_into_project(root, Path(body.get("path", "")), kind)  # type: ignore[arg-type]
+                written = import_into_project(root, client_path(body.get("path", "")), kind)  # type: ignore[arg-type]
             except OscalError as exc:
                 raise HTTPException(422, "\n".join(str(i) for i in exc.issues) or str(exc)) from exc
             except (ValueError, OSError) as exc:
@@ -727,6 +758,7 @@ def create_app(token: str, port: int | None = None, project: Path | None = None)
     @app.post("/api/open-build-folder")
     def open_build_folder() -> dict[str, str]:
         """Open <project>/build in the file manager of the local machine."""
+        local_only()
         with session.lock:
             folder = session.require().root.resolve() / "build"
         folder.mkdir(exist_ok=True)
@@ -816,8 +848,10 @@ def create_app(token: str, port: int | None = None, project: Path | None = None)
     def frontend(path: str) -> Response:
         if path.startswith("api/"):
             raise HTTPException(404)
-        target = (WEB_DIR / path).resolve()
-        if path and target.is_file() and target.is_relative_to(WEB_DIR.resolve()):
+        # boundary first (string check): never even probe files outside the bundled frontend
+        web = os.path.abspath(WEB_DIR)
+        target = os.path.normpath(os.path.join(web, path))
+        if path and target.startswith(web + os.sep) and os.path.isfile(target):
             return FileResponse(target)
         index = WEB_DIR / "index.html"
         if not index.exists():
@@ -866,21 +900,36 @@ def _step(
         return {"ok": True}
 
 
-def serve(project: Path | None, open_browser: bool = True) -> None:
-    """Start the GUI server on a random free localhost port."""
+MIN_TOKEN = 24
+
+
+def serve(
+    project: Path | None,
+    open_browser: bool = True,
+    host: str = "127.0.0.1",
+    port: int = 0,
+    allowed_hosts: tuple[str, ...] = (),
+) -> None:
+    """Start the GUI server; default a random free localhost port."""
     import socket
     import webbrowser
 
     import uvicorn
 
-    token = secrets.token_urlsafe(32)
-    sock = socket.socket()
-    sock.bind(("127.0.0.1", 0))
+    token = os.environ.get("THREATWRIGHT_TOKEN") or secrets.token_urlsafe(32)
+    if len(token) < MIN_TOKEN:
+        raise SystemExit(f"THREATWRIGHT_TOKEN must be at least {MIN_TOKEN} characters")
+    sock = socket.socket(socket.AF_INET6 if ":" in host else socket.AF_INET)
+    sock.bind((host, port))
     port = sock.getsockname()[1]
-    app = create_app(token, port, project)
-    url = f"http://127.0.0.1:{port}/#token={token}"
+    # reachable by others (bound beyond loopback, or behind a proxy): confine client paths
+    shared = bool(allowed_hosts) or host not in ("127.0.0.1", "::1", "localhost")
+    root = (project or Path.cwd()) if shared else None
+    app = create_app(token, port, project, frozenset(allowed_hosts), root)
+    shown = allowed_hosts[0] if allowed_hosts else "127.0.0.1"
+    url = f"http://{shown}:{port}/#token={token}"
     print(
-        f"{PRODUCT_NAME} {__version__} running at http://127.0.0.1:{port}/ (Ctrl+C to stop)",
+        f"{PRODUCT_NAME} {__version__} running at http://{shown}:{port}/ (Ctrl+C to stop)",
         flush=True,
     )
     if open_browser:

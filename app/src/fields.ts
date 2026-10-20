@@ -1,4 +1,5 @@
-import type { Key } from './i18n'
+import { label, type Key } from './i18n'
+import { assetClassLabel } from './setup-text'
 import { app } from './state.svelte'
 import type { Collection, Obj } from './types'
 
@@ -23,7 +24,9 @@ const zones = (): Option[] =>
 const configurations = (): Option[] =>
   (app.model?.meta.configurations ?? []).map((c) => ({ value: c.id, label: `${c.id} ${c.title}` }))
 const assetClasses = (): Option[] =>
-  Object.keys(app.method?.asset_classes ?? {}).map((v) => ({ value: v, label: v }))
+  Object.keys(app.method?.asset_classes ?? {}).map((v) => ({ value: v, label: assetClassLabel(app.lang, v) }))
+// letter plus name: a lone "I" checkbox says nothing to a newcomer
+const stride = (): Option[] => STRIDE.map((s) => ({ value: s, label: `${s} – ${label(app.lang, s)}` }))
 const cra = (): Option[] =>
   Object.entries(app.cra).map(([id, e]) => ({ value: id, label: `${id} ${e[app.lang] ?? ''}` }))
 const targets = (): Option[] => [...refs('elements')(), ...refs('flows')()]
@@ -60,7 +63,7 @@ export const FIELDS: Record<Collection, Field[]> = {
   threats: [
     { key: 'title', label: 'title', type: 'text', required: true },
     { key: 'cyber_cause', label: 'cyber_cause', type: 'tristate' },
-    { key: 'stride', label: 'stride', type: 'multi', options: values(...STRIDE) },
+    { key: 'stride', label: 'stride', type: 'multi', options: stride },
     { key: 'targets', label: 'targets', type: 'multi', options: targets },
     { key: 'assets', label: 'assets', type: 'multi', options: refs('assets') },
     { key: 'scenario', label: 'scenario', type: 'longtext' },

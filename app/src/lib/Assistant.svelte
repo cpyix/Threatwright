@@ -2,7 +2,9 @@
   import { api } from '../api'
   import { label, tr } from '../i18n'
   import { app } from '../state.svelte'
+  import { STRIDE_QUESTIONS } from '../glossary'
   import type { Category, ModelPayload } from '../types'
+  import Info from './Info.svelte'
 
   let { target }: { target: string | null } = $props()
 
@@ -11,6 +13,7 @@
   const lang = $derived(app.lang)
   const targets = $derived([...app.objects('elements'), ...app.objects('flows')])
   const threatTitle = (id: string) => app.objects('threats').find((t) => t.id === id)?.title ?? ''
+  const untypedFlow = $derived(!!app.objects('flows').find((f) => f.id === target && !f.library_ref))
 
   async function load() {
     categories = target
@@ -41,7 +44,7 @@
 </script>
 
 <section>
-  <h1>{tr(lang, 'assistant')}</h1>
+  <h1>{tr(lang, 'assistant')} <Info term="stride" /></h1>
   <label for="assistant-target">{tr(lang, 'select_target')}</label>
   <select
     id="assistant-target"
@@ -54,13 +57,17 @@
   </select>
 
   {#if categories}
+    {#if untypedFlow}<p class="warning" data-testid="assistant-untyped-flow">{tr(lang, 'flow_needs_type')}</p>{/if}
     {#each Object.entries(categories) as [s, cat] (s)}
       {#if cat.relevant || cat.existing.length}
         <details open={cat.relevant && cat.existing.length === 0} class:done={cat.existing.length > 0 || !!cat.not_relevant}>
           <summary>
             <strong>{s}</strong> {label(lang, s)}
-            <span class="muted">· {cat.existing.length} · {cat.suggestions.length}</span>
+            <span class="muted">
+              · {cat.existing.length} {tr(lang, 'existing_short')} · {cat.suggestions.length} {tr(lang, 'suggestions_short')}
+            </span>
             {#if cat.not_relevant}<span class="muted">· {tr(lang, 'not_relevant')}</span>{/if}
+            <span class="question">{STRIDE_QUESTIONS[lang][s]}</span>
           </summary>
           {#if cat.existing.length}
             <h3>{tr(lang, 'existing')}</h3>
@@ -119,6 +126,12 @@
   }
   summary {
     cursor: pointer;
+  }
+  .question {
+    display: block;
+    margin: 0.15rem 0 0 1.1rem;
+    color: var(--muted);
+    font-style: italic;
   }
   h3 {
     font-size: 0.95rem;

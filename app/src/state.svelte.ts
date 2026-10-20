@@ -14,8 +14,32 @@ export type View =
   | { kind: 'documents' }
   | { kind: 'objects'; collection: Collection; selected: string | null }
 
+const LANG_KEY = 'tw-lang'
+
+/** UI language: the viewer's own pick, else the browser's first language; German only for German. */
+function initialLang(): Lang {
+  try {
+    const stored = localStorage.getItem(LANG_KEY)
+    if (stored === 'de' || stored === 'en') return stored
+  } catch {
+    /* storage unavailable */
+  }
+  const first = navigator.languages?.[0] ?? navigator.language ?? ''
+  return first.toLowerCase().startsWith('de') ? 'de' : 'en'
+}
+
 class AppState {
-  lang = $state<Lang>('de')
+  lang = $state<Lang>(initialLang())
+
+  /** Toggle by the viewer; remembered per browser. The project language only drives documents. */
+  setLang(lang: Lang): void {
+    this.lang = lang
+    try {
+      localStorage.setItem(LANG_KEY, lang)
+    } catch {
+      /* storage unavailable */
+    }
+  }
   version = $state('')
   recent = $state<string[]>([])
   project = $state<ProjectInfo | null>(null)
@@ -37,23 +61,30 @@ class AppState {
     const info = await api<{ version: string; recent: string[] }>('GET', '/app')
     this.version = info.version
     this.recent = info.recent
+    // Loading takes a moment; if the user navigated meanwhile (e.g. created a new project
+    // from the start page), their view wins over the landing view.
+    const before = this.view
     try {
       await this.loadProject(await api<ProjectInfo>('GET', '/project'))
+      if (this.view === before) this.view = this.home()
     } catch {
-      this.view = { kind: 'start' }
+      if (this.view === before) this.view = { kind: 'start' }
     }
   }
 
   async loadProject(info: ProjectInfo): Promise<void> {
     this.project = info
-    this.lang = info.config.language
     this.method = await api<Method>('GET', '/method').catch(() => null)
     const cra = await api<{ entries: Record<string, I18n> }>('GET', '/catalog/cra')
     this.cra = cra.entries
     const names = Object.keys(info.models)
     if (!this.modelName || !names.includes(this.modelName)) this.modelName = names[0] ?? null
     await this.refreshModel()
-    if (this.view.kind === 'start') this.view = { kind: 'overview' }
+  }
+
+  /** Landing view: the diagram once there is something to see, else the setup wizard. */
+  home(): View {
+    return this.model && this.objects('elements').length ? { kind: 'diagram' } : { kind: 'setup', step: 0 }
   }
 
   async refreshProject(): Promise<void> {

@@ -42,12 +42,12 @@ const de = {
   description: 'Beschreibung (Zweck, Verwendung, Umgebung, Systemgrenze)',
   description_placeholder:
     'Zweck: …\nVorhersehbare Verwendung und Fehlanwendung: …\nEinsatzumgebung: …\nNutzergruppen: …\nSystemgrenze: …',
-  configurations: 'Varianten und Ausbaustufen',
+  configurations: 'Ausbaustufen / Varianten',
   configurations_help:
     'Gibt es das Produkt in Varianten mit unterschiedlichen Schnittstellen (z. B. mit oder ohne Fernwartung)? ' +
-    'Legen Sie je Variante eine Ausbaustufe an. Elemente und Bedrohungen lassen sich später darauf einschränken. ' +
+    'Legen Sie je Ausbaustufe / Variante einen Eintrag an. Elemente und Bedrohungen lassen sich später darauf einschränken. ' +
     'Ohne Varianten genügt „Standard“.',
-  add_configuration: '+ Ausbaustufe',
+  add_configuration: '+ Ausbaustufe / Variante',
 
   zones_text:
     'Zonen fassen Komponenten mit gleicher Erreichbarkeit zusammen; jede Grenze zwischen Zonen ist eine Vertrauensgrenze. ' +
@@ -70,6 +70,9 @@ const de = {
   add: 'Anlegen',
   brings_assets: 'bringt mit',
   none_yet: 'Noch nichts angelegt.',
+  preview: 'So sieht Ihr Modell aus',
+  preview_help:
+    'Das ist das Diagramm. Ziehen Sie Elemente in eine andere Zone oder ziehen Sie eine Verbindung von einem Anfasser zum nächsten Element.',
   remove: 'Entfernen',
   search: 'Suchen …',
 
@@ -105,13 +108,16 @@ const de = {
     'Zu jeder übernommenen Bedrohung fragt die TR, ob die Ursache ein Angriff auf das digitale Produkt ist (Regel 3.3). ' +
     'Nur dann ist es ein Cyberrisiko; sonst wird die Bedrohung mit Begründung verworfen.',
   adopt_selected: 'Ausgewählte übernehmen',
-  select_all: 'alle auswählen',
   adopted: 'übernommen',
+  adopted_of: 'übernommen',
+  more: 'Weitere Vorschläge',
   no_suggestions: 'Keine Vorschläge für diesen Baustein.',
+  flow_needs_type:
+    'Für eine allgemeine Verbindung gibt es keine Vorlagen. Wählen Sie im Schritt „Verbindungen“ den Typ (z. B. EtherCAT, IP-Netz), dann erscheinen passende Vorschläge.',
   open_cyber: 'Offene Frage: Ist die Ursache ein Angriff auf das digitale Produkt?',
+  open_cyber_help: 'Lesen Sie das Szenario und entscheiden Sie einzeln. Bei „Nein“ wird die Bedrohung mit Begründung verworfen.',
   yes: 'Ja, Cyberrisiko',
   no: 'Nein …',
-  all_yes: 'Alle mit „Ja“ beantworten',
   loading: 'Lädt …',
 
   finish_text:
@@ -125,6 +131,7 @@ const de = {
   c_threats: 'Bedrohungen übernommen',
   c_cyber: 'Ursachenfrage beantwortet',
   c_errors: 'Fehler in der Prüfung',
+  show_errors: 'Fehler ansehen →',
   next_steps: 'Nächste Schritte',
   n_assess: 'Bedrohungen bewerten: Schnittstelle, Zugang und Nutzer prüfen, Impact setzen und begründen.',
   n_coverage: 'Abdeckung prüfen: Lücken schließen oder als „nicht relevant“ begründen.',
@@ -209,6 +216,8 @@ const en: Text = {
   add: 'Add',
   brings_assets: 'brings',
   none_yet: 'Nothing added yet.',
+  preview: 'Your model so far',
+  preview_help: 'This is the diagram. Drag elements into another zone or drag a connection from a handle to another element.',
   remove: 'Remove',
   search: 'Search …',
 
@@ -243,13 +252,16 @@ const en: Text = {
     'For every adopted threat the TR asks whether the cause is an attack on the digital product (rule 3.3). ' +
     'Only then is it a cyber risk; otherwise the threat is rejected with a rationale.',
   adopt_selected: 'Adopt selected',
-  select_all: 'select all',
   adopted: 'adopted',
+  adopted_of: 'adopted',
+  more: 'More suggestions',
   no_suggestions: 'No suggestions for this building block.',
+  flow_needs_type:
+    'A generic connection has no templates. Choose its type (e.g. EtherCAT, IP network) in the "Connections" step to get matching suggestions.',
   open_cyber: 'Open question: is the cause an attack on the digital product?',
+  open_cyber_help: 'Read the scenario and decide for each one. "No" rejects the threat with a rationale.',
   yes: 'Yes, cyber risk',
   no: 'No …',
-  all_yes: 'Answer all with “yes”',
   loading: 'Loading …',
 
   finish_text: 'The basic structure is in place. From here, continue in the regular views:',
@@ -262,6 +274,7 @@ const en: Text = {
   c_threats: 'Threats adopted',
   c_cyber: 'Cause question answered',
   c_errors: 'Errors in the validation',
+  show_errors: 'Show errors →',
   next_steps: 'Next steps',
   n_assess: 'Assess threats: check interface, access and user, set and justify the impact.',
   n_coverage: 'Check coverage: close gaps or justify them as “not relevant”.',
@@ -302,6 +315,10 @@ export const CATEGORIES: Record<Lang, Record<string, string>> = {
 }
 
 // Short own-words explanation of the TR-03183-1 asset classes (Tables 1-3).
+/** Readable option text for an asset class: the description without its example. */
+export const assetClassLabel = (lang: Lang, cls: string): string =>
+  ASSET_CLASSES[lang][cls]?.split(' (')[0] ?? cls
+
 export const ASSET_CLASSES: Record<Lang, Record<string, string>> = {
   de: {
     'PII.TechnicalNecessary': 'Personenbezogene Daten, die nur technisch nötig sind (z. B. Benutzerkennung im Protokoll)',

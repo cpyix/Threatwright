@@ -3,9 +3,13 @@
   // Every step works on the regular model through the existing API (undo and save as usual).
   import { api, ApiError } from '../api'
   import { label, tr } from '../i18n'
-  import { ASSET_CLASSES, CATEGORIES, SETUP } from '../setup-text'
+  import { ASSET_CLASSES, assetClassLabel, CATEGORIES, SETUP } from '../setup-text'
   import { app } from '../state.svelte'
   import type { Category, ElementType, ModelPayload, Obj, ProjectInfo } from '../types'
+  import { SvelteFlowProvider } from '@xyflow/svelte'
+  import '@xyflow/svelte/dist/style.css'
+  import Canvas from './diagram/Canvas.svelte'
+  import Info from './Info.svelte'
   import MultiSelect from './MultiSelect.svelte'
 
   let { step }: { step: number } = $props()
@@ -189,18 +193,22 @@
     suggestions[id] = r.categories
   }
 
+  const TOP = 5 // shown per target before "more"; a long list invites adopting everything
+  let expanded = $state<Record<string, boolean>>({})
+
   function suggestionList(id: string) {
     const seen = new Set<string>()
-    const out: { template_id: string; title: string; scenario: string; adopted: boolean; stride: string }[] = []
+    const out: { template_id: string; title: string; scenario: string; adopted: boolean; stride: string; impact: number }[] = []
     for (const [s, cat] of Object.entries(suggestions[id] ?? {})) {
       if (!cat.relevant) continue
       for (const sg of cat.suggestions) {
         if (seen.has(sg.template_id)) continue
         seen.add(sg.template_id)
-        out.push({ template_id: sg.template_id, title: sg.title, scenario: sg.scenario, adopted: sg.adopted, stride: s })
+        out.push({ template_id: sg.template_id, title: sg.title, scenario: sg.scenario, adopted: sg.adopted, stride: s, impact: sg.impact ?? 0 })
       }
     }
-    return out
+    // ponytail: "relevance" = template impact; replace with a real score once libraries carry one
+    return out.sort((a, b) => b.impact - a.impact)
   }
 
   async function adopt(id: string) {
@@ -216,16 +224,6 @@
     })
   }
 
-  async function answerAllYes() {
-    await guard(async () => {
-      let model: ModelPayload | undefined
-      for (const x of openCyber) {
-        model = (await api<{ model: ModelPayload }>('PUT', path(`/threats/${x.id}`), { ...$state.snapshot(x), cyber_cause: true })).model
-      }
-      await app.afterChange(model)
-    })
-  }
-
   // --- step 7: finish ------------------------------------------------------------------------
   const errors = $derived(app.issues.filter((i) => i.severity === 'error').length)
   const checks = $derived([
@@ -238,6 +236,16 @@
     [t.c_cyber, threats.length > 0 && openCyber.length === 0],
   ] as [string, boolean, number?][])
 </script>
+
+{#snippet preview(type: string)}
+  <h3>{t.preview}</h3>
+  <p class="muted small">{t.preview_help}</p>
+  <div class="preview" data-testid="setup-preview">
+    <SvelteFlowProvider>
+      <Canvas flowType={type} configuration="" types={elementTypes} onselect={() => {}} />
+    </SvelteFlowProvider>
+  </div>
+{/snippet}
 
 <section class="setup" data-testid="setup">
   <h1>{t.title}</h1>
@@ -280,7 +288,7 @@
     <input id="setup-title" bind:value={meta.title} data-testid="setup-title" />
     <label for="setup-description">{t.description}</label>
     <textarea id="setup-description" rows="7" bind:value={meta.description} placeholder={t.description_placeholder} data-testid="setup-description"></textarea>
-    <h3>{t.configurations}</h3>
+    <h3>{t.configurations} <Info term="configurations" /></h3>
     <p class="muted">{t.configurations_help}</p>
     {#each meta.configurations ?? [] as c, n}
       <div class="row">
@@ -298,7 +306,7 @@
       }}>{t.add_configuration}</button
     >
   {:else if step === 2}
-    <h2>{t.s_zones}</h2>
+    <h2>{t.s_zones} <Info term="zone" /></h2>
     <p>{t.zones_text}</p>
     <p class="muted">{t.zones_hint}</p>
     {#each meta.zones ?? [] as zone, n}
@@ -344,7 +352,7 @@
     <p class="muted">{t.elements_hint}</p>
     <div class="split">
       <div>
-        <h3>{t.library}</h3>
+        <h3>{t.library} <Info term="palette" /></h3>
         <input type="search" bind:value={filter} placeholder={t.search} aria-label={t.search} />
         <!-- svelte-ignore a11y_no_noninteractive_tabindex (scrollable region must be keyboard reachable) -->
         <div class="scroll" tabindex="0" role="region" aria-label={t.library}>
@@ -397,8 +405,9 @@
         {/each}
       </div>
     </div>
+    {#if elements.length}{@render preview('')}{/if}
   {:else if step === 4}
-    <h2>{t.s_flows}</h2>
+    <h2>{t.s_flows} <Info term="flow" /></h2>
     <p>{t.flows_text}</p>
     <p class="muted">{t.flows_hint}</p>
     {#if elements.length < 2}
@@ -407,14 +416,24 @@
       <form class="card grid4" onsubmit={(e) => { e.preventDefault(); addFlow() }}>
         <div>
           <label for="setup-src">{t.source}</label>
-          <select id="setup-src" bind:value={source} required data-testid="setup-flow-source">
+          <!-- value + onchange, not bind: the target options depend on the source (bind lost the pick) -->
+          <select
+            id="setup-src"
+            value={source}
+            onchange={(e) => {
+              source = e.currentTarget.value
+              if (target === source) target = ''
+            }}
+            required
+            data-testid="setup-flow-source"
+          >
             <option value=""></option>
             {#each elements as e}<option value={e.id}>{e.id} {e.title}</option>{/each}
           </select>
         </div>
         <div>
           <label for="setup-tgt">{t.target}</label>
-          <select id="setup-tgt" bind:value={target} required data-testid="setup-flow-target">
+          <select id="setup-tgt" value={target} onchange={(e) => (target = e.currentTarget.value)} required data-testid="setup-flow-target">
             <option value=""></option>
             {#each elements.filter((e) => e.id !== source) as e}<option value={e.id}>{e.id} {e.title}</option>{/each}
           </select>
@@ -442,8 +461,9 @@
     {:else}
       <p class="muted">{t.none_yet}</p>
     {/each}
+    {#if elements.length}{@render preview(flowType)}{/if}
   {:else if step === 5}
-    <h2>{t.s_assets}</h2>
+    <h2>{t.s_assets} <Info term="asset_class" /></h2>
     <p>{t.assets_text}</p>
     <table>
       <thead>
@@ -460,7 +480,7 @@
                 onchange={(e) => update('assets', a, { asset_class: e.currentTarget.value })}
               >
                 <option value=""></option>
-                {#each classes as c}<option value={c}>{c}</option>{/each}
+                {#each classes as c}<option value={c}>{assetClassLabel(lang, c)}</option>{/each}
               </select>
               <p class="muted small">{ASSET_CLASSES[lang][a.asset_class] ?? ''}</p>
               {#if String(a.asset_class).startsWith('Security.')}
@@ -489,14 +509,14 @@
         <label for="setup-asset-class">{t.asset_class}</label>
         <select id="setup-asset-class" bind:value={assetClass} required data-testid="setup-asset-class">
           <option value=""></option>
-          {#each classes as c}<option value={c}>{c}</option>{/each}
+          {#each classes as c}<option value={c}>{assetClassLabel(lang, c)}</option>{/each}
         </select>
         {#if assetClass}<p class="muted small">{ASSET_CLASSES[lang][assetClass] ?? ''}</p>{/if}
       </div>
       <button class="primary" type="submit" disabled={busy} data-testid="setup-asset-add">{t.add_asset}</button>
     </form>
   {:else if step === 6}
-    <h2>{t.s_threats}</h2>
+    <h2>{t.s_threats} <Info term="stride" /></h2>
     <p>{t.threats_text}</p>
     <p class="muted">{t.threats_cyber}</p>
     {#each targets as o (o.id)}
@@ -507,20 +527,22 @@
         }}
         data-testid="setup-target-{o.id}"
       >
-        <summary><strong>{o.id}</strong> {o.title}</summary>
+        <summary>
+          <strong>{o.id}</strong> {o.title}
+          {#if suggestions[o.id]}
+            {@const all = suggestionList(o.id)}
+            {#if all.length}<span class="muted small">· {all.filter((s) => s.adopted).length}/{all.length} {t.adopted_of}</span>{/if}
+          {/if}
+        </summary>
         {#if !suggestions[o.id]}
           <p class="muted">{t.loading}</p>
         {:else}
           {@const list = suggestionList(o.id)}
           {#if list.length === 0}
-            <p class="muted">{t.no_suggestions}</p>
+            <p class="muted">{o.source && !o.library_ref ? t.flow_needs_type : t.no_suggestions}</p>
           {:else}
-            <button
-              class="link"
-              onclick={() => (chosen[o.id] = list.filter((s) => !s.adopted).map((s) => s.template_id))}>{t.select_all}</button
-            >
             <ul class="plain">
-              {#each list as s (s.template_id)}
+              {#each expanded[o.id] ? list : list.slice(0, TOP) as s (s.template_id)}
                 <li class="suggestion">
                   <label>
                     <input
@@ -542,6 +564,11 @@
                 </li>
               {/each}
             </ul>
+            {#if !expanded[o.id] && list.length > TOP}
+              <button class="link" onclick={() => (expanded[o.id] = true)} data-testid="setup-more-{o.id}">
+                {t.more} ({list.length - TOP})
+              </button>
+            {/if}
             <button class="primary" disabled={busy || !(chosen[o.id] ?? []).length} onclick={() => adopt(o.id)} data-testid="setup-adopt-{o.id}">
               {t.adopt_selected} ({(chosen[o.id] ?? []).length})
             </button>
@@ -551,12 +578,15 @@
     {/each}
 
     {#if openCyber.length}
-      <h3>{t.open_cyber}</h3>
-      <button onclick={answerAllYes} disabled={busy} data-testid="setup-cyber-all">{t.all_yes}</button>
+      <h3>{t.open_cyber} <Info term="cyber_cause" /></h3>
+      <p class="muted">{t.open_cyber_help}</p>
       {#each openCyber as x (x.id)}
-        <div class="row item">
-          <span class="grow"><strong>{x.id}</strong> {x.title}</span>
-          <button onclick={() => update('threats', x, { cyber_cause: true })} disabled={busy}>{t.yes}</button>
+        <div class="row item cyber" data-testid="setup-cyber-{x.id}">
+          <span class="grow">
+            <strong>{x.id}</strong> {x.title}
+            {#if x.scenario}<span class="muted small block">{x.scenario}</span>{/if}
+          </span>
+          <button onclick={() => update('threats', x, { cyber_cause: true })} disabled={busy} data-testid="setup-cyber-yes-{x.id}">{t.yes}</button>
           <button onclick={() => (app.cyberCheck = x.id)}>{t.no}</button>
         </div>
       {/each}
@@ -569,7 +599,10 @@
       {#each checks as [text, ok, count]}
         <li><span class={ok ? 'ok' : 'warning'}>{ok ? '✓' : '•'}</span> {text}{count != null ? `: ${count}` : ''}</li>
       {/each}
-      <li><span class={errors ? 'error' : 'ok'}>{errors ? '•' : '✓'}</span> {t.c_errors}: {errors}</li>
+      <li>
+        <span class={errors ? 'error' : 'ok'}>{errors ? '•' : '✓'}</span> {t.c_errors}: {errors}
+        {#if errors}<button class="link" onclick={() => (app.view = { kind: 'validation' })} data-testid="setup-show-errors">{t.show_errors}</button>{/if}
+      </li>
     </ul>
     <h3>{t.next_steps}</h3>
     <ol>
@@ -715,6 +748,12 @@
   .pick.active {
     border-color: var(--accent);
     outline: 1px solid var(--accent);
+  }
+  .preview {
+    height: 26rem;
+  }
+  .preview :global(.canvas) {
+    min-height: 0;
   }
   .grid4 {
     grid-template-columns: repeat(3, minmax(0, 1fr)) auto;

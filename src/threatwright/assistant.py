@@ -229,6 +229,9 @@ def suggestions(
     etype = library_type(target)
     if etype in libs.elements:
         types = {etype}
+    elif kind == "flow":
+        # flow templates are protocol specific (fieldbus, VPN, Wi-Fi); none fits an untyped flow
+        types = set()
     else:  # no library type: offer templates for element types of the same kind
         types = {e.id for e in libs.elements.values() if e.kind == kind}
     threats = [t for t in sub.objects["threats"].values() if isinstance(t, Threat)]

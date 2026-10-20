@@ -98,7 +98,7 @@ Abschnittstypen und wählbare Spalten (Standardspalten **fett**):
 | Typ | Inhalt | Spalten |
 |---|---|---|
 | `cover` | Titel, Projekt, Modell, Version, Stand, Methode, Lebenszyklus; danach Seitenumbruch | – |
-| `scope` | Modellbeschreibung, Konfigurationen (Ausbaustufen), Zonen mit Umgebung | – |
+| `scope` | Modellbeschreibung, Ausbaustufen / Varianten, Zonen mit Umgebung | – |
 | `method` | Methode, Expositionsformel, **Hinweis zur Matrix-Lesart** (`inverted`/`literal`), **Akzeptanzgrenze**, wirksame Risikomatrix, Sonderregeln, Freigabeberechtigte | – |
 | `assets` | Assets mit TR-Klasse und C/I/A-Impact (inkl. Vererbung und Verstärker) | **id, title, asset_class, c, i, a**, protects, configurations, description |
 | `elements_and_flows` | Elemente und Datenflüsse | Elemente: **id, title, kind, zone, configurations**, description; Flüsse (`flow_columns`): **id, title, source, target, protocol, assets**, configurations, description |

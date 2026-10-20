@@ -2,6 +2,7 @@
   import { tr } from '../i18n'
   import { app } from '../state.svelte'
   import type { Evaluation, ThreatEvaluation } from '../types'
+  import Info from './Info.svelte'
   import RiskBadge from './RiskBadge.svelte'
 
   let {
@@ -25,7 +26,11 @@
 </script>
 
 <fieldset class="assessment" data-testid="{prefix}-panel">
-  <legend>{tr(lang, prefix === 'assessment' ? 'assessment' : 'residual')}</legend>
+  <legend>
+    {tr(lang, prefix === 'assessment' ? 'assessment' : 'residual')}
+    {#if prefix === 'residual'}<Info term="residual" />{/if}
+  </legend>
+  <p class="env-head">{tr(lang, 'environment')} <Info term="environment" /></p>
   <div class="grid">
     {#each indicators as name}
       <label>
@@ -48,7 +53,7 @@
   </div>
 
   <div class="impact" role="group" aria-label={tr(lang, 'impact')}>
-    <span>{tr(lang, 'impact')}</span>
+    <span>{tr(lang, 'impact')} <Info term="impact" /></span>
     {#each levels as [level, l]}
       <button
         type="button"
@@ -73,7 +78,7 @@
   </div>
 
   <output class="result" aria-live="polite">
-    <span>{tr(lang, 'exposure')}: <strong>{evaluation?.exposure ?? '–'}</strong></span>
+    <span>{tr(lang, 'exposure')}: <strong>{evaluation?.exposure ?? '–'}</strong> <Info term="exposure" /></span>
     <span>{tr(lang, 'risk')}: <RiskBadge risk={evaluation?.risk} /></span>
     {#if evaluation?.acceptable === true}
       <span class="ok" data-testid="{prefix}-verdict">{tr(lang, 'acceptable')}</span>
@@ -104,6 +109,10 @@
     display: grid;
     gap: 0.6rem;
     background: var(--surface-2);
+  }
+  .env-head {
+    margin: 0 0 0.2rem;
+    font-weight: 600;
   }
   .grid {
     display: grid;

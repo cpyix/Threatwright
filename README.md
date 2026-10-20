@@ -56,11 +56,11 @@ threatwright ci gitlab my-product                  # GitLab pipeline for this pr
 threatwright --help                                # all commands
 ```
 
-Started inside a project folder, `threatwright` opens that project directly. The GUI runs on `127.0.0.1` only, on a random port, protected by a per-start token and a strict Content Security Policy; nothing leaves your machine.
+Started inside a project folder, `threatwright` opens that project directly. By default the GUI runs on `127.0.0.1` only, on a random port, protected by a per-start token and a strict Content Security Policy; nothing leaves your machine. To host it in a container or on a server, see [Hosting the GUI](#hosting-the-gui-container-or-server).
 
-## Docker (CLI and CI)
+## Docker
 
-The image contains the CLI, Git and LibreOffice (for PDF). It is meant for pipelines and batch use, not for the GUI: the GUI binds to `127.0.0.1` inside the container by design and is therefore not reachable from the host. Run the GUI locally instead.
+The image contains the CLI, the GUI, Git and LibreOffice (for PDF). Use it in pipelines and batch jobs, or to host the GUI.
 
 Build the image locally from the repository root (the frontend is built inside the image, no local Node.js needed):
 
@@ -80,6 +80,67 @@ docker run --rm -v "${PWD}:/work" threatwright:local validate .
 ```
 
 `--user` makes generated files belong to you instead of the container user. Released images are published as `ghcr.io/cpyix/threatwright:<version>`; the pipeline templates use them.
+
+### Hosting the GUI (container or server)
+
+Three options control where the GUI listens ([ADR-0013](docs/adr/0013-self-hosted-gui.md)):
+
+| Option | Meaning |
+|---|---|
+| `--host 0.0.0.0` | Listen on all interfaces (needed inside a container). Default `127.0.0.1`. |
+| `--port 8080` | Fixed port. Default: random free port. |
+| `--allowed-host NAME` | Host name the browser uses (`localhost`, `threatwright.example.com`, …); accepted on any port. Repeatable. All other Host headers are rejected. |
+| `THREATWRIGHT_TOKEN` (env) | Fixed access token, at least 24 characters, so the link survives restarts. Default: new random token per start. |
+
+**On your own machine with Docker:**
+
+```
+# Linux / macOS
+docker run --rm -p 127.0.0.1:8080:8080 -v "$PWD/my-product:/work" --user "$(id -u):$(id -g)" \
+  ghcr.io/cpyix/threatwright:<version> --project /work --no-browser \
+  --host 0.0.0.0 --port 8080 --allowed-host localhost
+
+# Windows PowerShell
+docker run --rm -p 127.0.0.1:8080:8080 -v "${PWD}/my-product:/work" `
+  ghcr.io/cpyix/threatwright:<version> --project /work --no-browser `
+  --host 0.0.0.0 --port 8080 --allowed-host localhost
+```
+
+The container prints `open: http://localhost:8080/#token=…`; open that link. `-p 127.0.0.1:8080:8080` keeps the port on your machine only.
+
+**On a server (Docker Compose behind a TLS proxy):**
+
+```yaml
+# compose.yaml
+services:
+  threatwright:
+    image: ghcr.io/cpyix/threatwright:<version>
+    command: [--project, /work, --no-browser, --host, 0.0.0.0, --port, "8080",
+              --allowed-host, threatwright.example.com]
+    environment:
+      THREATWRIGHT_TOKEN: ${THREATWRIGHT_TOKEN}   # e.g. openssl rand -base64 32, in .env
+    volumes:
+      - ./my-product:/work   # a Git checkout of the project
+    restart: unless-stopped
+  caddy:
+    image: caddy:2
+    command: caddy reverse-proxy --from threatwright.example.com --to threatwright:8080
+    ports: ["443:443", "80:80"]
+    volumes: [caddy-data:/data]
+volumes:
+  caddy-data:
+```
+
+Then open `https://threatwright.example.com/#token=<THREATWRIGHT_TOKEN>`. The project folder must be writable by UID 10001 (`chown -R 10001 my-product`), or set `user:` to the folder's owner.
+
+**Without Docker on a server:** run `threatwright --project my-product --no-browser --port 8080` (still bound to `127.0.0.1`) and reach it through an SSH tunnel: `ssh -L 8080:127.0.0.1:8080 server`, then open the printed link locally.
+
+Before you host it, note:
+
+- **The token is the only login.** Anyone with the link can read and change the model. Expose it only over TLS and behind your own access control (VPN, SSO proxy); never put a bare port on the internet.
+- **One shared session per instance.** Everyone works on the same in-memory state; it suits one person or a coordinated team. Run one instance per project.
+- **Git stays with you.** The GUI saves files into the mounted folder; commit, push and merge requests happen outside, as with the local GUI.
+- **Confined to the project folder.** As soon as the GUI is reachable for others (`--host` other than loopback, or any `--allowed-host`), it only opens, creates and imports inside the `--project` folder (or the working directory). The folder dialog and "open build folder" are switched off; pass the project with `--project`.
 
 ## Development
 

@@ -72,7 +72,9 @@ jobs:
     needs: frontend
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        # Linux pinned: the bundle needs at least the build system's glibc, so build on an
+        # older base to run on older plant PCs (ubuntu-latest moves to 26.04 from 2026-10-19)
+        os: [windows-latest, ubuntu-24.04]
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read

@@ -75,6 +75,14 @@ def main(
         Path | None, typer.Option(help="Project to open in the GUI (default: current folder).")
     ] = None,
     browser: Annotated[bool, typer.Option(help="Open the default browser.")] = True,
+    host: Annotated[
+        str, typer.Option(help="Bind address; 0.0.0.0 only in a container or behind a proxy.")
+    ] = "127.0.0.1",
+    port: Annotated[int, typer.Option(help="Port (0 = random free port).")] = 0,
+    allowed_host: Annotated[
+        list[str] | None,
+        typer.Option(help="Host name the browser uses, e.g. threatwright.example.com. Repeatable."),
+    ] = None,
 ) -> None:
     """Without a command: start the GUI on a local port."""
     if version:
@@ -85,7 +93,7 @@ def main(
 
         if project is None and (Path(".") / PROJECT_FILE).exists():
             project = Path(".")
-        serve(project, open_browser=browser)
+        serve(project, browser, host, port, tuple(allowed_host or ()))
 
 
 @app.command("validate")

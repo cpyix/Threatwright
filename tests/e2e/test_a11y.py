@@ -35,8 +35,7 @@ def test_main_views_have_no_wcag_aa_violations(
     page.goto(gui)
     failures: list[str] = []
     for view in VIEWS:
-        if view != "overview":
-            page.get_by_test_id(f"nav-{view}").click()
+        page.get_by_test_id(f"nav-{view}").click()
         page.wait_for_timeout(400)
         # evaluate() runs via the DevTools protocol, so the app's strict CSP stays on
         page.evaluate(AXE.read_text(encoding="utf-8"))

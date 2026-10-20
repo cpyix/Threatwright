@@ -7,7 +7,7 @@ from threatwright import assistant
 from threatwright.diagram import render_svg
 from threatwright.library import load_libraries
 from threatwright.method import load_method
-from threatwright.model.objects import Measure, Threat
+from threatwright.model.objects import DiagramNote, Measure, Threat
 from threatwright.model.store import Project
 from threatwright.rules import validate
 from threatwright.server import API_HEADER, create_app
@@ -97,6 +97,10 @@ def test_coverage_and_svg(loaded) -> None:  # type: ignore[no-untyped-def]
     assert svg.startswith("<svg") and "E-0001" in svg and "F-0001" in svg and "#f3b6b6" in svg
     sub.objects["elements"]["E-0001"].title = "<script>&"
     assert "&lt;script&gt;&amp;" in render_svg(sub)
+    sub.layout.notes["N1"] = DiagramNote(x=900, y=700, text="Line one\n<b>two</b>")
+    svg = render_svg(sub)
+    assert "Line one</tspan>" in svg and "&lt;b&gt;two&lt;/b&gt;" in svg
+    assert 'width="1054"' in svg  # canvas grows to include the note
 
 
 def test_m4_endpoints(project_dir: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

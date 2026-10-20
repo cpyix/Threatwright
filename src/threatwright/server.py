@@ -630,7 +630,10 @@ def create_app(
         with session.lock:
             sub = session.model(name)
             try:
-                layout = DiagramLayout.model_validate({"nodes": body.get("nodes", {})})
+                # notes are optional in the body, so a positions-only update keeps them
+                notes = body.get("notes", sub.layout.model_dump(mode="json")["notes"])
+                nodes = body.get("nodes", {})
+                layout = DiagramLayout.model_validate({"nodes": nodes, "notes": notes})
             except ValidationError as exc:
                 raise HTTPException(422, json.loads(exc.json(include_url=False))) from exc
             if layout != sub.layout:

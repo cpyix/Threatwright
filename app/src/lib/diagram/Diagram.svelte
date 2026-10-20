@@ -1,8 +1,11 @@
 <script lang="ts">
   import { SvelteFlowProvider } from '@xyflow/svelte'
+  import Search from '@lucide/svelte/icons/search'
+  import StickyNote from '@lucide/svelte/icons/sticky-note'
   import '@xyflow/svelte/dist/style.css'
   import { api, download } from '../../api'
   import { tr } from '../../i18n'
+  import { CATEGORIES } from '../../setup-text'
   import { app } from '../../state.svelte'
   import type { ElementType } from '../../types'
   import { iconFor } from '../icons'
@@ -23,10 +26,48 @@
   function toggleConfig(id: string, on: boolean) {
     configuration = on ? [...configuration, id] : configuration.filter((c) => c !== id)
   }
+  let flowFilter = $state<string[]>([]) // connection types ('' = untyped); empty = all
+  // types that occur in the model, untyped last
+  const protocols = $derived(
+    [...new Set(app.objects('flows').map((f) => (f.protocol ?? '') as string))].sort((a, b) => (!a ? 1 : !b ? -1 : a.localeCompare(b))),
+  )
+  function toggleFlowType(p: string, on: boolean) {
+    flowFilter = on ? [...flowFilter, p] : flowFilter.filter((x) => x !== p)
+  }
+  let search = $state('')
+  let hits = $state(0)
+  const SNAP_KEY = 'tw-snap'
+  let snap = $state(readSnap())
+  function readSnap() {
+    try {
+      return localStorage.getItem(SNAP_KEY) === '1'
+    } catch {
+      return false
+    }
+  }
+  $effect(() => {
+    try {
+      localStorage.setItem(SNAP_KEY, snap ? '1' : '0')
+    } catch {
+      /* storage unavailable */
+    }
+  })
   let selected = $state<{ collection: 'elements' | 'flows'; id: string } | null>(null)
   let canvas: Canvas | undefined = $state()
   const lang = $derived(app.lang)
   const elementTypes = $derived(types.filter((t) => t.kind !== 'flow'))
+  let paletteFilter = $state('')
+  // grouped like the setup wizard; the search also looks at the description
+  const paletteGroups = $derived.by(() => {
+    const f = paletteFilter.trim().toLowerCase()
+    const shown = elementTypes.filter(
+      (t) => !f || [t.name[lang], t.id, t.description?.[lang]].some((v) => v?.toLowerCase().includes(f)),
+    )
+    const order = Object.keys(CATEGORIES[lang])
+    const by: Record<string, ElementType[]> = {}
+    for (const t of shown) (by[t.category && order.includes(t.category) ? t.category : 'other'] ??= []).push(t)
+    return order.filter((c) => by[c]).map((c) => [c, by[c]] as const)
+  })
   const flowTypes = $derived(types.filter((t) => t.kind === 'flow'))
   const current = $derived(selected ? app.objects(selected.collection).find((o) => o.id === selected!.id) : null)
 
@@ -46,33 +87,94 @@
   <aside class="palette" aria-label={tr(lang, 'palette')} tabindex="0">
     <h2>{tr(lang, 'palette')} <Info term="palette" /></h2>
     <p class="muted">{tr(lang, 'palette_help')}</p>
-    <ul>
-      {#each elementTypes as t (t.id)}
-        {@const Icon = iconFor(t.icon, t.kind)}
-        <li>
-          <button
-            draggable="true"
-            ondragstart={(e) => e.dataTransfer?.setData('application/x-threatwright-type', t.id)}
-            onclick={() => canvas?.addElement(t.id)}
-            title={tr(lang, 'palette_add')}
-            data-testid="palette-{t.id}"
-          >
-            <span class="kind kind-{t.kind}"><Icon size={16} strokeWidth={1.75} aria-hidden="true" /></span>{t.name[lang]}
-          </button>
-        </li>
-      {/each}
-    </ul>
+    <label class="new-flow">
+      <span>{tr(lang, 'flow_type')} <Info term="flow" /></span>
+      <select bind:value={flowType} data-testid="flow-type">
+        <option value="">{tr(lang, 'generic_flow')}</option>
+        {#each flowTypes as t}<option value={t.id}>{t.name[lang]}</option>{/each}
+      </select>
+    </label>
+    <input
+      type="search"
+      class="palette-search"
+      bind:value={paletteFilter}
+      placeholder={tr(lang, 'palette_search')}
+      aria-label={tr(lang, 'palette_search')}
+      onkeydown={(e) => {
+        // Enter adds the first match
+        const first = paletteGroups[0]?.[1][0]
+        if (e.key === 'Enter' && first) canvas?.addElement(first.id)
+      }}
+      data-testid="palette-search"
+    />
+    {#each paletteGroups as [cat, list] (cat)}
+      <h3>{CATEGORIES[lang][cat]}</h3>
+      <ul>
+        {#each list as t (t.id)}
+          {@const Icon = iconFor(t.icon, t.kind)}
+          <li>
+            <button
+              draggable="true"
+              ondragstart={(e) => e.dataTransfer?.setData('application/x-threatwright-type', t.id)}
+              onclick={() => canvas?.addElement(t.id)}
+              title={tr(lang, 'palette_add')}
+              data-testid="palette-{t.id}"
+            >
+              <span class="kind kind-{t.kind}"><Icon size={16} strokeWidth={1.75} aria-hidden="true" /></span>{t.name[lang]}
+            </button>
+          </li>
+        {/each}
+      </ul>
+    {:else}
+      <p class="muted">{elementTypes.length ? tr(lang, 'palette_no_match') : ''}</p>
+    {/each}
+    <p class="muted small">{tr(lang, 'multi_select_help')}</p>
   </aside>
 
   <div class="main">
     <div class="toolbar">
-      <label>
-        <span>{tr(lang, 'flow_type')} <Info term="flow" /></span>
-        <select bind:value={flowType} data-testid="flow-type">
-          <option value="">{tr(lang, 'generic_flow')}</option>
-          {#each flowTypes as t}<option value={t.id}>{t.name[lang]}</option>{/each}
-        </select>
+      <label class="search">
+        <span>{tr(lang, 'search')}</span>
+        <span class="field">
+          <Search size={14} aria-hidden="true" />
+          <input
+            type="search"
+            bind:value={search}
+            placeholder={tr(lang, 'search_placeholder')}
+            title={tr(lang, 'search_help')}
+            onkeydown={(e) => e.key === 'Enter' && canvas?.showHits()}
+            data-testid="diagram-search"
+          />
+          {#if search.trim()}<span class="muted hits" data-testid="search-hits" aria-live="polite">{hits} {tr(lang, 'search_hits')}</span>{/if}
+        </span>
       </label>
+      <div class="filter">
+        <span>{tr(lang, 'flow_filter')}</span>
+        <details class="dropdown" data-testid="flow-filter">
+          <summary>
+            {flowFilter.length ? flowFilter.map((p) => p || tr(lang, 'generic_flow')).join(', ') : tr(lang, 'all_flow_types')}
+          </summary>
+          <div class="menu">
+            {#each protocols as p (p)}
+              <label class="check">
+                <input
+                  type="checkbox"
+                  checked={flowFilter.includes(p)}
+                  onchange={(e) => toggleFlowType(p, e.currentTarget.checked)}
+                  data-testid="flow-filter-{p || 'generic'}"
+                />
+                {p || tr(lang, 'generic_flow')}
+              </label>
+            {:else}
+              <p class="muted">{tr(lang, 'no_flows')}</p>
+            {/each}
+            {#if flowFilter.length}
+              <button type="button" class="link" onclick={() => (flowFilter = [])}>{tr(lang, 'show_all')}</button>
+            {/if}
+            <p class="muted small">{tr(lang, 'flow_filter_help')}</p>
+          </div>
+        </details>
+      </div>
       <div class="filter">
         <span>{tr(lang, 'configurations')} <Info term="configurations" /></span>
         <details class="dropdown" data-testid="config-filter">
@@ -104,11 +206,28 @@
         </details>
       </div>
       <span class="spacer"></span>
+      <button onclick={() => canvas?.addNote()} title={tr(lang, 'add_note_help')} data-testid="add-note">
+        <StickyNote size={14} aria-hidden="true" /> {tr(lang, 'add_note')}
+      </button>
+      <label class="check snap" title={tr(lang, 'snap_grid_help')}>
+        <input type="checkbox" bind:checked={snap} data-testid="snap-grid" />
+        {tr(lang, 'snap_grid')}
+      </label>
       <button onclick={() => canvas?.autoLayout()} data-testid="auto-layout">{tr(lang, 'auto_layout')}</button>
       <button onclick={exportSvg}>{tr(lang, 'export_svg')}</button>
     </div>
     <SvelteFlowProvider>
-      <Canvas bind:this={canvas} {flowType} {configuration} types={elementTypes} onselect={select} />
+      <Canvas
+        bind:this={canvas}
+        {flowType}
+        {configuration}
+        {flowFilter}
+        {search}
+        {snap}
+        types={elementTypes}
+        onselect={select}
+        onsearchhits={(n) => (hits = n)}
+      />
     </SvelteFlowProvider>
   </div>
 
@@ -137,6 +256,27 @@
   .palette h2 {
     font-size: 1rem;
     margin: 0;
+  }
+  .new-flow {
+    display: grid;
+    gap: 0.15rem;
+    font-size: 0.9em;
+    margin-bottom: 0.25rem;
+  }
+  .palette .small {
+    font-size: 0.85em;
+  }
+  .palette-search {
+    width: 100%;
+    margin: 0.25rem 0;
+  }
+  .palette h3 {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+    margin: 0.75rem 0 0;
   }
   .palette ul {
     list-style: none;
@@ -182,7 +322,41 @@
     gap: 0.15rem;
     font-size: 0.9em;
   }
-  .toolbar select {
+  .search .field {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+  .search .field:focus-within {
+    outline: 2px solid var(--focus);
+  }
+  .search input {
+    border: none;
+    outline: none;
+    background: none;
+    padding: 0.35rem 0;
+    width: 13rem;
+  }
+  .hits {
+    white-space: nowrap;
+    font-size: 0.9em;
+  }
+  .toolbar > button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .toolbar .snap {
+    display: flex;
+    gap: 0.35rem;
+    align-items: center;
+    padding: 0.4rem 0;
+  }
+  .toolbar .snap input {
     width: auto;
   }
   .filter {

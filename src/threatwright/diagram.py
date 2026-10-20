@@ -98,8 +98,26 @@ def render_svg(sub: SubModel, risks: dict[str, int] | None = None) -> str:
         parts.append(_text(x + W / 2, y + 26, eid, 11, "bold"))
         parts.append(_text(x + W / 2, y + 44, _short(e.title)))
 
-    width = max((p[0] for p in pos.values()), default=0) + W + 2 * PAD + 20
-    height = max((p[1] for p in pos.values()), default=0) + H + 2 * PAD + 20
+    corners = list(pos.values())
+    for nid in sorted(sub.layout.notes):
+        note = sub.layout.notes[nid]
+        lines = note.text.splitlines() or [""]
+        nw = max(len(line) for line in lines) * 7 + 16
+        nh = len(lines) * 16 + 12
+        text = "".join(
+            f'<tspan x="{note.x + 8}" dy="{16 if i else 0}">{escape(line)}</tspan>'
+            for i, line in enumerate(lines)
+        )
+        parts.append(
+            f'<rect x="{note.x}" y="{note.y}" width="{nw}" height="{nh}" fill="#fff8c5" '
+            f'stroke="#d4a72c" rx="4"/>'
+            f'<text x="{note.x + 8}" y="{note.y + 20}" font-size="12" font-family="sans-serif" '
+            f'fill="#1b1f24">{text}</text>'
+        )
+        corners.append((note.x + nw - W, note.y + nh - H))
+
+    width = max((p[0] for p in corners), default=0) + W + 2 * PAD + 20
+    height = max((p[1] for p in corners), default=0) + H + 2 * PAD + 20
     return (
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width:.0f}" height="{height:.0f}" '
         f'viewBox="0 0 {width:.0f} {height:.0f}">'

@@ -19,6 +19,8 @@
   --risk-4: #f8cdb0;
   --risk-5: #f3b6b6;
   --risk-text: #1b1f24;
+  --note-bg: #fff8c5;
+  --note-border: #d4a72c;
   --radius: 6px;
   --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
 }
@@ -37,6 +39,8 @@
     --error: #ff8a8a;
     --warning: #f2c46b;
     --ok: #79d18f;
+    --note-bg: #3b3420;
+    --note-border: #9e7c1f;
   }
 }
 

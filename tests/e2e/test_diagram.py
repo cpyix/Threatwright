@@ -23,6 +23,14 @@ def test_diagram_assistant_coverage(
     page.goto(gui)
     page.get_by_test_id("nav-diagram").click()
 
+    search = page.get_by_test_id("palette-search")
+    search.fill("drive")
+    expect(page.get_by_test_id("palette-drive")).to_be_visible()
+    expect(page.locator(".palette li")).to_have_count(1)
+    search.fill("zzz")
+    expect(page.locator(".palette li")).to_have_count(0)
+    search.fill("")
+
     page.drag_and_drop(
         "[data-testid=palette-drive]", ".svelte-flow__pane", target_position={"x": 500, "y": 420}
     )

@@ -1,0 +1,122 @@
+# Threat templates for personal data: telemetry, presence, deletion and change of
+# ownership.
+threats:
+  - id: telemetry-personal-data-leak
+    rev: 1
+    stride: [I]
+    applies_to: [vendor-cloud, iot-device, companion-app, flow-https-cloud, flow-mqtt-tls]
+    title:
+      de: '{element} sammelt und verbreitet mehr persönliche Daten als nötig'
+      en: '{element} collects and spreads more personal data than necessary'
+    scenario:
+      de: >-
+        Gerät und App senden detaillierte Nutzungsdaten, Standort, Geräte-IDs und
+        Kontaktdaten an die Cloud und an Analyse- oder Werbedienste, auch wenn die
+        Funktion sie nicht braucht. Der Nutzer wird darüber nicht verständlich
+        informiert und kann es nicht abschalten.
+      en: >-
+        Device and app send detailed usage data, location, device IDs and contact data
+        to the cloud and to analytics or advertising services, even though the function
+        does not need them. The user is not informed in an understandable way and
+        cannot switch it off.
+    consequence:
+      de: >-
+        Bei einem Datenleck oder durch Weitergabe werden Lebensgewohnheiten bekannt.
+        Es drohen Datenschutzverstöße und Vertrauensverlust.
+      en: >-
+        Living habits become known through a data breach or disclosure. Data protection
+        violations and loss of trust are likely.
+    environment: {interface: external_network, access: non_restricted, user: layman}
+    impact: 3
+    cra_refs: [AI-I-2-g, AI-I-2-e]
+    etsi303645: ['6-1', '6-4', '6-5', '5.8-1']
+    masvs: [MASVS-PRIVACY-1, MASVS-PRIVACY-3]
+    measures: [iot-data-minimisation, privacy-information]
+    sources: ["ETSI EN 303 645 V3.1.3 clause 6; OWASP MASVS v2"]
+
+  - id: presence-inference
+    rev: 1
+    stride: [I]
+    applies_to: [iot-device, iot-hub, device-api, vendor-cloud]
+    title:
+      de: Über {element} lässt sich erkennen, ob jemand zu Hause ist
+      en: '{element} reveals whether someone is at home'
+    scenario:
+      de: >-
+        Statusdaten wie Raumtemperatur-Sollwert, Bewegungsmelder, Urlaubsmodus oder die
+        Uhrzeit der letzten Bedienung sind ohne Anmeldung im Heimnetz abrufbar oder
+        werden in der Cloud weitergegeben, z. B. über geteilte Ansichten.
+      en: >-
+        Status data such as temperature set point, motion sensor, holiday mode or the
+        time of last operation can be retrieved in the home network without login or
+        are passed on in the cloud, e.g. via shared views.
+    consequence:
+      de: >-
+        Einbrecher oder Stalker erfahren, wann die Wohnung leer ist oder wo sich eine
+        Person aufhält.
+      en: >-
+        Burglars or stalkers learn when the home is empty or where a person is.
+    environment: {interface: known_network, access: public_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-e, AI-I-2-g]
+    etsi303645: ['5.8-2', '6-8']
+    measures: [iot-data-minimisation, local-api-auth]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.8 and clause 6"]
+
+  - id: data-remains-after-reset
+    rev: 1
+    stride: [I]
+    applies_to: [iot-device, iot-credentials-store, vendor-cloud, companion-app]
+    title:
+      de: Persönliche Daten bleiben nach Zurücksetzen oder Weiterverkauf in {element}
+      en: Personal data remains in {element} after reset or resale
+    scenario:
+      de: >-
+        Der Nutzer verkauft das Gerät gebraucht oder gibt es zurück. Der Werksreset löscht
+        nur die Einstellungen, nicht aber WLAN-Passwort, Verlauf oder Schlüssel, und das
+        Konto in der Cloud behält alle Daten.
+      en: >-
+        The user sells the device second-hand or returns it. The factory reset only
+        deletes the settings, not Wi-Fi password, history or keys, and the account in
+        the cloud keeps all data.
+    consequence:
+      de: >-
+        Der nächste Besitzer liest Daten und Zugangsdaten des Vorbesitzers aus.
+      en: >-
+        The next owner reads the previous owner's data and credentials.
+    environment: {interface: physical, access: non_restricted, user: layman}
+    impact: 3
+    cra_refs: [AI-I-2-m]
+    etsi303645: ['5.11-1', '5.11-2', '5.11-4']
+    measures: [secure-factory-reset, privacy-information]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.11; TR-03183-1 Annex B"]
+
+  - id: previous-owner-keeps-access
+    rev: 1
+    stride: [S, E]
+    applies_to: [user-account, vendor-cloud, iot-device]
+    title:
+      de: Vorbesitzer behält über {element} Zugriff auf das Gerät
+      en: Previous owner keeps access to the device via {element}
+    scenario:
+      de: >-
+        Nach Verkauf, Umzug oder Trennung bleibt das Gerät mit dem alten Konto oder mit
+        Freigaben für Mitbewohner verknüpft. Der neue Besitzer sieht das nicht und kann es
+        nicht ändern.
+      en: >-
+        After a sale, move or separation the device remains linked to the old account
+        or to shares with housemates. The new owner does not see this and cannot change
+        it.
+    consequence:
+      de: >-
+        Der Vorbesitzer sieht weiterhin Daten, etwa Kamerabilder, und kann das Gerät
+        steuern, auch gegen den Willen der neuen Bewohner.
+      en: >-
+        The previous owner keeps seeing data, such as camera images, and can control
+        the device, even against the will of the new residents.
+    environment: {interface: external_network, access: non_restricted, user: layman}
+    impact: 4
+    cra_refs: [AI-I-2-m, AI-I-2-d]
+    etsi303645: ['5.11-1', '5.11-3']
+    measures: [secure-factory-reset, security-event-logging]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.11; generic consumer IoT threat knowledge"]

@@ -1,0 +1,263 @@
+# Element types for connected and consumer devices (e.g. smart thermostat with
+# companion app and vendor cloud). kind = DFD category; "flow" entries are data
+# flow types. environment = suggestion only; asset_class values refer to
+# TR-03183-1 Tables 1-3.
+elements:
+  # --- device and firmware -----------------------------------------------------
+  - id: iot-device
+    category: device
+    name: {de: Vernetztes Gerät, en: Connected device}
+    kind: device
+    icon: sensor
+    description:
+      de: >-
+        Das Produkt selbst, z. B. Thermostat, Steckdose, Kamera oder Haushaltsgerät
+        mit WLAN- oder Funkanbindung.
+      en: >-
+        The product itself, e.g. thermostat, smart plug, camera or household appliance
+        with Wi-Fi or radio connection.
+    interfaces: [wifi, ble, buttons, usb]
+    environment: {interface: known_network, access: public_restricted, user: layman}
+    properties: {firmware: true, update_path: ota, authentication: device-credentials, default_password: possible}
+    assets:
+      - title: {de: Gerätefunktion, en: Device function}
+        asset_class: Functions.Essential
+      - title: {de: Einstellungen und Zeitpläne, en: Settings and schedules}
+        asset_class: Other.Configuration
+      - title: {de: Nutzungs- und Sensordaten, en: Usage and sensor data}
+        asset_class: PII.Generic
+        rationale:
+          de: Lassen Rückschlüsse auf Anwesenheit und Lebensgewohnheiten zu
+          en: Reveal presence and living habits
+  - id: iot-firmware
+    category: device
+    name: {de: Gerätefirmware, en: Device firmware}
+    kind: process
+    icon: soft-plc
+    interfaces: [ota, debug]
+    environment: {interface: known_network, access: public_restricted}
+    properties: {update_path: ota, secure_boot: optional}
+    assets:
+      - title: {de: Firmware-Abbild, en: Firmware image}
+        asset_class: BusinessData.Important
+        rationale:
+          de: Know-how des Herstellers, Grundlage aller Gerätefunktionen
+          en: Manufacturer know-how, basis of all device functions
+      - title: {de: Schutzmechanismen der Firmware, en: Firmware protection mechanisms}
+        asset_class: Security.Mechanism
+  - id: iot-local-ui
+    category: device
+    name: {de: 'Bedienelemente am Gerät (Tasten, Display)', en: 'On-device controls (buttons, display)'}
+    kind: device
+    icon: hmi
+    interfaces: [buttons, display]
+    environment: {interface: physical, access: public_restricted, user: layman}
+    properties: {authentication: none-or-pin}
+    assets:
+      - title: {de: Lokale Bedienfunktion, en: Local operating function}
+        asset_class: Functions.Essential
+      - title: {de: Angezeigte Informationen, en: Displayed information}
+        asset_class: PII.Generic
+  - id: iot-debug-port
+    category: device
+    name: {de: 'Debug-Schnittstelle (UART, JTAG, SWD)', en: 'Debug interface (UART, JTAG, SWD)'}
+    kind: device
+    icon: usb
+    description:
+      de: >-
+        Test- und Programmierschnittstelle auf der Leiterplatte, oft als Lötpunkte
+        oder Steckerleiste. Wer ein Gerät kauft, kann sie erreichen.
+      en: >-
+        Test and programming interface on the circuit board, often as solder pads or a
+        pin header. Anyone who buys a device can reach it.
+    interfaces: [uart, jtag, swd]
+    environment: {interface: physical, access: non_restricted, user: non_user_related}
+    properties: {authentication: none, lockable: true}
+    assets:
+      - title: {de: Speicherzugriff und Konsole, en: Memory access and console}
+        asset_class: Security.Mechanism
+  - id: iot-hub
+    category: wireless
+    name: {de: Hub / Gateway / Bridge, en: Hub / gateway / bridge}
+    kind: device
+    icon: iot-gateway
+    description:
+      de: >-
+        Zentrale im Haushalt, die Funkgeräte (z. B. Zigbee, Thread, Bluetooth) mit dem
+        Heimnetz und der Cloud verbindet.
+      en: >-
+        Central unit in the home that connects radio devices (e.g. Zigbee, Thread,
+        Bluetooth) to the home network and the cloud.
+    interfaces: [wifi, ethernet, zigbee, thread, ble]
+    environment: {interface: known_network, access: public_restricted, user: layman}
+    properties: {firmware: true, update_path: ota, authentication: device-credentials, default_password: possible}
+    assets:
+      - title: {de: Weiterleitung und Steuerung der Funkgeräte, en: Forwarding and control of radio devices}
+        asset_class: Functions.Essential
+      - title: {de: Netzwerkschlüssel des Funknetzes, en: Radio network keys}
+        asset_class: Security.Secrets
+  - id: device-api
+    category: device
+    name: {de: 'Lokale Geräteschnittstelle (REST, CoAP)', en: 'Local device API (REST, CoAP)'}
+    kind: process
+    icon: server
+    description:
+      de: >-
+        Dienst auf dem Gerät, über den App, Hub oder andere Geräte im Heimnetz das
+        Gerät direkt steuern.
+      en: >-
+        Service on the device through which app, hub or other devices in the home
+        network control the device directly.
+    interfaces: [wifi, ethernet]
+    environment: {interface: known_network, access: public_restricted}
+    properties: {authentication: optional, encryption: optional}
+    assets:
+      - title: {de: Steuerbefehle und Statusabfragen, en: Control commands and status queries}
+        asset_class: Functions.CommunicationNetwork
+  - id: pairing
+    category: wireless
+    name: {de: Einrichtung und Kopplung, en: Onboarding and pairing}
+    kind: process
+    icon: wireless
+    description:
+      de: >-
+        Erstinbetriebnahme: Gerät mit dem WLAN verbinden, mit App und Konto
+        verknüpfen, in ein Funknetz aufnehmen.
+      en: >-
+        Initial setup: connect the device to Wi-Fi, link it to app and account, add
+        it to a radio network.
+    interfaces: [ble, setup-ap, qr-code]
+    environment: {interface: local, access: public_restricted, user: layman}
+    properties: {proof_of_possession: optional}
+    assets:
+      - title: {de: WLAN-Zugangsdaten des Nutzers, en: User's Wi-Fi credentials}
+        asset_class: Security.Secrets
+      - title: {de: Zuordnung Gerät zu Konto, en: Device-to-account binding}
+        asset_class: Security.Mechanism
+  - id: iot-credentials-store
+    category: data
+    name: {de: Schlüssel- und Zugangsdatenspeicher im Gerät, en: Key and credential store in the device}
+    kind: datastore
+    icon: key
+    assets:
+      - title: {de: 'Geräteschlüssel, Zertifikate, WLAN-Passwort', en: 'Device keys, certificates, Wi-Fi password'}
+        asset_class: Security.Secrets
+      - title: {de: Geräteidentität, en: Device identity}
+        asset_class: Security.Mechanism
+
+  # --- app and backend ---------------------------------------------------------
+  - id: companion-app
+    category: app
+    name: {de: Begleit-App, en: Companion app}
+    kind: process
+    icon: tablet
+    interfaces: [internet, wifi, ble]
+    environment: {interface: external_network, access: non_restricted, user: layman}
+    properties: {platform: android-ios, update_path: app-store}
+    assets:
+      - title: {de: Anmeldedaten und Sitzungstoken, en: Login data and session tokens}
+        asset_class: Security.Secrets
+      - title: {de: Daten des Nutzers, en: User data}
+        asset_class: PII.Generic
+  - id: vendor-cloud
+    category: backend
+    name: {de: Hersteller-Cloud, en: Vendor cloud}
+    kind: process
+    icon: cloud
+    interfaces: [internet]
+    environment: {interface: external_network, access: non_restricted}
+    properties: {authentication: accounts, encryption: tls, multi_tenant: true}
+    assets:
+      - title: {de: Konten und Gerätedaten aller Kunden, en: Accounts and device data of all customers}
+        asset_class: PII.Generic
+      - title: {de: Fernsteuerung der Geräteflotte, en: Remote control of the device fleet}
+        asset_class: Functions.Essential
+      - title: {de: Telemetrie, en: Telemetry}
+        asset_class: Other.Telemetric
+  - id: ota-service
+    category: distribution
+    name: {de: Update-Dienst (OTA), en: Update service (OTA)}
+    kind: process
+    icon: patch
+    interfaces: [internet]
+    environment: {interface: external_network, access: non_restricted}
+    properties: {signing: required}
+    assets:
+      - title: {de: Firmware-Updates, en: Firmware updates}
+        asset_class: Security.Mechanism
+      - title: {de: Signaturschlüssel, en: Signing key}
+        asset_class: Security.Secrets
+  - id: user-account
+    category: backend
+    name: {de: Nutzerkonto, en: User account}
+    kind: external
+    icon: directory
+    environment: {interface: external_network, access: non_restricted, user: layman}
+    assets:
+      - title: {de: 'Kontodaten (E-Mail, Adresse)', en: 'Account data (e-mail, address)'}
+        asset_class: PII.Generic
+  - id: third-party-service
+    category: backend
+    name: {de: 'Drittdienst (Sprachassistent, Smart-Home-Plattform)', en: 'Third-party service (voice assistant, smart home platform)'}
+    kind: external
+    icon: cloud-connector
+    environment: {interface: external_network, access: non_restricted}
+    assets:
+      - title: {de: Zugriffstoken für die Integration, en: Integration access token}
+        asset_class: Security.Secrets
+
+  # --- communication: flow types ---------------------------------------------------
+  - id: flow-wifi
+    name: {de: WLAN, en: Wi-Fi}
+    kind: flow
+    interfaces: [wifi]
+    environment: {interface: dedicated_known_network, access: non_restricted}
+    properties: {encryption: wpa2-or-wpa3}
+    assets:
+      - title: {de: Übertragene Daten im Heimnetz, en: Data transmitted in the home network}
+        asset_class: Functions.CommunicationNetwork
+  - id: flow-ble
+    name: {de: Bluetooth Low Energy, en: Bluetooth Low Energy}
+    kind: flow
+    interfaces: [ble]
+    environment: {interface: local, access: non_restricted}
+    properties: {encryption: optional}
+    assets:
+      - title: {de: Befehle und Statusdaten über Bluetooth, en: Commands and status data via Bluetooth}
+        asset_class: Functions.CommunicationLocal
+  - id: flow-zigbee-thread
+    name: {de: Zigbee / Thread, en: Zigbee / Thread}
+    kind: flow
+    interfaces: [zigbee, thread]
+    environment: {interface: dedicated_known_network, access: non_restricted}
+    properties: {encryption: network-key}
+    assets:
+      - title: {de: Befehle und Messwerte im Funknetz, en: Commands and readings in the radio network}
+        asset_class: Functions.CommunicationLocal
+  - id: flow-matter
+    name: {de: Matter, en: Matter}
+    kind: flow
+    interfaces: [wifi, thread, ethernet]
+    environment: {interface: known_network, access: public_restricted}
+    properties: {encryption: case-session}
+    assets:
+      - title: {de: Steuerbefehle zwischen Geräten und Steuerzentralen, en: Control commands between devices and controllers}
+        asset_class: Functions.CommunicationNetwork
+  - id: flow-mqtt-tls
+    name: {de: MQTT über TLS zur Cloud, en: MQTT over TLS to the cloud}
+    kind: flow
+    interfaces: [internet]
+    environment: {interface: external_network, access: non_restricted}
+    properties: {encryption: tls, authentication: client-certificate-or-token}
+    assets:
+      - title: {de: Telemetrie und Cloud-Befehle, en: Telemetry and cloud commands}
+        asset_class: Functions.CommunicationNetwork
+  - id: flow-https-cloud
+    name: {de: HTTPS zur Cloud, en: HTTPS to the cloud}
+    kind: flow
+    interfaces: [internet]
+    environment: {interface: external_network, access: non_restricted}
+    properties: {encryption: tls}
+    assets:
+      - title: {de: 'API-Aufrufe von App und Gerät', en: 'API calls from app and device'}
+        asset_class: Functions.CommunicationNetwork

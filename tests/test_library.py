@@ -18,8 +18,8 @@ runner = CliRunner()
 
 # Minimum (elements, threats, measures) per bundled library.
 BUNDLED = {"ot": (25, 120, 80), "iot": (12, 30, 20), "software": (12, 30, 20)}
-# iot/software are added by their own tasks; strict xfail flips to a failure once they exist.
-NOT_YET = {"iot", "software"}
+# software is added by its own task; strict xfail flips to a failure once it exists.
+NOT_YET = {"software"}
 
 
 @pytest.mark.parametrize(

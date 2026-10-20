@@ -1,0 +1,311 @@
+# Threat templates for companion app, vendor cloud, user accounts and third-party
+# integrations, including the connections between device, app and cloud.
+threats:
+  # --- connections to the cloud ---------------------------------------------------------
+  - id: cloud-endpoint-spoofed
+    rev: 1
+    stride: [S, T, I]
+    applies_to: [iot-device, iot-hub, companion-app, ota-service, flow-https-cloud, flow-mqtt-tls]
+    title:
+      de: '{element} spricht mit einem gefälschten Server'
+      en: '{element} talks to a fake server'
+    scenario:
+      de: >-
+        Gerät oder App verschlüsseln die Verbindung zur Cloud, prüfen aber das
+        Server-Zertifikat nicht oder nicht richtig. Ein Angreifer im selben WLAN, ein
+        manipulierter Router oder ein gefälschter DNS-Eintrag leitet die Verbindung auf
+        einen eigenen Server um.
+      en: >-
+        Device or app encrypt the connection to the cloud but do not check the server
+        certificate, or check it incorrectly. An attacker in the same Wi-Fi, a
+        manipulated router or a forged DNS entry redirects the connection to an own
+        server.
+    consequence:
+      de: >-
+        Der Angreifer liest Zugangsdaten und Nutzerdaten mit, schickt falsche Befehle
+        oder ein falsches Update.
+      en: >-
+        The attacker reads credentials and user data, sends false commands or a false
+        update.
+    environment: {interface: known_network, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-e, AI-I-2-f]
+    etsi303645: ['5.5-1', '5.4-4']
+    masvs: [MASVS-NETWORK-1]
+    asvs: [V12.3.1]
+    measures: [tls-cert-validation]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.5; OWASP MASVS v2; OWASP ASVS 5.0.0"]
+
+  - id: cloud-outage-device-unusable
+    rev: 1
+    stride: [D]
+    applies_to: [vendor-cloud, iot-device, iot-hub, companion-app, iot-local-ui, flow-https-cloud, flow-mqtt-tls]
+    title:
+      de: Ohne Cloud ist {element} nicht mehr nutzbar
+      en: Without the cloud {element} can no longer be used
+    scenario:
+      de: >-
+        Jede Bedienung läuft über die Hersteller-Cloud, auch das Schalten mit der Taste
+        am Gerät. Die Cloud fällt durch einen Angriff, eine Störung oder die Einstellung
+        des Dienstes aus, oder der Internetanschluss des Nutzers ist gestört.
+      en: >-
+        Every operation goes through the vendor cloud, even switching with the button
+        on the device. The cloud fails due to an attack, an outage or the service being
+        discontinued, or the user's internet connection is down.
+    consequence:
+      de: >-
+        Der Nutzer kann das Gerät nicht mehr bedienen, Heizung oder Licht lassen sich
+        nicht schalten. Fällt die Cloud bei allen Kunden zugleich aus, sind alle Geräte
+        betroffen.
+      en: >-
+        The user can no longer operate the device; heating or light cannot be switched.
+        If the cloud fails for all customers at once, all devices are affected.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h]
+    etsi303645: ['5.9-1', '5.9-2']
+    measures: [local-fallback]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.9"]
+
+  - id: cloud-api-flooding
+    rev: 1
+    stride: [D]
+    applies_to: [vendor-cloud, device-api, flow-mqtt-tls, flow-https-cloud]
+    title:
+      de: Anfrageflut legt {element} lahm
+      en: Request flood disables {element}
+    scenario:
+      de: >-
+        Ein Angreifer oder ein fehlerhaftes Gerät sendet massenhaft Anfragen,
+        Verbindungsaufbauten oder große Nachrichten. Die Schnittstelle begrenzt weder
+        Anzahl noch Größe.
+      en: >-
+        An attacker or a faulty device sends masses of requests, connection attempts or
+        large messages. The interface limits neither number nor size.
+    consequence:
+      de: >-
+        Der Dienst antwortet nicht mehr, Geräte und Apps verlieren die Verbindung.
+      en: >-
+        The service stops responding, devices and apps lose their connection.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h]
+    etsi303645: ['5.6-2', '5.9-1']
+    asvs: [V2.4.1]
+    measures: [rate-limiting]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.9; OWASP ASVS 5.0.0"]
+
+  # --- vendor cloud and accounts --------------------------------------------------------
+  - id: user-account-takeover
+    rev: 1
+    stride: [S, E]
+    applies_to: [user-account, vendor-cloud, companion-app]
+    title:
+      de: Fremder übernimmt das Kundenkonto über {element}
+      en: Outsider takes over the customer account via {element}
+    scenario:
+      de: >-
+        Viele Nutzer verwenden dasselbe Passwort für mehrere Dienste. Ein Angreifer
+        probiert geleakte E-Mail-Passwort-Paare automatisiert am Login der Cloud aus.
+        Es gibt keine Begrenzung der Versuche und keine Möglichkeit für einen zweiten
+        Faktor.
+      en: >-
+        Many users reuse the same password for several services. An attacker
+        automatically tries leaked e-mail/password pairs at the cloud login. There is
+        no limit on attempts and no option for a second factor.
+    consequence:
+      de: >-
+        Der Angreifer steuert alle Geräte des Kunden, sieht Kamerabilder oder
+        Anwesenheitsdaten und kann das Konto für sich sperren.
+      en: >-
+        The attacker controls all of the customer's devices, sees camera images or
+        presence data and can lock the customer out.
+    environment: {interface: external_network, access: non_restricted, user: layman}
+    impact: 4
+    cra_refs: [AI-I-2-d]
+    etsi303645: ['5.1-3', '5.1-5']
+    asvs: [V6.3.1, V6.3.3]
+    measures: [account-mfa, rate-limiting]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.1; OWASP ASVS 5.0.0"]
+
+  - id: cloud-tenant-idor
+    rev: 1
+    stride: [I, T, E]
+    applies_to: [vendor-cloud]
+    title:
+      de: Kunde greift über {element} auf Geräte anderer Kunden zu
+      en: Customer accesses other customers' devices via {element}
+    scenario:
+      de: >-
+        Die Cloud-Schnittstelle prüft nur, ob jemand angemeldet ist, nicht aber, ob ihm
+        das angefragte Gerät gehört. Ein angemeldeter Nutzer ändert in einer Anfrage die
+        Geräte-ID und erhält Zugriff auf fremde Geräte.
+      en: >-
+        The cloud interface only checks that someone is logged in, not whether the
+        requested device belongs to them. A logged-in user changes the device ID in a
+        request and gains access to other people's devices.
+    consequence:
+      de: >-
+        Daten und Steuerung beliebiger Kundengeräte sind offen, im schlimmsten Fall die
+        gesamte Flotte.
+      en: >-
+        Data and control of any customer device are exposed, in the worst case the
+        entire fleet.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 5
+    cra_refs: [AI-I-2-d, AI-I-2-e]
+    etsi303645: ['5.5-5', '6-6']
+    asvs: [V8.2.2]
+    measures: [tenant-isolation]
+    sources: ["OWASP ASVS 5.0.0; ETSI EN 303 645 V3.1.3 provisions 5.5 and 6"]
+
+  - id: cloud-cross-device-topics
+    rev: 1
+    stride: [I, T]
+    applies_to: [flow-mqtt-tls, vendor-cloud]
+    title:
+      de: Ein Gerät liest und schreibt über {element} Nachrichten anderer Geräte
+      en: A device reads and writes other devices' messages via {element}
+    scenario:
+      de: >-
+        Alle Geräte melden sich mit eigenen Zugangsdaten am Broker an, dürfen dort aber
+        jedes Thema abonnieren und beschreiben. Wer ein einziges Gerät kauft und dessen
+        Zugangsdaten ausliest, abonniert alle Themen.
+      en: >-
+        All devices log in to the broker with their own credentials but may subscribe
+        and publish to any topic there. Anyone who buys a single device and reads out
+        its credentials subscribes to all topics.
+    consequence:
+      de: >-
+        Der Angreifer liest Telemetrie aller Kunden und sendet Befehle an fremde Geräte.
+      en: >-
+        The attacker reads all customers' telemetry and sends commands to other
+        people's devices.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 5
+    cra_refs: [AI-I-2-d, AI-I-2-e]
+    etsi303645: ['5.6-7', '5.5-5']
+    measures: [tenant-isolation]
+    sources: ["ETSI EN 303 645 V3.1.3 provisions 5.5 and 5.6; generic MQTT threat knowledge"]
+
+  - id: cloud-actions-unattributed
+    rev: 1
+    stride: [R]
+    applies_to: [vendor-cloud, user-account, third-party-service, companion-app, ota-service]
+    title:
+      de: Aktionen über {element} lassen sich niemandem zuordnen
+      en: Actions via {element} cannot be attributed to anyone
+    scenario:
+      de: >-
+        Die Cloud protokolliert nicht, welches Konto, welche App-Sitzung oder welche
+        Integration einen Befehl gesendet, ein Gerät freigegeben oder ein Update verteilt
+        hat. Ein Kunde bestreitet eine Aktion, oder ein Angreifer handelt unter fremdem
+        Konto.
+      en: >-
+        The cloud does not record which account, app session or integration sent a
+        command, shared a device or rolled out an update. A customer disputes an action,
+        or an attacker acts under someone else's account.
+    consequence:
+      de: >-
+        Missbrauch fällt nicht auf, Streitfälle lassen sich nicht klären, und der
+        Hersteller kann einen Vorfall weder eingrenzen noch melden.
+      en: >-
+        Misuse goes unnoticed, disputes cannot be resolved, and the manufacturer can
+        neither scope nor report an incident.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 2
+    cra_refs: [AI-I-2-l]
+    etsi303645: ['5.10-1']
+    asvs: [V16.3.1]
+    measures: [security-event-logging]
+    sources: ["OWASP ASVS 5.0.0; ETSI EN 303 645 V3.1.3 provision 5.10; TR-03183-1 Annex B"]
+
+  # --- companion app -------------------------------------------------------------------
+  - id: app-insecure-local-storage
+    rev: 1
+    stride: [I]
+    applies_to: [companion-app]
+    title:
+      de: '{element} speichert Zugangsdaten ungeschützt auf dem Smartphone'
+      en: '{element} stores credentials unprotected on the smartphone'
+    scenario:
+      de: >-
+        Die App legt Passwort, Sitzungstoken, Geräteschlüssel oder das WLAN-Passwort im
+        Klartext in Einstellungsdateien, Logs oder Backups ab. Schadsoftware auf dem
+        Smartphone, ein gestohlenes Telefon oder ein Cloud-Backup gibt sie preis.
+      en: >-
+        The app stores password, session token, device keys or the Wi-Fi password in
+        clear text in preference files, logs or backups. Malware on the smartphone, a
+        stolen phone or a cloud backup discloses them.
+    consequence:
+      de: >-
+        Der Angreifer meldet sich als Nutzer an oder steuert die Geräte direkt.
+      en: >-
+        The attacker logs in as the user or controls the devices directly.
+    environment: {interface: local, access: movable, user: layman}
+    impact: 3
+    cra_refs: [AI-I-2-e]
+    etsi303645: ['5.4-1']
+    masvs: [MASVS-STORAGE-1, MASVS-STORAGE-2]
+    measures: [app-secure-storage]
+    sources: ["OWASP MASVS v2; ETSI EN 303 645 V3.1.3 provision 5.4-1"]
+
+  # --- third-party integrations ---------------------------------------------------------
+  - id: integration-token-leak
+    rev: 1
+    stride: [S, I, E]
+    applies_to: [third-party-service, vendor-cloud]
+    title:
+      de: Zugriffstoken der Integration mit {element} wird missbraucht
+      en: Integration access token for {element} is misused
+    scenario:
+      de: >-
+        Für Sprachassistent oder Smart-Home-Plattform stellt die Cloud ein Token aus,
+        das unbegrenzt gültig ist, alle Rechte hat und sich vom Nutzer nicht widerrufen
+        lässt. Das Token gelangt durch ein Datenleck beim Drittanbieter oder in Logs nach
+        außen.
+      en: >-
+        For a voice assistant or smart home platform the cloud issues a token that is
+        valid indefinitely, has all rights and cannot be revoked by the user. The token
+        leaks through a data breach at the third party or in logs.
+    consequence:
+      de: >-
+        Der Angreifer steuert die Geräte aller betroffenen Kunden über die Integration,
+        auch nachdem diese sie längst nicht mehr nutzen.
+      en: >-
+        The attacker controls the devices of all affected customers via the
+        integration, even long after they stopped using it.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-d, AI-I-2-e]
+    etsi303645: ['5.5-8', '5.4-1']
+    measures: [integration-token-scoping]
+    sources: ["ETSI EN 303 645 V3.1.3 provisions 5.4 and 5.5-8; generic OAuth threat knowledge"]
+
+  - id: integration-spoofed-caller
+    rev: 1
+    stride: [S]
+    applies_to: [third-party-service]
+    title:
+      de: Gefälschte Anfragen im Namen von {element}
+      en: Forged requests on behalf of {element}
+    scenario:
+      de: >-
+        Die Cloud nimmt Befehle an der Integrationsschnittstelle an, ohne zu prüfen, ob
+        sie wirklich vom Drittanbieter stammen, etwa ohne Signatur oder gegenseitige
+        Authentisierung.
+      en: >-
+        The cloud accepts commands at the integration interface without checking that
+        they really come from the third party, for example without signature or mutual
+        authentication.
+    consequence:
+      de: >-
+        Ein Angreifer sendet Befehle, als kämen sie vom Sprachassistenten des Nutzers.
+      en: >-
+        An attacker sends commands as if they came from the user's voice assistant.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-d]
+    etsi303645: ['5.5-1']
+    measures: [integration-token-scoping, tls-cert-validation]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.5-1; generic API threat knowledge"]

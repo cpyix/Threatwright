@@ -183,8 +183,11 @@
       target: c.target,
       type: flowType || null,
     })
-    await app.afterChange(r.model)
+    // afterChange sets the model synchronously; select now, before its validation round,
+    // so a click the user makes meanwhile is not overridden afterwards
+    const done = app.afterChange(r.model)
     onselect('flows', r.id)
+    await done
   }
 
   let host: HTMLDivElement | undefined = $state()
@@ -225,8 +228,9 @@
       x: Math.round(p.x - W / 2),
       y: Math.round(p.y - H / 2),
     })
-    await app.afterChange(r.model)
+    const done = app.afterChange(r.model) // see onconnect: select before validation finishes
     onselect('elements', r.id)
+    await done
   }
 
   export async function autoLayout() {

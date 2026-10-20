@@ -1,0 +1,284 @@
+# Cross-cutting threat templates for the device types of process automation,
+# robotics, remote sites, IIoT and energy systems, plus common threats for
+# further industrial protocols. Device-specific threats live in the topical files.
+threats:
+  # --- devices: credentials, attribution, disclosure ---------------------------------
+  - id: device-mgmt-default-credentials
+    rev: 1
+    stride: [S, E]
+    applies_to: [process-analyser, hart-multiplexer, robot-controller, cnc-controller, safety-sensor, id-reader, rtu, cellular-router, iiot-gateway, data-diode, energy-meter, der-inverter, building-controller]
+    title:
+      de: Anmeldung an der Verwaltungsschnittstelle von {element} mit Standard- oder Sammelpasswort
+      en: Login to the management interface of {element} with a default or shared password
+    scenario:
+      de: >-
+        Webserver, Konfigurationssoftware oder Wartungszugang des Geräts sind ab Werk mit
+        einem dokumentierten Standardpasswort geschützt, das bei der Inbetriebnahme nicht
+        geändert werden muss, oder alle Geräte einer Baureihe nutzen dasselbe
+        Service-Passwort. Ein Angreifer, der die Schnittstelle über das Netz oder vor Ort
+        erreicht, meldet sich mit diesen öffentlich bekannten Zugangsdaten an.
+      en: >-
+        The device's web server, configuration software or maintenance access is
+        protected at delivery by a documented default password that does not have to be
+        changed during commissioning, or all devices of a product line share the same
+        service password. An attacker who reaches the interface via the network or on
+        site logs in with these publicly known credentials.
+    consequence:
+      de: >-
+        Der Angreifer hat Administratorrechte am Gerät, ändert Konfiguration und
+        Zugangsdaten, spielt Firmware ein und sperrt berechtigte Nutzer aus.
+      en: >-
+        The attacker has administrator rights on the device, changes configuration and
+        credentials, installs firmware and locks out authorised users.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    cra_refs: [AI-I-2-b, AI-I-2-d]
+    attack_ics: [T1694, T0859]
+    emb3d: [TID-311, TID-328]
+    iec62443: [FR1]
+    measures: [no-default-passwords, unique-device-credentials, account-lockout, secure-commissioning-guide]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: device-change-not-attributable
+    rev: 1
+    stride: [R]
+    applies_to: [dcs-controller, sis-logic-solver, field-transmitter, valve-positioner, process-analyser, hart-multiplexer, operator-station, robot-controller, teach-pendant, cnc-controller, safety-sensor, id-reader, rtu, cellular-router, iiot-gateway, data-diode, energy-meter, der-inverter, battery-management-system, building-controller]
+    title:
+      de: Änderungen an {element} lassen sich keiner Person zuordnen
+      en: Changes to {element} cannot be attributed to a person
+    scenario:
+      de: >-
+        Das Gerät speichert nicht oder nur ohne Benutzer und Zeitstempel, wann
+        Konfiguration, Programm oder Firmware geändert wurden. Zugriffe erfolgen über ein
+        gemeinsames Konto, ein Handbediengerät oder ein Werkzeug ohne Anmeldung. Ein
+        Angreifer oder Innentäter ändert das Gerät, und die Änderung lässt sich später
+        weder einer Person noch einem Zugangsweg zuordnen.
+      en: >-
+        The device does not record when configuration, program or firmware were changed,
+        or records it without user and time stamp. Access takes place via a shared
+        account, a handheld device or a tool without login. An attacker or insider
+        changes the device, and the change can later be attributed neither to a person
+        nor to an access path.
+    consequence:
+      de: >-
+        Manipulationen fallen spät oder gar nicht auf, die Ursachenanalyse nach einem
+        Vorfall ist erschwert und Verantwortlichkeiten bleiben ungeklärt.
+      en: >-
+        Manipulation is noticed late or not at all, root cause analysis after an incident
+        is hampered and responsibilities remain unresolved.
+    environment: {interface: known_network, access: restricted}
+    impact: 2
+    cra_refs: [AI-I-2-l]
+    attack_ics: [T0872]
+    iec62443: [FR6, FR1]
+    measures: [security-logging, time-synchronization, config-integrity-check, change-management]
+    sources: ["generic OT threat knowledge"]
+
+  - id: device-configuration-disclosure
+    rev: 1
+    stride: [I]
+    applies_to: [process-analyser, hart-multiplexer, id-reader, rtu, cellular-router, iiot-gateway, data-diode, energy-meter, der-inverter, battery-management-system, building-controller]
+    title:
+      de: Konfigurationsexport von {element} gibt Zugangsdaten und Netzstruktur preis
+      en: Configuration export of {element} reveals credentials and network structure
+    scenario:
+      de: >-
+        Die Konfiguration des Geräts lässt sich über Webserver, Service-Werkzeug oder
+        Feldbus ohne oder mit geringer Berechtigung als Datei exportieren. Die Datei
+        enthält Passwörter, Schlüssel oder Zugangsdaten zu Gegenstellen im Klartext oder
+        nur verschleiert, dazu Adressen und Namen anderer Anlagenteile. Ein Angreifer
+        lädt sie herunter oder findet sie auf einem Service-Laptop.
+      en: >-
+        The device configuration can be exported as a file via web server, service tool
+        or fieldbus without or with low privileges. The file contains passwords, keys or
+        credentials for peers in clear text or merely obfuscated, plus addresses and
+        names of other plant parts. An attacker downloads it or finds it on a service
+        laptop.
+    consequence:
+      de: >-
+        Mit den Zugangsdaten gelangt der Angreifer an weitere Systeme; die Netzstruktur
+        dient ihm als Plan für gezielte Angriffe.
+      en: >-
+        With the credentials the attacker reaches further systems; the network
+        structure serves as a plan for targeted attacks.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-e, AI-I-2-d]
+    attack_ics: [T0882, T0888]
+    emb3d: [TID-310]
+    iec62443: [FR4, FR2]
+    measures: [secrets-protected-storage, role-based-access, data-encryption-rest]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- devices: availability, firmware, known vulnerabilities ---------------------------
+  - id: device-network-dos
+    rev: 1
+    stride: [D]
+    applies_to: [dcs-controller, process-analyser, hart-multiplexer, teach-pendant, robot-controller, cnc-controller, id-reader, rtu, cellular-router, iiot-gateway, energy-meter, der-inverter, building-controller]
+    title:
+      de: Paketflut oder fehlerhafte Pakete legen {element} lahm
+      en: Packet flood or malformed packets disable {element}
+    scenario:
+      de: >-
+        Der Netzwerkstapel des Geräts ist für den regulären Verkehr ausgelegt. Ein
+        Angreifer oder ein fehlerhaftes Gerät im selben Netz sendet große Mengen an
+        Broadcasts, Verbindungsanfragen oder gezielt fehlerhafte Pakete. Der Prozessor
+        des Geräts ist ausgelastet oder der Protokollstapel bleibt hängen.
+      en: >-
+        The device's network stack is designed for regular traffic. An attacker or a
+        faulty device in the same network sends large volumes of broadcasts, connection
+        requests or crafted malformed packets. The device's processor is overloaded or
+        the protocol stack hangs.
+    consequence:
+      de: >-
+        Das Gerät kommuniziert nicht mehr oder startet neu; die von ihm erfüllte Funktion
+        fällt aus, bis es vor Ort zurückgesetzt wird.
+      en: >-
+        The device stops communicating or restarts; the function it performs fails until
+        it is reset on site.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h, AI-I-2-a]
+    attack_ics: [T0814, T0816]
+    emb3d: [TID-404, TID-405, TID-202]
+    iec62443: [FR7]
+    measures: [dos-rate-limiting, network-segmentation, security-testing, watchdog-safe-state]
+    sources: ["generic OT threat knowledge; MITRE EMB3D"]
+
+  - id: device-firmware-unsigned
+    rev: 1
+    stride: [T, E]
+    applies_to: [dcs-controller, sis-logic-solver, field-transmitter, valve-positioner, process-analyser, hart-multiplexer, robot-controller, teach-pendant, cnc-controller, safety-sensor, id-reader, rtu, cellular-router, iiot-gateway, data-diode, energy-meter, der-inverter, battery-management-system, building-controller]
+    title:
+      de: Manipulierte Firmware wird auf {element} eingespielt
+      en: Manipulated firmware is installed on {element}
+    scenario:
+      de: >-
+        Das Gerät nimmt Firmware über Webserver, Service-Werkzeug, Feldbus oder
+        Speicherkarte an und prüft weder Herkunft noch Integrität. Ein Angreifer mit
+        Zugang zu diesem Weg, etwa über einen kompromittierten Service-Rechner, spielt
+        eine veränderte Firmware ein, die dauerhaft im Gerät verbleibt.
+      en: >-
+        The device accepts firmware via web server, service tool, fieldbus or memory card
+        and checks neither origin nor integrity. An attacker with access to this path,
+        e.g. via a compromised service computer, installs modified firmware that
+        persists in the device.
+    consequence:
+      de: >-
+        Das Gerät führt fremden Code aus, liefert falsche Werte, ignoriert Befehle oder
+        fällt dauerhaft aus; die Manipulation überdauert Neustarts und ist von außen kaum
+        erkennbar.
+      en: >-
+        The device executes foreign code, delivers false values, ignores commands or
+        fails permanently; the manipulation survives restarts and is hardly detectable
+        from outside.
+    environment: {interface: local, access: restricted}
+    impact: 4
+    cra_refs: [AI-I-2-f, AI-II-7]
+    attack_ics: [T1693]
+    emb3d: [TID-211, TID-213]
+    iec62443: [FR3]
+    measures: [signed-firmware, secure-boot, anti-rollback, controller-run-mode-keyswitch]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: device-known-vulnerability-unpatched
+    rev: 1
+    stride: [E, T]
+    applies_to: [dcs-controller, process-analyser, hart-multiplexer, operator-station, robot-controller, cnc-controller, id-reader, rtu, cellular-router, iiot-gateway, data-diode, energy-meter, der-inverter, building-controller]
+    title:
+      de: Ausnutzung einer bekannten Schwachstelle in der Software von {element}
+      en: Exploitation of a known vulnerability in the software of {element}
+    scenario:
+      de: >-
+        Für das Gerät oder eine enthaltene Komponente (Webserver, Protokollstapel,
+        Betriebssystem) ist eine Schwachstelle veröffentlicht. Updates werden nicht
+        bereitgestellt oder im Feld nicht eingespielt, weil kein Wartungsfenster vorgesehen
+        ist. Ein Angreifer im Netz nutzt die Schwachstelle mit frei verfügbarem
+        Angriffscode aus.
+      en: >-
+        A vulnerability has been published for the device or an included component (web
+        server, protocol stack, operating system). Updates are not provided or are not
+        installed in the field because no maintenance window is planned. An attacker in
+        the network exploits the vulnerability with freely available exploit code.
+    consequence:
+      de: >-
+        Der Angreifer führt Code mit hohen Rechten auf dem Gerät aus, verändert dessen
+        Funktion und nutzt es als Ausgangspunkt für weitere Angriffe.
+      en: >-
+        The attacker executes code with high privileges on the device, alters its
+        function and uses it as a starting point for further attacks.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    cra_refs: [AI-I-2-a, AI-I-2-c, AI-II-2]
+    attack_ics: [T0866, T0819]
+    emb3d: [TID-202, TID-210]
+    iec62443: [FR3]
+    measures: [security-update-process, supplier-vulnerability-monitoring, component-inventory-sbom, network-segmentation]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  # --- further industrial protocols ------------------------------------------------------
+  - id: ot-protocol-cleartext-eavesdropping
+    rev: 1
+    stride: [I]
+    applies_to: [fieldbus-ethernet-ip, fieldbus-profibus, bacnet-ip, opcua-pubsub, iec-104, dnp3, iec-61850]
+    title:
+      de: Mitlesen von Prozessdaten und Befehlen auf {element}
+      en: Eavesdropping on process data and commands on {element}
+    scenario:
+      de: >-
+        Das Protokoll überträgt Messwerte, Zustände und Befehle ohne Verschlüsselung.
+        Ein Angreifer mit Zugang zu Leitung, Spiegel-Port, Funkstrecke oder einem
+        kompromittierten Teilnehmer zeichnet den Verkehr auf und wertet ihn mit frei
+        verfügbaren Protokollanalysatoren aus.
+      en: >-
+        The protocol transmits measured values, states and commands without
+        encryption. An attacker with access to the line, a mirror port, a radio link or
+        a compromised node records the traffic and analyses it with freely available
+        protocol analysers.
+    consequence:
+      de: >-
+        Prozesswerte, Adressbelegung und Befehlsabläufe werden offengelegt; der Angreifer
+        erhält die Kenntnisse für gezielte Manipulation und Wiedereinspielen.
+      en: >-
+        Process values, address assignment and command sequences are disclosed; the
+        attacker gains the knowledge needed for targeted manipulation and replay.
+    environment: {interface: known_network, access: restricted}
+    impact: 2
+    cra_refs: [AI-I-2-e]
+    attack_ics: [T0842, T0861]
+    emb3d: [TID-408]
+    iec62443: [FR4]
+    measures: [network-segmentation, protocol-security-extension, fieldbus-physical-protection]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: radio-link-jamming
+    rev: 1
+    stride: [D]
+    applies_to: [wirelesshart, lorawan, short-range-commissioning]
+    title:
+      de: Störsender unterbricht {element}
+      en: Jammer interrupts {element}
+    scenario:
+      de: >-
+        Ein Angreifer betreibt in Funkreichweite einen Störsender im genutzten Frequenzband
+        oder sendet gezielt zu den Zeitpunkten, an denen die Geräte übertragen. Kanalwechsel
+        und Wiederholungen der Protokolle reichen nicht aus, die Verbindung aufrecht zu
+        erhalten.
+      en: >-
+        An attacker within radio range operates a jammer in the frequency band used or
+        transmits selectively at the times when the devices send. The protocols' channel
+        hopping and retransmissions are not sufficient to keep the link up.
+    consequence:
+      de: >-
+        Messwerte und Befehle kommen nicht mehr an; Überwachung und Regelung, die von der
+        Funkstrecke abhängen, fallen aus oder arbeiten mit veralteten Werten.
+      en: >-
+        Measured values and commands no longer arrive; monitoring and control depending
+        on the radio link fail or work with stale values.
+    environment: {interface: local, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h]
+    attack_ics: [T0860, T1695]
+    iec62443: [FR7]
+    measures: [watchdog-safe-state, local-autonomy, network-monitoring-ids]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]

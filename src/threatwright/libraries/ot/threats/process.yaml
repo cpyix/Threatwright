@@ -1,0 +1,575 @@
+# Threat templates for process automation: DCS controllers, safety instrumented
+# systems, HART instruments, valve positioners, analysers and HART gateways.
+threats:
+  # --- controllers: logic and configuration --------------------------------------------
+  - id: controller-logic-readout
+    rev: 1
+    stride: [I]
+    applies_to: [dcs-controller, sis-logic-solver, robot-controller, cnc-controller, rtu, teach-pendant]
+    title:
+      de: Auslesen von Programmen und Parametern aus {element}
+      en: Readout of programs and parameters from {element}
+    scenario:
+      de: >-
+        Programme, Funktionsbausteine, Bahnen, NC-Programme oder Datenpunktlisten lassen
+        sich mit dem Engineering-Werkzeug, über eine Dateiübertragung oder per Export auf
+        einen USB-Stick ohne Anmeldung aus dem Gerät lesen. Ein Angreifer mit Zugang zum
+        Netz oder zum Gerät kopiert den vollständigen Stand.
+      en: >-
+        Programs, function blocks, paths, NC programs or data point lists can be read
+        from the device without login using the engineering tool, a file transfer or an
+        export to a USB stick. An attacker with access to the network or the device
+        copies the complete state.
+    consequence:
+      de: >-
+        Verfahrens- und Produkt-Know-how geht verloren; der Angreifer kennt Verriegelungen,
+        Grenzwerte und Adressen und kann gezielte Manipulationen vorbereiten.
+      en: >-
+        Process and product know-how is lost; the attacker learns interlocks, limits and
+        addresses and can prepare targeted manipulation.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-e, AI-I-2-d]
+    attack_ics: [T0845, T0882]
+    iec62443: [FR4, FR2]
+    measures: [strong-authentication, role-based-access, engineering-project-protection, usb-port-control]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: dcs-control-strategy-download
+    rev: 1
+    stride: [T, E]
+    applies_to: [dcs-controller]
+    title:
+      de: Veränderte Regelungsstrategie wird in {element} geladen
+      en: Modified control strategy is downloaded to {element}
+    scenario:
+      de: >-
+        Der Controller nimmt Änderungen an Funktionsbausteinen, Reglerparametern und
+        Verriegelungen von jeder Engineering-Station im Leitsystemnetz an, ohne den
+        Benutzer zu authentisieren. Ein Angreifer, der eine Engineering- oder
+        Bedienstation übernommen hat, lädt eine veränderte Strategie, z. B. mit
+        abgeschalteter Verriegelung oder veränderter Reglerverstärkung, als Online-Änderung
+        ohne Anlagenstillstand.
+      en: >-
+        The controller accepts changes to function blocks, tuning parameters and
+        interlocks from any engineering station in the control network without
+        authenticating the user. An attacker who has taken over an engineering or
+        operator station downloads a modified strategy, e.g. with an interlock disabled
+        or a changed controller gain, as an online change without plant shutdown.
+    consequence:
+      de: >-
+        Der Prozess läuft außerhalb seiner Grenzen, Verriegelungen greifen nicht und
+        Anlagenteile können beschädigt werden; Personen sind gefährdet, wenn die
+        Sicherheitseinrichtung nicht unabhängig ist.
+      en: >-
+        The process runs outside its limits, interlocks do not act and plant equipment
+        can be damaged; persons are endangered if the safety system is not independent.
+    environment: {interface: dedicated_known_network, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T0843, T0889, T0831]
+    emb3d: [TID-303]
+    iec62443: [FR1, FR2, FR3]
+    measures: [strong-authentication, controller-run-mode-keyswitch, program-integrity-check, engineering-tool-integrity]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: dcs-peer-data-spoofing
+    rev: 1
+    stride: [S, T]
+    applies_to: [dcs-controller]
+    title:
+      de: Gefälschte Querkommunikation zwischen Controllern erreicht {element}
+      en: Spoofed peer-to-peer data reaches {element}
+    scenario:
+      de: >-
+        Controller tauschen Messwerte und Freigaben über die Querkommunikation des
+        Leitsystems aus. Die Telegramme werden nur anhand von Adresse und Kennung
+        zugeordnet, nicht authentisiert. Ein Angreifer im Leitsystemnetz sendet
+        Telegramme mit der Kennung eines anderen Controllers und überlagert so dessen
+        Werte.
+      en: >-
+        Controllers exchange measured values and enables via the control system's
+        peer-to-peer communication. Telegrams are only assigned by address and
+        identifier, not authenticated. An attacker in the control network sends
+        telegrams with the identifier of another controller and thereby overrides its
+        values.
+    consequence:
+      de: >-
+        Regelkreise und Verriegelungen arbeiten mit vorgetäuschten Werten aus anderen
+        Anlagenteilen; Fehlsteuerungen und gefährliche Prozesszustände sind möglich.
+      en: >-
+        Control loops and interlocks work with spoofed values from other plant sections;
+        incorrect control actions and hazardous process states are possible.
+    environment: {interface: dedicated_known_network, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T1692, T0831]
+    emb3d: [TID-406, TID-407]
+    iec62443: [FR1, FR3]
+    measures: [protocol-security-extension, network-segmentation, measurement-cross-check, network-monitoring-ids]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: dcs-redundancy-common-cause
+    rev: 1
+    stride: [D]
+    applies_to: [dcs-controller]
+    title:
+      de: Gezielter Angriff legt beide Teile des redundanten {element} lahm
+      en: Targeted attack disables both halves of the redundant {element}
+    scenario:
+      de: >-
+        Der Controller ist redundant aufgebaut, beide Teile nutzen dieselbe Firmware und
+        sind am selben Netz erreichbar. Die Redundanz ist für zufällige Hardwarefehler
+        ausgelegt. Ein Angreifer sendet eine Paketfolge, die einen Fehler im
+        Protokollstapel auslöst; nach der Umschaltung bringt dieselbe Folge auch den
+        Reservecontroller zum Absturz.
+      en: >-
+        The controller has a redundant design; both halves use the same firmware and are
+        reachable on the same network. The redundancy is designed for random hardware
+        faults. An attacker sends a packet sequence that triggers a fault in the protocol
+        stack; after the switchover the same sequence also crashes the standby
+        controller.
+    consequence:
+      de: >-
+        Die Regelung des Anlagenteils fällt vollständig aus; der Prozess muss über die
+        Sicherheitseinrichtung abgefahren werden, mit Produktionsausfall und riskantem
+        Wiederanfahren.
+      en: >-
+        Control of the plant section fails completely; the process has to be shut down
+        via the safety system, with production loss and a risky restart.
+    environment: {interface: dedicated_known_network, access: restricted}
+    impact: 4
+    cra_refs: [AI-I-2-h, AI-I-2-a]
+    attack_ics: [T0814, T0813]
+    emb3d: [TID-404, TID-202]
+    iec62443: [FR7]
+    measures: [network-segmentation, dos-rate-limiting, security-testing, firewall-allowlist]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  # --- safety instrumented system ----------------------------------------------------------
+  - id: sis-logic-change-program-mode
+    rev: 1
+    stride: [T, E]
+    applies_to: [sis-logic-solver]
+    title:
+      de: Veränderte Sicherheitslogik wird in {element} geladen
+      en: Modified safety logic is downloaded to {element}
+    scenario:
+      de: >-
+        Das Logiksystem steht dauerhaft in einer Betriebsart, die Programmänderungen über
+        das Netz zulässt, oder der Schlüsselschalter wird nicht ausgewertet. Ein
+        Angreifer, der die Engineering-Station der Sicherheitseinrichtung übernommen hat,
+        lädt eine veränderte Logik mit verschobenen Auslösegrenzen oder unwirksamen
+        Abschaltungen.
+      en: >-
+        The logic solver is permanently in an operating mode that allows program changes
+        via the network, or the key switch is not evaluated. An attacker who has taken
+        over the safety system's engineering station downloads modified logic with
+        shifted trip set points or ineffective trips.
+    consequence:
+      de: >-
+        Die Sicherheitsfunktionen lösen bei einer Grenzwertverletzung nicht mehr aus;
+        Brand, Explosion, Freisetzung von Stoffen und Personenschäden sind möglich.
+      en: >-
+        The safety instrumented functions no longer trip on a limit violation; fire,
+        explosion, release of substances and injury to persons are possible.
+    environment: {interface: dedicated_known_network, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T0858, T0843, T0889, T0880]
+    emb3d: [TID-303]
+    iec62443: [FR1, FR2, FR3]
+    measures: [controller-run-mode-keyswitch, program-integrity-check, safety-separation, engineering-tool-integrity]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: sis-bypass-abuse
+    rev: 1
+    stride: [T, R]
+    applies_to: [sis-logic-solver]
+    title:
+      de: Unbemerkte Überbrückung von Sicherheitsfunktionen in {element}
+      en: Unnoticed bypass of safety instrumented functions in {element}
+    scenario:
+      de: >-
+        Überbrückungen für Wartung und Anfahren werden über Variablen gesetzt, die das
+        Leitsystem oder eine Bedienstation schreiben darf. Ein Angreifer mit Zugriff auf
+        Leitsystem oder Bedienstation setzt diese Überbrückungen. Sie sind zeitlich nicht
+        begrenzt, werden nicht dauerhaft angezeigt und ohne Benutzerbezug protokolliert.
+      en: >-
+        Bypasses for maintenance and start-up are set via variables that the control
+        system or an operator station may write. An attacker with access to the control
+        system or an operator station sets these bypasses. They are not time-limited,
+        not permanently displayed and logged without reference to a user.
+    consequence:
+      de: >-
+        Die Schutzfunktion ist unwirksam, ohne dass Betriebspersonal davon weiß; im
+        Anforderungsfall kommt es zu Personen- und Anlagenschäden. Wer die Überbrückung
+        gesetzt hat, lässt sich nicht feststellen.
+      en: >-
+        The protective function is ineffective without operating personnel knowing; on
+        demand, injury to persons and damage to the plant occur. Who set the bypass
+        cannot be determined.
+    environment: {interface: dedicated_known_network, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-l]
+    attack_ics: [T0836, T0880]
+    iec62443: [FR2, FR6]
+    measures: [sis-bypass-management, bypass-hardwired-key, security-logging]
+    sources: ["generic OT threat knowledge; functional safety practice"]
+
+  - id: sis-spurious-trip
+    rev: 1
+    stride: [D]
+    applies_to: [sis-logic-solver]
+    title:
+      de: Provozierte Fehlauslösungen durch {element}
+      en: Provoked spurious trips by {element}
+    scenario:
+      de: >-
+        Ein Angreifer stört gezielt die Kommunikation des Logiksystems, bringt es durch
+        fehlerhafte Pakete in den Fehlerzustand oder setzt über die Schnittstelle zum
+        Leitsystem Handauslösungen. Das Logiksystem reagiert bestimmungsgemäß mit einer
+        sicheren Abschaltung.
+      en: >-
+        An attacker deliberately disrupts the logic solver's communication, drives it
+        into a fault state with malformed packets or sets manual trips via the interface
+        to the control system. The logic solver reacts as designed with a safe shutdown.
+    consequence:
+      de: >-
+        Die Anlage wird wiederholt abgefahren, mit Produktionsausfall und belastenden
+        Wiederanfahrvorgängen; häufige Fehlauslösungen verleiten zu Überbrückungen.
+      en: >-
+        The plant is shut down repeatedly, with production loss and stressful restart
+        sequences; frequent spurious trips tempt staff to install bypasses.
+    environment: {interface: dedicated_known_network, access: restricted}
+    impact: 4
+    cra_refs: [AI-I-2-h]
+    attack_ics: [T0816, T0814, T0813]
+    emb3d: [TID-404]
+    iec62443: [FR7, FR5]
+    measures: [safety-separation, firewall-allowlist, network-segmentation, network-monitoring-ids]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: sis-bpcs-interface-writes
+    rev: 1
+    stride: [S, T]
+    applies_to: [sis-logic-solver]
+    title:
+      de: Schreibzugriffe aus dem Leitsystem verändern {element}
+      en: Write access from the control system alters {element}
+    scenario:
+      de: >-
+        Das Logiksystem ist über eine Kommunikationsschnittstelle mit dem
+        Prozessleitsystem verbunden und nimmt darüber nicht nur Lesezugriffe, sondern
+        auch Quittierungen, Rücksetzbefehle und Parameter an. Absender werden nur über die
+        Adresse erkannt. Ein kompromittiertes Leitsystem oder ein Gerät mit dessen Adresse
+        sendet diese Schreibbefehle.
+      en: >-
+        The logic solver is connected to the control system via a communication interface
+        and accepts not only reads but also acknowledgements, reset commands and
+        parameters through it. Senders are only recognised by address. A compromised
+        control system or a device using its address sends these write commands.
+    consequence:
+      de: >-
+        Die Unabhängigkeit von Leitsystem und Sicherheitseinrichtung ist aufgehoben; ein
+        einziger Angriff kann Regelung und Schutzfunktion zugleich beeinträchtigen.
+      en: >-
+        The independence of control system and safety system is lost; a single attack
+        can impair control and protective function at the same time.
+    environment: {interface: dedicated_known_network, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f, AI-I-2-j]
+    attack_ics: [T1692, T0836, T0831]
+    emb3d: [TID-406]
+    iec62443: [FR1, FR5]
+    measures: [safety-separation, firewall-allowlist, controller-run-mode-keyswitch, sis-bypass-management]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- HART instruments --------------------------------------------------------------------
+  - id: hart-loop-parameter-change
+    rev: 1
+    stride: [T]
+    applies_to: [hart, field-transmitter, valve-positioner, process-analyser]
+    title:
+      de: Umparametrierung über die HART-Schnittstelle von {element}
+      en: Reconfiguration via the HART interface of {element}
+    scenario:
+      de: >-
+        HART-Kommunikation liegt auf der 4–20-mA-Leitung und akzeptiert Befehle von einem
+        zweiten Master ohne Authentisierung. Ein Angreifer schließt ein Handbediengerät
+        oder HART-Modem an einer beliebigen Stelle des Messkreises an, etwa im
+        Feldverteiler oder Rangierschrank, und ändert Messbereichsanfang und -ende,
+        Einheit, Dämpfung oder Kennlinie.
+      en: >-
+        HART communication is superimposed on the 4–20 mA line and accepts commands from
+        a secondary master without authentication. An attacker connects a handheld
+        communicator or HART modem anywhere in the loop, e.g. in a field junction box or
+        marshalling cabinet, and changes lower and upper range value, unit, damping or
+        transfer function.
+    consequence:
+      de: >-
+        Das analoge Signal bedeutet einen anderen Messwert, als das Leitsystem annimmt;
+        Regelung und Schutzfunktionen arbeiten mit falschen Werten, ohne dass ein Fehler
+        gemeldet wird.
+      en: >-
+        The analogue signal represents a different measured value than the control
+        system assumes; control and protective functions work with wrong values without
+        any fault being reported.
+    environment: {interface: local, access: public_restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T0836]
+    emb3d: [TID-406]
+    iec62443: [FR1, FR3]
+    measures: [write-protection-switch, config-integrity-check, measurement-cross-check, physical-access-control]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: hart-fixed-current-mode
+    rev: 1
+    stride: [T, D]
+    applies_to: [hart, field-transmitter]
+    title:
+      de: Eingefrorener Stromwert durch HART-Befehl an {element}
+      en: Frozen loop current via HART command to {element}
+    scenario:
+      de: >-
+        Über HART lässt sich der Ausgangsstrom eines Messumformers für den Schleifentest
+        auf einen festen Wert setzen oder die Polling-Adresse so ändern, dass der Strom
+        fest auf 4 mA steht. Ein Angreifer mit HART-Zugang setzt einen solchen festen
+        Stromwert während des Betriebs.
+      en: >-
+        Via HART the output current of a transmitter can be set to a fixed value for loop
+        testing, or the polling address can be changed so that the current stays fixed
+        at 4 mA. An attacker with HART access sets such a fixed current during
+        operation.
+    consequence:
+      de: >-
+        Das Leitsystem sieht einen konstanten, plausiblen Wert, während sich der Prozess
+        weiter verändert; Grenzwertüberschreitungen werden weder angezeigt noch
+        abgeschaltet.
+      en: >-
+        The control system sees a constant, plausible value while the process keeps
+        changing; limit violations are neither displayed nor tripped.
+    environment: {interface: local, access: public_restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f, AI-I-2-h]
+    attack_ics: [T0836, T0832, T0815]
+    iec62443: [FR3, FR7]
+    measures: [write-protection-switch, measurement-cross-check, config-integrity-check]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: instrument-config-readout
+    rev: 1
+    stride: [I]
+    applies_to: [hart, field-transmitter, valve-positioner]
+    title:
+      de: Auslesen von Messstellen und Parametern über {element}
+      en: Readout of measuring points and parameters via {element}
+    scenario:
+      de: >-
+        Messstellenbezeichnung, Gerätetyp, Messbereich und Grenzwerte lassen sich über
+        HART oder die Bedienschnittstelle des Geräts ohne Berechtigung abfragen. Ein
+        Angreifer mit Zugang zu einem Messkreis oder Multiplexer liest diese Angaben für
+        viele Messstellen aus.
+      en: >-
+        Tag, device type, measuring range and limits can be queried via HART or the
+        device's operating interface without authorisation. An attacker with access to a
+        loop or multiplexer reads this information for many measuring points.
+    consequence:
+      de: >-
+        Der Angreifer erhält ein Abbild der Instrumentierung und erkennt, welche
+        Messstellen für Regelung und Schutzfunktionen entscheidend sind.
+      en: >-
+        The attacker obtains a map of the instrumentation and recognises which measuring
+        points are decisive for control and protective functions.
+    environment: {interface: local, access: public_restricted}
+    impact: 2
+    cra_refs: [AI-I-2-e]
+    attack_ics: [T0861, T0888]
+    iec62443: [FR4]
+    measures: [physical-access-control, fieldbus-physical-protection, network-segmentation]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: field-signal-spoofing
+    rev: 1
+    stride: [S, T]
+    applies_to: [field-transmitter, valve-positioner, process-analyser]
+    title:
+      de: Eingespeistes 4–20-mA-Signal ersetzt {element}
+      en: Injected 4–20 mA signal replaces {element}
+    scenario:
+      de: >-
+        Das analoge Signal enthält keine Kennung seines Absenders. Ein Angreifer klemmt im
+        Feldverteiler das Gerät ab und speist mit einem Kalibrator einen frei gewählten
+        Strom ein, beim Messumformer als Messwert, beim Stellungsregler als Stellsignal.
+      en: >-
+        The analogue signal carries no identification of its sender. An attacker
+        disconnects the device in the field junction box and injects a freely chosen
+        current with a calibrator, as measured value for a transmitter or as set point
+        for a valve positioner.
+    consequence:
+      de: >-
+        Leitsystem und Sicherheitseinrichtung reagieren auf einen vorgetäuschten Zustand
+        oder das Ventil fährt in eine Stellung, die das Leitsystem nicht vorgegeben hat.
+      en: >-
+        Control and safety systems react to a spoofed state, or the valve moves to a
+        position the control system did not command.
+    environment: {interface: local, access: public_restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-f]
+    attack_ics: [T0832, T0831]
+    iec62443: [FR3]
+    measures: [measurement-cross-check, physical-access-control, tamper-alarm, tamper-evident-seals]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: valve-positioner-command-abuse
+    rev: 1
+    stride: [T, D]
+    applies_to: [valve-positioner]
+    title:
+      de: Ventilhub oder Diagnosetest wird über {element} unbefugt ausgelöst
+      en: Valve stroke or diagnostic test is triggered on {element} without authorisation
+    scenario:
+      de: >-
+        Der Stellungsregler nimmt über HART oder Feldbus Befehle für Teilhubtest,
+        Sprungantwort-Diagnose oder Handbetrieb an, die das Ventil unabhängig vom
+        Stellsignal des Leitsystems bewegen. Ein Angreifer mit Zugang über Multiplexer,
+        Asset-Management oder Handbediengerät löst diese Befehle während des Betriebs aus.
+      en: >-
+        The valve positioner accepts commands via HART or fieldbus for partial stroke
+        test, step response diagnostics or manual mode that move the valve independently
+        of the control system's output. An attacker with access via a multiplexer, asset
+        management or handheld communicator triggers these commands during operation.
+    consequence:
+      de: >-
+        Das Ventil öffnet oder schließt unerwartet; Durchfluss, Druck oder Füllstand
+        weichen ab und die Regelung kann den Prozess nicht mehr halten.
+      en: >-
+        The valve opens or closes unexpectedly; flow, pressure or level deviate and
+        control can no longer hold the process.
+    environment: {interface: local, access: public_restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T1692, T0831]
+    emb3d: [TID-406]
+    iec62443: [FR2, FR3]
+    measures: [write-protection-switch, physical-access-control, network-segmentation, security-logging]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: analyser-calibration-manipulation
+    rev: 1
+    stride: [T]
+    applies_to: [process-analyser]
+    title:
+      de: Manipulation von Kalibrierung und Methoden in {element}
+      en: Manipulation of calibration and methods in {element}
+    scenario:
+      de: >-
+        Kalibrierfaktoren, Konzentrationen der Prüfgase, Kompensationswerte oder die
+        Zuordnung von Messsignalen zu Komponenten lassen sich über Webserver oder
+        Wartungssoftware des Analysators ändern. Ein Angreifer mit Netzzugang und
+        Wartungsrechten verändert diese Werte geringfügig.
+      en: >-
+        Calibration factors, concentrations of test gases, compensation values or the
+        assignment of measured signals to components can be changed via the analyser's
+        web server or maintenance software. An attacker with network access and
+        maintenance rights alters these values slightly.
+    consequence:
+      de: >-
+        Der Analysator liefert systematisch verschobene Ergebnisse; Produktqualität,
+        Emissionsnachweise und, wenn er Schutzfunktionen bedient, die Erkennung
+        gefährlicher Konzentrationen sind beeinträchtigt.
+      en: >-
+        The analyser delivers systematically shifted results; product quality, emission
+        records and, if it serves protective functions, the detection of hazardous
+        concentrations are impaired.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T0836]
+    iec62443: [FR2, FR3]
+    measures: [role-based-access, config-integrity-check, measurement-cross-check, security-logging]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- HART gateways and WirelessHART -------------------------------------------------------
+  - id: hart-gateway-pass-through
+    rev: 1
+    stride: [T, E]
+    applies_to: [hart-multiplexer]
+    title:
+      de: Netzzugang zu {element} öffnet den Schreibzugriff auf alle Feldgeräte
+      en: Network access to {element} opens write access to all field devices
+    scenario:
+      de: >-
+        Das Gateway leitet HART-Befehle aus dem IP-Netz, z. B. per HART-IP oder Modbus,
+        unverändert an alle angeschlossenen Feldgeräte weiter. Ohne aktivierte
+        Transportsicherung und ohne Anmeldung kann jeder Teilnehmer, der das Gateway im
+        Netz erreicht, Feldgeräte umparametrieren.
+      en: >-
+        The gateway forwards HART commands from the IP network, e.g. via HART-IP or
+        Modbus, unchanged to all connected field devices. Without enabled transport
+        security and without login, any party that reaches the gateway on the network
+        can reconfigure field devices.
+    consequence:
+      de: >-
+        Ein Angreifer im Netz verändert aus der Ferne Messbereiche und Stellfunktionen
+        vieler Messstellen gleichzeitig; die Feldebene ist nicht mehr durch
+        physischen Zugang geschützt.
+      en: >-
+        An attacker in the network remotely changes measuring ranges and actuation
+        functions of many measuring points at once; the field level is no longer
+        protected by physical access.
+    environment: {interface: known_network, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-j]
+    attack_ics: [T0836, T1692, T0886]
+    emb3d: [TID-310, TID-406]
+    iec62443: [FR1, FR5]
+    measures: [protocol-security-extension, firewall-allowlist, network-segmentation, write-protection-switch]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: wirelesshart-join-key-compromise
+    rev: 1
+    stride: [T, I]
+    applies_to: [wirelesshart, hart-multiplexer]
+    title:
+      de: Gemeinsamer Join-Schlüssel lässt fremde Geräte in {element} zu
+      en: Shared join key admits foreign devices to {element}
+    scenario:
+      de: >-
+        Alle Geräte des Funknetzes nutzen denselben Join-Schlüssel, der in
+        Inbetriebnahmewerkzeugen, Dokumentation oder ausgebauten Geräten zu finden ist,
+        und der Netzwerkmanager führt keine Liste zugelassener Geräte. Ein Angreifer
+        bringt mit diesem Schlüssel ein eigenes Gerät in das Netz.
+      en: >-
+        All devices of the wireless network use the same join key, which can be found in
+        commissioning tools, documentation or removed devices, and the network manager
+        keeps no list of admitted devices. An attacker uses this key to bring their own
+        device into the network.
+    consequence:
+      de: >-
+        Das fremde Gerät liefert vorgetäuschte Messwerte unter einer echten
+        Messstellenbezeichnung, beeinflusst das Routing im Mesh-Netz und erhält Einblick
+        in Netzstruktur und Daten.
+      en: >-
+        The foreign device delivers spoofed measured values under a genuine tag,
+        influences routing in the mesh network and gains insight into network structure
+        and data.
+    environment: {interface: local, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-d, AI-I-2-e]
+    attack_ics: [T0860, T0849]
+    iec62443: [FR1, FR4]
+    measures: [radio-key-management, secrets-protected-storage, network-monitoring-ids]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]

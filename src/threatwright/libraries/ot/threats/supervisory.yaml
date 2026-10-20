@@ -1,0 +1,935 @@
+# Threat templates for the supervisory level and plant IT: SCADA server and
+# operator stations, MES/ERP connector, alarm server, OT patch and antivirus
+# management, OT domain controller.
+threats:
+  # --- SCADA server and operator stations ----------------------------------------------
+  - id: scada-unauthenticated-client
+    rev: 1
+    stride: [S, T]
+    applies_to: [scada-server]
+    title:
+      de: Fremder Client verbindet sich mit {element} und sendet Befehle
+      en: Foreign client connects to {element} and sends commands
+    scenario:
+      de: >-
+        Der SCADA-Server nimmt Verbindungen von Bedienstationen über ein
+        herstellerspezifisches Protokoll an und prüft dabei nur die IP-Adresse oder ein
+        gemeinsames Anwendungskonto, nicht den einzelnen Benutzer. Ein Angreifer im
+        Anlagennetz installiert die frei erhältliche Client-Software oder spielt
+        mitgeschnittene Telegramme ein und tritt gegenüber dem Server als reguläre
+        Bedienstation auf.
+      en: >-
+        The SCADA server accepts connections from operator stations via a
+        vendor-specific protocol and checks only the IP address or a shared application
+        account, not the individual user. An attacker in the plant network installs the
+        freely available client software or replays recorded telegrams and appears to
+        the server as a regular operator station.
+    consequence:
+      de: >-
+        Der Angreifer schaltet Anlagenteile, ändert Sollwerte und quittiert Alarme mit
+        den Rechten einer Bedienstation; gefährliche Prozesszustände sind möglich.
+      en: >-
+        The attacker switches plant sections, changes set points and acknowledges alarms
+        with the rights of an operator station; hazardous process states are possible.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T1692, T0831, T0859]
+    emb3d: [TID-406]
+    iec62443: [FR1, FR2]
+    measures: [strong-authentication, role-based-access, mutual-tls, firewall-allowlist]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: scada-tag-database-manipulation
+    rev: 1
+    stride: [T]
+    applies_to: [scada-server]
+    title:
+      de: Manipulation der Variablendatenbank von {element}
+      en: Manipulation of the tag database of {element}
+    scenario:
+      de: >-
+        Ein Angreifer mit Schreibzugriff auf das Projekt des SCADA-Servers, etwa über ein
+        kompromittiertes Engineering- oder Administratorkonto, ändert in der
+        Variablendatenbank Skalierungen, Alarmgrenzen oder die Zuordnung von Variablen zu
+        Steuerungsadressen. Die Änderung wird ohne Freigabe online übernommen.
+      en: >-
+        An attacker with write access to the SCADA server project, e.g. via a compromised
+        engineering or administrator account, changes scaling, alarm limits or the
+        mapping of tags to controller addresses in the tag database. The change is
+        applied online without approval.
+    consequence:
+      de: >-
+        Bediener sehen falsche Werte und reagieren falsch; Befehle wirken auf ein anderes
+        Gerät als angezeigt. Gefährliche Zustände werden zu spät oder gar nicht erkannt.
+      en: >-
+        Operators see wrong values and react incorrectly; commands act on a different
+        device than displayed. Hazardous states are recognised too late or not at all.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    attack_ics: [T0832, T0838, T0831]
+    iec62443: [FR3, FR2]
+    measures: [config-integrity-check, change-management, role-based-access, measurement-cross-check]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: scada-operator-actions-not-attributable
+    rev: 1
+    stride: [R]
+    applies_to: [scada-server, operator-station, alarm-server]
+    title:
+      de: Bedienhandlungen über {element} lassen sich keinem Bediener zuordnen
+      en: Operator actions via {element} cannot be attributed to an operator
+    scenario:
+      de: >-
+        Bediener teilen sich ein Schicht- oder Stationskonto, oder das System protokolliert
+        Schalthandlungen, Sollwertänderungen und Quittierungen ohne Benutzerbezug. Ein
+        Angreifer oder Innentäter führt Bedienhandlungen aus, die sich später niemandem
+        zuordnen lassen.
+      en: >-
+        Operators share a shift or station account, or the system logs switching
+        actions, set point changes and acknowledgements without reference to a user. An
+        attacker or insider performs operator actions that cannot later be attributed
+        to anyone.
+    consequence:
+      de: >-
+        Fehlbedienungen und Manipulationen lassen sich nicht aufklären; Störungs- und
+        Vorfallanalysen bleiben ohne belastbare Grundlage.
+      en: >-
+        Operating errors and manipulation cannot be clarified; fault and incident
+        analyses lack a reliable basis.
+    environment: {interface: known_network, access: restricted}
+    impact: 2
+    cra_refs: [AI-I-2-l, AI-I-2-d]
+    attack_ics: [T0859]
+    iec62443: [FR1, FR6]
+    measures: [security-logging, strong-authentication, log-protection, time-synchronization]
+    sources: ["generic OT threat knowledge"]
+
+  - id: scada-plant-model-exfiltration
+    rev: 1
+    stride: [I]
+    applies_to: [scada-server]
+    title:
+      de: Abfluss von Anlagenbildern und Variablendatenbank aus {element}
+      en: Exfiltration of plant displays and tag database from {element}
+    scenario:
+      de: >-
+        Prozessbilder, Variablendatenbank und Kommunikationskonfiguration des
+        SCADA-Servers liegen in Projektverzeichnissen, die über Netzfreigaben, Backups
+        oder den Exportdienst ohne besondere Berechtigung lesbar sind. Ein Angreifer im
+        Netz kopiert das Projekt.
+      en: >-
+        Process displays, tag database and communication configuration of the SCADA
+        server are stored in project directories that can be read without special
+        privileges via network shares, backups or the export service. An attacker in the
+        network copies the project.
+    consequence:
+      de: >-
+        Der Angreifer kennt Aufbau, Steuerungsadressen und kritische Anlagenteile und
+        plant damit gezielte Manipulationen; Verfahrens-Know-how geht verloren.
+      en: >-
+        The attacker learns the structure, controller addresses and critical plant
+        sections and uses this to plan targeted manipulation; process know-how is lost.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-e, AI-I-2-d]
+    attack_ics: [T0811, T0882]
+    iec62443: [FR4, FR2]
+    measures: [role-based-access, engineering-project-protection, data-encryption-rest]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: scada-loss-of-view
+    rev: 1
+    stride: [D]
+    applies_to: [scada-server, operator-station, alarm-server]
+    title:
+      de: Ausfall von {element} nimmt dem Personal Sicht und Kontrolle
+      en: Failure of {element} deprives personnel of view and control
+    scenario:
+      de: >-
+        Ransomware aus dem Büronetz erreicht die Windows-Rechner der Leitebene und
+        verschlüsselt Programme und Projektdaten, oder ein Angreifer stoppt gezielt die
+        SCADA-Dienste. Die Bedienstationen zeigen keine aktuellen Werte mehr und nehmen
+        keine Befehle an.
+      en: >-
+        Ransomware from the office network reaches the Windows hosts of the supervisory
+        level and encrypts programs and project data, or an attacker deliberately stops
+        the SCADA services. The operator stations no longer show current values and no
+        longer accept commands.
+    consequence:
+      de: >-
+        Das Personal kann die Anlage nicht mehr überwachen und muss sie meist geordnet
+        abfahren; Produktion fällt bis zur Wiederherstellung aus.
+      en: >-
+        Personnel can no longer monitor the plant and usually has to shut it down in an
+        orderly manner; production is lost until recovery.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    cra_refs: [AI-I-2-h, AI-I-2-k]
+    attack_ics: [T0815, T0829, T0881]
+    iec62443: [FR7, FR5]
+    measures: [backup-restore, network-segmentation, application-allowlisting, local-autonomy]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: ot-server-service-exploit
+    rev: 1
+    stride: [E, T]
+    applies_to: [scada-server, alarm-server, mes-connector, ot-patch-server, ot-domain-controller]
+    title:
+      de: Angriff auf einen erreichbaren Netzwerkdienst von {element}
+      en: Attack on a reachable network service of {element}
+    scenario:
+      de: >-
+        Der Server bietet neben der eigentlichen Funktion weitere Dienste an, z. B.
+        Webserver, Fernwartung, DCOM für OPC Classic oder herstellerspezifische Ports, die
+        aus dem gesamten Anlagen- oder Büronetz erreichbar sind. Ein Angreifer nutzt eine
+        Schwachstelle in einem dieser Dienste aus, der mit Systemrechten läuft.
+      en: >-
+        Besides its actual function the server offers further services, e.g. web server,
+        remote maintenance, DCOM for OPC Classic or vendor-specific ports, which are
+        reachable from the entire plant or office network. An attacker exploits a
+        vulnerability in one of these services, which runs with system privileges.
+    consequence:
+      de: >-
+        Der Angreifer übernimmt den Server mit höchsten Rechten, verändert dessen Daten und
+        Funktion und nutzt ihn als Sprungbrett zu weiteren OT-Systemen.
+      en: >-
+        The attacker takes over the server with the highest privileges, alters its data
+        and function and uses it as a stepping stone to further OT systems.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    cra_refs: [AI-I-2-a, AI-I-2-j, AI-I-2-k]
+    attack_ics: [T0866, T0890]
+    emb3d: [TID-202, TID-219]
+    iec62443: [FR3, FR5]
+    measures: [os-hardening, least-privilege-services, firewall-allowlist, patch-management-os]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: operator-station-shared-session
+    rev: 1
+    stride: [S]
+    applies_to: [operator-station]
+    title:
+      de: Dauerhaft angemeldete Sitzung an {element} wird von Unbefugten genutzt
+      en: Permanently logged-in session on {element} is used by unauthorised persons
+    scenario:
+      de: >-
+        Die Bedienstation meldet sich beim Start automatisch mit einem Konto mit
+        Bedienrechten an und sperrt sich nie, damit im Schichtbetrieb keine Anmeldung nötig
+        ist. Jede Person mit Zugang zur Warte oder zum Bedienpult, etwa Fremdpersonal oder
+        Besucher, bedient die Anlage unter dieser Identität.
+      en: >-
+        The operator station logs on automatically at start-up with an account holding
+        operating rights and never locks, so that no logon is needed in shift operation.
+        Anyone with access to the control room or operator desk, such as contractors or
+        visitors, operates the plant under this identity.
+    consequence:
+      de: >-
+        Unbefugte schalten Anlagenteile oder ändern Sollwerte; die Handlungen erscheinen
+        als die eines berechtigten Bedieners.
+      en: >-
+        Unauthorised persons switch plant sections or change set points; their actions
+        appear as those of an authorised operator.
+    environment: {interface: local, access: public_restricted, user: instructed}
+    impact: 3
+    cra_refs: [AI-I-2-d]
+    attack_ics: [T0859, T0823]
+    iec62443: [FR1, FR2]
+    measures: [strong-authentication, session-timeout, role-based-access, physical-access-control]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: operator-station-malware-commands
+    rev: 1
+    stride: [T, E]
+    applies_to: [operator-station]
+    title:
+      de: Schadsoftware auf {element} sendet Befehle in der Sitzung des Bedieners
+      en: Malware on {element} sends commands within the operator's session
+    scenario:
+      de: >-
+        Über einen USB-Stick, eine E-Mail-Anlage oder eine Netzfreigabe gelangt
+        Schadsoftware auf die Bedienstation. Sie nutzt die Programmierschnittstelle der
+        SCADA-Client-Software oder simuliert Maus- und Tastatureingaben, um in der
+        angemeldeten Sitzung Schalthandlungen und Sollwertänderungen auszulösen.
+      en: >-
+        Malware reaches the operator station via a USB stick, an e-mail attachment or a
+        network share. It uses the programming interface of the SCADA client software or
+        simulates mouse and keyboard input to trigger switching actions and set point
+        changes in the logged-in session.
+    consequence:
+      de: >-
+        Der Server führt die Befehle als legitime Bedienhandlungen aus; Anlagenteile
+        werden fehlgesteuert, bis hin zu gefährlichen Zuständen.
+      en: >-
+        The server executes the commands as legitimate operator actions; plant sections
+        are misoperated, up to hazardous states.
+    environment: {interface: known_network, access: public_restricted, user: instructed}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-k, AI-I-2-f]
+    attack_ics: [T0871, T0823, T0863, T0831]
+    iec62443: [FR3, FR2]
+    measures: [application-allowlisting, malware-protection, usb-port-control, operator-confirmation-remote]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: operator-station-data-capture
+    rev: 1
+    stride: [I]
+    applies_to: [operator-station]
+    title:
+      de: Abgreifen von Bildschirminhalten und Zugangsdaten auf {element}
+      en: Capture of screen content and credentials on {element}
+    scenario:
+      de: >-
+        Ein Angreifer mit Zugriff auf die Bedienstation, etwa über Fernwartung oder
+        Schadsoftware, fertigt Bildschirmaufnahmen an, exportiert Trend- und Variablenlisten
+        und liest zwischengespeicherte Anmeldedaten des SCADA-Clients aus.
+      en: >-
+        An attacker with access to the operator station, e.g. via remote maintenance or
+        malware, takes screenshots, exports trend and tag lists and reads cached
+        credentials of the SCADA client.
+    consequence:
+      de: >-
+        Prozesswissen und Anlagenzustände werden offengelegt; mit den Zugangsdaten
+        gelangt der Angreifer an Server und weitere Stationen.
+      en: >-
+        Process knowledge and plant states are disclosed; with the credentials the
+        attacker reaches servers and further stations.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-e, AI-I-2-d]
+    attack_ics: [T0852, T0893, T0882]
+    emb3d: [TID-223]
+    iec62443: [FR4]
+    measures: [secrets-protected-storage, malware-protection, remote-access-session-logging]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- MES/ERP connector -----------------------------------------------------------------
+  - id: mes-order-spoofing
+    rev: 1
+    stride: [S, T]
+    applies_to: [mes-connector]
+    title:
+      de: Gefälschte Aufträge und Rezepte über {element}
+      en: Forged orders and recipes via {element}
+    scenario:
+      de: >-
+        Die Schnittstelle nimmt Fertigungsaufträge und Rezepte aus der Produktions-IT über
+        eine Nachrichtenwarteschlange oder REST-Schnittstelle an, ohne den Absender zu
+        authentisieren oder die Nachricht auf Integrität zu prüfen. Ein Angreifer im
+        Büronetz stellt eigene Aufträge mit veränderten Rezeptparametern ein, die an die
+        Steuerungen weitergegeben werden.
+      en: >-
+        The connector accepts production orders and recipes from production IT via a
+        message queue or REST interface without authenticating the sender or checking
+        the message integrity. An attacker in the office network submits own orders with
+        altered recipe parameters, which are passed on to the controllers.
+    consequence:
+      de: >-
+        Maschinen fertigen mit falschen Parametern; es entstehen fehlerhafte Produkte,
+        Ausschuss oder Schäden an Anlage und Werkzeug.
+      en: >-
+        Machines produce with wrong parameters; defective products, scrap or damage to
+        plant and tools result.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T1692, T0836]
+    emb3d: [TID-406]
+    iec62443: [FR1, FR3]
+    measures: [mutual-tls, parameter-plausibility, recipe-change-approval, remote-command-allowlist]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: mes-transfers-not-traceable
+    rev: 1
+    stride: [R]
+    applies_to: [mes-connector]
+    title:
+      de: Über {element} übertragene Aufträge und Rezepte sind nicht nachvollziehbar
+      en: Orders and recipes transferred via {element} are not traceable
+    scenario:
+      de: >-
+        Die Schnittstelle protokolliert nicht, welcher Auftrag mit welchem Rezeptstand
+        wann von welchem System oder Benutzer an welche Maschine übergeben wurde. Ein
+        Angreifer oder Innentäter schleust einen veränderten Auftrag ein, und die Herkunft
+        lässt sich später nicht feststellen.
+      en: >-
+        The connector does not log which order with which recipe version was handed
+        over to which machine, when and by which system or user. An attacker or insider
+        slips in an altered order, and its origin cannot be determined later.
+    consequence:
+      de: >-
+        Fehlerhafte Chargen lassen sich nicht auf ihre Ursache zurückführen;
+        Rückverfolgbarkeit und Haftungsklärung sind beeinträchtigt.
+      en: >-
+        Defective batches cannot be traced back to their cause; traceability and
+        clarification of liability are impaired.
+    environment: {interface: known_network, access: restricted}
+    impact: 2
+    cra_refs: [AI-I-2-l]
+    attack_ics: [T0872]
+    iec62443: [FR6]
+    measures: [security-logging, log-protection, time-synchronization]
+    sources: ["generic OT threat knowledge"]
+
+  - id: mes-connector-credentials-exposure
+    rev: 1
+    stride: [I]
+    applies_to: [mes-connector]
+    title:
+      de: Zugangsdaten zu IT- und OT-Systemen werden aus {element} ausgelesen
+      en: Credentials for IT and OT systems are read from {element}
+    scenario:
+      de: >-
+        Die Schnittstelle speichert Zugangsdaten zu ERP- oder MES-Datenbanken und zu
+        Steuerungen bzw. OPC-UA-Servern im Klartext in Konfigurationsdateien. Ein Angreifer
+        mit Lesezugriff auf das Dateisystem oder ein Backup liest diese Daten aus.
+      en: >-
+        The connector stores credentials for ERP or MES databases and for controllers or
+        OPC UA servers in clear text in configuration files. An attacker with read access
+        to the file system or a backup reads these data.
+    consequence:
+      de: >-
+        Der Angreifer erhält Zugang zu Systemen auf beiden Seiten der Schnittstelle und
+        kann Auftragsdaten sowie Produktionsdaten lesen oder verändern.
+      en: >-
+        The attacker gains access to systems on both sides of the connector and can read
+        or alter order and production data.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-e, AI-I-2-d]
+    attack_ics: [T0893, T0859]
+    emb3d: [TID-329]
+    iec62443: [FR4, FR1]
+    measures: [secrets-protected-storage, least-privilege-services, certificate-management]
+    sources: ["generic OT threat knowledge; MITRE EMB3D"]
+
+  - id: mes-it-outage-stops-production
+    rev: 1
+    stride: [D]
+    applies_to: [mes-connector]
+    title:
+      de: Ausfall der Produktions-IT legt über {element} die Fertigung still
+      en: Outage of production IT halts manufacturing via {element}
+    scenario:
+      de: >-
+        Die Maschinen erhalten Aufträge und Rezepte ausschließlich zur Laufzeit über die
+        Schnittstelle. Ransomware im Büronetz verschlüsselt ERP- oder MES-Server, oder die
+        IT trennt im Vorfall die Verbindung zur Produktion. Die Schnittstelle liefert keine
+        Daten mehr.
+      en: >-
+        The machines receive orders and recipes exclusively at runtime via the
+        connector. Ransomware in the office network encrypts ERP or MES servers, or IT
+        cuts the connection to production during an incident. The connector no longer
+        delivers data.
+    consequence:
+      de: >-
+        Die Produktion steht still, obwohl Steuerungen und Maschinen selbst nicht
+        angegriffen wurden.
+      en: >-
+        Production stops although controllers and machines themselves were not attacked.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h, AI-I-2-i]
+    attack_ics: [T0828, T0826]
+    iec62443: [FR7]
+    measures: [local-autonomy, backup-restore, network-segmentation]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: mes-connector-it-ot-pivot
+    rev: 1
+    stride: [E]
+    applies_to: [mes-connector]
+    title:
+      de: Angreifer gelangt über {element} aus dem Büronetz in die OT
+      en: Attacker moves from the office network into OT via {element}
+    scenario:
+      de: >-
+        Der Rechner der Schnittstelle ist aus dem Büronetz erreichbar und hat zugleich
+        Verbindungen zu Steuerungen und Servern der OT. Ein Angreifer, der das Büronetz
+        kontrolliert, übernimmt diesen Rechner und nutzt ihn als Brücke, an der
+        Firewall vorbei.
+      en: >-
+        The connector host is reachable from the office network and at the same time has
+        connections to OT controllers and servers. An attacker controlling the office
+        network takes over this host and uses it as a bridge past the firewall.
+    consequence:
+      de: >-
+        Die Trennung zwischen IT und OT ist aufgehoben; der Angreifer erreicht Steuerungen
+        und Leitsysteme mit den Rechten der Schnittstelle.
+      en: >-
+        The separation between IT and OT is cancelled; the attacker reaches controllers
+        and control systems with the connector's privileges.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    cra_refs: [AI-I-2-j, AI-I-2-k]
+    attack_ics: [T0884, T0886, T0867]
+    emb3d: [TID-412]
+    iec62443: [FR5]
+    measures: [network-segmentation, firewall-allowlist, unidirectional-gateway, least-privilege-services]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- alarm server --------------------------------------------------------------------------
+  - id: alarm-settings-manipulation
+    rev: 1
+    stride: [T]
+    applies_to: [alarm-server]
+    title:
+      de: Veränderte Alarmgrenzen und Prioritäten in {element}
+      en: Altered alarm limits and priorities in {element}
+    scenario:
+      de: >-
+        Ein Angreifer mit Zugang zur Alarmverwaltung, etwa über ein kompromittiertes
+        Bedien- oder Administratorkonto, verschiebt Alarmgrenzen, senkt Prioritäten oder
+        ändert Verzögerungszeiten. Die Änderung ist in der laufenden Bedienung nicht
+        sichtbar.
+      en: >-
+        An attacker with access to alarm management, e.g. via a compromised operator or
+        administrator account, shifts alarm limits, lowers priorities or changes delay
+        times. The change is not visible during ongoing operation.
+    consequence:
+      de: >-
+        Kritische Prozesszustände werden zu spät oder mit zu niedriger Priorität gemeldet;
+        Bediener greifen nicht rechtzeitig ein und Personen sowie Anlage können zu Schaden
+        kommen.
+      en: >-
+        Critical process states are reported too late or with too low priority;
+        operators do not intervene in time and persons and plant can be harmed.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    attack_ics: [T0838]
+    iec62443: [FR3, FR2]
+    measures: [alarm-configuration-management, role-based-access, change-management]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: alarm-suppression
+    rev: 1
+    stride: [D, T]
+    applies_to: [alarm-server]
+    title:
+      de: Unterdrückung von Alarmen und Benachrichtigungen durch {element}
+      en: Suppression of alarms and notifications by {element}
+    scenario:
+      de: >-
+        Ein Angreifer setzt Alarme dauerhaft in den Zurückstellungs- oder
+        Unterdrückungszustand oder blockiert den Benachrichtigungsweg, etwa indem er das
+        SMS-Modem abschaltet oder die Zieladressen ändert. Alarme entstehen weiter, erreichen
+        aber niemanden.
+      en: >-
+        An attacker permanently puts alarms into the shelved or suppressed state or
+        blocks the notification path, e.g. by switching off the SMS modem or changing the
+        destination addresses. Alarms are still raised but reach nobody.
+    consequence:
+      de: >-
+        Störungen und gefährliche Zustände bleiben insbesondere in unbesetzten Zeiten
+        unbemerkt; Schäden und Ausfälle werden größer.
+      en: >-
+        Faults and hazardous states remain unnoticed, especially during unattended
+        periods; damage and outages increase.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-h, AI-I-2-f]
+    attack_ics: [T0878, T0815]
+    iec62443: [FR7, FR6]
+    measures: [alarm-configuration-management, watchdog-safe-state, security-logging]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: alarm-acknowledgement-spoofing
+    rev: 1
+    stride: [S]
+    applies_to: [alarm-server]
+    title:
+      de: Gefälschte Quittierung von Alarmen bei {element}
+      en: Spoofed acknowledgement of alarms at {element}
+    scenario:
+      de: >-
+        Bereitschaftspersonal quittiert Alarme per SMS-Antwort oder über eine mobile App.
+        Der Alarmserver prüft dabei nur die Absenderrufnummer oder ein einfaches Kennwort.
+        Ein Angreifer fälscht die Rufnummer oder ruft die Quittierschnittstelle direkt auf
+        und quittiert anstehende Alarme.
+      en: >-
+        On-call staff acknowledge alarms by SMS reply or via a mobile app. The alarm
+        server checks only the sender's phone number or a simple password. An attacker
+        spoofs the number or calls the acknowledgement interface directly and
+        acknowledges pending alarms.
+    consequence:
+      de: >-
+        Die Eskalation an weitere Personen unterbleibt; Störungen werden nicht bearbeitet.
+      en: >-
+        Escalation to further persons does not happen; faults are not handled.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-d]
+    attack_ics: [T0878, T0849]
+    emb3d: [TID-406]
+    iec62443: [FR1]
+    measures: [strong-authentication, alarm-configuration-management, security-logging]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: alarm-notification-leak
+    rev: 1
+    stride: [I]
+    applies_to: [alarm-server]
+    title:
+      de: Alarmmeldungen von {element} legen Anlagendetails und Personendaten offen
+      en: Alarm notifications from {element} disclose plant details and personal data
+    scenario:
+      de: >-
+        Alarme werden per SMS, E-Mail oder Push-Nachricht über externe Anbieter versandt.
+        Die Meldungen enthalten Anlagennamen, Messwerte und Standort, die Versandlisten
+        Namen und Rufnummern des Bereitschaftspersonals. Die Inhalte laufen unverschlüsselt
+        über Dritte und bleiben auf privaten Mobilgeräten gespeichert.
+      en: >-
+        Alarms are sent by SMS, e-mail or push notification via external providers. The
+        messages contain plant names, measured values and location, the distribution
+        lists contain names and phone numbers of on-call staff. The content passes
+        through third parties unencrypted and remains stored on private mobile devices.
+    consequence:
+      de: >-
+        Anlagenzustände und Schwachstellen werden Dritten bekannt; personenbezogene Daten
+        des Personals sind ungeschützt.
+      en: >-
+        Plant states and weaknesses become known to third parties; personal data of
+        staff is unprotected.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 2
+    cra_refs: [AI-I-2-e, AI-I-2-g]
+    attack_ics: [T0882]
+    emb3d: [TID-408]
+    iec62443: [FR4]
+    measures: [data-minimisation, data-encryption-transit]
+    sources: ["generic OT threat knowledge"]
+
+  # --- OT patch and antivirus management ---------------------------------------------------
+  - id: patch-server-malicious-distribution
+    rev: 1
+    stride: [T, E]
+    applies_to: [ot-patch-server]
+    title:
+      de: Kompromittierter {element} verteilt Schadsoftware an alle OT-Rechner
+      en: Compromised {element} distributes malware to all OT hosts
+    scenario:
+      de: >-
+        Ein Angreifer übernimmt den Patch- und Virenschutzserver, etwa mit gestohlenen
+        Administratorzugangsdaten. Über die Softwareverteilung stellt er eigene Pakete oder
+        Skripte bereit, die die Agenten auf allen angebundenen OT-Rechnern mit
+        Systemrechten ausführen.
+      en: >-
+        An attacker takes over the patch and antivirus management server, e.g. with
+        stolen administrator credentials. Via software distribution he provides own
+        packages or scripts, which the agents on all connected OT hosts execute with
+        system privileges.
+    consequence:
+      de: >-
+        Alle Bedien-, Engineering- und Serverrechner der OT sind gleichzeitig
+        kompromittiert; Sicht und Kontrolle über die Anlage gehen verloren.
+      en: >-
+        All operator, engineering and server hosts of the OT are compromised at the same
+        time; view and control of the plant are lost.
+    environment: {interface: known_network, access: restricted}
+    impact: 5
+    cra_refs: [AI-I-2-d, AI-I-2-f, AI-I-2-k]
+    attack_ics: [T0867, T0859]
+    iec62443: [FR1, FR2, FR3]
+    measures: [mfa-remote-access, signed-updates, application-allowlisting, ot-domain-tiering]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: patch-incompatible-rollout
+    rev: 1
+    stride: [D]
+    applies_to: [ot-patch-server]
+    title:
+      de: Ungeprüfter Patch oder Virensignatur über {element} legt die Leitebene lahm
+      en: Unqualified patch or antivirus signature via {element} disables the supervisory level
+    scenario:
+      de: >-
+        Der Server verteilt Betriebssystem-Patches oder Virensignaturen automatisch und
+        ungeprüft an alle OT-Rechner. Ein Patch ist mit der Leitsystemsoftware unverträglich
+        oder eine Signatur stuft deren Programmdateien fälschlich als Schadsoftware ein
+        und verschiebt sie in Quarantäne. Ein Angreifer kann dies gezielt herbeiführen,
+        indem er Patches zur sofortigen Installation freigibt.
+      en: >-
+        The server distributes operating system patches or antivirus signatures
+        automatically and unchecked to all OT hosts. A patch is incompatible with the
+        control system software or a signature wrongly classifies its program files as
+        malware and quarantines them. An attacker can bring this about deliberately by
+        approving patches for immediate installation.
+    consequence:
+      de: >-
+        Bedienstationen und Server fallen gleichzeitig aus; die Anlage ist bis zur
+        Wiederherstellung nicht bedienbar.
+      en: >-
+        Operator stations and servers fail simultaneously; the plant cannot be operated
+        until recovery.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    cra_refs: [AI-I-2-h, AI-I-2-c]
+    attack_ics: [T0881, T0829]
+    iec62443: [FR7, FR3]
+    measures: [ot-patch-qualification, update-rollout-staged, backup-restore]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: patch-server-spoofed-source
+    rev: 1
+    stride: [S, T]
+    applies_to: [ot-patch-server]
+    title:
+      de: OT-Rechner beziehen Updates von einem gefälschten {element}
+      en: OT hosts obtain updates from a spoofed {element}
+    scenario:
+      de: >-
+        Die Agenten auf den OT-Rechnern holen Updates über eine unverschlüsselte und nicht
+        authentisierte Verbindung, z. B. HTTP. Ein Angreifer im Netz leitet die Anfragen
+        per ARP- oder DNS-Manipulation auf einen eigenen Server um und liefert eigene
+        Pakete oder Befehle aus.
+      en: >-
+        The agents on the OT hosts fetch updates via an unencrypted and unauthenticated
+        connection, e.g. HTTP. An attacker in the network redirects the requests to an
+        own server by ARP or DNS manipulation and delivers own packages or commands.
+    consequence:
+      de: >-
+        Manipulierte Software wird auf OT-Rechnern installiert, ohne dass der echte
+        Patchserver beteiligt ist.
+      en: >-
+        Manipulated software is installed on OT hosts without the genuine patch server
+        being involved.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    cra_refs: [AI-I-2-d, AI-I-2-f, AI-II-7]
+    attack_ics: [T0830, T0849]
+    emb3d: [TID-316]
+    iec62443: [FR1, FR3]
+    measures: [update-transport-protection, signed-updates, mutual-tls]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: patch-deployment-not-traceable
+    rev: 1
+    stride: [R]
+    applies_to: [ot-patch-server]
+    title:
+      de: Freigabe und Verteilung von Software über {element} sind nicht nachvollziehbar
+      en: Approval and distribution of software via {element} are not traceable
+    scenario:
+      de: >-
+        Der Server protokolliert nicht oder nur kurzzeitig, wer welche Pakete freigegeben
+        und auf welche Rechner verteilt hat. Mehrere Administratoren nutzen ein gemeinsames
+        Konto. Ein Angreifer oder Innentäter verteilt Software, die sich später keiner
+        Person zuordnen lässt.
+      en: >-
+        The server does not log, or logs only briefly, who approved which packages and
+        distributed them to which hosts. Several administrators use a shared account. An
+        attacker or insider distributes software that cannot later be attributed to any
+        person.
+    consequence:
+      de: >-
+        Nach einem Vorfall lässt sich nicht klären, welche Rechner betroffen sind und wie
+        die Software dorthin gelangt ist.
+      en: >-
+        After an incident it cannot be determined which hosts are affected and how the
+        software got there.
+    environment: {interface: known_network, access: restricted}
+    impact: 2
+    cra_refs: [AI-I-2-l]
+    attack_ics: [T0872]
+    iec62443: [FR6, FR1]
+    measures: [security-logging, log-protection, change-management]
+    sources: ["generic OT threat knowledge"]
+
+  - id: patch-inventory-disclosure
+    rev: 1
+    stride: [I]
+    applies_to: [ot-patch-server]
+    title:
+      de: Inventar und Patchstand aus {element} werden ausgelesen
+      en: Inventory and patch level are read from {element}
+    scenario:
+      de: >-
+        Die Datenbank des Servers enthält eine vollständige Liste aller OT-Rechner mit
+        Softwareständen, fehlenden Patches und Virenschutzstatus. Berichte oder die
+        Verwaltungskonsole sind für jeden Domänenbenutzer oder über eine Netzfreigabe
+        lesbar. Ein Angreifer ruft diese Daten ab.
+      en: >-
+        The server database contains a complete list of all OT hosts with software
+        versions, missing patches and antivirus status. Reports or the management console
+        are readable for every domain user or via a network share. An attacker retrieves
+        this data.
+    consequence:
+      de: >-
+        Der Angreifer erkennt gezielt die verwundbarsten Rechner und kann seinen Angriff
+        ohne auffällige Netzscans planen.
+      en: >-
+        The attacker identifies the most vulnerable hosts precisely and can plan the
+        attack without conspicuous network scans.
+    environment: {interface: known_network, access: restricted}
+    impact: 2
+    cra_refs: [AI-I-2-e, AI-I-2-d]
+    attack_ics: [T0888, T0846]
+    iec62443: [FR4, FR2]
+    measures: [role-based-access, least-privilege-services]
+    sources: ["generic OT threat knowledge; ATT&CK for ICS v20"]
+
+  # --- OT domain controller ----------------------------------------------------------------
+  - id: ot-domain-credential-theft
+    rev: 1
+    stride: [S, I, E]
+    applies_to: [ot-domain-controller]
+    title:
+      de: Gestohlene Domänenzugangsdaten aus {element} öffnen alle OT-Rechner
+      en: Stolen domain credentials from {element} open all OT hosts
+    scenario:
+      de: >-
+        Ein Angreifer mit Administratorrechten auf einem OT-Rechner liest dort
+        zwischengespeicherte Anmeldedaten eines Domänenadministrators aus und meldet sich
+        damit am Domänencontroller an. Er kopiert die Kontendatenbank und erstellt
+        gefälschte Kerberos-Tickets.
+      en: >-
+        An attacker with administrator rights on an OT host reads cached logon data of a
+        domain administrator there and uses it to log on to the domain controller. He
+        copies the account database and forges Kerberos tickets.
+    consequence:
+      de: >-
+        Der Angreifer tritt als beliebiger Benutzer auf jedem Rechner der Domäne auf, auch
+        nach Passwortänderungen; die Kontrolle über die OT-Rechner ist vollständig verloren.
+      en: >-
+        The attacker acts as any user on every host of the domain, even after password
+        changes; control over the OT hosts is completely lost.
+    environment: {interface: known_network, access: restricted}
+    impact: 5
+    cra_refs: [AI-I-2-d, AI-I-2-e, AI-I-2-k]
+    attack_ics: [T0859, T0890]
+    emb3d: [TID-329]
+    iec62443: [FR1, FR2]
+    measures: [ot-domain-tiering, mfa-remote-access, least-privilege-services, security-logging]
+    sources: ["generic IT/OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: ot-domain-policy-abuse
+    rev: 1
+    stride: [T, E]
+    applies_to: [ot-domain-controller]
+    title:
+      de: Gruppenrichtlinien von {element} werden zur Verteilung von Schadcode missbraucht
+      en: Group policies of {element} are misused to distribute malicious code
+    scenario:
+      de: >-
+        Ein Angreifer mit Schreibrechten auf Gruppenrichtlinien erstellt eine Richtlinie,
+        die auf allen OT-Rechnern ein Startskript ausführt, Virenschutz und Firewall
+        abschaltet oder lokale Administratoren hinzufügt. Die Rechner übernehmen die
+        Richtlinie beim nächsten Abgleich.
+      en: >-
+        An attacker with write access to group policies creates a policy that runs a
+        start-up script on all OT hosts, disables antivirus and firewall or adds local
+        administrators. The hosts apply the policy at the next refresh.
+    consequence:
+      de: >-
+        Schutzmechanismen aller OT-Rechner sind auf einen Schlag ausgehebelt; Ransomware
+        oder andere Schadsoftware breitet sich in der gesamten Leitebene aus.
+      en: >-
+        Protective mechanisms of all OT hosts are overridden at once; ransomware or other
+        malware spreads across the entire supervisory level.
+    environment: {interface: known_network, access: restricted}
+    impact: 5
+    cra_refs: [AI-I-2-d, AI-I-2-f, AI-I-2-k]
+    attack_ics: [T0867, T0859]
+    iec62443: [FR2, FR3]
+    measures: [ot-domain-tiering, config-integrity-check, change-management, security-logging]
+    sources: ["generic IT/OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: ot-domain-audit-missing
+    rev: 1
+    stride: [R]
+    applies_to: [ot-domain-controller]
+    title:
+      de: Fehlende Überwachung von Anmeldungen und Kontenänderungen auf {element}
+      en: Missing auditing of logons and account changes on {element}
+    scenario:
+      de: >-
+        Der Domänencontroller protokolliert Anmeldungen, Gruppenänderungen und
+        Richtlinienänderungen nicht oder überschreibt die Protokolle nach kurzer Zeit. Ein
+        Angreifer legt Konten an, ändert Gruppenmitgliedschaften und meldet sich an vielen
+        Rechnern an, ohne Spuren zu hinterlassen.
+      en: >-
+        The domain controller does not log logons, group changes and policy changes, or
+        overwrites the logs after a short time. An attacker creates accounts, changes
+        group memberships and logs on to many hosts without leaving traces.
+    consequence:
+      de: >-
+        Der Angriff wird nicht erkannt; Umfang und Weg der Kompromittierung lassen sich
+        nicht rekonstruieren.
+      en: >-
+        The attack is not detected; scope and path of the compromise cannot be
+        reconstructed.
+    environment: {interface: known_network, access: restricted}
+    impact: 3
+    cra_refs: [AI-I-2-l]
+    attack_ics: [T0872]
+    iec62443: [FR6]
+    measures: [security-logging, log-protection, network-monitoring-ids]
+    sources: ["generic IT/OT threat knowledge"]
+
+  - id: ot-domain-outage-logon
+    rev: 1
+    stride: [D]
+    applies_to: [ot-domain-controller]
+    title:
+      de: Ausfall von {element} verhindert Anmeldungen an Bedienstationen
+      en: Failure of {element} prevents logons at operator stations
+    scenario:
+      de: >-
+        Ein Angreifer verschlüsselt den Domänencontroller oder legt ihn durch Überlast
+        lahm. Bedienstationen und Server können Benutzer nicht mehr authentisieren und
+        Namen nicht mehr auflösen; Dienste mit Domänenkonten starten nicht.
+      en: >-
+        An attacker encrypts the domain controller or disables it by overload. Operator
+        stations and servers can no longer authenticate users or resolve names; services
+        running with domain accounts do not start.
+    consequence:
+      de: >-
+        Bediener können sich nach einem Schichtwechsel oder Neustart nicht anmelden; die
+        Anlage ist nicht mehr bedienbar.
+      en: >-
+        Operators cannot log on after a shift change or restart; the plant can no longer
+        be operated.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    cra_refs: [AI-I-2-h]
+    attack_ics: [T0813, T0826]
+    iec62443: [FR7]
+    measures: [local-autonomy, backup-restore, network-segmentation]
+    sources: ["generic IT/OT threat knowledge; ATT&CK for ICS v20"]
+
+  - id: ot-domain-it-trust
+    rev: 1
+    stride: [E]
+    applies_to: [ot-domain-controller]
+    title:
+      de: Vertrauensstellung zur Büro-IT macht {element} angreifbar
+      en: Trust relationship with office IT makes {element} vulnerable
+    scenario:
+      de: >-
+        Die OT-Domäne vertraut der Domäne der Büro-IT, oder Administratoren nutzen in beiden
+        Umgebungen dieselben Konten. Ein Angreifer, der die Büro-IT übernommen hat, meldet
+        sich mit diesen Rechten an OT-Rechnern und am Domänencontroller der OT an.
+      en: >-
+        The OT domain trusts the office IT domain, or administrators use the same accounts
+        in both environments. An attacker who has taken over the office IT logs on to OT
+        hosts and the OT domain controller with these rights.
+    consequence:
+      de: >-
+        Eine Kompromittierung der Büro-IT setzt sich ungehindert in die OT fort; die
+        Netztrennung bleibt wirkungslos.
+      en: >-
+        A compromise of the office IT continues unhindered into OT; network separation
+        remains ineffective.
+    environment: {interface: known_network, access: restricted}
+    impact: 5
+    cra_refs: [AI-I-2-d, AI-I-2-j]
+    attack_ics: [T0859, T0886]
+    iec62443: [FR1, FR5]
+    measures: [ot-domain-tiering, mfa-remote-access, network-segmentation]
+    sources: ["generic IT/OT threat knowledge; ATT&CK for ICS v20"]

@@ -9,6 +9,8 @@
   let newPath = $state('')
   let newName = $state('')
   let template = $state<'tr' | 'empty'>('tr')
+  const PRODUCT_TYPES = ['ot', 'iot', 'software'] as const // order of scaffold.PRODUCT_LIBRARIES
+  let libraries = $state<string[]>(['ot'])
   let error = $state('')
   const lang = $derived(app.lang)
 
@@ -76,6 +78,7 @@
         path: newPath,
         name: newName,
         template,
+        libraries,
         language: app.lang,
       }),
       // new projects start in the setup wizard
@@ -198,7 +201,17 @@
       <option value="tr">{tr(lang, 'template_tr')}</option>
       <option value="empty">{tr(lang, 'template_empty')}</option>
     </select>
-    <button class="primary" type="submit" data-testid="create-project">{tr(lang, 'create')}</button>
+    <fieldset>
+      <legend>{tr(lang, 'product_type')}</legend>
+      {#each PRODUCT_TYPES as id (id)}
+        <label class="check">
+          <input type="checkbox" value={id} bind:group={libraries} data-testid="new-lib-{id}" />
+          {tr(lang, `lib_${id}`)}
+        </label>
+      {/each}
+      <p class="muted">{tr(lang, 'product_type_hint')}</p>
+    </fieldset>
+    <button class="primary" type="submit" disabled={!libraries.length} data-testid="create-project">{tr(lang, 'create')}</button>
   </form>
   {/if}
 </section>
@@ -280,6 +293,19 @@
   form button {
     justify-self: start;
     margin-top: 0.4rem;
+  }
+  fieldset {
+    border: none;
+    padding: 0;
+    margin: 0.25rem 0 0;
+  }
+  .check {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  fieldset p {
+    margin: 0.2rem 0 0;
   }
   .row {
     display: flex;

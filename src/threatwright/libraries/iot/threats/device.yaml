@@ -1,0 +1,530 @@
+# Threat templates for the device itself: credentials, local interfaces, debug
+# access, stored secrets, firmware robustness and misuse of the device.
+threats:
+  # --- credentials and local access ----------------------------------------------
+  - id: iot-default-password
+    rev: 1
+    stride: [S, E]
+    applies_to: [iot-device, iot-hub, device-api, iot-debug-port]
+    title:
+      de: Anmeldung an {element} mit Standard- oder Sammelpasswort
+      en: Login to {element} with a default or shared password
+    scenario:
+      de: >-
+        Alle Geräte einer Baureihe werden mit demselben Passwort ausgeliefert, oder das
+        Passwort lässt sich aus der Seriennummer oder der MAC-Adresse berechnen. Das
+        Passwort steht im Handbuch oder in einem Internetforum. Ein Angreifer im
+        Heimnetz, im Internet oder an der Debug-Konsole meldet sich damit an.
+      en: >-
+        All devices of a product line ship with the same password, or the password can
+        be calculated from the serial number or the MAC address. The password is in the
+        manual or in an internet forum. An attacker in the home network, on the
+        internet or at the debug console logs in with it.
+    consequence:
+      de: >-
+        Der Angreifer hat volle Kontrolle über das Gerät, liest Daten des Nutzers mit,
+        ändert Einstellungen und kann dasselbe bei jedem anderen Gerät der Baureihe tun.
+      en: >-
+        The attacker has full control of the device, reads the user's data, changes
+        settings and can do the same with every other device of the product line.
+    environment: {interface: known_network, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-b, AI-I-2-d]
+    etsi303645: ['5.1-1', '5.1-2']
+    measures: [iot-unique-credentials, secure-setup-guide]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.1; OWASP IoT Top 10 2018; ENISA Baseline Security Recommendations for IoT (2017)"]
+
+  - id: iot-password-guessing
+    rev: 1
+    stride: [S]
+    applies_to: [iot-device, iot-hub, device-api, iot-local-ui]
+    title:
+      de: Passwort oder PIN von {element} wird durch Ausprobieren erraten
+      en: Password or PIN of {element} is guessed by trial and error
+    scenario:
+      de: >-
+        Das Gerät begrenzt Anmeldeversuche nicht. Ein Programm im Heimnetz probiert in
+        kurzer Zeit alle vierstelligen PINs oder eine Liste häufiger Passwörter durch.
+      en: >-
+        The device does not limit login attempts. A program in the home network tries
+        all four-digit PINs or a list of common passwords within a short time.
+    consequence:
+      de: >-
+        Der Angreifer meldet sich als berechtigter Nutzer an und steuert das Gerät.
+      en: >-
+        The attacker logs in as an authorised user and controls the device.
+    environment: {interface: known_network, access: public_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-d]
+    etsi303645: ['5.1-5']
+    measures: [rate-limiting]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.1-5; OWASP IoT Top 10 2018; ENISA Baseline Security Recommendations for IoT (2017)"]
+
+  - id: local-api-unauthenticated
+    rev: 1
+    stride: [S, T, I, E]
+    applies_to: [device-api, iot-device, iot-hub]
+    title:
+      de: '{element} nimmt Befehle aus dem Heimnetz ohne Anmeldung an'
+      en: '{element} accepts commands from the home network without login'
+    scenario:
+      de: >-
+        Die lokale Schnittstelle (REST, CoAP, UPnP) ist für die App gedacht, prüft aber
+        nicht, wer fragt. Jedes Gerät im Heimnetz, etwa ein infizierter PC, ein
+        Gast-Smartphone oder eine Webseite über den Browser, kann Status abfragen,
+        Einstellungen ändern und Befehle senden.
+      en: >-
+        The local interface (REST, CoAP, UPnP) is meant for the app but does not check
+        who is asking. Any device in the home network, such as an infected PC, a guest
+        smartphone or a web page via the browser, can query status, change settings
+        and send commands.
+    consequence:
+      de: >-
+        Fremde schalten das Gerät, verstellen es oder lesen Daten wie Anwesenheit und
+        Zeitpläne aus. Bei Heizung oder Haushaltsgeräten kann das Schäden oder Kosten
+        verursachen.
+      en: >-
+        Outsiders switch or adjust the device or read data such as presence and
+        schedules. For heating or household appliances this can cause damage or cost.
+    environment: {interface: known_network, access: public_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-d, AI-I-2-j]
+    etsi303645: ['5.5-4', '5.5-5', '5.6-2']
+    measures: [local-api-auth, unused-interfaces-off]
+    sources: ["ETSI EN 303 645 V3.1.3 provisions 5.5 and 5.6; OWASP IoT Top 10 2018; ENISA Baseline Security Recommendations for IoT (2017)"]
+
+  - id: device-malformed-input
+    rev: 1
+    stride: [T, D, E]
+    applies_to: [device-api, iot-device, iot-hub, iot-firmware]
+    title:
+      de: Manipulierte Nachricht bringt {element} zum Absturz oder unter fremde Kontrolle
+      en: Malformed message crashes {element} or puts it under outside control
+    scenario:
+      de: >-
+        Ein Angreifer sendet eine absichtlich fehlerhafte Anfrage, ein überlanges
+        Funkpaket oder eine präparierte Antwort. Der Parser in der Firmware prüft Längen
+        nicht, und es kommt zu einem Speicherüberlauf.
+      en: >-
+        An attacker sends a deliberately malformed request, an oversized radio packet
+        or a crafted response. The parser in the firmware does not check lengths, and a
+        memory overflow occurs.
+    consequence:
+      de: >-
+        Das Gerät startet ständig neu oder fällt aus. Im schlimmsten Fall führt der
+        Angreifer eigenen Code aus und übernimmt das Gerät dauerhaft.
+      en: >-
+        The device keeps restarting or fails. In the worst case the attacker runs own
+        code and takes over the device permanently.
+    environment: {interface: known_network, access: public_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-h, AI-I-2-k]
+    etsi303645: ['5.13-1B', '5.6-7']
+    measures: [api-input-validation, least-privilege-firmware]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.13; generic embedded threat knowledge"]
+
+  # --- physical access ----------------------------------------------------------------
+  - id: debug-port-open
+    rev: 1
+    stride: [T, I, D, E]
+    applies_to: [iot-debug-port, iot-device, iot-hub, iot-firmware]
+    title:
+      de: Offene Debug-Schnittstelle an {element} gibt vollen Zugriff
+      en: Open debug interface on {element} gives full access
+    scenario:
+      de: >-
+        Jemand kauft das Gerät oder hat kurz Zugang dazu, öffnet das Gehäuse und
+        schließt einen günstigen Adapter an UART, JTAG oder SWD an. Die Schnittstelle ist
+        in der Serienfirmware nicht gesperrt und bietet eine Konsole ohne Passwort oder
+        direkten Speicherzugriff.
+      en: >-
+        Someone buys the device or has brief access to it, opens the housing and
+        connects a cheap adapter to UART, JTAG or SWD. The interface is not locked in
+        the production firmware and offers a console without password or direct memory
+        access.
+    consequence:
+      de: >-
+        Der Angreifer liest Firmware und Schlüssel aus, ändert die Firmware, hält den
+        Prozessor an oder löscht den Speicher. Erkenntnisse daraus helfen beim Angriff
+        auf alle Geräte der Baureihe.
+      en: >-
+        The attacker reads out firmware and keys, modifies the firmware, halts the
+        processor or erases the memory. Findings help to attack all devices of the
+        product line.
+    environment: {interface: physical, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-d, AI-I-2-j]
+    etsi303645: ['5.6-4A', '5.6-4B']
+    measures: [debug-port-locked]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.6-4; generic embedded threat knowledge"]
+
+  - id: firmware-key-extraction
+    rev: 1
+    stride: [I]
+    applies_to: [iot-firmware, iot-credentials-store, iot-device, iot-debug-port]
+    title:
+      de: Firmware und Schlüssel werden aus {element} ausgelesen
+      en: Firmware and keys are read out of {element}
+    scenario:
+      de: >-
+        Ein Angreifer lötet den Flash-Speicher aus oder liest ihn über die Platine aus.
+        Firmware, Zertifikate, privater Geräteschlüssel und WLAN-Passwort liegen dort
+        unverschlüsselt.
+      en: >-
+        An attacker desolders the flash memory or reads it via the board. Firmware,
+        certificates, private device key and Wi-Fi password are stored there
+        unencrypted.
+    consequence:
+      de: >-
+        Der Angreifer gibt sich gegenüber der Cloud als dieses Gerät aus, gelangt mit
+        dem WLAN-Passwort ins Heimnetz des Vorbesitzers und sucht in der Firmware in Ruhe
+        nach Schwachstellen.
+      en: >-
+        The attacker impersonates this device towards the cloud, enters the previous
+        owner's home network with the Wi-Fi password and searches the firmware for
+        vulnerabilities at leisure.
+    environment: {interface: physical, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-e]
+    etsi303645: ['5.4-1', '5.4-2']
+    measures: [secure-element-keys, debug-port-locked]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.4; generic embedded threat knowledge"]
+
+  - id: firmware-hardcoded-secrets
+    rev: 1
+    stride: [S, I, E]
+    applies_to: [iot-firmware, companion-app, ota-service]
+    title:
+      de: Fest eingebautes Geheimnis in {element} gilt für alle Geräte
+      en: Secret built into {element} is valid for all devices
+    scenario:
+      de: >-
+        Im Programmcode stehen ein API-Schlüssel für die Cloud, ein Service-Passwort
+        oder ein symmetrischer Schlüssel, der in jeder Firmware oder App gleich ist. Wer
+        die Firmware oder die App zerlegt, findet ihn in wenigen Minuten.
+      en: >-
+        The program code contains an API key for the cloud, a service password or a
+        symmetric key that is the same in every firmware or app. Anyone who
+        disassembles the firmware or the app finds it within minutes.
+    consequence:
+      de: >-
+        Mit dem einen Geheimnis greift der Angreifer auf alle Geräte oder die
+        Cloud-Schnittstelle zu. Austauschen lässt es sich nur durch ein Update aller
+        Geräte und Apps.
+      en: >-
+        With the one secret the attacker accesses all devices or the cloud interface.
+        It can only be replaced by updating all devices and apps.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 5
+    cra_refs: [AI-I-2-d, AI-I-2-e]
+    etsi303645: ['5.4-3', '5.1-2A']
+    masvs: [MASVS-CRYPTO-2]
+    measures: [no-hardcoded-secrets, iot-unique-credentials]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.4-3; OWASP MASVS v2"]
+
+  - id: device-identity-copied
+    rev: 1
+    stride: [S]
+    applies_to: [iot-device, iot-hub, iot-credentials-store]
+    title:
+      de: Identität von {element} wird kopiert und missbraucht
+      en: Identity of {element} is copied and misused
+    scenario:
+      de: >-
+        Der Geräteschlüssel lässt sich auslesen oder ist aus öffentlichen Daten
+        ableitbar. Ein Angreifer meldet sich mit der kopierten Identität bei der Cloud an,
+        etwa mit einem Skript auf einem Server.
+      en: >-
+        The device key can be read out or derived from public data. An attacker logs in
+        to the cloud with the copied identity, for example with a script on a server.
+    consequence:
+      de: >-
+        Der Angreifer empfängt Befehle und Daten, die für das echte Gerät bestimmt sind,
+        oder schickt falsche Messwerte an Cloud und App.
+      en: >-
+        The attacker receives commands and data meant for the real device or sends
+        false readings to cloud and app.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-d]
+    etsi303645: ['5.4-2']
+    measures: [secure-element-keys, iot-unique-credentials]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.4-2; OWASP IoT Top 10 2018; ENISA Baseline Security Recommendations for IoT (2017)"]
+
+  - id: credential-store-tampering
+    rev: 1
+    stride: [T]
+    applies_to: [iot-credentials-store]
+    title:
+      de: Inhalt von {element} wird ausgetauscht
+      en: Content of {element} is replaced
+    scenario:
+      de: >-
+        Mit Zugriff auf den Speicher oder über eine Schwachstelle ersetzt ein Angreifer
+        das hinterlegte Cloud-Zertifikat, die Server-Adresse oder die
+        Vertrauensanker für Updates.
+      en: >-
+        With access to the memory or via a vulnerability, an attacker replaces the
+        stored cloud certificate, the server address or the trust anchors for updates.
+    consequence:
+      de: >-
+        Das Gerät verbindet sich mit einem Server des Angreifers und akzeptiert dessen
+        Befehle und Updates.
+      en: >-
+        The device connects to an attacker's server and accepts its commands and
+        updates.
+    environment: {interface: physical, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-f]
+    etsi303645: ['5.4-4', '5.7-1']
+    measures: [secure-element-keys, verified-boot]
+    sources: ["ETSI EN 303 645 V3.1.3 provisions 5.4-4 and 5.7-1"]
+
+  - id: credential-store-loss
+    rev: 1
+    stride: [D]
+    applies_to: [iot-credentials-store]
+    title:
+      de: '{element} wird beschädigt, das Gerät verliert seine Verbindung'
+      en: '{element} gets corrupted, the device loses its connection'
+    scenario:
+      de: >-
+        Stromausfall während eines Schreibvorgangs, ein fehlerhaftes Update oder
+        absichtlich ausgelöste Dauer-Schreibzugriffe zerstören Schlüssel oder
+        WLAN-Daten im Flash.
+      en: >-
+        A power failure during a write, a faulty update or deliberately triggered
+        continuous writes destroy keys or Wi-Fi data in the flash.
+    consequence:
+      de: >-
+        Das Gerät kann sich nicht mehr mit WLAN oder Cloud verbinden. Der Nutzer muss es
+        neu einrichten oder einschicken.
+      en: >-
+        The device can no longer connect to Wi-Fi or cloud. The user has to set it up
+        again or send it in.
+    environment: {interface: local, access: public_restricted}
+    impact: 2
+    cra_refs: [AI-I-2-h]
+    etsi303645: ['5.9-1']
+    measures: [power-fail-safe-updates, secure-factory-reset]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.9-1; generic embedded engineering knowledge"]
+
+  # --- on-device controls and reset ---------------------------------------------------
+  - id: local-controls-tampering
+    rev: 1
+    stride: [S, T, I]
+    applies_to: [iot-local-ui]
+    title:
+      de: Unbefugte ändern über {element} sicherheitsrelevante Einstellungen
+      en: Unauthorised persons change security-relevant settings via {element}
+    scenario:
+      de: >-
+        Eine Tastenkombination öffnet ein Service-Menü, in dem sich ohne PIN der
+        Fernzugriff einschalten, die WLAN-Verbindung ändern oder das gespeicherte
+        WLAN-Passwort im Display anzeigen lässt. Besucher, Handwerker oder Kinder kommen
+        an das Gerät heran.
+      en: >-
+        A button combination opens a service menu where remote access can be
+        switched on, the Wi-Fi connection changed or the stored Wi-Fi password shown
+        on the display without a PIN. Visitors, tradespeople or children can reach the
+        device.
+    consequence:
+      de: >-
+        Das Gerät wird unbemerkt für Fremde geöffnet oder liefert Geheimnisse preis.
+      en: >-
+        The device is opened up to outsiders unnoticed or discloses secrets.
+    environment: {interface: physical, access: public_restricted, user: layman}
+    impact: 3
+    cra_refs: [AI-I-2-d]
+    etsi303645: ['5.5-5']
+    measures: [local-ui-protection]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.5-5"]
+
+  - id: insecure-factory-reset
+    rev: 1
+    stride: [S, T, D, E]
+    applies_to: [iot-local-ui, iot-device, iot-hub]
+    title:
+      de: Werksreset an {element} öffnet das Gerät für Fremde
+      en: Factory reset of {element} opens the device to outsiders
+    scenario:
+      de: >-
+        Ein kurzer Tastendruck, ein Befehl über die lokale Schnittstelle oder die App
+        setzt das Gerät zurück. Danach öffnet es einen ungeschützten Einrichtungsmodus,
+        in dem sich der Nächstbeste als Besitzer eintragen kann.
+      en: >-
+        A short button press, a command via the local interface or the app resets the
+        device. Afterwards it opens an unprotected setup mode in which anyone nearby can
+        register as owner.
+    consequence:
+      de: >-
+        Das Gerät fällt aus, bis der Nutzer es neu einrichtet, oder ein Fremder
+        übernimmt es dauerhaft.
+      en: >-
+        The device stops working until the user sets it up again, or an outsider takes
+        it over permanently.
+    environment: {interface: physical, access: public_restricted, user: layman}
+    impact: 3
+    cra_refs: [AI-I-2-b, AI-I-2-d]
+    etsi303645: ['5.5-4', '5.5-5']
+    measures: [secure-factory-reset, secure-pairing]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.5; OWASP IoT Top 10 2018; ENISA Baseline Security Recommendations for IoT (2017)"]
+
+  # --- impact on others ---------------------------------------------------------------
+  - id: device-botnet-node
+    rev: 1
+    stride: [E, D]
+    applies_to: [iot-device, iot-hub, iot-firmware]
+    title:
+      de: '{element} wird Teil eines Botnetzes'
+      en: '{element} becomes part of a botnet'
+    scenario:
+      de: >-
+        Automatisierte Schadsoftware durchsucht das Internet nach erreichbaren Geräten
+        mit Standardpasswort, offenen Diensten (Telnet, UPnP) oder bekannten
+        Schwachstellen und installiert sich darauf.
+      en: >-
+        Automated malware scans the internet for reachable devices with default
+        passwords, open services (Telnet, UPnP) or known vulnerabilities and installs
+        itself on them.
+    consequence:
+      de: >-
+        Das Gerät greift im Verbund mit tausenden anderen fremde Server oder Netze an,
+        verbraucht Bandbreite des Nutzers und erfüllt seine eigentliche Funktion nur noch
+        eingeschränkt. Der Ruf des Herstellers leidet.
+      en: >-
+        Together with thousands of others the device attacks third-party servers or
+        networks, consumes the user's bandwidth and performs its actual function only
+        partly. The manufacturer's reputation suffers.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-i, AI-I-2-j]
+    etsi303645: ['5.6-1', '5.6-2', '5.1-1']
+    measures: [unused-interfaces-off, iot-unique-credentials, automatic-updates]
+    sources: ["ETSI EN 303 645 V3.1.3 provisions 5.1 and 5.6; OWASP IoT Top 10 2018; ENISA Baseline Security Recommendations for IoT (2017)"]
+
+  - id: hub-pivot
+    rev: 1
+    stride: [E, T]
+    applies_to: [iot-hub]
+    title:
+      de: Übernommener {element} steuert alle angebundenen Geräte
+      en: Compromised {element} controls all connected devices
+    scenario:
+      de: >-
+        Ein Angreifer übernimmt den Hub über eine Schwachstelle. Alle Dienste laufen
+        dort mit vollen Rechten, und der Hub besitzt die Schlüssel des gesamten
+        Funknetzes.
+      en: >-
+        An attacker takes over the hub through a vulnerability. All services run there
+        with full privileges, and the hub holds the keys of the entire radio network.
+    consequence:
+      de: >-
+        Der Angreifer schaltet Türschlösser, Heizung oder Alarmanlage und nutzt den Hub
+        als Brücke ins Heimnetz.
+      en: >-
+        The attacker operates door locks, heating or alarm system and uses the hub as a
+        bridge into the home network.
+    environment: {interface: known_network, access: public_restricted}
+    impact: 5
+    cra_refs: [AI-I-2-k, AI-I-2-d]
+    etsi303645: ['5.6-7', '5.6-5']
+    measures: [least-privilege-firmware, unused-interfaces-off]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.6; OWASP IoT Top 10 2018; ENISA Baseline Security Recommendations for IoT (2017)"]
+
+  # --- logging -------------------------------------------------------------------------
+  - id: device-security-events-unlogged
+    rev: 1
+    stride: [R]
+    applies_to: [iot-device, iot-hub, iot-firmware, device-api, pairing, iot-debug-port, iot-local-ui, iot-credentials-store]
+    title:
+      de: Sicherheitsereignisse an {element} werden nicht festgehalten
+      en: Security events on {element} are not recorded
+    scenario:
+      de: >-
+        Fehlgeschlagene Anmeldungen, neue Kopplungen, Werksreset, Firmware-Wechsel oder
+        geänderte Einstellungen hinterlassen keine Spur, weder im Gerät noch in der
+        Cloud.
+      en: >-
+        Failed logins, new pairings, factory reset, firmware changes or changed
+        settings leave no trace, neither on the device nor in the cloud.
+    consequence:
+      de: >-
+        Angriffe bleiben unbemerkt. Bei einer Beschwerde oder einem Vorfall lässt sich
+        nicht klären, wer was wann getan hat, und Meldepflichten lassen sich nicht
+        erfüllen.
+      en: >-
+        Attacks go unnoticed. After a complaint or incident it cannot be established
+        who did what and when, and reporting obligations cannot be met.
+    environment: {interface: known_network, access: public_restricted}
+    impact: 2
+    cra_refs: [AI-I-2-l]
+    etsi303645: ['5.10-1', '5.7-2']
+    measures: [security-event-logging]
+    sources: ["ETSI EN 303 645 V3.1.3 provisions 5.7-2 and 5.10; TR-03183-1 Annex B"]
+
+  # --- hardware attacks and supply chain -------------------------------------------------
+  - id: fault-injection-bypass
+    rev: 1
+    stride: [T, I, E]
+    applies_to: [iot-device, iot-firmware, iot-credentials-store]
+    title:
+      de: Ausleseschutz oder sicherer Start von {element} wird durch Fehlerinjektion umgangen
+      en: Readout protection or secure boot of {element} is bypassed by fault injection
+    scenario:
+      de: >-
+        Ein Angreifer stört mit einfacher, frei erhältlicher Ausrüstung im richtigen
+        Moment die Versorgungsspannung oder den Takt des Mikrocontrollers. Der Baustein
+        überspringt dadurch die Prüfung der Debug-Sperre oder der Firmware-Signatur.
+        Anleitungen für verbreitete Mikrocontroller sind öffentlich.
+      en: >-
+        With simple, freely available equipment an attacker disturbs the supply voltage
+        or the clock of the microcontroller at the right moment. The chip thereby skips
+        the check of the debug lock or of the firmware signature. Instructions for
+        common microcontrollers are public.
+    consequence:
+      de: >-
+        Firmware und Schlüssel werden trotz Sperre ausgelesen oder eine fremde Firmware
+        startet. Gelten die Schlüssel für mehrere Geräte, ist die ganze Baureihe
+        betroffen.
+      en: >-
+        Firmware and keys are read out despite the lock, or foreign firmware boots. If
+        the keys apply to several devices, the whole product line is affected.
+    environment: {interface: physical, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-e, AI-I-2-f]
+    etsi303645: ['5.4-1', '5.7-1', '5.6-4A']
+    measures: [fault-injection-hardening, secure-element-keys, iot-unique-credentials]
+    sources: ["OWASP IoT Top 10 2018; ETSI EN 303 645 V3.1.3 provisions 5.4 and 5.7"]
+
+  - id: odm-firmware-backdoor
+    rev: 1
+    stride: [S, E]
+    applies_to: [iot-firmware, iot-device, iot-hub]
+    title:
+      de: Zugekaufte Firmware von {element} enthält einen versteckten Zugang
+      en: Purchased firmware of {element} contains a hidden access
+    scenario:
+      de: >-
+        Gerät oder Funkmodul stammen von einem Auftragsfertiger (ODM, White Label) und
+        werden unter eigener Marke verkauft. Die Firmware enthält einen Wartungszugang
+        mit festem Passwort, einen Telnet-Dienst oder eine Verbindung zu einem Server
+        des Zulieferers, von der der Hersteller nichts weiß.
+      en: >-
+        Device or radio module come from a contract manufacturer (ODM, white label) and
+        are sold under the own brand. The firmware contains a maintenance access with a
+        fixed password, a Telnet service or a connection to a server of the supplier
+        that the manufacturer does not know about.
+    consequence:
+      de: >-
+        Zulieferer oder jeder, der den Zugang entdeckt, steuert alle Geräte. Der
+        Hersteller haftet trotzdem als Inverkehrbringer.
+      en: >-
+        The supplier, or anyone who discovers the access, controls all devices. The
+        manufacturer is nevertheless liable as the one placing the product on the market.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 5
+    cra_refs: [AI-I-2-a, AI-I-2-d, AI-II-1]
+    etsi303645: ['5.4-3', '5.6-5', '5.6-9']
+    measures: [odm-firmware-review, sbom-maintained, unused-interfaces-off]
+    sources: ["OWASP IoT Top 10 2018; ENISA Baseline Security Recommendations for IoT (2017)"]

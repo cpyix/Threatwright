@@ -38,7 +38,7 @@ my-product/
       questions/Q-0001.yaml    open questions
 ```
 
-Create a project with `threatwright init my-product --name "My product" --language en` (template `tr` is the TR-03183-1 default with four zones and the OT library).
+Create a project with `threatwright init my-product --name "My product" --language en` (template `tr` is the TR-03183-1 default with four zones; the OT library is the default). Choose the product type with `--library`/`-l ot|iot|software` (repeatable, e.g. `-l iot -l software`); without `ot` the third zone is `Z-LAN` (local network, LAN/WLAN).
 
 Id prefixes: `E` elements, `F` flows, `A` assets, `T` threats, `M` measures, `Q` questions; ids look like `T-0007` (pattern `^[A-Za-z][A-Za-z0-9_]*-[0-9]{4,}$`).
 
@@ -203,7 +203,7 @@ threats: [T-0004]
 
 ## Library building blocks
 
-Projects with `libraries: [ot]` use the bundled OT library: element types, threat and measure templates. In an installed Threatwright the files are in the package folder `threatwright/libraries/ot/` (`elements.yaml`, `threats/*.yaml`, `measures/*.yaml`). A template has `id`, `rev`, `stride`, `applies_to` (element types), bilingual `title`/`scenario`/`consequence` with an `{element}` placeholder, `impact`, `measures` and `cra_refs`.
+Projects use the bundled libraries listed in `libraries:` (`ot` for machines and plants, `iot` for connected devices with ETSI EN 303 645 references, `software` with OWASP ASVS/MASVS references; the examples below use `ot`). A library provides element types, threat and measure templates. In an installed Threatwright the files are in the package folder `threatwright/libraries/ot/` (`elements.yaml`, `threats/*.yaml`, `measures/*.yaml`). A template has `id`, `rev`, `stride`, `applies_to` (element types), bilingual `title`/`scenario`/`consequence` with an `{element}` placeholder, `impact`, `measures` and `cra_refs`.
 
 When you adopt a template, copy its texts in the project language, replace `{element}` with the target's title, set `library_ref: lib:ot/threat/<id>@<rev>` (elements: `lib:ot/element/<id>@<rev>`, measures: `lib:ot/measure/<id>@<rev>`) set `cyber_cause: true` (see rule 7) and still decide the assessment for this product. `threatwright library update <project>` lists objects whose template has a newer revision.
 

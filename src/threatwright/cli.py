@@ -164,6 +164,12 @@ def validate_cmd(
     raise typer.Exit(1 if has_errors(issues, strict) else 0)
 
 
+class ProductType(StrEnum):  # keys of scaffold.PRODUCT_LIBRARIES
+    ot = "ot"
+    iot = "iot"
+    software = "software"
+
+
 @app.command("init")
 def init_cmd(
     path: Annotated[Path, typer.Argument(help="Folder for the new project.")] = Path("."),
@@ -172,11 +178,15 @@ def init_cmd(
     ),
     name: Annotated[str | None, typer.Option(help="Project name.")] = None,
     language: Annotated[Language, typer.Option(help="Project language.")] = Language.de,
+    library: Annotated[
+        list[ProductType],
+        typer.Option("--library", "-l", help="Product type (library); repeatable."),
+    ] = [ProductType.ot],  # noqa: B006 - typer needs the list default
 ) -> None:
     """Create a new project."""
     try:
-        create_project(path, template.value, name, language.value)
-    except ProjectExists as exc:
+        create_project(path, template.value, name, language.value, [x.value for x in library])
+    except (ProjectExists, ValueError) as exc:
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(1) from exc
     typer.echo(f"created {PRODUCT_NAME} project in {path}")

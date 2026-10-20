@@ -1,0 +1,734 @@
+# Technical measures for connected and consumer devices, app and vendor cloud.
+measures:
+  # --- credentials and access -------------------------------------------------------
+  - id: iot-unique-credentials
+    rev: 1
+    title:
+      de: Eindeutige Zugangsdaten je Gerät
+      en: Unique credentials per device
+    description:
+      de: >-
+        Jedes Gerät erhält in der Fertigung eigene, zufällige Passwörter und Schlüssel,
+        die sich nicht aus Seriennummer, MAC-Adresse oder anderen sichtbaren Daten
+        ableiten lassen. Alternativ legt der Nutzer bei der Einrichtung ein eigenes
+        Passwort fest, bevor das Gerät Netzfunktionen freigibt. Gemeinsame
+        Service-Passwörter für eine Baureihe gibt es nicht.
+      en: >-
+        Each device receives its own random passwords and keys during production that
+        cannot be derived from serial number, MAC address or other visible data.
+        Alternatively the user sets an own password during setup before the device
+        enables network functions. There are no shared service passwords for a product
+        line.
+    kind: technical
+    evidence:
+      de: >-
+        Fertigungsanweisung zur Erzeugung der Zugangsdaten; Stichprobe zweier Geräte mit
+        unterschiedlichen Zugangsdaten; Suche nach festen Passwörtern in der Firmware.
+      en: >-
+        Production instruction for generating credentials; sample of two devices with
+        different credentials; search for fixed passwords in the firmware.
+    cra_refs: [AI-I-2-b, AI-I-2-d]
+    etsi303645: ['5.1-1', '5.1-2']
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.1"]
+
+  - id: rate-limiting
+    rev: 1
+    title:
+      de: Begrenzung von Anmeldeversuchen und Anfragen
+      en: Limiting login attempts and requests
+    description:
+      de: >-
+        Nach mehreren Fehlversuchen verlängert sich die Wartezeit bis zum nächsten
+        Versuch. Gerät, lokale Schnittstelle und Cloud begrenzen außerdem Anzahl und
+        Größe von Anfragen je Absender, damit eine Anfrageflut den Dienst nicht lahmlegt.
+      en: >-
+        After several failed attempts the waiting time until the next attempt
+        increases. Device, local interface and cloud also limit number and size of
+        requests per sender so that a request flood does not disable the service.
+    kind: technical
+    evidence:
+      de: Test mit automatisierten Fehlversuchen und Lasttest der Schnittstelle.
+      en: Test with automated failed attempts and load test of the interface.
+    cra_refs: [AI-I-2-d, AI-I-2-h]
+    etsi303645: ['5.1-5']
+    asvs: [V2.4.1, V6.3.1]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.1-5; OWASP ASVS 5.0.0"]
+
+  - id: local-api-auth
+    rev: 1
+    title:
+      de: Anmeldung an der lokalen Schnittstelle
+      en: Authentication on the local interface
+    description:
+      de: >-
+        Die lokale Schnittstelle beantwortet Anfragen und Befehle nur nach Anmeldung,
+        z. B. mit einem bei der Kopplung vereinbarten Schlüssel, und verschlüsselt die
+        Verbindung. Änderungen an sicherheitsrelevanten Einstellungen erfordern
+        immer eine Anmeldung. Ohne Anmeldung erreichbar ist höchstens, was für die
+        Einrichtung nötig ist.
+      en: >-
+        The local interface answers requests and commands only after authentication,
+        e.g. with a key agreed during pairing, and encrypts the connection. Changes to
+        security-relevant settings always require authentication. At most what is
+        needed for setup is reachable without authentication.
+    kind: technical
+    evidence:
+      de: Portscan und Testanfragen ohne Anmeldung aus dem Heimnetz.
+      en: Port scan and test requests without authentication from the home network.
+    cra_refs: [AI-I-2-d]
+    etsi303645: ['5.5-4', '5.5-5', '5.6-2']
+    sources: ["ETSI EN 303 645 V3.1.3 provisions 5.5 and 5.6"]
+
+  - id: unused-interfaces-off
+    rev: 1
+    title:
+      de: Nicht benötigte Dienste und Schnittstellen abgeschaltet
+      en: Unneeded services and interfaces switched off
+    description:
+      de: >-
+        Telnet, SSH, UPnP, Test-Webseiten und ungenutzte Funkschnittstellen sind in der
+        Serienfirmware nicht vorhanden oder ab Werk abgeschaltet. Ins Internet sind keine
+        Ports geöffnet; das Gerät baut Verbindungen zur Cloud selbst auf.
+      en: >-
+        Telnet, SSH, UPnP, test web pages and unused radio interfaces are not present in
+        the production firmware or switched off at delivery. No ports are opened to the
+        internet; the device establishes connections to the cloud itself.
+    kind: technical
+    evidence:
+      de: Portscan des Seriengeräts; Liste der aktiven Dienste.
+      en: Port scan of the production device; list of active services.
+    cra_refs: [AI-I-2-j]
+    etsi303645: ['5.6-1', '5.6-2', '5.6-5']
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.6"]
+
+  - id: account-mfa
+    rev: 1
+    title:
+      de: Zweiter Faktor und Schutz für Kundenkonten
+      en: Second factor and protection for customer accounts
+    description:
+      de: >-
+        Kundenkonten bieten einen zweiten Faktor an (App-Code, Passkey). Die Cloud
+        lehnt bekannte geleakte Passwörter ab, erkennt automatisierte Anmeldeversuche und
+        benachrichtigt den Nutzer bei Anmeldung von einem neuen Gerät.
+      en: >-
+        Customer accounts offer a second factor (app code, passkey). The cloud rejects
+        known leaked passwords, detects automated login attempts and notifies the user
+        about logins from a new device.
+    kind: technical
+    evidence:
+      de: Testkonto mit aktiviertem zweitem Faktor; Test der Benachrichtigung.
+      en: Test account with second factor enabled; test of the notification.
+    cra_refs: [AI-I-2-d]
+    etsi303645: ['5.1-3']
+    asvs: [V6.3.3]
+    masvs: [MASVS-AUTH-1]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.1-3; OWASP ASVS 5.0.0"]
+
+  - id: tenant-isolation
+    rev: 1
+    title:
+      de: Strikte Trennung der Kunden in der Cloud
+      en: Strict separation of customers in the cloud
+    description:
+      de: >-
+        Die Cloud prüft bei jeder Anfrage, ob das angefragte Gerät oder Datum zum
+        angemeldeten Konto gehört. Jedes Gerät darf am Broker nur die eigenen Themen
+        lesen und schreiben. Automatisierte Tests versuchen gezielt, mit einem Konto auf
+        Daten eines anderen zuzugreifen.
+      en: >-
+        For each request the cloud checks whether the requested device or record
+        belongs to the logged-in account. Each device may only read and write its own
+        topics at the broker. Automated tests specifically try to access another
+        account's data with one account.
+    kind: technical
+    evidence:
+      de: Testfälle mit zwei Konten; Zugriffsregeln des Brokers.
+      en: Test cases with two accounts; access rules of the broker.
+    cra_refs: [AI-I-2-d, AI-I-2-e]
+    etsi303645: ['5.5-5', '5.6-7']
+    asvs: [V8.2.2]
+    sources: ["OWASP ASVS 5.0.0; ETSI EN 303 645 V3.1.3"]
+
+  - id: integration-token-scoping
+    rev: 1
+    title:
+      de: Begrenzte und widerrufbare Tokens für Integrationen
+      en: Limited and revocable tokens for integrations
+    description:
+      de: >-
+        Drittdienste erhalten Tokens nur über ein Standardverfahren (z. B. OAuth) mit
+        Zustimmung des Nutzers, nur für die nötigen Geräte und Funktionen und mit
+        begrenzter Laufzeit. Der Nutzer sieht verknüpfte Dienste in der App und kann sie
+        jederzeit trennen. Eingehende Anfragen von Drittdiensten werden auf ihre Herkunft
+        geprüft.
+      en: >-
+        Third-party services receive tokens only via a standard procedure (e.g. OAuth)
+        with the user's consent, only for the necessary devices and functions and with
+        limited lifetime. The user sees linked services in the app and can disconnect
+        them at any time. Incoming requests from third-party services are checked for
+        their origin.
+    kind: technical
+    evidence:
+      de: Integrationsbeschreibung; Test des Widerrufs.
+      en: Integration description; test of revocation.
+    cra_refs: [AI-I-2-d]
+    etsi303645: ['5.5-8']
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.5-8; generic OAuth practice"]
+
+  # --- pairing and radio -------------------------------------------------------------
+  - id: secure-pairing
+    rev: 1
+    title:
+      de: Sichere Einrichtung und Kopplung
+      en: Secure onboarding and pairing
+    description:
+      de: >-
+        Die Kopplung setzt einen Nachweis voraus, dass der Nutzer das Gerät vor sich hat:
+        QR-Code oder Code auf dem Gerät, Tastendruck oder ein Einrichtungscode im
+        Lieferumfang. Der Kopplungsmodus ist zeitlich begrenzt. Zugangsdaten werden
+        während der Einrichtung nur verschlüsselt übertragen. Funknetze verwenden
+        gerätespezifische Beitrittsschlüssel statt bekannter Standardschlüssel.
+      en: >-
+        Pairing requires proof that the user has the device in hand: QR code or code on
+        the device, button press or a setup code included in the package. Pairing mode
+        is time-limited. Credentials are transmitted only encrypted during setup. Radio
+        networks use device-specific join keys instead of well-known default keys.
+    kind: technical
+    evidence:
+      de: Beschreibung des Einrichtungsablaufs; Test der Kopplung ohne Code.
+      en: Description of the setup flow; test of pairing without code.
+    cra_refs: [AI-I-2-b, AI-I-2-d]
+    etsi303645: ['5.5-4', '5.5-7', '5.12-1']
+    sources: ["ETSI EN 303 645 V3.1.3 provisions 5.5 and 5.12"]
+
+  - id: radio-encryption
+    rev: 1
+    title:
+      de: Verschlüsselung und Integritätsschutz der Funkverbindungen
+      en: Encryption and integrity protection of radio links
+    description:
+      de: >-
+        Alle Funkverbindungen nutzen aktuelle Verfahren mit Verschlüsselung und Schutz
+        gegen Veränderung: WPA2 oder WPA3 für WLAN, gekoppeltes BLE mit LE Secure
+        Connections, Zigbee und Thread mit eindeutigem Netzwerkschlüssel, Matter mit
+        gesicherten Sitzungen. Unverschlüsselte Fallbacks sind abgeschaltet.
+      en: >-
+        All radio links use current methods with encryption and protection against
+        modification: WPA2 or WPA3 for Wi-Fi, paired BLE with LE Secure Connections,
+        Zigbee and Thread with a unique network key, Matter with secured sessions.
+        Unencrypted fallbacks are switched off.
+    kind: technical
+    evidence:
+      de: Mitschnitt der Funkkommunikation; Konfiguration des Funk-Stacks.
+      en: Capture of the radio communication; radio stack configuration.
+    cra_refs: [AI-I-2-e, AI-I-2-f]
+    etsi303645: ['5.5-1', '5.8-1']
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.5-1"]
+
+  - id: replay-protection
+    rev: 1
+    title:
+      de: Schutz vor wiedereingespielten Befehlen
+      en: Protection against replayed commands
+    description:
+      de: >-
+        Jede Nachricht enthält einen Zähler, Zeitstempel oder eine Einmalzahl, die der
+        Empfänger prüft. Bereits gesehene oder zu alte Nachrichten werden verworfen. Der
+        Zähler übersteht Neustarts.
+      en: >-
+        Each message contains a counter, timestamp or nonce that the recipient checks.
+        Messages already seen or too old are discarded. The counter survives restarts.
+    kind: technical
+    evidence:
+      de: Test mit einem aufgezeichneten und erneut gesendeten Befehl.
+      en: Test with a recorded and resent command.
+    cra_refs: [AI-I-2-f]
+    etsi303645: ['5.5-1']
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.5-1"]
+
+  - id: tls-cert-validation
+    rev: 1
+    title:
+      de: Prüfung des Server-Zertifikats
+      en: Server certificate validation
+    description:
+      de: >-
+        Gerät und App bauen Verbindungen zur Cloud nur mit TLS auf und prüfen das
+        Zertifikat vollständig (Aussteller, Name, Gültigkeit). Für eigene Server ist das
+        erwartete Zertifikat oder die eigene Zertifizierungsstelle fest hinterlegt.
+        Fehler führen zum Abbruch, nicht zu einer Warnung.
+      en: >-
+        Device and app connect to the cloud only via TLS and fully check the
+        certificate (issuer, name, validity). For own servers the expected certificate
+        or own certificate authority is pinned. Errors lead to abort, not to a warning.
+    kind: technical
+    evidence:
+      de: Test mit einem Proxy und selbst ausgestelltem Zertifikat.
+      en: Test with a proxy and a self-signed certificate.
+    cra_refs: [AI-I-2-e, AI-I-2-f]
+    etsi303645: ['5.5-1', '5.4-4']
+    masvs: [MASVS-NETWORK-1, MASVS-NETWORK-2]
+    asvs: [V12.2.1, V12.3.1]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.5; OWASP MASVS v2; OWASP ASVS 5.0.0"]
+
+  # --- device hardening --------------------------------------------------------------
+  - id: debug-port-locked
+    rev: 1
+    title:
+      de: Debug-Schnittstellen gesperrt
+      en: Debug interfaces locked
+    description:
+      de: >-
+        JTAG und SWD werden in der Fertigung per Sicherungsbit (z. B. Readout
+        Protection) dauerhaft gesperrt. Die UART-Konsole ist in der Serienfirmware
+        abgeschaltet oder verlangt eine gerätespezifische Anmeldung. Testpunkte liegen
+        nicht offen zugänglich. Die Sperre vieler Mikrocontroller lässt sich durch
+        Fehlerinjektion (z. B. Spannungsglitches) umgehen; sie ist daher kein
+        alleiniger Schutz für Schlüssel und Firmware (siehe geschützter
+        Hardware-Speicher und Härtung gegen Fehlerinjektion).
+      en: >-
+        JTAG and SWD are locked permanently during production via a fuse bit (e.g.
+        readout protection). The UART console is switched off in the production
+        firmware or requires device-specific authentication. Test points are not openly
+        accessible. The lock of many microcontrollers can be bypassed by fault injection
+        (e.g. voltage glitches); it is therefore not the sole protection for keys and
+        firmware (see protected hardware storage and fault injection hardening).
+    kind: technical
+    evidence:
+      de: Fertigungsschritt zum Sperren; Test mit Debug-Adapter am Seriengerät.
+      en: Production step for locking; test with debug adapter on the production device.
+    cra_refs: [AI-I-2-j, AI-I-2-d]
+    etsi303645: ['5.6-4A', '5.6-4B', '5.6-3']
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.6"]
+
+  - id: secure-element-keys
+    rev: 1
+    title:
+      de: Schlüssel in geschütztem Hardware-Speicher
+      en: Keys in protected hardware storage
+    description:
+      de: >-
+        Private Schlüssel und Geräteidentität liegen in einem Secure Element, TPM oder
+        einem geschützten Bereich des Mikrocontrollers und verlassen ihn nicht. Weitere
+        Geheimnisse wie das WLAN-Passwort sind mit einem gerätespezifischen Schlüssel
+        verschlüsselt gespeichert.
+      en: >-
+        Private keys and device identity reside in a secure element, TPM or a protected
+        area of the microcontroller and never leave it. Further secrets such as the
+        Wi-Fi password are stored encrypted with a device-specific key.
+    kind: technical
+    evidence:
+      de: Hardware-Datenblatt; Speicherabbild zeigt keine Schlüssel im Klartext.
+      en: Hardware data sheet; memory dump shows no keys in clear text.
+    cra_refs: [AI-I-2-e, AI-I-2-d]
+    etsi303645: ['5.4-1', '5.4-2']
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.4"]
+
+  - id: no-hardcoded-secrets
+    rev: 1
+    title:
+      de: Keine fest eingebauten Geheimnisse
+      en: No built-in secrets
+    description:
+      de: >-
+        Firmware, App und Update-Pakete enthalten keine Passwörter, API-Schlüssel oder
+        privaten Schlüssel, die für mehrere Geräte gelten. Geheimnisse werden je Gerät
+        oder Nutzer erzeugt. Ein automatischer Scan im Build-Prozess findet versehentlich
+        eingecheckte Geheimnisse.
+      en: >-
+        Firmware, app and update packages contain no passwords, API keys or private keys
+        that apply to several devices. Secrets are generated per device or user. An
+        automated scan in the build process finds secrets checked in by mistake.
+    kind: technical
+    evidence:
+      de: Ergebnis des Secret-Scans; Prüfung des App-Pakets.
+      en: Result of the secret scan; review of the app package.
+    cra_refs: [AI-I-2-e]
+    etsi303645: ['5.4-3', '5.1-2A']
+    masvs: [MASVS-CRYPTO-2]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.4-3; OWASP MASVS v2"]
+
+  - id: api-input-validation
+    rev: 1
+    title:
+      de: Prüfung aller Eingaben
+      en: Validation of all input
+    description:
+      de: >-
+        Firmware und Dienste prüfen Länge, Format und Wertebereich aller Nachrichten aus
+        Netz, Funk und App, bevor sie sie verarbeiten. Parser werden mit zufälligen
+        Eingaben (Fuzzing) getestet.
+      en: >-
+        Firmware and services check length, format and value range of all messages from
+        network, radio and app before processing them. Parsers are tested with random
+        input (fuzzing).
+    kind: technical
+    evidence:
+      de: Fuzzing-Bericht für die Schnittstellen.
+      en: Fuzzing report for the interfaces.
+    cra_refs: [AI-I-2-k, AI-II-3]
+    etsi303645: ['5.13-1A', '5.13-1B']
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.13"]
+
+  - id: least-privilege-firmware
+    rev: 1
+    title:
+      de: Geringste Rechte und Exploit-Schutz in der Firmware
+      en: Least privilege and exploit protection in the firmware
+    description:
+      de: >-
+        Netzwerkdienste laufen mit eingeschränkten Rechten und getrennt voneinander, so
+        dass eine Schwachstelle nicht sofort das ganze Gerät öffnet. Speicherschutz,
+        Stack-Schutz und nicht ausführbarer Speicher sind eingeschaltet, soweit die
+        Hardware das erlaubt.
+      en: >-
+        Network services run with restricted privileges and separated from each other
+        so that a vulnerability does not immediately open the whole device. Memory
+        protection, stack protection and non-executable memory are enabled as far as the
+        hardware allows.
+    kind: technical
+    evidence:
+      de: Übersicht der Prozesse und ihrer Rechte; Compiler- und Linker-Einstellungen.
+      en: Overview of processes and their privileges; compiler and linker settings.
+    cra_refs: [AI-I-2-k]
+    etsi303645: ['5.6-7', '5.6-8']
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.6"]
+
+  - id: local-ui-protection
+    rev: 1
+    title:
+      de: Schutz sicherheitsrelevanter Funktionen am Gerät
+      en: Protection of security-relevant functions on the device
+    description:
+      de: >-
+        Service-Menüs und sicherheitsrelevante Einstellungen am Gerät (Fernzugriff,
+        Netzwerk, Werksreset) sind durch PIN, langen Tastendruck oder Bestätigung in der
+        App geschützt. Das Display zeigt keine Passwörter oder Schlüssel an.
+      en: >-
+        Service menus and security-relevant settings on the device (remote access,
+        network, factory reset) are protected by PIN, long button press or confirmation
+        in the app. The display shows no passwords or keys.
+    kind: technical
+    evidence:
+      de: Bedienkonzept; Test der Tastenkombinationen am Seriengerät.
+      en: Operating concept; test of button combinations on the production device.
+    cra_refs: [AI-I-2-d]
+    etsi303645: ['5.5-5']
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.5-5"]
+
+  - id: secure-factory-reset
+    rev: 1
+    title:
+      de: Vollständiger und geschützter Werksreset
+      en: Complete and protected factory reset
+    description:
+      de: >-
+        Der Werksreset löscht alle Nutzerdaten, WLAN-Zugangsdaten und Kopplungen
+        unwiderruflich und trennt das Gerät vom Konto in der Cloud. Er erfordert
+        Anwesenheit am Gerät (langer Tastendruck) und führt in einen sicheren
+        Einrichtungsmodus, nicht in einen offenen Zustand. Gerätezertifikate bleiben
+        erhalten, damit das Gerät neu eingerichtet werden kann. Im Konto lassen sich
+        Geräte und Freigaben entfernen.
+      en: >-
+        The factory reset irrevocably deletes all user data, Wi-Fi credentials and
+        pairings and unlinks the device from the cloud account. It requires presence at
+        the device (long button press) and leads to a secure setup mode, not to an open
+        state. Device certificates are kept so the device can be set up again. Devices
+        and shares can be removed in the account.
+    kind: technical
+    evidence:
+      de: Test Reset und Neueinrichtung; Speicherabbild nach dem Reset.
+      en: Test of reset and new setup; memory dump after reset.
+    cra_refs: [AI-I-2-m, AI-I-2-b]
+    etsi303645: ['5.11-1', '5.11-2', '5.11-4']
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.11"]
+
+  - id: iot-data-minimisation
+    rev: 1
+    title:
+      de: Datensparsamkeit bei Telemetrie und Status
+      en: Data minimisation for telemetry and status
+    description:
+      de: >-
+        Gerät, App und Cloud erheben nur die Daten, die für die Funktion nötig sind,
+        und speichern sie nur so lange wie nötig. Telemetrie ist abschaltbar, Analysedaten
+        werden anonymisiert. Statusdaten, die Anwesenheit verraten, sind nur nach
+        Anmeldung abrufbar.
+      en: >-
+        Device, app and cloud collect only the data necessary for the function and store
+        it only as long as necessary. Telemetry can be switched off, analytics data is
+        anonymised. Status data that reveals presence is only retrievable after
+        authentication.
+    kind: technical
+    evidence:
+      de: Datenflussübersicht mit Zweck je Datum; Mitschnitt der Telemetrie.
+      en: Data flow overview with purpose per data item; capture of the telemetry.
+    cra_refs: [AI-I-2-g]
+    etsi303645: ['6-4', '6-8']
+    masvs: [MASVS-PRIVACY-1]
+    sources: ["ETSI EN 303 645 V3.1.3 clause 6"]
+
+  - id: app-secure-storage
+    rev: 1
+    title:
+      de: Geschützte Speicherung in der App
+      en: Protected storage in the app
+    description:
+      de: >-
+        Die App speichert Tokens und Schlüssel nur im sicheren Speicher des
+        Betriebssystems (Android Keystore, iOS Keychain), nicht in Einstellungsdateien,
+        Logs oder Backups. Das WLAN-Passwort wird nach der Einrichtung nicht in der App
+        aufbewahrt.
+      en: >-
+        The app stores tokens and keys only in the operating system's secure storage
+        (Android Keystore, iOS Keychain), not in preference files, logs or backups. The
+        Wi-Fi password is not kept in the app after setup.
+    kind: technical
+    evidence:
+      de: Prüfung des App-Datenverzeichnisses auf einem Testgerät.
+      en: Review of the app data directory on a test device.
+    cra_refs: [AI-I-2-e]
+    etsi303645: ['5.4-1']
+    masvs: [MASVS-STORAGE-1, MASVS-STORAGE-2]
+    sources: ["OWASP MASVS v2"]
+
+  - id: security-event-logging
+    rev: 1
+    title:
+      de: Protokollierung von Sicherheitsereignissen
+      en: Logging of security events
+    description:
+      de: >-
+        Gerät und Cloud halten Anmeldungen, Fehlversuche, Kopplungen, Freigaben,
+        Werksreset, Firmware-Wechsel und Änderungen an Sicherheitseinstellungen mit
+        Zeit und Konto fest. Der Nutzer sieht in der App, welche Geräte und Personen
+        Zugriff haben und was zuletzt geändert wurde. Der Hersteller wertet die Ereignisse
+        auf Auffälligkeiten aus.
+      en: >-
+        Device and cloud record logins, failed attempts, pairings, shares, factory
+        reset, firmware changes and changes to security settings with time and account.
+        The user sees in the app which devices and persons have access and what was
+        changed recently. The manufacturer analyses the events for anomalies.
+    kind: technical
+    evidence:
+      de: Beispielprotokoll; Ansicht der Zugriffe in der App.
+      en: Sample log; access view in the app.
+    cra_refs: [AI-I-2-l]
+    etsi303645: ['5.10-1', '5.7-2']
+    asvs: [V16.2.1, V16.3.1]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.10; OWASP ASVS 5.0.0"]
+
+  - id: local-fallback
+    rev: 1
+    title:
+      de: Lokaler Betrieb ohne Cloud
+      en: Local operation without cloud
+    description:
+      de: >-
+        Die Grundfunktion bleibt ohne Internet und ohne Hersteller-Cloud erhalten:
+        Bedienung am Gerät, Zeitpläne und, wo möglich, Steuerung über die App im Heimnetz.
+        Nach einem Ausfall verbindet sich das Gerät mit zufälliger Verzögerung neu, damit
+        nicht alle Geräte gleichzeitig die Cloud belasten.
+      en: >-
+        The basic function remains available without internet and without the vendor
+        cloud: operation on the device, schedules and, where possible, control via the
+        app in the home network. After an outage the device reconnects with a random
+        delay so that not all devices load the cloud at the same time.
+    kind: technical
+    evidence:
+      de: Test mit getrennter Internetverbindung.
+      en: Test with disconnected internet connection.
+    cra_refs: [AI-I-2-h]
+    etsi303645: ['5.9-1', '5.9-2', '5.9-3']
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.9"]
+
+  # --- updates -----------------------------------------------------------------------
+  - id: signed-ota
+    rev: 1
+    title:
+      de: Signierte Updates mit Prüfung im Gerät
+      en: Signed updates verified on the device
+    description:
+      de: >-
+        Jedes Update ist vom Hersteller signiert. Das Gerät prüft die Signatur mit einem
+        geschützt hinterlegten öffentlichen Schlüssel, bevor es das Update installiert,
+        unabhängig vom Übertragungsweg (Cloud, App, lokal).
+      en: >-
+        Every update is signed by the manufacturer. The device verifies the signature
+        with a protected public key before installing the update, regardless of the
+        transfer path (cloud, app, local).
+    kind: technical
+    evidence:
+      de: Test mit verändertem und unsigniertem Update.
+      en: Test with modified and unsigned update.
+    cra_refs: [AI-I-2-f, AI-II-7]
+    etsi303645: ['5.3-2', '5.3-9', '5.3-10']
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.3"]
+
+  - id: verified-boot
+    rev: 1
+    title:
+      de: Prüfung der Firmware beim Start
+      en: Firmware verification at boot
+    description:
+      de: >-
+        Ein unveränderlicher Bootloader prüft bei jedem Start die Signatur der Firmware
+        und startet nur echte Firmware. Bei einer Abweichung startet das Gerät eine
+        Rückfallversion oder meldet den Fehler.
+      en: >-
+        An immutable bootloader verifies the firmware signature at every start and only
+        boots genuine firmware. If there is a mismatch the device starts a fallback
+        version or reports the error.
+    kind: technical
+    evidence:
+      de: Test mit veränderter Firmware im Flash.
+      en: Test with modified firmware in flash.
+    cra_refs: [AI-I-2-f]
+    etsi303645: ['5.7-1', '5.7-2']
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.7"]
+
+  - id: iot-anti-rollback
+    rev: 1
+    title:
+      de: Schutz vor Rückkehr zu alten Firmware-Versionen
+      en: Protection against returning to old firmware versions
+    description:
+      de: >-
+        Das Gerät speichert die Mindestversion in einem nicht rücksetzbaren Zähler und
+        lehnt ältere Firmware ab, auch wenn sie korrekt signiert ist.
+      en: >-
+        The device stores the minimum version in a non-resettable counter and rejects
+        older firmware, even if it is correctly signed.
+    kind: technical
+    evidence:
+      de: Test mit älterer signierter Firmware.
+      en: Test with older signed firmware.
+    cra_refs: [AI-I-2-c, AI-I-2-f]
+    etsi303645: ['5.3-2']
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.3-2"]
+
+  - id: power-fail-safe-updates
+    rev: 1
+    title:
+      de: Ausfallsichere Updates und Speicherzugriffe
+      en: Fail-safe updates and storage writes
+    description:
+      de: >-
+        Updates werden in einen zweiten Speicherbereich geschrieben und erst nach
+        erfolgreicher Prüfung aktiviert. Startet die neue Firmware nicht, kehrt das Gerät
+        zur letzten funktionierenden Version zurück. Einstellungen und Schlüssel werden
+        so geschrieben, dass ein Stromausfall keinen halben Zustand hinterlässt. Updates
+        werden in Wellen verteilt.
+      en: >-
+        Updates are written to a second memory area and only activated after successful
+        verification. If the new firmware does not start, the device returns to the last
+        working version. Settings and keys are written so that a power failure leaves
+        no half-finished state. Updates are rolled out in waves.
+    kind: technical
+    evidence:
+      de: Test mit Stromunterbrechung während des Updates.
+      en: Test with power interruption during the update.
+    cra_refs: [AI-I-2-h]
+    etsi303645: ['5.9-1']
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.9-1; generic embedded engineering practice"]
+
+  - id: automatic-updates
+    rev: 1
+    title:
+      de: Automatische Sicherheitsupdates
+      en: Automatic security updates
+    description:
+      de: >-
+        Das Gerät sucht regelmäßig nach Sicherheitsupdates und installiert sie ab Werk
+        automatisch. Der Nutzer kann das abschalten und wird informiert, wenn ein Update
+        nötig ist oder eine Funktion ändert. Die App erzwingt bei Sicherheitsupdates die
+        neue Version.
+      en: >-
+        The device regularly checks for security updates and installs them
+        automatically by default. The user can switch this off and is informed when an
+        update is needed or changes a function. The app enforces the new version for
+        security updates.
+    kind: technical
+    evidence:
+      de: Beschreibung des Update-Ablaufs; Anteil aktueller Geräte im Feld.
+      en: Description of the update flow; share of up-to-date devices in the field.
+    cra_refs: [AI-I-2-c, AI-II-8]
+    etsi303645: ['5.3-4A', '5.3-4B', '5.3-5', '5.3-11']
+    masvs: [MASVS-CODE-2]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.3"]
+
+  - id: ota-signing-key-hsm
+    rev: 1
+    title:
+      de: Signaturschlüssel in einem Hardware-Sicherheitsmodul
+      en: Signing key in a hardware security module
+    description:
+      de: >-
+        Der private Schlüssel für Updates liegt in einem Hardware-Sicherheitsmodul oder
+        einem vergleichbar geschützten Cloud-Dienst und ist nicht exportierbar.
+        Signieren erfordert die Freigabe durch zwei Personen und wird protokolliert. Ein
+        Plan zum Austausch des Schlüssels liegt vor.
+      en: >-
+        The private key for updates resides in a hardware security module or a
+        comparably protected cloud service and cannot be exported. Signing requires
+        approval by two persons and is logged. A plan for replacing the key exists.
+    kind: technical
+    evidence:
+      de: HSM-Konfiguration; Signierprotokoll.
+      en: HSM configuration; signing log.
+    cra_refs: [AI-I-2-f, AI-II-7]
+    etsi303645: ['5.3-2']
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.3-2; generic code signing practice"]
+
+  - id: fault-injection-hardening
+    rev: 1
+    title:
+      de: Härtung gegen Fehlerinjektion
+      en: Fault injection hardening
+    description:
+      de: >-
+        Für Produkte, deren Schlüssel oder Firmware lohnende Ziele sind, wählt der
+        Hersteller Mikrocontroller oder Secure Elements mit Schutz gegen Spannungs-,
+        Takt- und elektromagnetische Glitches. Sicherheitsprüfungen im Bootloader werden
+        doppelt und mit zufälliger Verzögerung ausgeführt. Ein erfolgreicher Angriff auf
+        ein Gerät verrät keine Geheimnisse, die für andere Geräte gelten.
+      en: >-
+        For products whose keys or firmware are worthwhile targets, the manufacturer
+        selects microcontrollers or secure elements with protection against voltage,
+        clock and electromagnetic glitches. Security checks in the bootloader are
+        executed twice and with random delay. A successful attack on one device reveals
+        no secrets that apply to other devices.
+    kind: technical
+    evidence:
+      de: Datenblatt bzw. Zertifizierung des Bausteins; Code-Review des Bootloaders.
+      en: Data sheet or certification of the chip; code review of the bootloader.
+    cra_refs: [AI-I-2-e, AI-I-2-f]
+    etsi303645: ['5.4-1', '5.7-1']
+    sources: ["OWASP IoT Top 10 2018; generic hardware security practice"]
+
+  - id: stream-access-control
+    rev: 1
+    title:
+      de: Geschützter Zugriff auf Kamera- und Audiostreams
+      en: Protected access to camera and audio streams
+    description:
+      de: >-
+        Video- und Audiostreams (RTSP, P2P-Relay, Web-Ansicht) sind nur nach Anmeldung
+        und verschlüsselt abrufbar. Der Relay-Dienst prüft bei jedem Verbindungsaufbau,
+        ob der Anfragende zum Konto des Geräts gehört; eine Geräte-ID allein reicht nicht.
+        Nicht benötigte Streaming-Dienste sind ab Werk aus, und eine sichtbare Anzeige
+        am Gerät zeigt aktive Aufnahmen.
+      en: >-
+        Video and audio streams (RTSP, P2P relay, web view) are only retrievable after
+        authentication and encrypted. The relay service checks at every connection
+        whether the requester belongs to the device's account; a device ID alone is not
+        enough. Unneeded streaming services are off by default, and a visible indicator
+        on the device shows active recording.
+    kind: technical
+    evidence:
+      de: Test des Streamabrufs ohne Anmeldung und mit fremdem Konto.
+      en: Test of stream retrieval without authentication and with another account.
+    cra_refs: [AI-I-2-d, AI-I-2-e]
+    etsi303645: ['5.8-2', '5.8-3', '5.6-2']
+    sources: ["ETSI EN 303 645 V3.1.3 provisions 5.6 and 5.8"]

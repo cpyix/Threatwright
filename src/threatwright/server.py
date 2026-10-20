@@ -21,11 +21,11 @@ import threading
 import time
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, JSONResponse
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from threatwright import __version__, archive, assistant, history
 from threatwright.arc import ArcOverride, applicability, set_override
@@ -34,7 +34,7 @@ from threatwright.branding import PRODUCT_NAME, PROJECT_FILE
 from threatwright.ci import render_ci
 from threatwright.ci import target_path as ci_target_path
 from threatwright.diagram import render_svg
-from threatwright.library import Libraries, load_catalog, load_libraries
+from threatwright.library import CATALOG_NAMES, Libraries, load_catalog, load_libraries
 from threatwright.method import (
     Method,
     MethodError,
@@ -64,7 +64,7 @@ from threatwright.render import (
     preview_html,
 )
 from threatwright.rules import relative, validate
-from threatwright.scaffold import ProjectExists, create_project
+from threatwright.scaffold import PRODUCT_LIBRARIES, ProjectExists, create_project
 from threatwright.vcs import VcsError, changed_objects, release_tags
 
 WEB_DIR = Path(__file__).parent / "web"
@@ -288,6 +288,18 @@ def pick_folder(title: str, initial: str | None = None) -> str | None:
     return path or None
 
 
+class NewProject(BaseModel):
+    path: str = ""
+    name: str | None = None
+    template: Literal["tr", "empty"] = "tr"
+    language: Literal["de", "en"] = "de"
+    libraries: list[str] | None = None
+
+
+class AddLibraries(BaseModel):
+    add: list[str]
+
+
 def create_app(
     port: int | None = None,
     project: Path | None = None,
@@ -437,24 +449,27 @@ def create_app(
             dialog_lock.release()
 
     @app.post("/api/project/new")
-    def new_project(body: dict[str, str]) -> dict[str, Any]:
-        template = body.get("template", "tr")
-        language = body.get("language", "de")
-        if template not in ("tr", "empty") or language not in ("de", "en"):
-            raise HTTPException(422, "template: tr|empty, language: de|en")
-        path = client_path(body.get("path", ""))
+    def new_project(body: NewProject) -> dict[str, Any]:
+        path = client_path(body.path)
         with session.lock:
             try:
-                create_project(path, template, body.get("name") or None, language)  # type: ignore[arg-type]
+                create_project(
+                    path, body.template, body.name or None, body.language, body.libraries
+                )
+            except ValueError as exc:
+                raise HTTPException(422, str(exc)) from exc
+            except (ProjectExists, OSError) as exc:
+                raise HTTPException(400, str(exc)) from exc
+            try:
                 session.open(path)
-            except (ProjectExists, LoadError, OSError) as exc:
+            except (LoadError, OSError) as exc:
                 raise HTTPException(400, str(exc)) from exc
             _recent(path)
             return project_info()
 
     @app.get("/api/catalog/{name}")
     def catalog(name: str) -> dict[str, Any]:
-        if name not in ("cra", "attack-ics", "emb3d", "iec62443"):
+        if name not in CATALOG_NAMES:
             raise HTTPException(404, "unknown catalog")
         return load_catalog(name).model_dump(mode="json")
 
@@ -473,10 +488,28 @@ def create_app(
                     }
                     for name, sub in project.models.items()
                 },
+                "product_libraries": list(PRODUCT_LIBRARIES),
                 "dirty": session.dirty,
                 "can_undo": bool(session.undo),
                 "can_redo": bool(session.redo),
             }
+
+    @app.post("/api/project/libraries")
+    def add_libraries(body: AddLibraries) -> dict[str, Any]:
+        unknown = [name for name in body.add if name not in PRODUCT_LIBRARIES]
+        if unknown:
+            raise HTTPException(422, f"unknown libraries: {', '.join(unknown)}")
+        with session.lock:
+            project = session.require()
+            config = project.config
+            missing = [n for n in PRODUCT_LIBRARIES if n in body.add and n not in config.libraries]
+            if missing:  # add-only: existing entries (own libraries too) keep their place
+                libraries = [*config.libraries, *missing]
+                libs = load_libraries(libraries, project.root)  # may raise: assign only afterwards
+                config.libraries = libraries
+                session.libs = libs
+                session.changed()
+            return project_info()
 
     @app.get("/api/method")
     def method_info() -> dict[str, Any]:

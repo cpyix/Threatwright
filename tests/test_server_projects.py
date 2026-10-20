@@ -87,3 +87,19 @@ def test_server_features_are_off_locally(project_dir: Path) -> None:
     assert c.get("/api/workspace").status_code == 501
     assert c.post("/api/project/upload?folder=x", content=b"").status_code == 501
     assert c.get("/api/project/download").status_code == 200  # works locally too
+
+
+def test_new_project_libraries(workspace: Path) -> None:
+    c = server(workspace)
+    r = c.post("/api/project/new", json={"path": "dev", "libraries": ["iot"]})
+    assert r.json()["config"]["libraries"] == ["iot"]
+    for body in (
+        {"libraries": []},
+        {"libraries": ["foo"]},
+        {"libraries": "iot"},
+        {"name": 123},
+        {"path": 5},
+    ):
+        body = {"path": "x", **body}
+        assert c.post("/api/project/new", json=body).status_code == 422, body
+        assert not (workspace / "x").exists(), body

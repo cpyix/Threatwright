@@ -1,0 +1,138 @@
+# Threat templates for third-party libraries, SDKs and the build supply chain.
+threats:
+  - id: vulnerable-dependency
+    rev: 1
+    stride: [T, I, D, E]
+    applies_to: [third-party-library, desktop-app, mobile-app, backend-api]
+    title:
+      de: Bekannte Schwachstelle in einer Bibliothek von {element}
+      en: Known vulnerability in a library of {element}
+    scenario:
+      de: >-
+        Die Software enthält Open-Source-Pakete und SDKs, die seit dem Einbau nicht
+        aktualisiert wurden. Für eine davon wird eine Schwachstelle veröffentlicht;
+        Angreifer suchen sofort automatisiert nach betroffenen Produkten. Der
+        Hersteller weiß nicht, welche seiner Versionen die Bibliothek enthalten.
+      en: >-
+        The software contains open source packages and SDKs that have not been
+        updated since they were added. A vulnerability is published for one of them;
+        attackers immediately search automatically for affected products. The
+        manufacturer does not know which of its versions contain the library.
+    consequence:
+      de: >-
+        Je nach Schwachstelle werden Daten ausgelesen, Dienste lahmgelegt oder
+        Server und Rechner übernommen. Der Hersteller liefert ein Produkt mit
+        bekannter ausnutzbarer Schwachstelle aus, was der CRA ausdrücklich verbietet.
+      en: >-
+        Depending on the vulnerability, data is read, services are disabled or
+        servers and computers are taken over. The manufacturer delivers a product
+        with a known exploitable vulnerability, which the CRA explicitly prohibits.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-a, AI-II-1, AI-II-2]
+    asvs: [V15.1.1, V15.2.1]
+    masvs: [MASVS-CODE-3]
+    measures: [dependency-scanning, sbom-generated]
+    sources: ["OWASP Top 10 2021 A06 Vulnerable and Outdated Components; CWE-1395"]
+
+  - id: malicious-dependency
+    rev: 1
+    stride: [S, T, I, E]
+    applies_to: [third-party-library]
+    title:
+      de: Schadcode gelangt über {element} in das Produkt
+      en: Malicious code enters the product via {element}
+    scenario:
+      de: >-
+        Ein Entwickler installiert ein Paket mit Tippfehler im Namen, ein öffentliches
+        Paket mit dem Namen eines internen Pakets wird bevorzugt, oder das Konto
+        eines Bibliotheks-Maintainers wird gekapert und eine neue Version mit
+        Hintertür veröffentlicht. Der Build übernimmt automatisch die neueste Version.
+      en: >-
+        A developer installs a package with a typo in its name, a public package with
+        the name of an internal package is preferred, or the account of a library
+        maintainer is hijacked and a new version with a backdoor is published. The
+        build automatically takes the newest version.
+    consequence:
+      de: >-
+        Die Hintertür wird mit dem nächsten Release an alle Kunden ausgeliefert,
+        signiert mit dem Schlüssel des Herstellers. Zugangsdaten aus der
+        Build-Umgebung werden gestohlen.
+      en: >-
+        The backdoor is delivered to all customers with the next release, signed with
+        the manufacturer's key. Credentials from the build environment are stolen.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 5
+    cra_refs: [AI-I-2-f, AI-II-1]
+    asvs: [V15.2.4]
+    masvs: [MASVS-CODE-3]
+    measures: [dependency-provenance, sbom-generated]
+    sources: ["OWASP Top 10 2021 A08 Software and Data Integrity Failures; CWE-506 Embedded Malicious Code"]
+
+  - id: dependency-origin-untraceable
+    rev: 1
+    stride: [R]
+    applies_to: [third-party-library]
+    title:
+      de: Herkunft und Version von {element} sind nicht nachvollziehbar
+      en: Origin and version of {element} cannot be traced
+    scenario:
+      de: >-
+        Bibliotheken wurden irgendwann von Hand in das Projekt kopiert oder ohne
+        festgeschriebene Version geladen. Es gibt keine Liste, welche Version in
+        welchem Release steckt und woher sie stammt.
+      en: >-
+        Libraries were copied into the project by hand at some point or loaded
+        without a pinned version. There is no list of which version is in which
+        release and where it comes from.
+    consequence:
+      de: >-
+        Bei einer neuen Schwachstelle oder einem Lieferkettenangriff kann der
+        Hersteller nicht sagen, welche Kunden betroffen sind, und die Meldefristen
+        des CRA nicht einhalten.
+      en: >-
+        For a new vulnerability or a supply chain attack the manufacturer cannot say
+        which customers are affected and cannot meet the CRA reporting deadlines.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-II-1, AI-II-2]
+    asvs: [V15.1.2]
+    measures: [sbom-generated, dependency-provenance]
+    sources: ["Regulation (EU) 2024/2847 Annex I Part II (1); BSI TR-03183-2"]
+
+  - id: build-pipeline-compromise
+    rev: 1
+    stride: [S, T, E]
+    applies_to: [installer, updater, desktop-app, mobile-app]
+    title:
+      de: Angreifer im Build-System des Herstellers verteilt Schadcode über {element}
+      en: Attacker in the manufacturer's build system distributes malicious code via {element}
+    scenario:
+      de: >-
+        Ein Angreifer dringt in Build-Server, Quellcode-Verwaltung oder den Rechner
+        eines Entwicklers ein, der signieren darf. Er fügt beim Bauen unbemerkt
+        Schadcode ein oder signiert eigene Programme mit dem Schlüssel des
+        Herstellers. Der Signaturschlüssel liegt als Datei auf dem Build-Server oder
+        bei mehreren Entwicklern.
+      en: >-
+        An attacker gets into the build server, source code management or the
+        computer of a developer who is allowed to sign. He silently adds malicious
+        code during the build or signs own programs with the manufacturer's key. The
+        signing key is kept as a file on the build server or with several
+        developers.
+    consequence:
+      de: >-
+        Alle Kunden erhalten über den regulären, korrekt signierten Update-Weg
+        Schadsoftware, der sie vertrauen. Signaturprüfungen bei Kunden schlagen nicht
+        an. Der Schlüssel muss gesperrt und alle Installationen neu ausgestattet
+        werden.
+      en: >-
+        All customers receive malware through the regular, correctly signed update
+        path, and they trust it. Signature checks at customers do not trigger. The
+        key has to be revoked and all installations re-equipped.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 5
+    cra_refs: [AI-I-2-f, AI-II-7]
+    asvs: [V13.3.1]
+    measures: [release-signing-protection, code-signing]
+    sources: ["Public incident reports on the SolarWinds Orion (2020) and 3CX (2023) supply chain attacks; CWE-506 Embedded Malicious Code"]

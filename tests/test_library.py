@@ -1,12 +1,14 @@
+import itertools
 import os
 import shutil
 from pathlib import Path
 
+import pytest
 from conftest import FIXTURE, ROOT
 from typer.testing import CliRunner
 
 from threatwright.cli import app
-from threatwright.library import check_library_refs, load_libraries
+from threatwright.library import CATALOG_NAMES, CATALOGS, check_library_refs, load_libraries
 from threatwright.method import load_method
 from threatwright.model.objects import ProjectConfig
 from threatwright.model.store import Project
@@ -15,12 +17,21 @@ from threatwright.rules import validate
 runner = CliRunner()
 
 
-def test_bundled_ot_library_is_complete_and_valid() -> None:
-    libs = load_libraries(["ot"])
+# Minimum (elements, threats, measures) per bundled library.
+BUNDLED = {"ot": (25, 120, 80), "iot": (12, 30, 20), "software": (12, 30, 20)}
+# software threats without an honest ASVS/MASVS fit (native desktop issues); they
+# must cite a CWE instead. Keep this as small as possible.
+NO_CATALOG_FIT = {"library-search-path-hijack"}
+
+
+@pytest.mark.parametrize("name", list(BUNDLED))
+def test_bundled_library_is_complete_and_valid(name: str) -> None:
+    libs = load_libraries([name])
     assert libs.issues == []
-    assert len(libs.elements) >= 25
-    assert len(libs.threats) >= 120
-    assert len(libs.measures) >= 80
+    n_el, n_th, n_me = BUNDLED[name]
+    assert len(libs.elements) >= n_el
+    assert len(libs.threats) >= n_th
+    assert len(libs.measures) >= n_me
     method = load_method(ROOT, ProjectConfig(name="t"))
     for el in libs.elements.values():
         have = {s for t in libs.threats.values() if el.id in t.applies_to for s in t.stride}
@@ -29,10 +40,28 @@ def test_bundled_ot_library_is_complete_and_valid() -> None:
     for t in libs.threats.values():
         assert t.measures, f"threat {t.id} suggests no measure"
         assert t.sources, f"threat {t.id} has no source"
+        assert t.cra_refs, f"threat {t.id} has no CRA reference"
+        if name == "iot":
+            assert t.etsi303645, f"threat {t.id} has no ETSI EN 303 645 reference"
+        if name == "software" and t.id in NO_CATALOG_FIT:
+            assert any("CWE-" in s for s in t.sources), f"threat {t.id} cites no CWE"
+        elif name == "software":
+            assert t.asvs or t.masvs, f"threat {t.id} has no ASVS/MASVS reference"
     used = {m for t in libs.threats.values() for m in t.measures}
     assert set(libs.measures) <= used | {
         m.id for m in libs.measures.values() if m.kind != "technical"
     }
+
+
+def test_bundled_libraries_do_not_collide() -> None:
+    # A later library overrides same-kind same-ID entries of an earlier one, so
+    # bundled libraries must never share an ID or combining them loses content.
+    loaded = {n: load_libraries([n]) for n in BUNDLED}
+    for a, b in itertools.combinations(BUNDLED, 2):
+        for kind in ("elements", "threats", "measures"):
+            shared = set(getattr(loaded[a], kind)) & set(getattr(loaded[b], kind))
+            assert not shared, f"{a} and {b} share {kind} {sorted(shared)}"
+    assert load_libraries(list(BUNDLED)).issues == []
 
 
 def own_library(root: Path) -> None:
@@ -100,3 +129,28 @@ def test_unknown_library_and_cra_ref(tmp_path: Path) -> None:
     issues = validate(Project.load(root))
     assert sum(i.code == "library-invalid" for i in issues) == 2
     assert any(i.code == "unknown-cra-ref" for i in issues)
+
+
+def test_new_catalog_refs_are_checked(tmp_path: Path) -> None:
+    root = tmp_path / "p"
+    shutil.copytree(FIXTURE, root)
+    own_library(root)
+    lib = root / "libraries" / "own"
+    (lib / "measures.yaml").write_text(
+        "measures:\n  - id: m\n    rev: 1\n    kind: technical\n"
+        "    title: {de: M, en: M}\n    description: {de: M, en: M}\n",
+        encoding="utf-8",
+    )
+    (lib / "threats.yaml").write_text(
+        "threats:\n  - id: t\n    rev: 1\n    stride: [S]\n    applies_to: [plc]\n"
+        "    title: {de: T, en: T}\n    scenario: {de: T, en: T}\n    consequence: {de: T, en: T}\n"
+        "    etsi303645: ['5.1-1', NOPE]\n    asvs: [V0.0.0]\n    masvs: [MASVS-STORAGE-1]\n"
+        "    measures: [m]\n",
+        encoding="utf-8",
+    )
+    libs = load_libraries(["own"], root)
+    assert [(i.location, i.message) for i in libs.issues] == [
+        ("own/threat/t.etsi303645", "unknown reference 'NOPE'"),
+        ("own/threat/t.asvs", "unknown reference 'V0.0.0'"),
+    ]
+    assert set(CATALOG_NAMES) == {p.stem for p in CATALOGS.glob("*.yaml")}

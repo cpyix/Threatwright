@@ -1,0 +1,28 @@
+schema_version: 1
+id: iot
+version: 0.1.0
+title:
+  de: IoT- und Consumer-Bibliothek für vernetzte Geräte
+  en: IoT and consumer library for connected devices
+license: CC-BY-4.0
+description:
+  de: >-
+    Generische Element-, Bedrohungs- und Maßnahmenvorlagen für vernetzte Geräte
+    und Verbraucherprodukte, z. B. ein smarter Thermostat mit Begleit-App und
+    Hersteller-Cloud: Gerät und Firmware, Funk und Kopplung, App, Cloud,
+    Updates und Drittkomponenten. Vorschläge, keine vollständige Analyse; jede
+    Übernahme ist im Produktkontext zu prüfen. Funkanlagen müssen zusätzlich die
+    EN 18031 (delegierter Rechtsakt zur Funkanlagenrichtlinie RED) beachten;
+    diese Bibliothek bildet die EN 18031 nicht ab.
+  en: >-
+    Generic element, threat and measure templates for connected devices and
+    consumer products, e.g. a smart thermostat with companion app and vendor
+    cloud: device and firmware, wireless and pairing, app, cloud, updates and
+    third-party components. Suggestions, not a complete analysis; review every
+    entry in the context of your product. Radio equipment must additionally
+    consider EN 18031 (delegated act under the Radio Equipment Directive, RED);
+    this library does not map EN 18031.
+attribution:
+  - ETSI EN 303 645 V3.1.3 provision identifiers (c) ETSI, referenced by number only.
+  - OWASP ASVS 5.0.0 and OWASP MASVS v2 identifiers (c) OWASP Foundation, referenced by number only.
+  - CRA requirement mapping after BSI TR-03183-1 v1.0.0, Annex B.

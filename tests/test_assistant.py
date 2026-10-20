@@ -84,6 +84,20 @@ def test_untyped_flow_gets_no_protocol_templates(loaded) -> None:  # type: ignor
     assert any(s.template_id == "fieldbus-rogue-master" for s in cats["S"].suggestions)
 
 
+def test_iot_device_gets_suggestions(project_dir: Path) -> None:
+    project = Project.load(project_dir)
+    project.config.libraries = ["iot"]
+    libs = load_libraries(["iot"])
+    method = load_method(project_dir, project.config)
+    sub = project.models["main"]
+    device = assistant.add_element(sub, libs, project.config, "iot-device")
+    cats = assistant.suggestions(sub, libs, method, project.config, device.id)
+    for s in method.stride_per_kind.map["device"]:
+        assert cats[s].suggestions, f"no iot template for STRIDE {s}"
+        for sug in cats[s].suggestions:
+            assert libs.ref("threat", sug.template_id).startswith("lib:iot/threat/")
+
+
 def test_coverage_and_svg(loaded) -> None:  # type: ignore[no-untyped-def]
     project, _, method = loaded
     sub = project.models["main"]

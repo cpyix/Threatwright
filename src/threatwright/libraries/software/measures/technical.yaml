@@ -1,0 +1,859 @@
+# Technical measures for desktop applications, mobile apps, backend and API,
+# installer, updater and licence check.
+measures:
+  # --- backend and API ---------------------------------------------------------------
+  - id: sw-input-validation
+    rev: 1
+    title:
+      de: Eingaben prüfen und sicher weiterverarbeiten
+      en: Validate input and process it safely
+    description:
+      de: >-
+        Alle Daten von außen (API-Anfragen, Dateien, Nachrichten anderer Programme)
+        gelten als nicht vertrauenswürdig. Die Software prüft Typ, Länge und
+        erlaubte Werte nach einer Positivliste. Datenbankabfragen nutzen Parameter
+        statt zusammengesetzter Zeichenketten, Betriebssystembefehle werden nicht
+        aus Eingaben gebaut. Adressen, die der Server selbst abruft, müssen auf einer
+        Positivliste stehen. Die Prüfung findet auf dem Server statt, auch wenn der
+        Client schon prüft.
+      en: >-
+        All data from outside (API requests, files, messages from other programs) is
+        treated as untrusted. The software checks type, length and allowed values
+        against an allowlist. Database queries use parameters instead of assembled
+        strings, operating system commands are not built from input. Addresses the
+        server fetches itself must be on an allowlist. Checks take
+        place on the server, even if the client already checks.
+    kind: technical
+    evidence:
+      de: >-
+        Entwicklungsrichtlinie; Code-Review-Checkliste; Ergebnisse statischer
+        Analyse und von Tests mit manipulierten Eingaben.
+      en: >-
+        Development guideline; code review checklist; results of static analysis and
+        of tests with manipulated input.
+    cra_refs: [AI-I-2-f, AI-I-2-k]
+    asvs: [V1.2.4, V1.2.5, V1.3.6, V2.2.1, V2.2.2, V13.2.4]
+    masvs: [MASVS-CODE-4]
+    sources: ["OWASP Top 10 2021 A03 Injection; CWE-20"]
+
+  - id: object-level-authz
+    rev: 1
+    title:
+      de: Berechtigung bei jedem Zugriff auf dem Server prüfen
+      en: Check authorisation on the server for every access
+    description:
+      de: >-
+        Der Server prüft bei jeder Anfrage, ob der angemeldete Nutzer genau dieses
+        Objekt (z. B. Auftrag, Dokument, Gerät) und genau diese Funktion nutzen
+        darf. Eine ID in der Anfrage allein berechtigt zu nichts. Antworten
+        enthalten nur die Felder, die der Nutzer sehen darf, und beim Schreiben
+        übernimmt der Server nur Felder, die der Nutzer ändern darf. Verwaltungsfunktionen
+        sind nur für Administratorrollen erreichbar. Entscheidungen, die der Client
+        trifft (Preis, Rolle, Freischaltung), übernimmt der Server nicht ungeprüft.
+      en: >-
+        For every request the server checks whether the logged-in user may use
+        exactly this object (e.g. order, document, device) and exactly this
+        function. An ID in the request alone grants nothing. Responses contain only
+        the fields the user may see, and when writing the server accepts only fields
+        the user may change. Administration functions are only reachable for
+        administrator roles. The server does not accept decisions made by the client
+        (price, role, activation) without checking.
+    kind: technical
+    evidence:
+      de: >-
+        Rollen- und Rechtekonzept; automatisierte Tests, die mit zwei Konten auf die
+        Objekte des jeweils anderen zugreifen.
+      en: >-
+        Role and permission concept; automated tests that access the other
+        account's objects with two accounts.
+    cra_refs: [AI-I-2-d]
+    asvs: [V8.2.1, V8.2.2, V8.2.3, V8.3.1, V15.3.3]
+    sources: ["OWASP API Security Top 10 2023 API1, API3 and API5"]
+
+  - id: api-rate-limiting
+    rev: 1
+    title:
+      de: Anfragen je Nutzer und Absender begrenzen
+      en: Limit requests per user and sender
+    description:
+      de: >-
+        Backend, Lizenzserver und Login begrenzen Anzahl, Größe und Rechenaufwand
+        von Anfragen je Konto, Token und Absenderadresse. Nach wiederholten
+        Fehlanmeldungen steigt die Wartezeit. Aufwendige Funktionen (Export,
+        Suche, Upload) haben eigene, engere Grenzen.
+      en: >-
+        Backend, licence server and login limit number, size and computing effort of
+        requests per account, token and sender address. After repeated failed logins
+        the waiting time increases. Expensive functions (export, search, upload)
+        have their own, tighter limits.
+    kind: technical
+    evidence:
+      de: Konfiguration der Grenzwerte; Lasttest und Test mit automatisierten Fehlanmeldungen.
+      en: Configuration of the limits; load test and test with automated failed logins.
+    cra_refs: [AI-I-2-h, AI-I-2-d]
+    asvs: [V2.4.1, V6.3.1]
+    sources: ["OWASP API Security Top 10 2023 API4 Unrestricted Resource Consumption"]
+
+  - id: sw-account-auth
+    rev: 1
+    title:
+      de: Sichere Anmeldung mit zweitem Faktor für Administratoren
+      en: Secure login with second factor for administrators
+    description:
+      de: >-
+        Passwörter haben eine Mindestlänge, bekannte geleakte Passwörter werden
+        abgelehnt und nur als sicherer Hash gespeichert. Administratorkonten und
+        Support-Zugänge brauchen immer einen zweiten Faktor, für normale Nutzer ist
+        er wählbar. Die Wiederherstellung eines Kontos ist genauso gut geschützt wie
+        die Anmeldung selbst. Gemeinsam genutzte Konten gibt es nicht.
+      en: >-
+        Passwords have a minimum length, known leaked passwords are rejected and
+        they are stored only as a secure hash. Administrator accounts and support
+        accesses always need a second factor; for normal users it is optional.
+        Account recovery is protected as well as the login itself. There are no
+        shared accounts.
+    kind: technical
+    evidence:
+      de: Passwort- und MFA-Richtlinie; Test der Anmeldung und der Kontowiederherstellung.
+      en: Password and MFA policy; test of login and account recovery.
+    cra_refs: [AI-I-2-d]
+    asvs: [V6.2.1, V6.2.4, V6.3.3, V6.3.5, V6.4.3]
+    masvs: [MASVS-AUTH-1]
+    sources: ["OWASP Top 10 2021 A07 Identification and Authentication Failures"]
+
+  - id: secure-session-mgmt
+    rev: 1
+    title:
+      de: Sichere Sitzungen und Token
+      en: Secure sessions and tokens
+    description:
+      de: >-
+        Sitzungstoken sind zufällig, lang genug und werden nach der Anmeldung neu
+        erzeugt. Sie laufen nach Inaktivität und nach einer Höchstdauer ab und
+        werden bei Abmeldung und Passwortwechsel auf dem Server ungültig. Token
+        stehen nie in URLs oder Logs. Signierte Token (z. B. JWT) prüft der Server
+        mit festem Algorithmus.
+      en: >-
+        Session tokens are random, long enough and newly created after login. They
+        expire after inactivity and after a maximum duration and are invalidated on
+        the server on logout and password change. Tokens never appear in URLs or
+        logs. The server checks signed tokens (e.g. JWT) with a fixed algorithm.
+    kind: technical
+    evidence:
+      de: Konfiguration der Sitzungsdauer; Test, dass ein Token nach Abmeldung abgelehnt wird.
+      en: Session lifetime configuration; test that a token is rejected after logout.
+    cra_refs: [AI-I-2-d]
+    asvs: [V7.2.1, V7.2.4, V7.3.1, V7.4.1, V9.1.1]
+    masvs: [MASVS-AUTH-1]
+    sources: ["OWASP Top 10 2021 A07; CWE-384; CWE-613"]
+
+  - id: web-console-hardening
+    rev: 1
+    title:
+      de: Web-Oberfläche gegen Skript-Einschleusung und fremde Aufrufe härten
+      en: Harden the web front end against script injection and forged requests
+    description:
+      de: >-
+        Ausgaben werden passend zum Kontext kodiert, eine strenge Content Security
+        Policy erlaubt nur eigene Skripte. Cookies sind Secure, HttpOnly und
+        SameSite. Ändernde Aufrufe sind gegen Cross-Site Request Forgery geschützt
+        (z. B. Origin-Prüfung). Die Konsole lässt sich nicht in fremde Seiten
+        einbetten.
+      en: >-
+        Output is encoded for its context, a strict Content Security Policy allows
+        only own scripts. Cookies are Secure, HttpOnly and SameSite. Changing
+        requests are protected against cross-site request forgery (e.g. origin
+        check). The console cannot be embedded in foreign pages.
+    kind: technical
+    evidence:
+      de: Ausgelieferte Sicherheits-Header; Ergebnis eines Web-Schwachstellenscans.
+      en: Delivered security headers; result of a web vulnerability scan.
+    cra_refs: [AI-I-2-f, AI-I-2-k]
+    asvs: [V1.2.1, V3.3.2, V3.4.3, V3.5.1]
+    sources: ["OWASP Top 10 2021 A03 Injection; CWE-79; CWE-352"]
+
+  - id: audit-trail
+    rev: 1
+    title:
+      de: Protokoll sicherheitsrelevanter Aktionen
+      en: Log of security-relevant actions
+    description:
+      de: >-
+        Backend und Anwendung protokollieren Anmeldungen, Fehlanmeldungen,
+        Rechteänderungen, Löschungen, Exporte, Installationen und Updates mit Zeit,
+        Konto und Quelle. Das Protokoll liegt getrennt von den Anwendungsdaten, ist
+        gegen Änderung geschützt und wird für einen festgelegten Zeitraum
+        aufbewahrt. Passwörter und Token stehen nicht darin.
+      en: >-
+        Backend and application log logins, failed logins, permission changes,
+        deletions, exports, installations and updates with time, account and
+        source. The log is kept separately from the application data, protected
+        against modification and retained for a defined period. Passwords and
+        tokens do not appear in it.
+    kind: technical
+    evidence:
+      de: Beispielauszug des Protokolls; Aufbewahrungsregel; Rechte auf den Protokollspeicher.
+      en: Sample log extract; retention rule; rights on the log store.
+    cra_refs: [AI-I-2-l]
+    asvs: [V16.2.1, V16.3.1, V16.3.2, V16.4.2]
+    sources: ["OWASP Top 10 2021 A09 Security Logging and Monitoring Failures"]
+
+  - id: vetted-crypto
+    rev: 1
+    title:
+      de: Bewährte Kryptografie aus geprüften Bibliotheken
+      en: Proven cryptography from vetted libraries
+    description:
+      de: >-
+        Verschlüsselung, Hashes und Zufallszahlen kommen aus der Plattform oder
+        einer verbreiteten, gepflegten Bibliothek, nie aus eigener Implementierung.
+        Es werden nur aktuelle Verfahren genutzt (z. B. AES-GCM, SHA-256, Argon2
+        oder bcrypt für Passwörter, kryptografisch sicherer Zufall). Schlüssel sind
+        nicht im Code, und eine Liste aller eingesetzten Verfahren erleichtert den
+        späteren Austausch.
+      en: >-
+        Encryption, hashes and random numbers come from the platform or a widely
+        used, maintained library, never from an own implementation. Only current
+        methods are used (e.g. AES-GCM, SHA-256, Argon2 or bcrypt for passwords,
+        cryptographically secure randomness). Keys are not in the code, and a list
+        of all methods used makes later replacement easier.
+    kind: technical
+    evidence:
+      de: Kryptografie-Inventar; Code-Review; Suche nach veralteten Verfahren im Code.
+      en: Cryptography inventory; code review; search for outdated methods in the code.
+    cra_refs: [AI-I-2-e, AI-I-2-f]
+    asvs: [V11.1.2, V11.2.1, V11.3.2, V11.5.1]
+    masvs: [MASVS-CRYPTO-1]
+    sources: ["OWASP Top 10 2021 A02 Cryptographic Failures; CWE-327"]
+
+  # --- secrets and local data --------------------------------------------------------
+  - id: no-client-secrets
+    rev: 1
+    title:
+      de: Keine geheimen Schlüssel in ausgelieferter Software
+      en: No secret keys in delivered software
+    description:
+      de: >-
+        Installationspaket und App enthalten keine Schlüssel, Passwörter oder
+        API-Keys, die für alle Kunden gleich sind und Zugriff auf Backend,
+        Push-Dienst, Cloud-Speicher oder Drittdienste geben. Jeder Client erhält
+        eigene, widerrufbare Token erst nach der Anmeldung. Vor jedem Release sucht
+        ein Werkzeug im Paket nach Schlüsseln, Test-Zugängen, internen Adressen und
+        Debug-Informationen.
+      en: >-
+        Installation package and app contain no keys, passwords or API keys that are
+        the same for all customers and give access to backend, push service, cloud
+        storage or third-party services. Each client receives its own revocable
+        tokens only after login. Before each release a tool searches the package for
+        keys, test accesses, internal addresses and debug information.
+    kind: technical
+    evidence:
+      de: Bericht des Secret-Scans im Build; Liste der Token-Arten und wie sie widerrufen werden.
+      en: Report of the secret scan in the build; list of token types and how they are revoked.
+    cra_refs: [AI-I-2-d, AI-I-2-e]
+    asvs: [V13.3.1, V15.2.3]
+    masvs: [MASVS-CRYPTO-2]
+    sources: ["OWASP Mobile Top 10 2024 M1 Improper Credential Usage; CWE-798"]
+
+  - id: os-keystore
+    rev: 1
+    title:
+      de: Zugangsdaten im Schlüsselspeicher des Betriebssystems
+      en: Credentials in the operating system key store
+    description:
+      de: >-
+        Passwörter, Token und Schlüssel liegen im Schlüsselspeicher der Plattform
+        (Windows Credential Manager/DPAPI, macOS Keychain, Android Keystore, iOS
+        Keychain) und nicht in Einstellungsdateien. Wo möglich sind Schlüssel an
+        das Gerät gebunden und nicht exportierbar.
+      en: >-
+        Passwords, tokens and keys are kept in the platform key store (Windows
+        Credential Manager/DPAPI, macOS Keychain, Android Keystore, iOS Keychain)
+        and not in settings files. Where possible keys are bound to the device and
+        not exportable.
+    kind: technical
+    evidence:
+      de: Code-Stelle der Ablage; Prüfung der App-Dateien auf einem Testgerät.
+      en: Code location of storage; inspection of the app files on a test device.
+    cra_refs: [AI-I-2-e]
+    masvs: [MASVS-STORAGE-1, MASVS-CRYPTO-2]
+    sources: ["OWASP Mobile Top 10 2024 M9 Insecure Data Storage"]
+
+  - id: local-data-protection
+    rev: 1
+    title:
+      de: Lokale Daten schützen und als nicht vertrauenswürdig behandeln
+      en: Protect local data and treat it as untrusted
+    description:
+      de: >-
+        Lokale Daten liegen im Benutzerprofil bzw. im privaten App-Bereich mit
+        Rechten nur für den Nutzer, nicht in gemeinsamen Ordnern oder auf der
+        SD-Karte. Sensible Daten werden mit einem Schlüssel aus dem
+        Schlüsselspeicher verschlüsselt und sind von Cloud-Backups ausgenommen,
+        wenn nötig. Beim Lesen prüft die Anwendung Einstellungen und Daten wie
+        jede andere Eingabe; sicherheitsrelevante Einstellungen (z. B.
+        Server-Adresse, Prüfungen ein/aus) liegen in einem nur für Administratoren
+        schreibbaren Bereich.
+      en: >-
+        Local data is kept in the user profile or the private app area with rights
+        only for the user, not in shared folders or on the SD card. Sensitive data
+        is encrypted with a key from the key store and excluded from cloud backups
+        where necessary. When reading, the application checks settings and data
+        like any other input; security-relevant settings (e.g. server address,
+        checks on/off) are kept in an area writable only by administrators.
+    kind: technical
+    evidence:
+      de: Dateirechte nach Installation; Inhalt des Datenverzeichnisses auf einem Testgerät.
+      en: File rights after installation; content of the data directory on a test device.
+    cra_refs: [AI-I-2-e, AI-I-2-f]
+    asvs: [V14.2.4]
+    masvs: [MASVS-STORAGE-1, MASVS-CODE-4]
+    sources: ["OWASP Mobile Top 10 2024 M9 Insecure Data Storage; CWE-312; CWE-276"]
+
+  - id: local-data-recovery
+    rev: 1
+    title:
+      de: Beschädigte lokale Daten erkennen und wiederherstellen
+      en: Detect and recover corrupted local data
+    description:
+      de: >-
+        Die Anwendung schreibt Daten so, dass ein Absturz oder Stromausfall keine
+        halbe Datei hinterlässt (erst neue Datei schreiben, dann ersetzen). Beim
+        Start erkennt sie beschädigte oder fehlende Einstellungen und startet mit
+        sicheren Standardwerten statt abzustürzen. Wichtige Nutzerdaten lassen sich
+        sichern und wiederherstellen.
+      en: >-
+        The application writes data so that a crash or power failure does not leave
+        a half-written file (write new file first, then replace). At start it
+        detects corrupted or missing settings and starts with safe default values
+        instead of crashing. Important user data can be backed up and restored.
+    kind: technical
+    evidence:
+      de: Test mit absichtlich beschädigter Einstellungsdatei; Beschreibung der Sicherungsfunktion.
+      en: Test with a deliberately corrupted settings file; description of the backup function.
+    cra_refs: [AI-I-2-h]
+    asvs: [V16.5.3]
+    sources: ["CWE-703; general software engineering practice"]
+
+  - id: log-redaction
+    rev: 1
+    title:
+      de: Keine sensiblen Daten in Logs und Absturzberichten
+      en: No sensitive data in logs and crash reports
+    description:
+      de: >-
+        Passwörter, Token, Schlüssel, Gesundheits- oder Zahlungsdaten und
+        Dokumentinhalte werden vor dem Schreiben in Logs entfernt oder maskiert.
+        Absturzberichte und Diagnosedaten enthalten nur das Nötige, gehen nur mit
+        Zustimmung an den Hersteller und werden dort mit Zugriffsbeschränkung und
+        Löschfrist gespeichert. Ausführliches Debug-Logging ist im Auslieferungszustand
+        aus.
+      en: >-
+        Passwords, tokens, keys, health or payment data and document contents are
+        removed or masked before writing to logs. Crash reports and diagnostic data
+        contain only what is needed, go to the manufacturer only with consent and
+        are stored there with access restriction and deletion period. Verbose debug
+        logging is off in the delivered state.
+    kind: technical
+    evidence:
+      de: Log-Richtlinie; Durchsicht von Log und Absturzbericht nach einem Testlauf mit Testdaten.
+      en: Logging policy; review of log and crash report after a test run with test data.
+    cra_refs: [AI-I-2-e, AI-I-2-g]
+    asvs: [V16.2.5, V14.2.3]
+    masvs: [MASVS-STORAGE-2]
+    sources: ["CWE-532; OWASP Mobile Top 10 2024 M6 Inadequate Privacy Controls"]
+
+  # --- platform integration ----------------------------------------------------------
+  - id: safe-library-loading
+    rev: 1
+    title:
+      de: Bibliotheken nur aus geschützten Pfaden laden
+      en: Load libraries only from protected paths
+    description:
+      de: >-
+        Die Anwendung lädt DLLs, dylibs, Plug-ins und Hilfsprogramme nur mit
+        vollständigem Pfad aus dem Installationsverzeichnis oder Systemverzeichnis,
+        nicht aus dem aktuellen Ordner, dem Download-Ordner oder über PATH.
+        Unter Windows wird die sichere Suchreihenfolge gesetzt, unter macOS sind
+        Hardened Runtime und Library Validation aktiv. Plug-ins werden vor dem Laden
+        auf eine gültige Signatur geprüft.
+      en: >-
+        The application loads DLLs, dylibs, plug-ins and helper programs only by full
+        path from the installation directory or system directory, not from the
+        current folder, the downloads folder or via PATH. On Windows the safe search
+        order is set, on macOS hardened runtime and library validation are active.
+        Plug-ins are checked for a valid signature before loading.
+    kind: technical
+    evidence:
+      de: Test mit einer präparierten Bibliothek im Programm- und Download-Ordner (z. B. mit Process Monitor).
+      en: Test with a prepared library in the program and downloads folder (e.g. with Process Monitor).
+    cra_refs: [AI-I-2-f, AI-I-2-k]
+    sources: ["CWE-427; CWE-426"]
+
+  - id: least-privilege-install
+    rev: 1
+    title:
+      de: Installation mit möglichst wenigen Rechten
+      en: Installation with as few rights as possible
+    description:
+      de: >-
+        Wo möglich installiert sich die Software ohne Administratorrechte im
+        Benutzerprofil. Braucht sie Administratorrechte, liegt das Programm in einem
+        nur für Administratoren schreibbaren Ordner, temporäre Dateien liegen in
+        einem geschützten Verzeichnis, und das Installationsprogramm startet keine
+        Programme aus beschreibbaren Orten. Nach der Installation läuft nichts
+        dauerhaft mit erhöhten Rechten, was nicht unbedingt nötig ist.
+      en: >-
+        Where possible the software installs without administrator rights in the user
+        profile. If it needs administrator rights, the program is placed in a folder
+        writable only by administrators, temporary files are kept in a protected
+        directory, and the installer does not start programs from writable
+        locations. After installation nothing runs permanently with elevated rights
+        that is not strictly necessary.
+    kind: technical
+    evidence:
+      de: Dateirechte des Installationsordners; Liste der installierten Dienste mit Konto.
+      en: File rights of the installation folder; list of installed services with account.
+    cra_refs: [AI-I-2-j, AI-I-2-k]
+    sources: ["CWE-250; CWE-276"]
+
+  - id: local-service-hardening
+    rev: 1
+    title:
+      de: Lokale Dienste mit eigenen Rechten und Aufruferprüfung
+      en: Local services with own rights and caller check
+    description:
+      de: >-
+        Hintergrunddienste (z. B. für Updates oder Lizenzen) laufen unter einem
+        eigenen Konto mit nur den nötigen Rechten statt als SYSTEM oder root. Sie
+        nehmen Befehle nur von berechtigten Aufrufern an, prüfen jede Anfrage und
+        bieten keine allgemeinen Funktionen wie "Datei kopieren" oder "Programm
+        starten" an.
+      en: >-
+        Background services (e.g. for updates or licences) run under their own
+        account with only the rights needed instead of SYSTEM or root. They accept
+        commands only from authorised callers, check every request and offer no
+        general functions such as "copy file" or "start program".
+    kind: technical
+    evidence:
+      de: Dienstkonto und Rechte; Liste der angebotenen Befehle; Test als normaler Nutzer.
+      en: Service account and rights; list of offered commands; test as a normal user.
+    cra_refs: [AI-I-2-d, AI-I-2-j]
+    asvs: [V8.3.1, V13.2.2]
+    sources: ["CWE-269; CWE-250"]
+
+  - id: ipc-hardening
+    rev: 1
+    title:
+      de: Lokale Schnittstellen zwischen Programmen absichern
+      en: Secure local interfaces between programs
+    description:
+      de: >-
+        Named Pipes, lokale Sockets, lokale HTTP-Server und Android-Komponenten
+        (Activities, Services, Broadcast Receiver, Content Provider) sind nur
+        erreichbar, wenn nötig. Sie prüfen, wer aufruft (Rechte, Signatur,
+        Benutzer), und behandeln jede Nachricht als nicht vertrauenswürdige Eingabe.
+        Sensible Daten gehen nur an ein bestimmtes Ziel, nicht per Rundsendung.
+      en: >-
+        Named pipes, local sockets, local HTTP servers and Android components
+        (activities, services, broadcast receivers, content providers) are only
+        reachable when needed. They check who is calling (rights, signature, user)
+        and treat every message as untrusted input. Sensitive data goes only to a
+        specific target, not by broadcast.
+    kind: technical
+    evidence:
+      de: Liste der lokalen Schnittstellen mit Zugriffsregeln; Manifest-Prüfung; Test mit einer fremden App bzw. einem anderen Benutzer.
+      en: List of local interfaces with access rules; manifest review; test with a foreign app or another user.
+    cra_refs: [AI-I-2-d, AI-I-2-j]
+    masvs: [MASVS-PLATFORM-1]
+    sources: ["CWE-926; CWE-927; CWE-306"]
+
+  - id: deep-link-validation
+    rev: 1
+    title:
+      de: Deep Links und eigene URL-Schemata prüfen
+      en: Validate deep links and custom URL schemes
+    description:
+      de: >-
+        Die App nutzt verifizierte Links (Android App Links, iOS Universal Links)
+        statt frei belegbarer URL-Schemata. Parameter aus Links werden wie jede
+        Eingabe geprüft. Ein Link löst keine sicherheitsrelevante Aktion
+        (Zahlung, Löschung, Kontoverknüpfung, Login mit Token) ohne Bestätigung
+        des Nutzers aus.
+      en: >-
+        The app uses verified links (Android App Links, iOS Universal Links) instead
+        of freely claimable URL schemes. Parameters from links are checked like any
+        input. A link triggers no security-relevant action (payment, deletion,
+        account linking, login with token) without user confirmation.
+    kind: technical
+    evidence:
+      de: Liste der registrierten Links; Test mit manipulierten Links.
+      en: List of registered links; test with manipulated links.
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    masvs: [MASVS-PLATFORM-1, MASVS-CODE-4]
+    sources: ["CWE-939"]
+
+  - id: webview-hardening
+    rev: 1
+    title:
+      de: Eingebettete Browser-Ansichten härten
+      en: Harden embedded browser views
+    description:
+      de: >-
+        WebViews und Electron-Fenster zeigen nur eigene Inhalte von festgelegten
+        Adressen über HTTPS. JavaScript-Brücken zu App-Funktionen und Node.js-
+        Zugriff sind aus oder auf eine kleine Liste von Funktionen begrenzt;
+        Dateizugriff ist aus. Fremde Links öffnen im normalen Browser. Eine Content
+        Security Policy verhindert eingeschleuste Skripte.
+      en: >-
+        WebViews and Electron windows show only own content from defined addresses
+        via HTTPS. JavaScript bridges to app functions and Node.js access are off or
+        limited to a small list of functions; file access is off. Foreign links open
+        in the normal browser. A Content Security Policy prevents injected scripts.
+    kind: technical
+    evidence:
+      de: WebView- bzw. Electron-Konfiguration; Liste der erlaubten Adressen und Brückenfunktionen.
+      en: WebView or Electron configuration; list of allowed addresses and bridge functions.
+    cra_refs: [AI-I-2-f, AI-I-2-j]
+    asvs: [V3.4.3]
+    masvs: [MASVS-PLATFORM-2]
+    sources: ["CWE-79; CWE-749"]
+
+  - id: tls-pinning-or-validation
+    rev: 1
+    title:
+      de: Verschlüsselte Verbindungen mit Zertifikatsprüfung
+      en: Encrypted connections with certificate validation
+    description:
+      de: >-
+        Alle Verbindungen zu Backend, Lizenz- und Update-Server nutzen TLS 1.2 oder
+        neuer. Die Software prüft Zertifikat und Servername und bricht bei Fehlern
+        ab; es gibt keinen Schalter und keinen Debug-Code, der die Prüfung
+        abschaltet. Für eigene Server kann zusätzlich der erwartete Schlüssel
+        festgelegt werden (Pinning), mit Plan für den Schlüsselwechsel.
+      en: >-
+        All connections to backend, licence and update server use TLS 1.2 or newer.
+        The software checks certificate and server name and aborts on errors; there
+        is no switch and no debug code that disables the check. For own servers the
+        expected key can additionally be fixed (pinning), with a plan for key
+        rollover.
+    kind: technical
+    evidence:
+      de: Test mit einem Proxy und selbst ausgestelltem Zertifikat; Netzwerk-Sicherheitskonfiguration der App.
+      en: Test with a proxy and self-issued certificate; network security configuration of the app.
+    cra_refs: [AI-I-2-e, AI-I-2-f]
+    asvs: [V12.1.1, V12.2.1, V12.3.2]
+    masvs: [MASVS-NETWORK-1, MASVS-NETWORK-2]
+    sources: ["OWASP Mobile Top 10 2024 M5 Insecure Communication; CWE-295"]
+
+  - id: safe-file-parsing
+    rev: 1
+    title:
+      de: Dateien robust und abgeschottet einlesen
+      en: Read files robustly and in isolation
+    description:
+      de: >-
+        Importierte Dateien werden auf Format und Größe geprüft, bevor sie
+        verarbeitet werden. Parser kommen aus gepflegten Bibliotheken oder sind in
+        einer speichersicheren Sprache geschrieben und werden mit Fuzzing getestet.
+        Formate mit eingebettetem Code (Makros, Skripte, serialisierte Objekte)
+        werden nicht oder nur nach Rückfrage ausgeführt. Wo möglich läuft das
+        Einlesen in einem Prozess mit wenig Rechten.
+      en: >-
+        Imported files are checked for format and size before processing. Parsers
+        come from maintained libraries or are written in a memory-safe language and
+        are tested with fuzzing. Formats with embedded code (macros, scripts,
+        serialised objects) are not executed, or only after asking. Where possible
+        reading takes place in a process with few rights.
+    kind: technical
+    evidence:
+      de: Fuzzing-Ergebnisse; Liste der unterstützten Formate und ihrer Grenzen.
+      en: Fuzzing results; list of supported formats and their limits.
+    cra_refs: [AI-I-2-f, AI-I-2-k]
+    asvs: [V1.4.1, V1.5.2, V5.2.1]
+    masvs: [MASVS-CODE-4]
+    sources: ["CWE-787; CWE-502"]
+
+  - id: file-exchange-protection
+    rev: 1
+    title:
+      de: Exportierte Dateien schützen und Herkunft prüfbar machen
+      en: Protect exported files and make their origin verifiable
+    description:
+      de: >-
+        Exporte enthalten nur die gewählten Daten, keine Zugangsdaten, Token oder
+        versteckten Metadaten. Sensible Exporte lassen sich mit einem Passwort oder
+        Schlüssel verschlüsseln. Wo die Unverfälschtheit zählt (z. B.
+        Konfigurations- oder Projektdateien), sind Dateien signiert und die
+        Anwendung warnt beim Import einer veränderten Datei.
+      en: >-
+        Exports contain only the selected data, no credentials, tokens or hidden
+        metadata. Sensitive exports can be encrypted with a password or key. Where
+        integrity matters (e.g. configuration or project files), files are signed
+        and the application warns when importing a modified file.
+    kind: technical
+    evidence:
+      de: Durchsicht einer Exportdatei; Test mit einer veränderten signierten Datei.
+      en: Review of an export file; test with a modified signed file.
+    cra_refs: [AI-I-2-e, AI-I-2-f]
+    asvs: [V14.2.4, V14.2.8]
+    sources: ["CWE-212; CWE-345"]
+
+  - id: push-content-minimal
+    rev: 1
+    title:
+      de: Push-Nachrichten nur als Hinweis
+      en: Push messages only as a notice
+    description:
+      de: >-
+        Push-Nachrichten enthalten keine vertraulichen Inhalte, sondern nur den
+        Hinweis, dass es Neues gibt. Die App holt die Inhalte über die
+        authentifizierte API ab und führt keine Befehle aus der Push-Nachricht aus.
+        Was auf dem Sperrbildschirm erscheint, ist einstellbar. Wichtige Meldungen
+        gehen nicht verloren, wenn eine Push-Nachricht ausbleibt, weil die App
+        beim Öffnen selbst abfragt.
+      en: >-
+        Push messages contain no confidential content, only the notice that there is
+        something new. The app fetches the content via the authenticated API and
+        does not execute commands from the push message. What appears on the lock
+        screen is configurable. Important messages are not lost if a push message
+        does not arrive, because the app queries itself when opened.
+    kind: technical
+    evidence:
+      de: Beispiel-Push-Nachricht; Beschreibung des Abrufs nach Push.
+      en: Sample push message; description of the fetch after push.
+    cra_refs: [AI-I-2-e, AI-I-2-g]
+    masvs: [MASVS-STORAGE-2, MASVS-PLATFORM-3]
+    sources: ["OWASP Mobile Top 10 2024 M6 Inadequate Privacy Controls"]
+
+  # --- integrity of the delivered software -------------------------------------------
+  - id: code-signing
+    rev: 1
+    title:
+      de: Programme und Pakete signieren
+      en: Sign programs and packages
+    description:
+      de: >-
+        Installationspaket, Programmdateien und Apps sind mit dem Zertifikat des
+        Herstellers signiert (Authenticode, Apple Developer ID mit Notarisierung,
+        App-Store-Signatur). Der Signaturschlüssel liegt in einem Hardware-Modul
+        oder Signaturdienst, und nur der Build-Server kann signieren. Download-Seite
+        und Dokumentation nennen die einzige offizielle Bezugsquelle.
+      en: >-
+        Installation package, program files and apps are signed with the
+        manufacturer certificate (Authenticode, Apple Developer ID with
+        notarisation, app store signature). The signing key is kept in a hardware
+        module or signing service, and only the build server can sign. Download page
+        and documentation name the only official source.
+    kind: technical
+    evidence:
+      de: Signaturprüfung eines ausgelieferten Pakets; Beschreibung der Schlüsselaufbewahrung.
+      en: Signature check of a delivered package; description of key storage.
+    cra_refs: [AI-I-2-f, AI-II-7]
+    masvs: [MASVS-RESILIENCE-2]
+    sources: ["OWASP Top 10 2021 A08 Software and Data Integrity Failures; CWE-494"]
+
+  - id: app-attestation
+    rev: 1
+    title:
+      de: Echtheit von App und Gerät gegenüber dem Backend nachweisen
+      en: Prove authenticity of app and device to the backend
+    description:
+      de: >-
+        Für sensible Funktionen lässt das Backend sich von der Plattform bestätigen,
+        dass die Anfrage von der unveränderten, offiziellen App auf einem nicht
+        manipulierten Gerät kommt (z. B. Play Integrity, App Attest). Ist das nicht
+        der Fall, sperrt es sensible Funktionen und weist den Nutzer auf die
+        offizielle Bezugsquelle hin.
+      en: >-
+        For sensitive functions the backend has the platform confirm that the
+        request comes from the unmodified official app on a non-manipulated device
+        (e.g. Play Integrity, App Attest). If not, it blocks sensitive functions and
+        points the user to the official source.
+    kind: technical
+    evidence:
+      de: Beschreibung der Prüfung im Backend; Test mit einer nachgebauten App.
+      en: Description of the check in the backend; test with a rebuilt app.
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    masvs: [MASVS-RESILIENCE-1, MASVS-RESILIENCE-2]
+    sources: ["OWASP Mobile Top 10 2024 M7 Insufficient Binary Protections"]
+
+  # --- updates -----------------------------------------------------------------------
+  - id: sw-signed-updates
+    rev: 1
+    title:
+      de: Updates signieren und vor der Installation prüfen
+      en: Sign updates and verify them before installation
+    description:
+      de: >-
+        Jedes Update und jede Update-Liste ist vom Hersteller signiert. Die
+        Update-Funktion prüft die Signatur mit einem fest eingebauten Schlüssel,
+        bevor sie etwas installiert, und lädt nur über geprüftes HTTPS. Eine
+        ungültige Signatur bricht das Update ab und wird gemeldet. (Der ASVS-Bezug
+        betrifft nur den geprüften Transportweg; für die Signaturprüfung selbst hat
+        ASVS keine Anforderung.)
+      en: >-
+        Every update and every update list is signed by the manufacturer. The
+        updater checks the signature with a built-in key before installing
+        anything and downloads only via validated HTTPS. An invalid signature aborts
+        the update and is reported. (The ASVS reference covers only the validated
+        transport; ASVS has no requirement for the signature check itself.)
+    kind: technical
+    evidence:
+      de: Test mit einem manipulierten Update-Paket; Beschreibung der Update-Signierung.
+      en: Test with a manipulated update package; description of update signing.
+    cra_refs: [AI-I-2-c, AI-I-2-f, AI-II-7]
+    asvs: [V12.3.2]
+    sources: ["OWASP Top 10 2021 A08 Software and Data Integrity Failures; CWE-494 Download of Code Without Integrity Check"]
+
+  - id: update-anti-rollback
+    rev: 1
+    title:
+      de: Rückfall auf alte Versionen verhindern
+      en: Prevent rollback to old versions
+    description:
+      de: >-
+        Die Update-Funktion installiert keine ältere Version als die vorhandene,
+        auch wenn sie korrekt signiert ist. Update-Listen tragen ein Ablaufdatum
+        oder eine fortlaufende Nummer, damit ein Angreifer keine alte Liste
+        zurückspielen kann. Der Server kann Versionen mit bekannten Schwachstellen
+        sperren.
+      en: >-
+        The updater does not install a version older than the existing one, even if
+        it is correctly signed. Update lists carry an expiry date or a sequence
+        number so that an attacker cannot replay an old list. The server can block
+        versions with known vulnerabilities.
+    kind: technical
+    evidence:
+      de: Test mit einer signierten älteren Version und einer veralteten Update-Liste.
+      en: Test with a signed older version and an outdated update list.
+    cra_refs: [AI-I-2-c, AI-I-2-f]
+    masvs: [MASVS-CODE-2]
+    sources: ["OWASP Top 10 2021 A08 Software and Data Integrity Failures"]
+
+  - id: update-failsafe
+    rev: 1
+    title:
+      de: Ausfallsichere Installation und Updates
+      en: Fail-safe installation and updates
+    description:
+      de: >-
+        Installation und Update laufen so, dass ein Abbruch (Absturz, Neustart,
+        voller Datenträger) die vorhandene Version lauffähig lässt oder
+        automatisch zu ihr zurückkehrt. Updates werden schrittweise verteilt, und
+        der Hersteller kann eine fehlerhafte Verteilung stoppen.
+      en: >-
+        Installation and update work so that an abort (crash, restart, full disk)
+        leaves the existing version working or returns to it automatically. Updates
+        are rolled out in stages, and the manufacturer can stop a faulty rollout.
+    kind: technical
+    evidence:
+      de: Test mit abgebrochenem Update; Beschreibung der stufenweisen Verteilung.
+      en: Test with an aborted update; description of staged rollout.
+    cra_refs: [AI-I-2-h, AI-II-7]
+    asvs: [V16.5.3]
+    sources: ["general software engineering practice; ASVS V16.5.3 (fail securely) is only a loose fit"]
+
+  - id: update-notification
+    rev: 1
+    title:
+      de: Nutzer auf Sicherheitsupdates hinweisen
+      en: Notify users of security updates
+    description:
+      de: >-
+        Die Software prüft regelmäßig auf neue Versionen und zeigt
+        Sicherheitsupdates deutlich an, mit kurzer Erklärung, warum das Update
+        wichtig ist. Wo der Kunde es zulässt, werden Sicherheitsupdates automatisch
+        installiert. Versionen mit kritischen Schwachstellen fordern das Update
+        nachdrücklich oder sperren betroffene Funktionen.
+      en: >-
+        The software regularly checks for new versions and clearly shows security
+        updates, with a short explanation why the update matters. Where the customer
+        allows it, security updates are installed automatically. Versions with
+        critical vulnerabilities insist on the update or block affected functions.
+    kind: technical
+    evidence:
+      de: Bildschirmfoto des Update-Hinweises; Einstellung für automatische Updates.
+      en: Screenshot of the update notice; setting for automatic updates.
+    cra_refs: [AI-I-2-c, AI-II-8]
+    masvs: [MASVS-CODE-2]
+    sources: ["Regulation (EU) 2024/2847 Annex I Part I (2)(c) and Part II (8)"]
+
+  - id: license-offline-grace
+    rev: 1
+    title:
+      de: Weiterarbeiten bei nicht erreichbarem Lizenzserver
+      en: Continued work when the licence server is unreachable
+    description:
+      de: >-
+        Ist der Lizenzserver nicht erreichbar, läuft eine gültige Lizenz für einen
+        festgelegten Zeitraum weiter (z. B. mit einem signierten, zeitlich
+        begrenzten Lizenznachweis auf dem Rechner). Die Anwendung zeigt an, wie
+        lange noch, und gespeicherte Daten bleiben jederzeit zugänglich.
+      en: >-
+        If the licence server is unreachable, a valid licence keeps working for a
+        defined period (e.g. with a signed, time-limited licence proof on the
+        computer). The application shows how long, and stored data remains
+        accessible at all times.
+    kind: technical
+    evidence:
+      de: Test ohne Netzverbindung; dokumentierte Kulanzzeit.
+      en: Test without network connection; documented grace period.
+    cra_refs: [AI-I-2-h]
+    sources: ["general software engineering practice"]
+
+  # --- dependencies ------------------------------------------------------------------
+  - id: dependency-scanning
+    rev: 1
+    title:
+      de: Abhängigkeiten laufend auf Schwachstellen prüfen
+      en: Continuously check dependencies for vulnerabilities
+    description:
+      de: >-
+        Ein Werkzeug im Build prüft alle eingebundenen Bibliotheken gegen
+        Schwachstellendatenbanken und schlägt bei kritischen Funden Alarm. Auch für
+        bereits ausgelieferte Versionen wird weiter geprüft. Für das Beheben gelten
+        feste Fristen je Schweregrad, und veraltete, nicht mehr gepflegte
+        Bibliotheken werden ersetzt.
+      en: >-
+        A tool in the build checks all included libraries against vulnerability
+        databases and raises an alarm for critical findings. Versions already
+        delivered keep being checked. Fixing follows fixed deadlines per severity,
+        and outdated, unmaintained libraries are replaced.
+    kind: technical
+    evidence:
+      de: Bericht des Abhängigkeits-Scans; Fristenregelung; Ticketverlauf zu einem Fund.
+      en: Dependency scan report; deadline rules; ticket history for a finding.
+    cra_refs: [AI-I-2-a, AI-II-2]
+    asvs: [V15.1.1, V15.2.1]
+    masvs: [MASVS-CODE-3]
+    sources: ["OWASP Top 10 2021 A06 Vulnerable and Outdated Components; CWE-1395"]
+
+  - id: release-signing-protection
+    rev: 1
+    title:
+      de: Build und Signierschlüssel abschotten
+      en: Isolate build and signing key
+    description:
+      de: >-
+        Der Signaturschlüssel liegt in einem Hardware-Sicherheitsmodul oder
+        Cloud-Signaturdienst und lässt sich nicht exportieren. Signiert wird nur
+        aus einer abgeschotteten Build-Umgebung, für Releases mit Freigabe durch
+        eine zweite Person, und jede Signatur wird protokolliert. Build-Server und
+        Quellcode-Verwaltung sind mit zweitem Faktor und minimalen Rechten
+        geschützt; Builds sind nach Möglichkeit reproduzierbar, sodass sich ein
+        Release gegen einen unabhängigen Build vergleichen lässt.
+      en: >-
+        The signing key is kept in a hardware security module or cloud signing
+        service and cannot be exported. Signing takes place only from an isolated
+        build environment, for releases with approval by a second person, and every
+        signature is logged. Build server and source code management are protected
+        with a second factor and minimal rights; builds are reproducible where
+        possible so that a release can be compared against an independent build.
+    kind: technical
+    evidence:
+      de: Beschreibung der Schlüsselaufbewahrung; Signaturprotokoll; Rechte auf Build-Server und Repository.
+      en: Description of key storage; signing log; rights on build server and repository.
+    cra_refs: [AI-I-2-f, AI-II-7]
+    asvs: [V13.3.1]
+    sources: ["SLSA framework (supply-chain levels for software artifacts); CWE-506"]

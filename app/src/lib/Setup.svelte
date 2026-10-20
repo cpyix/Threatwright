@@ -1,5 +1,5 @@
 <script lang="ts">
-  // Guided initial setup of a model: product, zones, components, connections, assets, threats.
+  // Guided initial setup of a model: product, CRA classification (orientation only), zones, components, connections, assets, threats.
   // Every step works on the regular model through the existing API (undo and save as usual).
   import { api, ApiError } from '../api'
   import { label, tr } from '../i18n'
@@ -9,6 +9,7 @@
   import { SvelteFlowProvider } from '@xyflow/svelte'
   import '@xyflow/svelte/dist/style.css'
   import Canvas from './diagram/Canvas.svelte'
+  import CraClass from './CraClass.svelte'
   import Info from './Info.svelte'
   import MultiSelect from './MultiSelect.svelte'
 
@@ -16,7 +17,7 @@
 
   const lang = $derived(app.lang)
   const t = $derived(SETUP[lang])
-  const STEPS = ['s_product', 's_zones', 's_elements', 's_flows', 's_assets', 's_threats', 's_finish'] as const
+  const STEPS = ['s_product', 's_cra', 's_zones', 's_elements', 's_flows', 's_assets', 's_threats', 's_finish'] as const
   const indicators = ['interface', 'access', 'user'] as const
 
   let error = $state('')
@@ -31,9 +32,15 @@
   const threats = $derived(app.objects('threats'))
   const elementTypes = $derived(types.filter((x) => x.kind !== 'flow'))
   const flowTypes = $derived(types.filter((x) => x.kind === 'flow'))
+  const libraries = $derived(app.project?.config.libraries ?? [])
+  const productQuestions = $derived([
+    ...t.product_q.common,
+    ...libraries.flatMap((id) => t.product_q[id as 'ot' | 'iot' | 'software'] ?? []),
+  ])
   const title = (id: string) => [...elements, ...flows, ...assets].find((o) => o.id === id)?.title ?? id
 
   $effect(() => {
+    void libraries.join(',') // stable key: the array is rebuilt on every project refresh; reload the building blocks when a library is added
     api<{ elements: ElementType[] }>('GET', '/library').then((r) => (types = r.elements)).catch(() => (types = []))
   })
 
@@ -63,16 +70,27 @@
 
   async function go(n: number) {
     // product and zones are edited as a draft: apply before leaving the step
-    if (step === 1 || step === 2) {
+    if (busy) return
+    if (step === 1 || step === 3) {
       error = ''
+      busy = true // disables the pager: a second click must not send a second save
       try {
         await saveMeta()
       } catch (e) {
         error = e instanceof ApiError ? e.message : String(e)
         return
+      } finally {
+        busy = false
       }
     }
     app.view = { kind: 'setup', step: n }
+  }
+
+  async function addLibrary(id: string) {
+    await guard(async () => {
+      app.project = await api<ProjectInfo>('POST', '/project/libraries', { add: [id] })
+      await app.afterChange() // new library: refresh the issue list
+    })
   }
 
   async function createModel() {
@@ -83,7 +101,7 @@
     })
   }
 
-  // --- step 3: components ----------------------------------------------------------
+  // --- step 4: components ----------------------------------------------------------
   let filter = $state('')
   let picked = $state<ElementType | null>(null)
   let newTitle = $state('')
@@ -143,7 +161,7 @@
     })
   }
 
-  // --- step 4: connections -------------------------------------------------------------
+  // --- step 5: connections -------------------------------------------------------------
   let source = $state('')
   let target = $state('')
   let flowType = $state('')
@@ -161,7 +179,7 @@
     })
   }
 
-  // --- step 5: assets ---------------------------------------------------------------------
+  // --- step 6: assets ---------------------------------------------------------------------
   let assetTitle = $state('')
   let assetClass = $state('')
   const classes = $derived(Object.keys(app.method?.asset_classes ?? {}))
@@ -182,7 +200,7 @@
     return i ? (['C', 'I', 'A'] as const).map((d) => i[d] ?? '–').join(' / ') : ''
   }
 
-  // --- step 6: threats ---------------------------------------------------------------------
+  // --- step 7: threats ---------------------------------------------------------------------
   let suggestions = $state<Record<string, Record<string, Category>>>({})
   let chosen = $state<Record<string, string[]>>({})
   const targets = $derived([...elements, ...flows])
@@ -224,7 +242,7 @@
     })
   }
 
-  // --- step 7: finish ------------------------------------------------------------------------
+  // --- step 8: finish ------------------------------------------------------------------------
   const errors = $derived(app.issues.filter((i) => i.severity === 'error').length)
   const checks = $derived([
     [t.c_description, !!app.model?.meta.description?.trim()],
@@ -282,8 +300,20 @@
     <p>{t.product_text}</p>
     <details class="hint">
       <summary>{t.product_questions}</summary>
-      <ul>{#each t.product_q as q}<li>{q}</li>{/each}</ul>
+      <ul>{#each productQuestions as q}<li>{q}</li>{/each}</ul>
     </details>
+    <fieldset>
+      <legend>{tr(lang, 'product_type')}</legend>
+      {#each app.project?.product_libraries ?? [] as id (id)}
+        <label class="check">
+          <input type="checkbox" checked={libraries.includes(id)} disabled data-testid="setup-lib-{id}" />
+          {tr(lang, `lib_${id as 'ot' | 'iot' | 'software'}`)}
+        </label>
+        {#if !libraries.includes(id)}
+          <button type="button" onclick={() => addLibrary(id)} disabled={busy} data-testid="setup-add-lib-{id}">{t.add_library}</button>
+        {/if}
+      {/each}
+    </fieldset>
     <label for="setup-title">{t.model_title}</label>
     <input id="setup-title" bind:value={meta.title} data-testid="setup-title" />
     <label for="setup-description">{t.description}</label>
@@ -306,9 +336,12 @@
       }}>{t.add_configuration}</button
     >
   {:else if step === 2}
+    <h2>{t.s_cra}</h2>
+    <CraClass />
+  {:else if step === 3}
     <h2>{t.s_zones} <Info term="zone" /></h2>
     <p>{t.zones_text}</p>
-    <p class="muted">{t.zones_hint}</p>
+    <p class="muted">{libraries.includes('ot') ? t.zones_hint : t.zones_hint_other}</p>
     {#each meta.zones ?? [] as zone, n}
       <fieldset class="card zone" data-testid="setup-zone-{zone.id}">
         <legend>{zone.id}</legend>
@@ -346,7 +379,7 @@
         meta.zones = [...list, { id: `Z-${n}`, title: '', environment: {} }]
       }}>{t.add_zone}</button
     >
-  {:else if step === 3}
+  {:else if step === 4}
     <h2>{t.s_elements}</h2>
     <p>{t.elements_text}</p>
     <p class="muted">{t.elements_hint}</p>
@@ -406,7 +439,7 @@
       </div>
     </div>
     {#if elements.length}{@render preview('')}{/if}
-  {:else if step === 4}
+  {:else if step === 5}
     <h2>{t.s_flows} <Info term="flow" /></h2>
     <p>{t.flows_text}</p>
     <p class="muted">{t.flows_hint}</p>
@@ -462,7 +495,7 @@
       <p class="muted">{t.none_yet}</p>
     {/each}
     {#if elements.length}{@render preview(flowType)}{/if}
-  {:else if step === 5}
+  {:else if step === 6}
     <h2>{t.s_assets} <Info term="asset_class" /></h2>
     <p>{t.assets_text}</p>
     <table>
@@ -515,7 +548,7 @@
       </div>
       <button class="primary" type="submit" disabled={busy} data-testid="setup-asset-add">{t.add_asset}</button>
     </form>
-  {:else if step === 6}
+  {:else if step === 7}
     <h2>{t.s_threats} <Info term="stride" /></h2>
     <p>{t.threats_text}</p>
     <p class="muted">{t.threats_cyber}</p>

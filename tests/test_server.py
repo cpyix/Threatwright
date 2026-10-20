@@ -4,9 +4,11 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from test_library import own_library
 
 from threatwright import server
 from threatwright.auth import hash_password, users_from, verify_password
+from threatwright.model.store import Project
 from threatwright.server import API_HEADER, create_app
 
 
@@ -286,3 +288,33 @@ def test_pick_folder_macos(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     assert calls[-1][-2:] == ["T", str(tmp_path)]  # as argv, not inside the script
     stdout = ""  # cancelled
     assert server.pick_folder("T", str(tmp_path)) is None
+
+
+def _with_libraries(project_dir: Path, libraries: list[str], own: bool = False) -> TestClient:
+    if own:
+        own_library(project_dir)
+    project = Project.load(project_dir)
+    project.config.libraries = libraries
+    project.save()
+    return TestClient(
+        create_app(None, project_dir), base_url="http://127.0.0.1", headers={API_HEADER: "1"}
+    )
+
+
+def test_add_libraries(project_dir: Path) -> None:
+    client = _with_libraries(project_dir, ["ot"])
+    assert client.get("/api/project").json()["product_libraries"] == ["ot", "iot", "software"]
+    assert "iot-device" not in {e["id"] for e in client.get("/api/library").json()["elements"]}
+    r = client.post("/api/project/libraries", json={"add": ["iot"]})
+    assert r.status_code == 200
+    assert r.json()["config"]["libraries"] == ["ot", "iot"] and r.json()["dirty"]
+    assert "iot-device" in {e["id"] for e in client.get("/api/library").json()["elements"]}
+    again = client.post("/api/project/libraries", json={"add": ["ot"]})
+    assert again.json()["config"]["libraries"] == ["ot", "iot"]
+    assert client.post("/api/project/libraries", json={"add": ["foo"]}).status_code == 422
+
+
+def test_add_libraries_keeps_own_library(project_dir: Path) -> None:
+    client = _with_libraries(project_dir, ["own", "ot"], own=True)
+    r = client.post("/api/project/libraries", json={"add": ["software"]})
+    assert r.json()["config"]["libraries"] == ["own", "ot", "software"]

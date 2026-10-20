@@ -1,0 +1,737 @@
+# Threat templates for desktop applications and mobile apps on the user's device:
+# local data, platform integration, local interfaces and exchanged files.
+threats:
+  # --- secrets and local data --------------------------------------------------------
+  - id: client-embedded-secrets
+    rev: 1
+    stride: [S, I]
+    applies_to: [desktop-app, mobile-app, installer, updater]
+    title:
+      de: Geheime Schlüssel lassen sich aus {element} auslesen
+      en: Secret keys can be extracted from {element}
+    scenario:
+      de: >-
+        Im Programm oder Installationspaket steckt ein API-Key, ein Passwort für den
+        Cloud-Speicher, ein Schlüssel für den Push-Dienst oder ein Test-Zugang, der für
+        alle Kunden gleich ist. Wer die Software herunterlädt, findet ihn mit frei
+        verfügbaren Werkzeugen in wenigen Minuten, auch wenn der Code verschleiert ist.
+      en: >-
+        The program or installation package contains an API key, a password for the
+        cloud storage, a key for the push service or a test access that is the same
+        for all customers. Anyone who downloads the software finds it with freely
+        available tools within minutes, even if the code is obfuscated.
+    consequence:
+      de: >-
+        Der Angreifer greift im Namen des Herstellers auf Backend oder Drittdienste zu,
+        liest Daten aller Kunden oder verschickt Nachrichten an alle Nutzer. Der
+        Schlüssel lässt sich erst mit einem Update aller Installationen austauschen.
+      en: >-
+        The attacker accesses backend or third-party services in the manufacturer's
+        name, reads data of all customers or sends messages to all users. The key can
+        only be replaced with an update of all installations.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-d, AI-I-2-e]
+    asvs: [V13.3.1, V15.2.3]
+    masvs: [MASVS-CRYPTO-2]
+    measures: [no-client-secrets]
+    sources: ["OWASP Mobile Top 10 2024 M1 Improper Credential Usage; CWE-798"]
+
+  - id: desktop-data-readable
+    rev: 1
+    stride: [I]
+    applies_to: [desktop-app, local-config, local-database, app-secrets-store]
+    title:
+      de: Andere lesen Daten und Zugangsdaten aus {element}
+      en: Others read data and credentials from {element}
+    scenario:
+      de: >-
+        Die Desktop-Anwendung speichert Kundendaten, Passwörter oder Anmeldetoken
+        unverschlüsselt in Dateien, die jeder Benutzer des Rechners lesen darf, z. B.
+        im Programmordner, in einem gemeinsamen Ordner oder in einer
+        Einstellungsdatei. Ein anderer Benutzer, eine Schadsoftware oder ein Dieb des
+        Laptops liest sie einfach aus.
+      en: >-
+        The desktop application stores customer data, passwords or login tokens
+        unencrypted in files that every user of the computer may read, e.g. in the
+        program folder, a shared folder or a settings file. Another user, malware or
+        a thief of the laptop simply reads them.
+    consequence:
+      de: >-
+        Vertrauliche Daten gelangen an Unbefugte; mit den Zugangsdaten meldet sich der
+        Angreifer als der Nutzer am Backend an.
+      en: >-
+        Confidential data reaches unauthorised persons; with the credentials the
+        attacker logs in to the backend as the user.
+    environment: {interface: local, access: movable}
+    impact: 3
+    cra_refs: [AI-I-2-e]
+    asvs: [V14.2.4]
+    masvs: [MASVS-STORAGE-1]
+    measures: [os-keystore, local-data-protection]
+    sources: ["CWE-312; CWE-922"]
+
+  - id: mobile-data-readable
+    rev: 1
+    stride: [I]
+    applies_to: [mobile-app, local-config, local-database, app-secrets-store]
+    title:
+      de: Daten der App lassen sich aus {element} auslesen
+      en: App data can be read from {element}
+    scenario:
+      de: >-
+        Die App legt Token, Passwörter oder persönliche Daten unverschlüsselt in
+        Einstellungen, Datenbank, Zwischenspeicher oder auf der SD-Karte ab. Über ein
+        Backup, ein gerootetes Gerät, ein verlorenes Telefon oder eine andere App mit
+        Speicherzugriff kommt ein Fremder an die Daten.
+      en: >-
+        The app stores tokens, passwords or personal data unencrypted in preferences,
+        database, cache or on the SD card. Via a backup, a rooted device, a lost
+        phone or another app with storage access a stranger gets the data.
+    consequence:
+      de: >-
+        Persönliche Daten des Nutzers werden bekannt, und mit dem Token übernimmt der
+        Angreifer das Konto, ohne das Passwort zu kennen.
+      en: >-
+        Personal data of the user becomes known, and with the token the attacker
+        takes over the account without knowing the password.
+    environment: {interface: local, access: movable, user: layman}
+    impact: 3
+    cra_refs: [AI-I-2-e]
+    masvs: [MASVS-STORAGE-1]
+    measures: [os-keystore, local-data-protection]
+    sources: ["OWASP Mobile Top 10 2024 M9 Insecure Data Storage; CWE-312"]
+
+  - id: local-data-tampering
+    rev: 1
+    stride: [T]
+    applies_to: [local-config, local-database, app-secrets-store]
+    title:
+      de: Manipulierte Inhalte in {element} steuern die Anwendung
+      en: Manipulated contents of {element} control the application
+    scenario:
+      de: >-
+        Die Anwendung vertraut ihren lokalen Dateien blind. Ein anderer Benutzer oder
+        eine Schadsoftware ändert die Server-Adresse, schaltet Prüfungen ab, ersetzt
+        ein hinterlegtes Zertifikat oder schreibt präparierte Werte in die Datenbank,
+        die beim Einlesen einen Fehler auslösen.
+        Schadsoftware, die so etwas tut, gelangt typischerweise über das Internet auf das Gerät (Download, E-Mail-Anhang); der Angriff ist dann ein zweiter Schritt aus der Ferne.
+      en: >-
+        The application trusts its local files blindly. Another user or malware
+        changes the server address, switches off checks, replaces a stored
+        certificate or writes prepared values into the database that trigger a flaw
+        when read.
+        Malware that does this typically reaches the device via the internet (download, e-mail attachment); the attack is then a remote second step.
+    consequence:
+      de: >-
+        Die Anwendung spricht mit einem fremden Server, arbeitet ohne Schutz oder
+        führt eingeschleusten Code aus.
+      en: >-
+        The application talks to a foreign server, works without protection or
+        executes injected code.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-f]
+    asvs: [V2.2.1]
+    masvs: [MASVS-CODE-4]
+    measures: [local-data-protection, os-keystore]
+    sources: ["CWE-15 External Control of System or Configuration Setting; CWE-642"]
+
+  - id: local-changes-untraceable
+    rev: 1
+    stride: [R]
+    applies_to: [local-config, local-database, app-secrets-store, installer, updater, os-platform]
+    title:
+      de: Änderungen an {element} sind nicht nachvollziehbar
+      en: Changes to {element} cannot be traced
+    scenario:
+      de: >-
+        Sicherheitseinstellungen werden geändert, Versionen installiert oder entfernt,
+        gespeicherte Zugangsdaten ersetzt, ohne dass die Anwendung festhält, wann und
+        durch wen. Änderungen direkt im Betriebssystem, z. B. in einer
+        Einstellungsdatei, bemerkt sie gar nicht.
+        Schadsoftware, die so etwas tut, gelangt typischerweise über das Internet auf das Gerät (Download, E-Mail-Anhang); der Angriff ist dann ein zweiter Schritt aus der Ferne.
+      en: >-
+        Security settings are changed, versions installed or removed, stored
+        credentials replaced without the application recording when and by whom.
+        Changes made directly in the operating system, e.g. in a settings file, go
+        completely unnoticed.
+        Malware that does this typically reaches the device via the internet (download, e-mail attachment); the attack is then a remote second step.
+    consequence:
+      de: >-
+        Nach einem Vorfall lässt sich nicht klären, was passiert ist, welche Version
+        lief und wer verantwortlich war. Kunden und Support streiten über die Ursache.
+      en: >-
+        After an incident it cannot be clarified what happened, which version was
+        running and who was responsible. Customers and support argue about the cause.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 2
+    cra_refs: [AI-I-2-l]
+    asvs: [V16.2.1]
+    measures: [audit-trail]
+    sources: ["OWASP Top 10 2021 A09 Security Logging and Monitoring Failures; CWE-778"]
+
+  - id: local-data-corrupted
+    rev: 1
+    stride: [D]
+    applies_to: [local-config, local-database, app-secrets-store, desktop-app]
+    title:
+      de: Beschädigte Daten in {element} legen die Anwendung lahm
+      en: Corrupted data in {element} disables the application
+    scenario:
+      de: >-
+        Ein Absturz während des Speicherns, ein voller Datenträger, eine
+        Verschlüsselungs-Schadsoftware oder ein Angreifer mit Schreibrecht beschädigt
+        oder löscht Einstellungen und Datenbank. Die Anwendung startet danach nicht
+        mehr oder verliert Daten.
+        Schadsoftware, die so etwas tut, gelangt typischerweise über das Internet auf das Gerät (Download, E-Mail-Anhang); der Angriff ist dann ein zweiter Schritt aus der Ferne.
+      en: >-
+        A crash while saving, a full disk, ransomware or an attacker with write access
+        damages or deletes settings and database. The application then no longer
+        starts or loses data.
+        Malware that does this typically reaches the device via the internet (download, e-mail attachment); the attack is then a remote second step.
+    consequence:
+      de: >-
+        Der Nutzer kann nicht arbeiten und verliert Arbeitsstände; der Support muss
+        jede Installation einzeln reparieren.
+      en: >-
+        The user cannot work and loses work in progress; support has to repair each
+        installation individually.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h]
+    asvs: [V16.5.3]
+    measures: [local-data-recovery]
+    sources: ["CWE-703; general software engineering practice"]
+
+  # --- platform integration ----------------------------------------------------------
+  - id: library-search-path-hijack
+    rev: 1
+    stride: [T, E]
+    applies_to: [desktop-app, installer, updater]
+    title:
+      de: '{element} lädt eine untergeschobene Bibliothek (DLL/dylib)'
+      en: '{element} loads a planted library (DLL/dylib)'
+    scenario:
+      de: >-
+        Das Programm lädt Bibliotheken oder Hilfsprogramme ohne vollständigen Pfad.
+        Das Betriebssystem sucht sie dann auch im Download-Ordner, im aktuellen
+        Arbeitsordner oder in einem für alle Benutzer beschreibbaren Ordner. Ein
+        Angreifer legt dort eine gleichnamige DLL oder dylib ab, z. B. per Download
+        neben das Installationsprogramm.
+        Schadsoftware, die so etwas tut, gelangt typischerweise über das Internet auf das Gerät (Download, E-Mail-Anhang); der Angriff ist dann ein zweiter Schritt aus der Ferne.
+      en: >-
+        The program loads libraries or helper programs without a full path. The
+        operating system then also searches the downloads folder, the current working
+        folder or a folder writable by all users. An attacker places a library with
+        the same name there, e.g. via a download next to the installer.
+        Malware that does this typically reaches the device via the internet (download, e-mail attachment); the attack is then a remote second step.
+    consequence:
+      de: >-
+        Fremder Code läuft mit den Rechten des Programms, beim Installationsprogramm
+        oder Update-Dienst oft mit Administratorrechten. Der Rechner ist vollständig
+        übernommen.
+      en: >-
+        Foreign code runs with the rights of the program, for installer or update
+        service often with administrator rights. The computer is completely taken
+        over.
+    environment: {interface: external_network, access: non_restricted, user: layman}
+    impact: 4
+    cra_refs: [AI-I-2-f, AI-I-2-k]
+    measures: [safe-library-loading, least-privilege-install]
+    sources: ["CWE-427 Uncontrolled Search Path Element; CWE-426 Untrusted Search Path"]
+
+  - id: local-service-privilege-escalation
+    rev: 1
+    stride: [E, T]
+    applies_to: [desktop-app, updater, license-service]
+    title:
+      de: Normaler Benutzer erlangt über {element} Administratorrechte
+      en: Normal user gains administrator rights via {element}
+    scenario:
+      de: >-
+        Zur Software gehört ein Hintergrunddienst, der als SYSTEM oder root läuft, etwa
+        für Updates oder Lizenzen. Er nimmt Befehle von jedem lokalen Programm an,
+        z. B. "installiere diese Datei" oder "starte dieses Programm", oder führt
+        Dateien aus einem für Benutzer beschreibbaren Ordner aus.
+        Schadsoftware, die so etwas tut, gelangt typischerweise über das Internet auf das Gerät (Download, E-Mail-Anhang); der Angriff ist dann ein zweiter Schritt aus der Ferne.
+      en: >-
+        The software includes a background service running as SYSTEM or root, e.g.
+        for updates or licences. It accepts commands from any local program, e.g.
+        "install this file" or "start this program", or executes files from a
+        folder writable by users.
+        Malware that does this typically reaches the device via the internet (download, e-mail attachment); the attack is then a remote second step.
+    consequence:
+      de: >-
+        Ein Benutzer ohne Rechte oder eine Schadsoftware übernimmt den ganzen Rechner,
+        schaltet Schutzprogramme ab und greift auf die Daten aller Benutzer zu.
+      en: >-
+        A user without rights or malware takes over the whole computer, switches off
+        protection software and accesses the data of all users.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-d, AI-I-2-j, AI-I-2-k]
+    asvs: [V8.3.1, V13.2.2]
+    measures: [local-service-hardening, ipc-hardening]
+    sources: ["CWE-269 Improper Privilege Management; CWE-250"]
+
+  - id: ipc-unauthenticated-caller
+    rev: 1
+    stride: [S, T, E]
+    applies_to: [desktop-app, mobile-app, flow-ipc]
+    title:
+      de: Fremdes Programm steuert {element} über eine lokale Schnittstelle
+      en: Foreign program controls {element} via a local interface
+    scenario:
+      de: >-
+        Die Anwendung bietet anderen Programmen eine lokale Schnittstelle an: eine
+        Named Pipe, einen lokalen Web-Server oder unter Android eine exportierte
+        Activity, einen Service oder Content Provider. Sie prüft nicht, wer aufruft.
+        Eine andere App, eine Webseite im Browser (über den lokalen Web-Server) oder
+        ein anderer Benutzer schickt Befehle.
+        Schadsoftware, die so etwas tut, gelangt typischerweise über das Internet auf das Gerät (Download, E-Mail-Anhang); der Angriff ist dann ein zweiter Schritt aus der Ferne.
+      en: >-
+        The application offers other programs a local interface: a named pipe, a
+        local web server or on Android an exported activity, service or content
+        provider. It does not check who is calling. Another app, a web page in the
+        browser (via the local web server) or another user sends commands.
+        Malware that does this typically reaches the device via the internet (download, e-mail attachment); the attack is then a remote second step.
+    consequence:
+      de: >-
+        Der Angreifer löst Funktionen im Namen des Nutzers aus, liest dessen Daten
+        oder nutzt Berechtigungen der App, die er selbst nicht hat.
+      en: >-
+        The attacker triggers functions in the user's name, reads the user's data or
+        uses permissions of the app that he does not have himself.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-d, AI-I-2-j]
+    masvs: [MASVS-PLATFORM-1]
+    measures: [ipc-hardening]
+    sources: ["OWASP Mobile Top 10 2024 M8 Security Misconfiguration; CWE-926; CWE-306"]
+
+  - id: ipc-data-eavesdropped
+    rev: 1
+    stride: [I]
+    applies_to: [flow-ipc, desktop-app, mobile-app]
+    title:
+      de: Andere Programme lesen Daten über {element} mit
+      en: Other programs read data via {element}
+    scenario:
+      de: >-
+        Programmteile tauschen Token oder persönliche Daten über einen Weg aus, den
+        auch andere Programme sehen: eine Rundsendung (Broadcast), eine Zwischenablage,
+        eine temporäre Datei für alle oder einen lokalen Port ohne Zugriffsschutz.
+        Schadsoftware, die so etwas tut, gelangt typischerweise über das Internet auf das Gerät (Download, E-Mail-Anhang); der Angriff ist dann ein zweiter Schritt aus der Ferne.
+      en: >-
+        Program parts exchange tokens or personal data via a path that other programs
+        can also see: a broadcast, the clipboard, a temporary file for everyone or a
+        local port without access protection.
+        Malware that does this typically reaches the device via the internet (download, e-mail attachment); the attack is then a remote second step.
+    consequence:
+      de: >-
+        Eine beliebige App oder ein anderer Benutzer liest die Daten mit und nutzt die
+        Token für eigene Zugriffe.
+      en: >-
+        Any app or another user reads the data and uses the tokens for own access.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-e]
+    masvs: [MASVS-PLATFORM-1, MASVS-STORAGE-2]
+    measures: [ipc-hardening]
+    sources: ["CWE-927 Use of Implicit Intent for Sensitive Communication; CWE-200"]
+
+  - id: ipc-malformed-messages
+    rev: 1
+    stride: [D]
+    applies_to: [flow-ipc, desktop-app, mobile-app, updater, license-service]
+    title:
+      de: Fehlerhafte lokale Nachrichten bringen {element} zum Absturz
+      en: Malformed local messages crash {element}
+    scenario:
+      de: >-
+        Ein anderes Programm schickt über die lokale Schnittstelle sehr große,
+        unvollständige oder sehr viele Nachrichten. Der empfangende Programmteil
+        prüft sie nicht und stürzt ab oder hängt.
+        Schadsoftware, die so etwas tut, gelangt typischerweise über das Internet auf das Gerät (Download, E-Mail-Anhang); der Angriff ist dann ein zweiter Schritt aus der Ferne.
+      en: >-
+        Another program sends very large, incomplete or very many messages via the
+        local interface. The receiving program part does not check them and crashes
+        or hangs.
+        Malware that does this typically reaches the device via the internet (download, e-mail attachment); the attack is then a remote second step.
+    consequence:
+      de: >-
+        Die Anwendung, der Update- oder der Lizenzdienst fallen aus; Updates werden
+        nicht mehr installiert oder die Software ist gesperrt.
+      en: >-
+        The application, the update or the licence service fail; updates are no
+        longer installed or the software is locked.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 2
+    cra_refs: [AI-I-2-h]
+    masvs: [MASVS-CODE-4]
+    measures: [ipc-hardening, sw-input-validation]
+    sources: ["CWE-20 Improper Input Validation; CWE-400"]
+
+  - id: deep-link-abuse
+    rev: 1
+    stride: [S, T]
+    applies_to: [mobile-app, desktop-app]
+    title:
+      de: Präparierter Link löst Aktionen in {element} aus
+      en: Prepared link triggers actions in {element}
+    scenario:
+      de: >-
+        Die Anwendung reagiert auf Links wie meineapp://... oder auf Web-Links, die
+        sie öffnet. Ein Angreifer schickt dem Nutzer per E-Mail oder Messenger einen
+        Link, der ohne Rückfrage eine Aktion ausführt, ein fremdes Konto verknüpft
+        oder eine Anmelde-Antwort an eine andere App umleitet, die dasselbe Schema
+        registriert hat.
+      en: >-
+        The application responds to links like myapp://... or to web links that it
+        opens. An attacker sends the user a link by e-mail or messenger that performs
+        an action without asking, links a foreign account or redirects a login
+        response to another app that registered the same scheme.
+    consequence:
+      de: >-
+        Daten werden geändert oder gelöscht, Zahlungen ausgelöst oder die Anmeldung
+        des Nutzers fällt einem Angreifer zu.
+      en: >-
+        Data is changed or deleted, payments are triggered or the user's login ends
+        up with an attacker.
+    environment: {interface: external_network, access: non_restricted, user: layman}
+    impact: 3
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    masvs: [MASVS-PLATFORM-1, MASVS-CODE-4]
+    measures: [deep-link-validation]
+    sources: ["CWE-939 Improper Authorization in Handler for Custom URL Scheme"]
+
+  - id: webview-injection
+    rev: 1
+    stride: [T, I, E]
+    applies_to: [mobile-app, desktop-app]
+    title:
+      de: Eingeschleustes Skript in der Browser-Ansicht von {element}
+      en: Injected script in the browser view of {element}
+    scenario:
+      de: >-
+        Teile der Oberfläche sind Web-Seiten in einer WebView oder in Electron. Die
+        Ansicht lädt auch fremde Seiten oder zeigt Inhalte ungeprüft an, und
+        JavaScript darf auf App-Funktionen, Dateien oder Node.js zugreifen. Ein
+        Angreifer bringt über einen Link, eine Nachricht oder einen Datensatz ein
+        Skript hinein.
+      en: >-
+        Parts of the user interface are web pages in a WebView or in Electron. The
+        view also loads foreign pages or shows content unchecked, and JavaScript may
+        access app functions, files or Node.js. An attacker brings in a script via a
+        link, a message or a record.
+    consequence:
+      de: >-
+        Das Skript liest Token und Daten aus, ruft App-Funktionen auf oder führt auf
+        dem Desktop beliebige Programme aus.
+      en: >-
+        The script reads tokens and data, calls app functions or on the desktop
+        runs arbitrary programs.
+    environment: {interface: external_network, access: non_restricted, user: layman}
+    impact: 4
+    cra_refs: [AI-I-2-f, AI-I-2-j]
+    asvs: [V3.4.3]
+    masvs: [MASVS-PLATFORM-2]
+    measures: [webview-hardening]
+    sources: ["CWE-79; CWE-749 Exposed Dangerous Method or Function"]
+
+  - id: tls-validation-disabled
+    rev: 1
+    stride: [S, T, I]
+    applies_to: [desktop-app, mobile-app, updater, license-service, flow-https-api]
+    title:
+      de: '{element} akzeptiert jedes Server-Zertifikat'
+      en: '{element} accepts any server certificate'
+    scenario:
+      de: >-
+        Für Tests wurde die Zertifikatsprüfung abgeschaltet und so ausgeliefert, oder
+        die Software nutzt an einer Stelle noch unverschlüsseltes HTTP. Im
+        Hotel-WLAN, über einen manipulierten Router oder einen Firmen-Proxy schaltet
+        sich ein Angreifer zwischen Software und Server.
+      en: >-
+        Certificate validation was switched off for testing and shipped that way, or
+        the software still uses unencrypted HTTP in one place. In a hotel Wi-Fi, via
+        a manipulated router or a company proxy an attacker places himself between
+        software and server.
+    consequence:
+      de: >-
+        Der Angreifer liest Passwörter, Token und Daten mit, verändert Antworten oder
+        gibt sich als Lizenz- oder Update-Server aus.
+      en: >-
+        The attacker reads passwords, tokens and data, alters responses or poses as
+        licence or update server.
+    environment: {interface: external_network, access: non_restricted, user: layman}
+    impact: 4
+    cra_refs: [AI-I-2-e, AI-I-2-f]
+    asvs: [V12.2.1, V12.3.2]
+    masvs: [MASVS-NETWORK-1]
+    measures: [tls-pinning-or-validation]
+    sources: ["OWASP Mobile Top 10 2024 M5 Insecure Communication; CWE-295"]
+
+  - id: sensitive-data-in-logs
+    rev: 1
+    stride: [I]
+    applies_to: [desktop-app, mobile-app, backend-api]
+    title:
+      de: '{element} schreibt vertrauliche Daten in Logs und Absturzberichte'
+      en: '{element} writes confidential data to logs and crash reports'
+    scenario:
+      de: >-
+        Zur Fehlersuche protokolliert die Software ganze Anfragen mit Passwörtern,
+        Token und Kundendaten. Logs liegen lesbar auf dem Rechner, werden an
+        Support-Tickets gehängt oder gehen mit Absturzberichten an einen
+        Dienstleister.
+        Schadsoftware, die so etwas tut, gelangt typischerweise über das Internet auf das Gerät (Download, E-Mail-Anhang); der Angriff ist dann ein zweiter Schritt aus der Ferne.
+      en: >-
+        For troubleshooting the software logs whole requests with passwords, tokens
+        and customer data. Logs are readable on the computer, attached to support
+        tickets or sent with crash reports to a service provider.
+        Malware that does this typically reaches the device via the internet (download, e-mail attachment); the attack is then a remote second step.
+    consequence:
+      de: >-
+        Zugangsdaten und persönliche Daten landen bei Personen und Firmen, die sie nie
+        sehen sollten, oft ohne dass es jemand bemerkt.
+      en: >-
+        Credentials and personal data end up with people and companies that should
+        never see them, often without anyone noticing.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-e, AI-I-2-g]
+    asvs: [V16.2.5]
+    masvs: [MASVS-STORAGE-2]
+    measures: [log-redaction]
+    sources: ["CWE-532 Insertion of Sensitive Information into Log File"]
+
+  - id: repackaged-app
+    rev: 1
+    stride: [S, T]
+    applies_to: [mobile-app, desktop-app]
+    title:
+      de: Nachgebaute oder veränderte Fassung von {element} im Umlauf
+      en: Rebuilt or modified version of {element} in circulation
+    scenario:
+      de: >-
+        Ein Angreifer entpackt die App oder das Programm, baut Schadcode oder Werbung
+        ein und verteilt es über einen fremden App-Store, eine Download-Seite oder
+        Werbung als "kostenlose Vollversion". Für Nutzer sieht es aus wie das
+        Original.
+      en: >-
+        An attacker unpacks the app or program, adds malicious code or advertising
+        and distributes it via a foreign app store, a download site or ads as a
+        "free full version". For users it looks like the original.
+    consequence:
+      de: >-
+        Nutzer geben Zugangsdaten preis oder holen sich Schadsoftware, und der Schaden
+        fällt auf den Namen des Herstellers zurück. Das Backend hält die Fälschung für
+        die echte App.
+      en: >-
+        Users disclose credentials or get malware, and the damage reflects on the
+        manufacturer's name. The backend takes the fake for the real app.
+    environment: {interface: external_network, access: non_restricted, user: layman}
+    impact: 4
+    cra_refs: [AI-I-2-f]
+    masvs: [MASVS-RESILIENCE-1, MASVS-RESILIENCE-2]
+    measures: [code-signing, app-attestation]
+    sources: ["OWASP Mobile Top 10 2024 M7 Insufficient Binary Protections; CWE-345"]
+
+  - id: client-side-only-checks
+    rev: 1
+    stride: [T, E]
+    applies_to: [desktop-app, mobile-app, web-frontend, backend-api]
+    title:
+      de: Prüfungen nur in {element} lassen sich umgehen
+      en: Checks only in {element} can be bypassed
+    scenario:
+      de: >-
+        Wer was darf, welcher Preis gilt oder welche Funktion freigeschaltet ist,
+        entscheidet nur der Client: Knöpfe werden ausgeblendet, Werte im Formular
+        geprüft. Ein Angreifer ruft die API direkt auf oder verändert die App und
+        schickt, was er will.
+      en: >-
+        Who may do what, which price applies or which function is enabled is decided
+        by the client alone: buttons are hidden, values are checked in the form. An
+        attacker calls the API directly or modifies the app and sends whatever he
+        wants.
+    consequence:
+      de: >-
+        Der Angreifer nutzt Funktionen, die ihm nicht zustehen, ändert Preise oder
+        sieht Daten anderer Kunden.
+      en: >-
+        The attacker uses functions he is not entitled to, changes prices or sees
+        other customers' data.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-d]
+    asvs: [V8.3.1, V2.2.2]
+    masvs: [MASVS-AUTH-1]
+    measures: [object-level-authz, sw-input-validation]
+    sources: ["CWE-602 Client-Side Enforcement of Server-Side Security"]
+
+  # --- exchanged files and notifications ---------------------------------------------
+  - id: malicious-file-import
+    rev: 1
+    stride: [T, D, E]
+    applies_to: [desktop-app, mobile-app, flow-file-exchange]
+    title:
+      de: Präparierte Datei übernimmt oder blockiert {element}
+      en: Prepared file takes over or blocks {element}
+    scenario:
+      de: >-
+        Der Nutzer öffnet eine Projekt-, Bild- oder Austauschdatei, die er per E-Mail
+        oder Download erhalten hat. Die Datei ist so gebaut, dass der Parser über den
+        Speicher hinaus schreibt, ein eingebettetes Skript ausführt oder
+        unendlich lange rechnet.
+      en: >-
+        The user opens a project, image or exchange file received by e-mail or
+        download. The file is crafted so that the parser writes beyond its memory,
+        executes an embedded script or computes endlessly.
+    consequence:
+      de: >-
+        Fremder Code läuft mit den Rechten des Nutzers, oder die Anwendung stürzt bei
+        jedem Öffnen ab.
+      en: >-
+        Foreign code runs with the user's rights, or the application crashes every
+        time it is opened.
+    environment: {interface: external_network, access: non_restricted, user: layman}
+    impact: 4
+    cra_refs: [AI-I-2-f, AI-I-2-k]
+    asvs: [V1.4.1, V1.5.2, V5.2.1]
+    masvs: [MASVS-CODE-4]
+    measures: [safe-file-parsing]
+    sources: ["CWE-787 Out-of-bounds Write; CWE-502 Deserialization of Untrusted Data"]
+
+  - id: exchanged-file-exposed-or-altered
+    rev: 1
+    stride: [T, I]
+    applies_to: [flow-file-exchange]
+    title:
+      de: Datei über {element} wird mitgelesen oder unbemerkt verändert
+      en: File sent via {element} is read or silently altered
+    scenario:
+      de: >-
+        Exportierte Dateien enthalten mehr als gedacht, z. B. gespeicherte
+        Zugangsdaten, Kundenlisten oder versteckte Metadaten, und gehen
+        unverschlüsselt per E-Mail oder Cloud-Ordner weiter. Unterwegs ändert
+        jemand Werte in einer Konfigurations- oder Projektdatei; beim Import fällt
+        es nicht auf.
+      en: >-
+        Exported files contain more than expected, e.g. stored credentials, customer
+        lists or hidden metadata, and are passed on unencrypted by e-mail or cloud
+        folder. On the way someone changes values in a configuration or project
+        file; on import nobody notices.
+    consequence:
+      de: >-
+        Vertrauliche Daten gelangen an Dritte, oder der Empfänger arbeitet mit
+        verfälschten Einstellungen weiter.
+      en: >-
+        Confidential data reaches third parties, or the recipient continues working
+        with falsified settings.
+    environment: {interface: external_network, access: non_restricted, user: layman}
+    impact: 3
+    cra_refs: [AI-I-2-e, AI-I-2-f]
+    asvs: [V14.2.4, V14.2.8]
+    measures: [file-exchange-protection]
+    sources: ["CWE-212 Improper Removal of Sensitive Information Before Storage or Transfer; CWE-345"]
+
+  - id: telemetry-personal-data
+    rev: 1
+    stride: [I]
+    applies_to: [desktop-app, mobile-app, backend-api, third-party-library]
+    title:
+      de: '{element} sendet mehr persönliche Daten als nötig'
+      en: '{element} sends more personal data than necessary'
+    scenario:
+      de: >-
+        Nutzungsstatistik, Analyse- oder Werbe-SDKs senden Gerätekennungen, Standort,
+        Dateinamen oder Inhalte an den Hersteller und an Dritte, ohne dass der Nutzer
+        es weiß oder abschalten kann.
+      en: >-
+        Usage statistics, analytics or advertising SDKs send device identifiers,
+        location, file names or contents to the manufacturer and third parties,
+        without the user knowing or being able to switch it off.
+    consequence:
+      de: >-
+        Nutzer lassen sich verfolgen und profilieren; der Hersteller verstößt gegen
+        Datenschutzrecht und verliert Vertrauen.
+      en: >-
+        Users can be tracked and profiled; the manufacturer violates data protection
+        law and loses trust.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-g, AI-I-2-e]
+    asvs: [V14.2.3]
+    masvs: [MASVS-PRIVACY-1, MASVS-PRIVACY-3]
+    measures: [telemetry-opt-in, log-redaction]
+    sources: ["OWASP Mobile Top 10 2024 M6 Inadequate Privacy Controls; CWE-359"]
+
+  - id: push-message-abuse
+    rev: 1
+    stride: [T, I, D]
+    applies_to: [flow-push, mobile-app]
+    title:
+      de: Push-Nachrichten über {element} verraten Inhalte oder werden gefälscht
+      en: Push messages via {element} reveal content or are forged
+    scenario:
+      de: >-
+        Push-Nachrichten enthalten den vollen Inhalt (Nachricht, Code, Kontostand) und
+        erscheinen auf dem Sperrbildschirm. Die App führt Befehle aus der
+        Push-Nachricht ungeprüft aus, und der Schlüssel für den Push-Dienst steckt in
+        der App. Bleiben Push-Nachrichten aus, erfährt der Nutzer nichts.
+      en: >-
+        Push messages contain the full content (message, code, balance) and appear on
+        the lock screen. The app executes commands from the push message unchecked,
+        and the key for the push service is inside the app. If push messages do not
+        arrive, the user learns nothing.
+    consequence:
+      de: >-
+        Umstehende und der Push-Anbieter lesen Inhalte mit, Angreifer schicken
+        gefälschte Nachrichten an alle Nutzer, wichtige Hinweise gehen verloren.
+      en: >-
+        Bystanders and the push provider read content, attackers send forged messages
+        to all users, important notices are lost.
+    environment: {interface: external_network, access: non_restricted, user: layman}
+    impact: 3
+    cra_refs: [AI-I-2-e, AI-I-2-f, AI-I-2-h]
+    masvs: [MASVS-STORAGE-2, MASVS-CODE-4]
+    measures: [push-content-minimal, no-client-secrets]
+    sources: ["OWASP Mobile Top 10 2024 M6 Inadequate Privacy Controls; CWE-200"]
+
+  - id: compromised-platform
+    rev: 1
+    stride: [S, T]
+    applies_to: [os-platform, mobile-app, desktop-app]
+    title:
+      de: '{element} läuft auf einem manipulierten oder veralteten System'
+      en: '{element} runs on a manipulated or outdated system'
+    scenario:
+      de: >-
+        Das Telefon ist gerootet oder gejailbreakt, der Rechner hat Schadsoftware mit
+        Administratorrechten, oder das Betriebssystem bekommt seit Jahren keine
+        Updates mehr. Die Schutzfunktionen der Plattform, auf die sich die Software
+        verlässt (Sandbox, Schlüsselspeicher, Rechte), wirken nicht mehr, und das
+        System meldet trotzdem "alles in Ordnung".
+        Schadsoftware, die so etwas tut, gelangt typischerweise über das Internet auf das Gerät (Download, E-Mail-Anhang); der Angriff ist dann ein zweiter Schritt aus der Ferne.
+      en: >-
+        The phone is rooted or jailbroken, the computer has malware with administrator
+        rights, or the operating system has not received updates for years. The
+        platform protection functions the software relies on (sandbox, key store,
+        rights) no longer work, and the system still reports "all fine".
+        Malware that does this typically reaches the device via the internet (download, e-mail attachment); the attack is then a remote second step.
+    consequence:
+      de: >-
+        Gespeicherte Zugangsdaten, Zahlungs- oder Gesundheitsdaten werden ausgelesen,
+        Anfragen der App lassen sich fälschen.
+      en: >-
+        Stored credentials, payment or health data are read, requests of the app can
+        be forged.
+    environment: {interface: external_network, access: non_restricted, user: layman}
+    impact: 3
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    masvs: [MASVS-RESILIENCE-1, MASVS-CODE-1]
+    measures: [app-attestation]
+    sources: ["OWASP Mobile Top 10 2024 M7 Insufficient Binary Protections"]

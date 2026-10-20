@@ -1,0 +1,247 @@
+# Threat templates for onboarding, pairing and radio links (Wi-Fi, Bluetooth LE,
+# Zigbee, Thread, Matter).
+threats:
+  # --- onboarding and pairing ---------------------------------------------------------
+  - id: pairing-no-proof-of-possession
+    rev: 1
+    stride: [S, E]
+    applies_to: [pairing, iot-device, iot-hub]
+    title:
+      de: Fremder koppelt {element} mit dem eigenen Konto
+      en: Outsider pairs {element} with their own account
+    scenario:
+      de: >-
+        Beim Einrichten prüft das Gerät nicht, ob die koppelnde Person es tatsächlich
+        vor sich hat, etwa über einen Code auf dem Gerät, einen QR-Code oder einen
+        Tastendruck. Ein Nachbar in Funkreichweite koppelt das Gerät zuerst oder fügt
+        sich während der Einrichtung als weiterer Besitzer hinzu.
+      en: >-
+        During setup the device does not check whether the pairing person actually has
+        it in hand, for example via a code on the device, a QR code or a button press.
+        A neighbour within radio range pairs the device first or adds themselves as an
+        additional owner during setup.
+    consequence:
+      de: >-
+        Ein Fremder steuert das Gerät und sieht dessen Daten, oft ohne dass der Besitzer
+        es bemerkt.
+      en: >-
+        An outsider controls the device and sees its data, often without the owner
+        noticing.
+    environment: {interface: dedicated_known_network, access: public_restricted, user: layman}
+    impact: 4
+    cra_refs: [AI-I-2-b, AI-I-2-d]
+    etsi303645: ['5.5-4', '5.12-2']
+    measures: [secure-pairing]
+    sources: ["ETSI EN 303 645 V3.1.3 provisions 5.5-4 and 5.12; OWASP IoT Top 10 2018; ENISA Baseline Security Recommendations for IoT (2017)"]
+
+  - id: pairing-open-setup-network
+    rev: 1
+    stride: [I, S]
+    applies_to: [pairing, flow-wifi, flow-ble]
+    title:
+      de: WLAN-Passwort wird bei der Einrichtung über {element} mitgelesen
+      en: Wi-Fi password is intercepted via {element} during setup
+    scenario:
+      de: >-
+        Für die Einrichtung öffnet das Gerät einen offenen WLAN-Zugangspunkt oder eine
+        ungesicherte Bluetooth-Verbindung. Die App überträgt darüber das WLAN-Passwort
+        des Nutzers im Klartext. Ein Angreifer in der Nähe liest mit oder stellt einen
+        gleichnamigen Zugangspunkt auf.
+      en: >-
+        For setup the device opens an open Wi-Fi access point or an unsecured
+        Bluetooth connection. The app transmits the user's Wi-Fi password over it in
+        clear text. An attacker nearby listens in or sets up an access point with the
+        same name.
+    consequence:
+      de: >-
+        Der Angreifer kennt das WLAN-Passwort und ist damit im gesamten Heimnetz des
+        Nutzers.
+      en: >-
+        The attacker knows the Wi-Fi password and is thus inside the user's entire home
+        network.
+    environment: {interface: dedicated_known_network, access: non_restricted, user: layman}
+    impact: 4
+    cra_refs: [AI-I-2-e]
+    etsi303645: ['5.5-6', '5.5-7']
+    measures: [secure-pairing, radio-encryption]
+    sources: ["ETSI EN 303 645 V3.1.3 provisions 5.5-6 and 5.5-7"]
+
+  - id: pairing-mode-abuse
+    rev: 1
+    stride: [D, S]
+    applies_to: [pairing, iot-device]
+    title:
+      de: '{element} bleibt dauerhaft kopplungsbereit oder wird mit Kopplungsanfragen überflutet'
+      en: '{element} stays ready for pairing indefinitely or is flooded with pairing requests'
+    scenario:
+      de: >-
+        Das Gerät bleibt nach dem Einschalten unbegrenzt im Kopplungsmodus oder lässt
+        sich aus der Ferne wieder hineinversetzen. Ein Angreifer sendet ständig
+        Kopplungsanfragen.
+      en: >-
+        After power-up the device stays in pairing mode without time limit or can be
+        put back into it remotely. An attacker keeps sending pairing requests.
+    consequence:
+      de: >-
+        Der berechtigte Nutzer kann das Gerät nicht einrichten, der Akku entlädt sich,
+        oder ein Fremder nutzt das offene Zeitfenster zur Kopplung.
+      en: >-
+        The authorised user cannot set up the device, the battery drains, or an
+        outsider uses the open time window to pair.
+    environment: {interface: dedicated_known_network, access: non_restricted}
+    impact: 2
+    cra_refs: [AI-I-2-h, AI-I-2-j]
+    etsi303645: ['5.6-2']
+    measures: [secure-pairing, rate-limiting]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.6-2; OWASP IoT Top 10 2018; ENISA Baseline Security Recommendations for IoT (2017)"]
+
+  - id: radio-default-network-key
+    rev: 1
+    stride: [S, T, I]
+    applies_to: [flow-zigbee-thread, iot-hub, pairing]
+    title:
+      de: Bekannter Standardschlüssel öffnet das Funknetz {element}
+      en: Well-known default key opens the radio network {element}
+    scenario:
+      de: >-
+        Neue Funkgeräte treten dem Netz mit einem öffentlich bekannten Standardschlüssel
+        bei, oder der Netzwerkschlüssel wird beim Beitritt mit diesem Schlüssel
+        verschlüsselt verteilt. Wer den Beitritt mitschneidet, kennt danach den
+        Netzwerkschlüssel.
+      en: >-
+        New radio devices join the network with a publicly known default key, or the
+        network key is distributed during joining encrypted with that key. Anyone who
+        records the join knows the network key afterwards.
+    consequence:
+      de: >-
+        Der Angreifer liest alle Befehle im Funknetz mit und sendet eigene, etwa zum
+        Öffnen eines Schlosses.
+      en: >-
+        The attacker reads all commands in the radio network and sends own ones, for
+        example to open a lock.
+    environment: {interface: dedicated_known_network, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-d, AI-I-2-e]
+    etsi303645: ['5.1-1', '5.5-8']
+    measures: [secure-pairing, radio-encryption]
+    sources: ["ETSI EN 303 645 V3.1.3 provisions 5.1 and 5.5-8; generic Zigbee threat knowledge"]
+
+  # --- radio links ------------------------------------------------------------------
+  - id: radio-cleartext
+    rev: 1
+    stride: [I]
+    applies_to: [flow-wifi, flow-ble, flow-zigbee-thread, flow-matter, iot-hub]
+    title:
+      de: Daten auf {element} werden mitgelesen
+      en: Data on {element} is intercepted
+    scenario:
+      de: >-
+        Befehle, Messwerte oder Zugangsdaten werden unverschlüsselt oder mit veralteten
+        Verfahren übertragen (z. B. offenes WLAN, BLE ohne Kopplung, WPA mit TKIP). Mit
+        einem handelsüblichen Funkempfänger liest ein Angreifer aus einigen Metern
+        Entfernung mit, auch von der Straße aus.
+      en: >-
+        Commands, readings or credentials are transmitted unencrypted or with outdated
+        methods (e.g. open Wi-Fi, BLE without pairing, WPA with TKIP). With a
+        commercially available radio receiver an attacker listens in from a few metres
+        away, even from the street.
+    consequence:
+      de: >-
+        Der Angreifer erfährt Zugangsdaten, Gewohnheiten und Anwesenheitszeiten der
+        Bewohner.
+      en: >-
+        The attacker learns credentials, habits and presence times of the residents.
+    environment: {interface: dedicated_known_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-e]
+    etsi303645: ['5.5-1', '5.8-1']
+    measures: [radio-encryption]
+    sources: ["ETSI EN 303 645 V3.1.3 provisions 5.5-1 and 5.8-1"]
+
+  - id: radio-command-injection
+    rev: 1
+    stride: [T, S]
+    applies_to: [flow-wifi, flow-ble, flow-zigbee-thread, flow-matter, iot-hub, iot-device]
+    title:
+      de: Gefälschte Befehle über {element}
+      en: Forged commands via {element}
+    scenario:
+      de: >-
+        Nachrichten im Funknetz sind nicht gegen Veränderung geschützt oder der
+        Empfänger prüft den Absender nicht. Ein Angreifer in Reichweite sendet eigene
+        Befehle oder verändert Messwerte unterwegs.
+      en: >-
+        Messages in the radio network are not protected against modification, or the
+        recipient does not check the sender. An attacker within range sends own
+        commands or alters readings in transit.
+    consequence:
+      de: >-
+        Das Gerät schaltet ungewollt, zeigt falsche Werte an oder regelt falsch,
+        z. B. heizt ein leeres Haus oder schaltet die Heizung im Winter ab.
+      en: >-
+        The device switches unintentionally, shows wrong values or controls wrongly,
+        e.g. heats an empty house or switches the heating off in winter.
+    environment: {interface: dedicated_known_network, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-f]
+    etsi303645: ['5.5-1']
+    measures: [radio-encryption, replay-protection]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.5-1"]
+
+  - id: command-replay
+    rev: 1
+    stride: [T, S]
+    applies_to: [flow-ble, flow-zigbee-thread, flow-matter, flow-mqtt-tls, device-api, iot-device]
+    title:
+      de: Aufgezeichneter Befehl wird über {element} erneut gesendet
+      en: Recorded command is resent via {element}
+    scenario:
+      de: >-
+        Ein Angreifer zeichnet einen gültigen, verschlüsselten Befehl auf, etwa
+        „Tür öffnen“ oder „Alarm aus“, und spielt ihn später unverändert wieder ab. Das
+        Gerät erkennt nicht, dass die Nachricht alt ist.
+      en: >-
+        An attacker records a valid, encrypted command such as "unlock door" or "alarm
+        off" and replays it unchanged later. The device does not recognise that the
+        message is old.
+    consequence:
+      de: >-
+        Der Angreifer löst die Aktion aus, ohne den Schlüssel zu kennen.
+      en: >-
+        The attacker triggers the action without knowing the key.
+    environment: {interface: dedicated_known_network, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    etsi303645: ['5.5-1']
+    measures: [replay-protection]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.5-1; generic radio protocol threat knowledge"]
+
+  - id: radio-jamming-flooding
+    rev: 1
+    stride: [D]
+    applies_to: [flow-wifi, flow-ble, flow-zigbee-thread, flow-matter, iot-device, iot-hub]
+    title:
+      de: Störsender oder Paketflut legen {element} lahm
+      en: Jammer or packet flood disables {element}
+    scenario:
+      de: >-
+        Ein Störsender aus dem Internethandel, WLAN-Deauthentisierungspakete oder eine
+        Flut von Funkpaketen unterbrechen die Verbindung. Einbrecher nutzen das, um
+        Kameras oder Alarmsensoren auszuschalten.
+      en: >-
+        A jammer bought online, Wi-Fi deauthentication packets or a flood of radio
+        packets interrupt the connection. Burglars use this to switch off cameras or
+        alarm sensors.
+    consequence:
+      de: >-
+        Befehle und Meldungen kommen nicht an. Verhält sich das Gerät ohne Verbindung
+        unsicher, etwa Heizung dauerhaft an oder Schloss offen, entstehen Schäden.
+      en: >-
+        Commands and notifications do not arrive. If the device behaves unsafely without
+        a connection, e.g. heating stays on or lock stays open, damage occurs.
+    environment: {interface: dedicated_known_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h]
+    etsi303645: ['5.9-1', '5.9-3']
+    measures: [radio-loss-safe-state, local-fallback]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.9; generic radio threat knowledge"]

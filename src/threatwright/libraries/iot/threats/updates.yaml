@@ -1,0 +1,272 @@
+# Threat templates for updates, support period, third-party components and
+# vulnerability handling.
+threats:
+  # --- update mechanism ---------------------------------------------------------------
+  - id: ota-unsigned-image
+    rev: 1
+    stride: [T, E]
+    applies_to: [ota-service, iot-firmware, iot-device, iot-hub]
+    title:
+      de: '{element} installiert eine manipulierte Firmware'
+      en: '{element} installs a manipulated firmware'
+    scenario:
+      de: >-
+        Das Gerät prüft nur eine Prüfsumme oder die Versionsnummer, nicht aber eine
+        Signatur des Herstellers. Über einen gefälschten Update-Server, die lokale
+        Schnittstelle oder die Debug-Schnittstelle spielt ein Angreifer eine eigene
+        Firmware ein, die auch nach einem Neustart aktiv bleibt.
+      en: >-
+        The device only checks a checksum or the version number, not a signature of the
+        manufacturer. Via a fake update server, the local interface or the debug
+        interface an attacker installs own firmware that stays active after a restart.
+    consequence:
+      de: >-
+        Der Angreifer hat dauerhaft die volle Kontrolle über das Gerät und kann seine
+        Spuren verbergen.
+      en: >-
+        The attacker has permanent full control of the device and can hide their
+        traces.
+    environment: {interface: known_network, access: non_restricted}
+    impact: 5
+    cra_refs: [AI-I-2-f, AI-II-7]
+    etsi303645: ['5.3-9', '5.3-10', '5.7-1']
+    measures: [signed-ota, verified-boot]
+    sources: ["ETSI EN 303 645 V3.1.3 provisions 5.3 and 5.7"]
+
+  - id: ota-downgrade
+    rev: 1
+    stride: [T, E]
+    applies_to: [ota-service, iot-firmware]
+    title:
+      de: Rückkehr zu einer alten, verwundbaren Firmware über {element}
+      en: Return to an old, vulnerable firmware via {element}
+    scenario:
+      de: >-
+        Alte Firmware-Versionen sind korrekt signiert und werden weiterhin akzeptiert.
+        Ein Angreifer spielt eine ältere Version mit bekannter Schwachstelle ein und nutzt
+        diese anschließend aus.
+      en: >-
+        Old firmware versions are correctly signed and are still accepted. An attacker
+        installs an older version with a known vulnerability and then exploits it.
+    consequence:
+      de: >-
+        Bereits behobene Schwachstellen sind wieder offen, die Updates waren umsonst.
+      en: >-
+        Vulnerabilities that were already fixed are open again; the updates were in
+        vain.
+    environment: {interface: known_network, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-c, AI-I-2-f]
+    etsi303645: ['5.3-2']
+    measures: [iot-anti-rollback]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.3-2; generic embedded threat knowledge"]
+
+  - id: ota-signing-key-theft
+    rev: 1
+    stride: [T, E]
+    applies_to: [ota-service]
+    title:
+      de: Signaturschlüssel für Updates wird über {element} gestohlen
+      en: Update signing key is stolen via {element}
+    scenario:
+      de: >-
+        Der private Schlüssel zum Signieren der Firmware liegt als Datei auf einem
+        Build-Server oder Entwickler-Laptop. Ein Angreifer gelangt in diese Umgebung und
+        kopiert ihn.
+      en: >-
+        The private key for signing the firmware is stored as a file on a build server
+        or developer laptop. An attacker gets into this environment and copies it.
+    consequence:
+      de: >-
+        Der Angreifer signiert eigene Firmware, die alle Geräte als echt akzeptieren. Der
+        Schlüssel lässt sich nur mit großem Aufwand austauschen.
+      en: >-
+        The attacker signs own firmware that all devices accept as genuine. The key can
+        only be replaced with great effort.
+    environment: {interface: external_network, access: restricted}
+    impact: 5
+    cra_refs: [AI-I-2-f, AI-II-7]
+    etsi303645: ['5.3-2']
+    measures: [ota-signing-key-hsm]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.3-2; generic supply chain threat knowledge"]
+
+  - id: ota-package-disclosure
+    rev: 1
+    stride: [I]
+    applies_to: [ota-service]
+    title:
+      de: Update-Pakete von {element} verraten Geheimnisse
+      en: Update packages from {element} reveal secrets
+    scenario:
+      de: >-
+        Update-Dateien liegen frei abrufbar auf einem Server. Sie enthalten
+        Zugangsdaten, interne Server-Adressen oder Testschlüssel, oder sie zeigen beim
+        Vergleich zweier Versionen, welche Schwachstelle gerade behoben wurde.
+      en: >-
+        Update files are freely downloadable from a server. They contain credentials,
+        internal server addresses or test keys, or a comparison of two versions shows
+        which vulnerability has just been fixed.
+    consequence:
+      de: >-
+        Angreifer nutzen die Geheimnisse oder greifen Geräte an, die das Update noch
+        nicht installiert haben.
+      en: >-
+        Attackers use the secrets or attack devices that have not yet installed the
+        update.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-e]
+    etsi303645: ['5.4-3']
+    measures: [no-hardcoded-secrets, automatic-updates]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.4-3"]
+
+  - id: update-bricks-device
+    rev: 1
+    stride: [D]
+    applies_to: [ota-service, iot-firmware, iot-device]
+    title:
+      de: Fehlgeschlagenes Update macht {element} unbrauchbar
+      en: Failed update renders {element} unusable
+    scenario:
+      de: >-
+        Während des Updates fällt der Strom aus oder die Verbindung bricht ab, oder ein
+        fehlerhaftes Update wird an alle Geräte gleichzeitig verteilt. Das Gerät hat keine
+        funktionsfähige Firmware mehr.
+      en: >-
+        Power fails or the connection drops during the update, or a faulty update is
+        distributed to all devices at once. The device no longer has working firmware.
+    consequence:
+      de: >-
+        Geräte fallen aus und müssen eingeschickt werden, im ungünstigsten Fall die
+        gesamte Flotte.
+      en: >-
+        Devices fail and have to be sent in, in the worst case the entire fleet.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h, AI-II-7]
+    etsi303645: ['5.9-1']
+    measures: [power-fail-safe-updates]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.9-1; generic embedded engineering knowledge"]
+
+  - id: updates-not-installed
+    rev: 1
+    stride: [E]
+    applies_to: [iot-device, iot-hub, companion-app]
+    title:
+      de: Sicherheitsupdates für {element} werden nicht installiert
+      en: Security updates for {element} are not installed
+    scenario:
+      de: >-
+        Updates müssen über ein verstecktes Menü von Hand gestartet werden, und der Nutzer
+        erfährt nicht, dass ein Sicherheitsupdate bereitsteht. Die meisten Geräte im
+        Feld bleiben auf dem Auslieferungsstand.
+      en: >-
+        Updates have to be started manually via a hidden menu, and the user is not told
+        that a security update is available. Most devices in the field stay at the
+        delivery version.
+    consequence:
+      de: >-
+        Bekannte Schwachstellen bleiben über Jahre ausnutzbar.
+      en: >-
+        Known vulnerabilities remain exploitable for years.
+    environment: {interface: external_network, access: non_restricted, user: layman}
+    impact: 4
+    cra_refs: [AI-I-2-c, AI-II-8]
+    etsi303645: ['5.3-3', '5.3-4A', '5.3-4B', '5.3-11']
+    masvs: [MASVS-CODE-2]
+    measures: [automatic-updates]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.3; OWASP MASVS v2"]
+
+  - id: no-update-path-end-of-support
+    rev: 1
+    stride: [E, T]
+    applies_to: [iot-firmware, iot-device, iot-hub, companion-app, vendor-cloud]
+    title:
+      de: Für {element} gibt es keine Updates (mehr)
+      en: No (more) updates for {element}
+    scenario:
+      de: >-
+        Das Gerät hat keinen Update-Weg, oder der Hersteller stellt nach kurzer Zeit die
+        Pflege ein, ohne dass Käufer das vorher wussten. Eine neu entdeckte Schwachstelle
+        bleibt offen.
+      en: >-
+        The device has no update path, or the manufacturer stops maintenance after a
+        short time without buyers knowing beforehand. A newly discovered vulnerability
+        stays open.
+    consequence:
+      de: >-
+        Geräte bleiben dauerhaft angreifbar und werden zum Einfallstor ins Heimnetz. Der
+        Hersteller verletzt seine Pflichten aus dem CRA.
+      en: >-
+        Devices remain permanently vulnerable and become a gateway into the home
+        network. The manufacturer breaches its obligations under the CRA.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-c, AI-II-2, Art13]
+    etsi303645: ['5.3-1', '5.3-13', '5.3-8']
+    measures: [support-period-defined, signed-ota]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.3; Regulation (EU) 2024/2847 Art. 13"]
+
+  # --- components and vulnerability handling ---------------------------------------------
+  - id: vulnerable-third-party-component
+    rev: 1
+    stride: [E, T, I]
+    applies_to: [iot-firmware, companion-app, vendor-cloud, iot-hub]
+    title:
+      de: Bekannte Schwachstelle in einer Fremdkomponente von {element}
+      en: Known vulnerability in a third-party component of {element}
+    scenario:
+      de: >-
+        Betriebssystem, Funk-Stack, TLS-Bibliothek oder App-Bibliotheken stammen von
+        Zulieferern oder aus Open Source. Niemand führt eine Liste der verbauten
+        Versionen (SBOM), deshalb fällt nicht auf, dass eine davon eine veröffentlichte
+        Schwachstelle hat.
+      en: >-
+        Operating system, radio stack, TLS library or app libraries come from suppliers
+        or open source. Nobody keeps a list of the versions used (SBOM), so it goes
+        unnoticed that one of them has a published vulnerability.
+    consequence:
+      de: >-
+        Angreifer nutzen die öffentlich beschriebene Schwachstelle mit fertigen
+        Werkzeugen aus, lange bevor der Hersteller reagiert.
+      en: >-
+        Attackers exploit the publicly described vulnerability with ready-made tools,
+        long before the manufacturer reacts.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-a, AI-II-1]
+    etsi303645: ['5.2-3', '5.3-8']
+    masvs: [MASVS-CODE-3]
+    measures: [sbom-maintained, automatic-updates]
+    sources: ["ETSI EN 303 645 V3.1.3 provisions 5.2-3 and 5.3; TR-03183-1 Annex B"]
+
+  - id: no-vulnerability-disclosure-contact
+    rev: 1
+    stride: [E]
+    applies_to: [iot-firmware, companion-app, vendor-cloud]
+    title:
+      de: Schwachstelle in {element} kann nicht gemeldet werden
+      en: Vulnerability in {element} cannot be reported
+    scenario:
+      de: >-
+        Ein Sicherheitsforscher findet eine Schwachstelle, aber es gibt keine
+        veröffentlichte Kontaktadresse und keine Regeln für die Meldung. Die Meldung
+        versandet im allgemeinen Kundenservice, der Forscher veröffentlicht die Lücke
+        schließlich ohne Abstimmung.
+      en: >-
+        A security researcher finds a vulnerability, but there is no published contact
+        address and no rules for reporting. The report gets lost in general customer
+        service, and the researcher eventually publishes the flaw without coordination.
+    consequence:
+      de: >-
+        Die Schwachstelle ist öffentlich bekannt, bevor ein Update existiert, und alle
+        Geräte sind angreifbar.
+      en: >-
+        The vulnerability is publicly known before an update exists, and all devices
+        are vulnerable.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-II-5, AI-II-6]
+    etsi303645: ['5.2-1', '5.2-2']
+    measures: [vuln-disclosure-policy]
+    sources: ["ETSI EN 303 645 V3.1.3 provision 5.2; TR-03183-1 Annex B"]

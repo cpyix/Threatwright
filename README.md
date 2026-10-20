@@ -10,12 +10,12 @@
 [![signed with Sigstore](https://img.shields.io/badge/releases-signed%20(Sigstore)-informational)](SECURITY.md)
 [![AI-assisted](https://img.shields.io/badge/code-AI--assisted-8a2be2)](#ai-assisted-development)
 
-Local-first threat modelling and risk analysis for products with digital elements under the EU Cyber Resilience Act (CRA), following **BSI TR-03183-1**. Built for machine and plant manufacturers (OT) whose engineers are not security specialists. Status: **alpha** (0.1.0).
+Local-first threat modelling and risk analysis for products with digital elements under the EU Cyber Resilience Act (CRA), following **BSI TR-03183-1**. Built for manufacturers of products with digital elements, e.g. machines and plants (OT), connected devices (IoT/consumer) and software, whose engineers are not security specialists. Status: **alpha** (0.1.0).
 
 - **Offline and local:** Windows, Linux and macOS, no admin rights, no network access at runtime, no telemetry.
 - **Git is the database:** one YAML file per object, stable IDs, saving without changes produces no diff. Merge requests are the change history; `threatwright diff` creates change evidence between releases.
 - **TR-03183-1 as configuration:** scales, factors, risk matrix and acceptance rules live in a method file with page references and can be overridden per project ([Methodik](docs/methodik.md)).
-- **Building blocks instead of empty forms:** OT library with 80 element types, 239 threat and 111 measure templates; STRIDE assistant, coverage matrix, data flow diagram.
+- **Building blocks instead of empty forms:** libraries for OT (80 element types, 239 threat and 111 measure templates), IoT/consumer (19, 49, 37; ETSI EN 303 645 references) and software (18, 48, 38; OWASP ASVS/MASVS references), chosen when you create a project; STRIDE assistant, coverage matrix, data flow diagram.
 - **Documents from your own templates:** DOCX, ODT, Markdown, HTML, PDF via LibreOffice; layout and outline without code changes ([Vorlagenreferenz](docs/vorlagenreferenz.md)).
 - **CI:** the same checks as the GUI in GitLab or GitHub pipelines, template pre-filled per project ([CI](docs/ci.md)).
 - **Interop:** OSCAL import (catalogs such as Grundschutz++, profiles, component definitions), Threat Dragon and CSV import, CSV/JSON/XLSX export.
@@ -61,7 +61,8 @@ Optional: Git (change evidence between releases), LibreOffice (PDF output). To b
 ### Usage
 
 ```
-threatwright init my-product --name "My product"   # new project (TR-03183-1 standard)
+threatwright init my-product --name "My product"   # new project (TR-03183-1 standard, OT library)
+threatwright init my-device -l iot -l software      # other product types: ot, iot, software (repeatable)
 threatwright --project my-product                  # GUI in the default browser
 threatwright --project my-product --no-browser     # GUI, prints the URL instead
 threatwright validate my-product                   # all rules; exit code 1 on errors

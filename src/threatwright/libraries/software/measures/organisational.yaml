@@ -1,0 +1,155 @@
+# Design, supply chain and organisational measures for software products.
+measures:
+  - id: secure-defaults
+    rev: 1
+    title:
+      de: Sicherer Auslieferungszustand
+      en: Secure delivered state
+    description:
+      de: >-
+        Die Software ist nach der Installation ohne weitere Schritte sicher: keine
+        Standardpasswörter oder Beispielkonten, Debug-Modus, Testschnittstellen und
+        ausführliche Fehlermeldungen sind aus, nur benötigte Dienste und Ports sind
+        offen, Verschlüsselung ist an. Wer eine Sicherheitsfunktion abschaltet,
+        erhält einen deutlichen Hinweis. Ein Zurücksetzen stellt diesen Zustand
+        wieder her.
+      en: >-
+        After installation the software is secure without further steps: no default
+        passwords or sample accounts; debug mode, test interfaces and verbose error
+        messages are off; only required services and ports are open; encryption is
+        on. Anyone who switches off a security function gets a clear notice. A reset
+        restores this state.
+    kind: design
+    evidence:
+      de: Prüfliste des Auslieferungszustands; Portscan und Fehlerseite einer frischen Installation.
+      en: Checklist of the delivered state; port scan and error page of a fresh installation.
+    cra_refs: [AI-I-2-b, AI-I-2-j]
+    asvs: [V13.4.2, V15.2.3, V16.5.1]
+    sources: ["OWASP Top 10 2021 A05 Security Misconfiguration; Regulation (EU) 2024/2847 Annex I Part I (2)(b)"]
+
+  - id: telemetry-opt-in
+    rev: 1
+    title:
+      de: Sparsame, abschaltbare Nutzungsdaten
+      en: Minimal telemetry that can be switched off
+    description:
+      de: >-
+        Nutzungs- und Diagnosedaten werden nur erhoben, wenn sie einem
+        beschriebenen Zweck dienen, ohne Namen, Inhalte oder dauerhafte
+        Gerätekennungen. Der Nutzer erfährt vorher, was gesendet wird, und kann es
+        abschalten; personenbezogene Analysen brauchen seine Zustimmung.
+        Analyse- und Werbe-SDKs werden vor der Einbindung auf ihre Datenflüsse
+        geprüft.
+      en: >-
+        Usage and diagnostic data is only collected when it serves a described
+        purpose, without names, contents or permanent device identifiers. The user
+        learns beforehand what is sent and can switch it off; personal analyses need
+        consent. Analytics and advertising SDKs are reviewed for their data flows
+        before inclusion.
+    kind: design
+    evidence:
+      de: Liste der gesendeten Datenfelder; Datenschutzhinweis; Mitschnitt des Netzwerkverkehrs bei abgeschalteter Telemetrie.
+      en: List of sent data fields; privacy notice; network capture with telemetry switched off.
+    cra_refs: [AI-I-2-g]
+    asvs: [V14.2.3]
+    masvs: [MASVS-PRIVACY-1, MASVS-PRIVACY-3, MASVS-PRIVACY-4]
+    sources: ["OWASP Mobile Top 10 2024 M6 Inadequate Privacy Controls; Regulation (EU) 2024/2847 Annex I Part I (2)(g)"]
+
+  - id: updates-independent-of-license
+    rev: 1
+    title:
+      de: Sicherheitsupdates unabhängig vom Lizenzstatus
+      en: Security updates independent of licence status
+    description:
+      de: >-
+        Sicherheitsupdates erreichen jede Installation im Unterstützungszeitraum,
+        auch wenn Lizenz oder Wartungsvertrag abgelaufen sind. Neue Funktionen
+        können an die Lizenz gebunden bleiben, Sicherheitskorrekturen nicht. So
+        hat niemand einen Grund, auf alten Versionen zu bleiben oder gecrackte
+        Kopien aus fremden Quellen zu nutzen.
+      en: >-
+        Security updates reach every installation within the support period, even if
+        licence or maintenance contract have expired. New features may stay tied to
+        the licence, security fixes may not. This gives no one a reason to stay on
+        old versions or use cracked copies from foreign sources.
+    kind: design
+    evidence:
+      de: Update-Richtlinie; Test eines Updates mit abgelaufener Lizenz.
+      en: Update policy; test of an update with an expired licence.
+    cra_refs: [AI-I-2-c, AI-II-8]
+    sources: ["Regulation (EU) 2024/2847 Annex I Part II (8)"]
+
+  - id: dependency-provenance
+    rev: 1
+    title:
+      de: Herkunft von Abhängigkeiten absichern
+      en: Secure the origin of dependencies
+    description:
+      de: >-
+        Bibliotheken kommen nur aus festgelegten Paketquellen oder einem eigenen
+        Spiegel. Versionen sind mit Prüfsummen festgeschrieben (Lockfile), interne
+        Paketnamen sind gegen gleichnamige öffentliche Pakete geschützt. Neue
+        Abhängigkeiten werden vor der Aufnahme auf Pflegezustand, Verbreitung und
+        Herausgeber geprüft; Builds laufen in einer kontrollierten Umgebung.
+      en: >-
+        Libraries come only from defined package sources or an own mirror. Versions
+        are pinned with checksums (lock file), internal package names are protected
+        against public packages with the same name. New dependencies are checked for
+        maintenance state, adoption and publisher before being added; builds run in
+        a controlled environment.
+    kind: supply_chain
+    evidence:
+      de: Lockfile mit Prüfsummen; Konfiguration der Paketquellen; Freigabeprotokoll neuer Abhängigkeiten.
+      en: Lock file with checksums; package source configuration; approval record of new dependencies.
+    cra_refs: [AI-I-2-f, AI-II-1]
+    asvs: [V15.2.4]
+    sources: ["OWASP Top 10 2021 A08 Software and Data Integrity Failures; CWE-506"]
+
+  - id: sbom-generated
+    rev: 1
+    title:
+      de: Komponentenliste (SBOM) bei jedem Release
+      en: Component list (SBOM) with every release
+    description:
+      de: >-
+        Der Build erzeugt für jede ausgelieferte Version von Anwendung, App und
+        Backend eine maschinenlesbare Liste aller enthaltenen Komponenten mit
+        Version (z. B. CycloneDX oder SPDX). Die Listen werden aufbewahrt, damit
+        sich bei einer neuen Schwachstelle sofort feststellen lässt, welche
+        Versionen betroffen sind.
+      en: >-
+        For every delivered version of application, app and backend the build
+        creates a machine-readable list of all included components with version
+        (e.g. CycloneDX or SPDX). The lists are kept so that for a new vulnerability
+        it can be determined immediately which versions are affected.
+    kind: supply_chain
+    evidence:
+      de: SBOM-Datei der aktuellen Version; Build-Schritt, der sie erzeugt.
+      en: SBOM file of the current version; build step that creates it.
+    cra_refs: [AI-II-1]
+    asvs: [V15.1.2]
+    sources: ["Regulation (EU) 2024/2847 Annex I Part II (1); BSI TR-03183-2"]
+
+  - id: security-advisories
+    rev: 1
+    title:
+      de: Sicherheitshinweise veröffentlichen und Kunden informieren
+      en: Publish security advisories and inform customers
+    description:
+      de: >-
+        Zu jeder behobenen Schwachstelle veröffentlicht der Hersteller einen
+        verständlichen Hinweis: betroffene Versionen, Auswirkung, was zu tun ist.
+        Registrierte Kunden und Administratoren erhalten ihn zusätzlich per E-Mail
+        oder in der Admin-Konsole. Eine Kontaktadresse für Schwachstellenmeldungen
+        ist veröffentlicht.
+      en: >-
+        For every fixed vulnerability the manufacturer publishes an understandable
+        advisory: affected versions, impact, what to do. Registered customers and
+        administrators additionally receive it by e-mail or in the admin console. A
+        contact address for vulnerability reports is published.
+    kind: organizational
+    evidence:
+      de: Veröffentlichter Sicherheitshinweis; Verteilerliste; security.txt.
+      en: Published security advisory; distribution list; security.txt.
+    cra_refs: [AI-II-4, AI-II-5, AI-II-6, AI-II-8]
+    sources: ["Regulation (EU) 2024/2847 Annex I Part II (4) to (8)"]

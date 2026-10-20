@@ -112,7 +112,7 @@ def screenshots(page: Page, ids: dict[str, str]) -> None:
 
     page.get_by_test_id("nav-setup").click()
     page.get_by_test_id("setup-start").click()
-    page.locator("ol.steps li").nth(3).locator("button").click()  # step 4: connections
+    page.locator("ol.steps li").nth(4).locator("button").click()  # step 5: connections
     page.locator("h2", has_text="Connections").wait_for()
     shoot(page, "setup", full_page=True)  # steps, form, list and the live diagram below
 

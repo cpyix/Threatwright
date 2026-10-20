@@ -1,0 +1,256 @@
+# Threat templates for delivery, installation, updates and licence check.
+threats:
+  - id: installer-tampered-download
+    rev: 1
+    stride: [S, T]
+    applies_to: [installer]
+    title:
+      de: Manipuliertes {element} aus fremder Quelle
+      en: Manipulated {element} from a foreign source
+    scenario:
+      de: >-
+        Das Installationspaket ist nicht signiert oder die Signatur wird nicht
+        beachtet. Kunden laden es von Download-Portalen, aus Suchmaschinen-Werbung
+        oder über einen unverschlüsselten Link. Ein Angreifer bietet eine Fassung mit
+        eingebauter Schadsoftware an.
+      en: >-
+        The installation package is not signed or the signature is ignored. Customers
+        download it from download portals, from search engine ads or via an
+        unencrypted link. An attacker offers a version with built-in malware.
+    consequence:
+      de: >-
+        Die Schadsoftware wird mit Administratorrechten installiert, der Rechner des
+        Kunden ist übernommen, und der Name des Herstellers steht auf dem
+        Installationsfenster.
+      en: >-
+        The malware is installed with administrator rights, the customer's computer
+        is taken over, and the manufacturer's name is on the installation window.
+    environment: {interface: external_network, access: non_restricted, user: layman}
+    impact: 4
+    cra_refs: [AI-I-2-f, AI-II-7]
+    asvs: [V12.2.1]
+    masvs: [MASVS-RESILIENCE-2]
+    measures: [code-signing]
+    sources: ["OWASP Top 10 2021 A08 Software and Data Integrity Failures; CWE-494 Download of Code Without Integrity Check"]
+
+  - id: installer-excessive-rights
+    rev: 1
+    stride: [E]
+    applies_to: [installer]
+    title:
+      de: '{element} hinterlässt zu weit offene Rechte'
+      en: '{element} leaves rights open too widely'
+    scenario:
+      de: >-
+        Das Installationsprogramm läuft mit Administratorrechten, entpackt Dateien in
+        einen für alle beschreibbaren Temp-Ordner und startet sie von dort. Es legt
+        den Programmordner mit Schreibrecht für alle Benutzer an oder richtet einen
+        Dienst ein, der dauerhaft als SYSTEM oder root läuft, obwohl das nicht nötig
+        ist.
+        Schadsoftware, die so etwas tut, gelangt typischerweise über das Internet auf das Gerät (Download, E-Mail-Anhang); der Angriff ist dann ein zweiter Schritt aus der Ferne.
+      en: >-
+        The installer runs with administrator rights, unpacks files into a temp
+        folder writable by everyone and starts them from there. It creates the
+        program folder with write access for all users or sets up a service that runs
+        permanently as SYSTEM or root although this is not needed.
+        Malware that does this typically reaches the device via the internet (download, e-mail attachment); the attack is then a remote second step.
+    consequence:
+      de: >-
+        Jeder Benutzer oder jede Schadsoftware auf dem Rechner kann Programmdateien
+        austauschen und erhält beim nächsten Start Administratorrechte.
+      en: >-
+        Every user or any malware on the computer can replace program files and gains
+        administrator rights at the next start.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-j, AI-I-2-k, AI-I-2-d]
+    asvs: [V13.2.2]
+    measures: [least-privilege-install]
+    sources: ["CWE-276 Incorrect Default Permissions; CWE-250 Execution with Unnecessary Privileges; CWE-379"]
+
+  - id: update-unsigned-or-mitm
+    rev: 1
+    stride: [S, T]
+    applies_to: [updater, desktop-app]
+    title:
+      de: '{element} installiert ein gefälschtes Update'
+      en: '{element} installs a forged update'
+    scenario:
+      de: >-
+        Die Update-Funktion lädt Updates ohne Signaturprüfung, über unverschlüsseltes
+        HTTP oder prüft nur, ob der Dateiname stimmt. Ein Angreifer im selben Netz,
+        ein gekaperter Download-Server oder ein übernommenes CDN-Konto liefert ein
+        präpariertes Update aus.
+      en: >-
+        The updater downloads updates without signature check, via unencrypted HTTP
+        or only checks the file name. An attacker in the same network, a hijacked
+        download server or a taken-over CDN account delivers a prepared update.
+    consequence:
+      de: >-
+        Schadcode wird mit den Rechten der Update-Funktion auf vielen Rechnern
+        gleichzeitig installiert, oft mit Administratorrechten.
+      en: >-
+        Malicious code is installed on many computers at once with the rights of the
+        updater, often with administrator rights.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 5
+    cra_refs: [AI-I-2-c, AI-I-2-f, AI-II-7]
+    asvs: [V12.3.2]
+    measures: [sw-signed-updates, tls-pinning-or-validation]
+    sources: ["OWASP Top 10 2021 A08 Software and Data Integrity Failures; CWE-494 Download of Code Without Integrity Check; ASVS V12.3.2 covers only the transport, not the signature check"]
+
+  - id: update-downgrade
+    rev: 1
+    stride: [T]
+    applies_to: [updater]
+    title:
+      de: '{element} wird auf eine alte, verwundbare Version zurückgesetzt'
+      en: '{element} is reset to an old, vulnerable version'
+    scenario:
+      de: >-
+        Die Update-Funktion prüft zwar die Signatur, installiert aber auch ältere
+        Versionen. Ein Angreifer spielt eine korrekt signierte alte Version oder eine
+        alte Update-Liste ein, in der eine bekannte Schwachstelle noch offen ist.
+      en: >-
+        The updater checks the signature but also installs older versions. An
+        attacker feeds in a correctly signed old version or an old update list in
+        which a known vulnerability is still open.
+    consequence:
+      de: >-
+        Eine längst behobene Schwachstelle ist wieder ausnutzbar, obwohl der Kunde
+        alle Updates installiert hat.
+      en: >-
+        A long-fixed vulnerability is exploitable again even though the customer has
+        installed all updates.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 4
+    cra_refs: [AI-I-2-c, AI-I-2-f]
+    masvs: [MASVS-CODE-2]
+    measures: [update-anti-rollback]
+    sources: ["OWASP Top 10 2021 A08 Software and Data Integrity Failures; CWE-1328 Security Version Number Mutable to Older Versions"]
+
+  - id: security-update-unnoticed
+    rev: 1
+    stride: [E]
+    applies_to: [desktop-app, mobile-app, updater]
+    title:
+      de: Nutzer von {element} erfahren nichts von Sicherheitsupdates
+      en: Users of {element} do not learn about security updates
+    scenario:
+      de: >-
+        Neue Versionen erscheinen nur auf der Webseite des Herstellers. Die Software
+        weist nicht auf Updates hin, unterscheidet nicht zwischen Funktions- und
+        Sicherheitsupdates, und Kunden werden nicht über behobene Schwachstellen
+        informiert.
+      en: >-
+        New versions only appear on the manufacturer's website. The software does not
+        point out updates, does not distinguish between feature and security updates,
+        and customers are not informed about fixed vulnerabilities.
+    consequence:
+      de: >-
+        Die meisten Installationen bleiben auf alten Versionen, bekannte
+        Schwachstellen bleiben über Jahre ausnutzbar. Der Hersteller erfüllt seine
+        Informationspflicht aus dem CRA nicht.
+      en: >-
+        Most installations stay on old versions, known vulnerabilities remain
+        exploitable for years. The manufacturer does not meet its information duty
+        under the CRA.
+    environment: {interface: external_network, access: non_restricted, user: layman}
+    impact: 4
+    cra_refs: [AI-I-2-c, AI-II-4, AI-II-8]
+    masvs: [MASVS-CODE-2]
+    measures: [update-notification, security-advisories]
+    sources: ["Regulation (EU) 2024/2847 Annex I Part I (2)(c) and Part II (8)"]
+
+  - id: update-breaks-installation
+    rev: 1
+    stride: [D]
+    applies_to: [installer, updater, desktop-app]
+    title:
+      de: Abgebrochene Installation macht {element} unbrauchbar
+      en: Aborted installation renders {element} unusable
+    scenario:
+      de: >-
+        Während Installation oder Update stürzt der Rechner ab, der Datenträger läuft
+        voll oder ein Virenscanner sperrt eine Datei. Die alte Version ist schon
+        entfernt, die neue unvollständig. Oder ein fehlerhaftes Update geht an alle
+        Kunden gleichzeitig.
+      en: >-
+        During installation or update the computer crashes, the disk runs full or a
+        virus scanner locks a file. The old version is already removed, the new one
+        incomplete. Or a faulty update goes to all customers at once.
+    consequence:
+      de: >-
+        Kunden können nicht arbeiten, bis der Support die Installation repariert; aus
+        Angst davor schalten viele Kunden Updates ab.
+      en: >-
+        Customers cannot work until support repairs the installation; out of fear of
+        this many customers switch updates off.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h, AI-II-7]
+    asvs: [V16.5.3]
+    measures: [update-failsafe]
+    sources: ["general software engineering practice; ASVS V16.5.3 (fail securely) is only a loose fit for installation and update robustness"]
+
+  - id: license-bypass-unpatched-copies
+    rev: 1
+    stride: [T, E]
+    applies_to: [license-service, desktop-app]
+    title:
+      de: Umgangene Lizenzprüfung in {element} führt zu ungepatchten Kopien
+      en: Bypassed licence check in {element} leads to unpatched copies
+    scenario:
+      de: >-
+        Die Lizenzprüfung findet nur im Programm statt und lässt sich durch Ändern
+        einer Datei oder einen Patch abschalten. Gecrackte Fassungen kursieren im
+        Netz, oft mit Schadsoftware. Da Updates an eine gültige Lizenz gebunden sind,
+        bekommen diese Kopien und auch Kunden mit abgelaufener Wartung keine
+        Sicherheitsupdates.
+      en: >-
+        The licence check takes place only in the program and can be switched off by
+        changing a file or a patch. Cracked versions circulate on the net, often with
+        malware. Since updates are tied to a valid licence, these copies and also
+        customers with expired maintenance receive no security updates.
+    consequence:
+      de: >-
+        Viele Installationen bleiben dauerhaft verwundbar oder sind schon infiziert;
+        Angriffe darauf werden dem Produkt zugeschrieben.
+      en: >-
+        Many installations remain vulnerable permanently or are already infected;
+        attacks on them are attributed to the product.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-c, AI-I-2-f]
+    masvs: [MASVS-RESILIENCE-2]
+    measures: [updates-independent-of-license, code-signing]
+    sources: ["CWE-602; Regulation (EU) 2024/2847 Annex I Part II (8)"]
+
+  - id: license-outage-blocks-use
+    rev: 1
+    stride: [D]
+    applies_to: [license-service, desktop-app]
+    title:
+      de: Ausfall von {element} sperrt alle Kunden aus
+      en: Outage of {element} locks out all customers
+    scenario:
+      de: >-
+        Die Software fragt bei jedem Start den Lizenzserver. Der Server fällt durch
+        einen Angriff, eine Störung oder ein abgelaufenes Zertifikat aus, oder der
+        Kunde arbeitet ohne Internet.
+      en: >-
+        The software asks the licence server at every start. The server fails due to
+        an attack, an outage or an expired certificate, or the customer works without
+        internet.
+    consequence:
+      de: >-
+        Kein Kunde kann die Software nutzen, auch nicht auf die eigenen Daten
+        zugreifen.
+      en: >-
+        No customer can use the software, not even access their own data.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 3
+    cra_refs: [AI-I-2-h]
+    asvs: [V16.5.2]
+    measures: [license-offline-grace]
+    sources: ["general software engineering practice"]

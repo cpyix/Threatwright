@@ -1,0 +1,5 @@
+schema_version: 1
+name: Demo machine
+uuid: dd98fd9f-8912-4932-9d74-43db35ee7518
+language: en
+libraries: [ot]

@@ -1,0 +1,9 @@
+schema_version: 1
+id: F-0003
+uuid: e76630c2-7e92-4091-b133-1f291f20b5a3
+title: EtherCAT
+library_ref: lib:ot/element/fieldbus-ethercat@1
+source: E-0001
+target: E-0003
+protocol: EtherCAT
+assets: [A-0016]

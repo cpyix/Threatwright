@@ -74,6 +74,7 @@ def test_basic_auth_guards_everything(project_dir: Path) -> None:
     for path in ("/", "/api/project"):
         r = anonymous.get(path)
         assert r.status_code == 401 and r.headers["www-authenticate"].startswith("Basic")
+
     def login(user: str, password: str) -> TestClient:
         basic = base64.b64encode(f"{user}:{password}".encode()).decode()
         headers = {API_HEADER: "1", "Authorization": f"Basic {basic}"}

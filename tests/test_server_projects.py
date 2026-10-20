@@ -35,7 +35,7 @@ def test_workspace_open_and_new(workspace: Path) -> None:
     c = server(workspace)
     assert c.get("/api/app").json()["server"] is True
     assert c.get("/api/workspace").json()["projects"] == [
-        {"path": "machine-a", "name": "machine-a"}
+        {"path": "machine-a", "name": "Test fixture project"}  # name from threatwright.yaml
     ]
     assert c.post("/api/project/open", json={"path": "machine-a"}).status_code == 200
     r = c.post("/api/project/new", json={"path": "machine-b", "name": "B", "language": "en"})

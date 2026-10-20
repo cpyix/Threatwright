@@ -53,6 +53,8 @@ const de = {
   server_projects: 'Projekte auf dem Server',
   no_server_projects: 'Noch keine Projekte auf dem Server. Laden Sie eines hoch oder legen Sie ein neues an.',
   upload_project: 'Projekt vom eigenen Rechner hochladen',
+  upload_project_short: 'Projekt hochladen (.zip)',
+  is_open: 'geöffnet – weiterarbeiten',
   upload_help:
     'Packen Sie den Projektordner (mit threatwright.yaml) als .zip und laden Sie ihn hoch. Er wird als neuer Ordner auf dem Server angelegt und geöffnet.',
   zip_file: 'Projekt als .zip',
@@ -296,6 +298,8 @@ const en: Record<Key, string> = {
   server_projects: 'Projects on the server',
   no_server_projects: 'No projects on the server yet. Upload one or create a new one.',
   upload_project: 'Upload a project from your computer',
+  upload_project_short: 'Upload project (.zip)',
+  is_open: 'open – continue',
   upload_help:
     'Zip the project folder (with threatwright.yaml) and upload it. It becomes a new folder on the server and opens.',
   zip_file: 'Project as .zip',

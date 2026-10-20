@@ -101,7 +101,8 @@ class AppState {
     const before = this.view
     try {
       await this.loadProject(await api<ProjectInfo>('GET', '/project'))
-      if (this.view === before) this.view = this.home()
+      // on a server the start page with the project overview comes first
+      if (this.view === before) this.view = this.server ? { kind: 'start' } : this.home()
     } catch {
       if (this.view === before) this.view = { kind: 'start' }
     }

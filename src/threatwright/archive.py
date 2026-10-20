@@ -9,6 +9,7 @@ from pathlib import Path
 
 from threatwright.branding import PROJECT_FILE
 from threatwright.history import HISTORY_DIR
+from threatwright.model.store import LoadError, read_yaml
 
 MAX_UPLOAD = 50 << 20  # compressed size of an uploaded archive
 MAX_UNPACKED = 200 << 20  # sum of the declared file sizes (zip bombs)
@@ -71,10 +72,19 @@ def unpack(data: bytes, target: Path) -> None:
                 shutil.copyfileobj(src, out)
 
 
+def _name(folder: Path) -> str:
+    """Project name from its config; the folder name if the config cannot be read."""
+    try:
+        name = read_yaml(folder / PROJECT_FILE).get("name")
+    except (LoadError, OSError, AttributeError):
+        name = None
+    return str(name) if name else folder.name
+
+
 def projects_in(root: Path) -> list[dict[str, str]]:
     """Project folders in `root` and one level below, relative to `root`."""
     found = [p for p in [root, *root.glob("*"), *root.glob("*/*")] if (p / PROJECT_FILE).is_file()]
     return sorted(
-        ({"path": p.relative_to(root).as_posix() or ".", "name": p.name} for p in found),
+        ({"path": p.relative_to(root).as_posix() or ".", "name": _name(p)} for p in found),
         key=lambda x: x["path"],
     )

@@ -238,3 +238,21 @@ def test_pick_folder(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> Non
 
     monkeypatch.setattr(server, "pick_folder", headless)
     assert client.post("/api/pick-folder", json={}).status_code == 501
+
+
+def test_pick_folder_macos(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[list[str]] = []
+
+    def run(cmd: list[str], **kwargs: object) -> object:
+        calls.append(cmd)
+        return type("Result", (), {"stdout": stdout})()
+
+    monkeypatch.setattr(server.sys, "platform", "darwin")
+    monkeypatch.setattr(server.subprocess, "run", run)
+    stdout = f"{tmp_path}/picked/\n"
+    assert server.pick_folder("T", str(tmp_path)) == str(tmp_path / "picked")
+    assert calls[-1][0] == "/usr/bin/osascript"
+    assert calls[-1][-2:] == ["T", str(tmp_path)]  # as argv, not inside the script
+    stdout = ""  # cancelled
+    assert server.pick_folder("T", str(tmp_path / "missing")) is None
+    assert calls[-1][-1] == str(Path.home())

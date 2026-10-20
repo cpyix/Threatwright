@@ -227,11 +227,30 @@ def _recent(add: Path | None = None) -> list[str]:
 def pick_folder(title: str, initial: str | None = None) -> str | None:
     """Native folder dialog on the local machine; None when cancelled.
 
-    Linux prefers zenity/kdialog (desktop-native), otherwise Tk, which uses the
-    Explorer dialog on Windows. Raises RuntimeError without a desktop (container, SSH).
+    Linux prefers zenity/kdialog (desktop-native), macOS uses osascript (Tk must run on
+    the main thread there), otherwise Tk, which uses the Explorer dialog on Windows.
+    Raises RuntimeError without a desktop (container, SSH).
     """
     # absolute, so a value like "--help" can never be read as a dialog option
     start = os.path.abspath(initial or Path.home())
+    if sys.platform == "darwin":
+        if not os.path.isdir(start):  # choose folder fails on a missing default location
+            start = str(Path.home())
+        # title and folder as argv, never spliced into the script
+        script = (
+            "on run argv",
+            "activate",
+            "POSIX path of (choose folder with prompt (item 1 of argv)"
+            " default location (POSIX file (item 2 of argv)))",
+            "end run",
+        )
+        args = [arg for line in script for arg in ("-e", line)]
+        # cancelling exits non-zero with empty stdout
+        result = subprocess.run(  # noqa: S603
+            ["/usr/bin/osascript", *args, title, start], capture_output=True, text=True, check=False
+        )
+        picked = result.stdout.strip()
+        return os.path.normpath(picked) if picked else None
     if sys.platform.startswith("linux"):
         for cmd in (
             [
@@ -846,7 +865,8 @@ def create_app(
         if sys.platform == "win32":
             os.startfile(folder)  # noqa: S606
         else:
-            subprocess.Popen(["xdg-open", str(folder)])  # noqa: S603, S607
+            opener = "open" if sys.platform == "darwin" else "xdg-open"
+            subprocess.Popen([opener, str(folder)])  # noqa: S603, S607
         return {"folder": str(folder)}
 
     # --- CI templates (ADR-0009) ----------------------------------------------------

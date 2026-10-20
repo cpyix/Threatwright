@@ -4,7 +4,7 @@
 
 Sie haben drei Möglichkeiten:
 
-- **Portable Version (empfohlen):** ZIP für Windows bzw. `tar.gz` für Linux von der Release-Seite herunterladen, entpacken und `threatwright` starten. Sie brauchen weder Python noch Administratorrechte.
+- **Portable Version (empfohlen):** ZIP für Windows bzw. `tar.gz` für Linux von der Release-Seite herunterladen, entpacken und `threatwright` starten. Sie brauchen weder Python noch Administratorrechte. Für macOS gibt es keine portable Version, dort die Variante mit Python nutzen.
 - **Mit Python:** `pipx install threatwright`
 - **Für CI:** das Container-Image, siehe [ci.md](ci.md)
 

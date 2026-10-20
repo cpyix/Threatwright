@@ -12,7 +12,7 @@
 
 Local-first threat modelling and risk analysis for products with digital elements under the EU Cyber Resilience Act (CRA), following **BSI TR-03183-1**. Built for machine and plant manufacturers (OT) whose engineers are not security specialists. Status: **alpha** (0.1.0).
 
-- **Offline and local:** Windows and Linux, no admin rights, no network access at runtime, no telemetry.
+- **Offline and local:** Windows, Linux and macOS, no admin rights, no network access at runtime, no telemetry.
 - **Git is the database:** one YAML file per object, stable IDs, saving without changes produces no diff. Merge requests are the change history; `threatwright diff` creates change evidence between releases.
 - **TR-03183-1 as configuration:** scales, factors, risk matrix and acceptance rules live in a method file with page references and can be overridden per project ([Methodik](docs/methodik.md)).
 - **Building blocks instead of empty forms:** OT library with 80 element types, 239 threat and 111 measure templates; STRIDE assistant, coverage matrix, data flow diagram.
@@ -47,7 +47,7 @@ The screenshots show a neutral demo model built from the library building blocks
 
 ### Install
 
-**Portable download (no Python, no admin rights).** From the [releases](https://github.com/cpyix/threatwright/releases) download `threatwright-<version>-windows-amd64.zip` or `threatwright-<version>-linux-x86_64.tar.gz`, unpack it anywhere (e.g. your user folder or a USB stick) and run `threatwright.exe` (Windows) or `./threatwright` (Linux). Without arguments the GUI opens in your default browser. Verify downloads with `SHA256SUMS` (see [SECURITY.md](SECURITY.md)).
+**Portable download (no Python, no admin rights).** From the [releases](https://github.com/cpyix/threatwright/releases) download `threatwright-<version>-windows-amd64.zip` or `threatwright-<version>-linux-x86_64.tar.gz`, unpack it anywhere (e.g. your user folder or a USB stick) and run `threatwright.exe` (Windows) or `./threatwright` (Linux). Without arguments the GUI opens in your default browser. Verify downloads with `SHA256SUMS` (see [SECURITY.md](SECURITY.md)). There is no portable build for macOS; install it with Python as below.
 
 **With Python (3.12+):**
 
@@ -269,7 +269,7 @@ Large parts of the code, tests and documentation in this repository were written
 What keeps the quality up is not who or what wrote a line, but the gates every change has to pass before it reaches `main` or a release:
 
 - **Pull requests only:** `main` is protected; a change needs the required checks `ci-ok` and `leakcheck` to pass.
-- **Tests and static checks:** unit and end-to-end tests (Playwright, in German and English, including an axe-core accessibility check in light and dark mode) on Ubuntu and Windows with Python 3.12 and 3.14; `ruff`, strict `mypy` and `svelte-check`.
+- **Tests and static checks:** unit and end-to-end tests (Playwright, in German and English, including an axe-core accessibility check in light and dark mode) on Ubuntu, Windows and macOS with Python 3.12 and 3.14; `ruff`, strict `mypy` and `svelte-check`.
 - **Security scans:** CodeQL code scanning on every pull request; gitleaks and a forbidden-files check over the full Git history; `pip-audit`, `npm audit` and OSV for dependencies, on every pull request and weekly.
 - **Supply chain:** GitHub Actions pinned to commit SHAs, locked dependencies, releases with build provenance, Sigstore-signed checksums and CycloneDX SBOMs, PyPI via Trusted Publishing.
 

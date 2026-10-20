@@ -70,13 +70,17 @@
 
   async function go(n: number) {
     // product and zones are edited as a draft: apply before leaving the step
+    if (busy) return
     if (step === 1 || step === 3) {
       error = ''
+      busy = true // disables the pager: a second click must not send a second save
       try {
         await saveMeta()
       } catch (e) {
         error = e instanceof ApiError ? e.message : String(e)
         return
+      } finally {
+        busy = false
       }
     }
     app.view = { kind: 'setup', step: n }

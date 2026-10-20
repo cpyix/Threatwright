@@ -96,19 +96,23 @@ export const PROCEDURE: Record<'default' | Cls, I18n> = {
     de:
       'Modul A genügt nur, wenn Sie harmonisierte Normen, gemeinsame Spezifikationen oder eine europäische Cybersicherheitszertifizierung ' +
       '(mindestens Stufe „substanziell“, z. B. EUCC) vollständig anwenden; sonst EU-Baumusterprüfung (Modul B + C) oder ' +
-      'umfassende Qualitätssicherung (Modul H) mit einer benannten Stelle (Art. 32 Abs. 2).',
+      'umfassende Qualitätssicherung (Modul H) mit einer benannten Stelle (Art. 32 Abs. 2).' +
+      ' Für freie und Open-Source-Software genügt jedes Verfahren nach Art. 32 Abs. 1, auch Modul A, wenn die technische Dokumentation beim Inverkehrbringen öffentlich ist (Art. 32 Abs. 5).',
     en:
       'Module A is enough only if you fully apply harmonised standards, common specifications or a European cybersecurity ' +
       'certification scheme (at least “substantial”, e.g. EUCC); otherwise EU-type examination (module B + C) or full quality ' +
-      'assurance (module H) with a notified body (Art. 32(2)).',
+      'assurance (module H) with a notified body (Art. 32(2)).' +
+      ' For free and open-source software any procedure under Art. 32(1), including module A, is allowed if the technical documentation is made public when it is placed on the market (Art. 32(5)).',
   },
   II: {
     de:
       'EU-Baumusterprüfung (Modul B + C) oder umfassende Qualitätssicherung (Modul H) mit einer benannten Stelle, oder, wo verfügbar, ' +
-      'eine europäische Cybersicherheitszertifizierung mindestens der Stufe „substanziell“, z. B. EUCC (Art. 32 Abs. 3); Modul A allein genügt nicht.',
+      'eine europäische Cybersicherheitszertifizierung mindestens der Stufe „substanziell“, z. B. EUCC (Art. 32 Abs. 3).' +
+      ' Für freie und Open-Source-Software genügt jedes Verfahren nach Art. 32 Abs. 1, auch Modul A, wenn die technische Dokumentation beim Inverkehrbringen öffentlich ist (Art. 32 Abs. 5).',
     en:
       'EU-type examination (module B + C) or full quality assurance (module H) with a notified body, or, where available, a European ' +
-      'cybersecurity certification scheme at level “substantial” or higher, e.g. EUCC (Art. 32(3)); module A alone is not enough.',
+      'cybersecurity certification scheme at level “substantial” or higher, e.g. EUCC (Art. 32(3)).' +
+      ' For free and open-source software any procedure under Art. 32(1), including module A, is allowed if the technical documentation is made public when it is placed on the market (Art. 32(5)).',
   },
   critical: {
     de:

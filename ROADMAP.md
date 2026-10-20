@@ -15,6 +15,9 @@ Open points after 0.1.0, ordered by impact. Sizes: S = hours, M = days, L = a we
 - OSCAL export (SSP or assessment results), revisiting ADR-0006.
 - Evidence attachments on measures (file or link instead of free text).
 - The qualitative method of TR-03183-1 §5.14.3 as a second method folder.
+- EN 18031 mapping for radio devices in the `iot` library, once a licensed reviewer is available.
+- MITRE ATT&CK Enterprise and Mobile as additional reference sets.
+- Deeper `iot` and `software` libraries, driven by user feedback.
 - Multi-user team server: per-user sessions and access control (ADR-0013 runs one shared session).
 
 ## Housekeeping

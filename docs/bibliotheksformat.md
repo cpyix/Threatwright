@@ -5,7 +5,15 @@ Bibliotheken liefern Bausteine:
 - **Bedrohungsvorlagen**
 - **Maßnahmenvorlagen**
 
-Mitgeliefert ist die Bibliothek `ot` (CC BY 4.0). Sie liegt unter `src/threatwright/libraries/ot/`.
+Mitgeliefert sind drei Bibliotheken (CC BY 4.0) unter `src/threatwright/libraries/`:
+
+| Bibliothek | Produktart | Bezüge |
+|---|---|---|
+| `ot` | Maschinen und Anlagen | CRA |
+| `iot` | vernetzte Geräte, Consumer | ETSI EN 303 645; Funkgeräte müssen zusätzlich EN 18031 beachten (nicht abgebildet) |
+| `software` | Desktop-, Mobil- und Backend-Anwendungen | OWASP ASVS 5.0.0, MASVS v2 |
+
+Die Produktart wird beim Anlegen des Projekts gewählt (`threatwright init --library ot|iot|software`, wiederholbar).
 
 ## Aktivieren und eigene Bibliotheken
 

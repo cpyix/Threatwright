@@ -14,9 +14,11 @@ Sie haben drei Möglichkeiten:
 threatwright init mein-produkt --name "Mein Produkt"
 ```
 
+Die Produktart wählen Sie mit `--library` (kurz `-l`): `ot` (Maschinen und Anlagen, Standard), `iot` (vernetzte Geräte, Consumer) oder `software`. Die Option ist wiederholbar, z. B. `-l iot -l software`. In der Oberfläche wählen Sie die Produktart per Ankreuzfeld auf der Startseite beim Anlegen.
+
 Das Werkzeug legt einen Ordner mit einem Teilmodell `main` an. Er enthält:
-- vier Standardzonen: geräteintern, lokal, Anlagennetz, extern
-- die Bibliothek `ot`
+- vier Standardzonen: geräteintern, lokal, Anlagennetz, extern. Ohne `ot` heißt die dritte Zone „Lokales Netz (LAN/WLAN)“ (Z-LAN).
+- die gewählte(n) Bibliothek(en), ohne Angabe `ot`
 - die Datei `method-overrides.yaml` mit allen Entscheidungspunkten zur Risikoakzeptanz
 
 Machen Sie den Ordner am besten gleich zum Git-Repository (`git init`).
@@ -31,7 +33,7 @@ Der Standardbrowser öffnet sich. Die Oberfläche läuft nur auf Ihrem Rechner u
 
 ## 4. Modell aufbauen
 
-**Mit dem Einrichtungsassistenten (empfohlen für den Einstieg):** Ein in der Oberfläche neu angelegtes Projekt öffnet direkt den Assistenten. Bei bestehenden Projekten erreichen Sie ihn über **Einrichtung** in der Navigation. Er führt in sieben Schritten durch Produktbeschreibung und Einsatzzweck, Zonen mit Schnittstelle, Zugang und Nutzer, Komponenten aus der Bibliothek, Verbindungen, Assets mit TR-Klasse, Bedrohungsvorschläge (gelten als Cyberrisiko nach Regel 3.3) und eine Abschlussübersicht. Alles landet als normaler Modellinhalt im Projekt; Rückgängig und Speichern funktionieren wie überall.
+**Mit dem Einrichtungsassistenten (empfohlen für den Einstieg):** Ein in der Oberfläche neu angelegtes Projekt öffnet direkt den Assistenten. Bei bestehenden Projekten erreichen Sie ihn über **Einrichtung** in der Navigation. Er führt in acht Schritten durch Produktbeschreibung und Einsatzzweck, eine optionale CRA-Einstufung (nur zur Orientierung, nichts wird gespeichert, nicht im Bericht), Zonen mit Schnittstelle, Zugang und Nutzer, Komponenten aus der Bibliothek, Verbindungen, Assets mit TR-Klasse, Bedrohungsvorschläge (gelten als Cyberrisiko nach Regel 3.3) und eine Abschlussübersicht. Die Leitfragen richten sich nach der Produktart; weitere Bibliotheken lassen sich im Produktschritt hinzufügen (entfernen nicht). Alles landet als normaler Modellinhalt im Projekt; Rückgängig und Speichern funktionieren wie überall.
 
 **Von Hand** in den einzelnen Ansichten:
 

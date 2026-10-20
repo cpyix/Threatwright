@@ -7,6 +7,8 @@ In diesem Tutorial bauen Sie ein Teilmodell für den Feldbus eines Produkts auf.
 - ein Remote-I/O-Modul im Maschinenbereich
 - Ausgänge mit Sicherheitswirkung, die von der Software geschaltet werden
 
+Das Tutorial nutzt die Produktart OT (Standard). Bei einem vernetzten Gerät oder einer Software legen Sie das Projekt mit `-l iot` bzw. `-l software` an; der Ablauf bleibt gleich, nur Bausteine und Leitfragen sind andere.
+
 Planen Sie etwa 30 Minuten ein. Die Zeitangaben sind Richtwerte.
 
 ## Vorbereitung (2 min)
@@ -17,6 +19,8 @@ cd feldbus-tutorial
 git init
 threatwright
 ```
+
+Im Einrichtungsassistenten gibt es vor den Zonen den optionalen Schritt **CRA-Einstufung**. Er dient der Orientierung, speichert nichts und erscheint nicht im Bericht; für das Tutorial können Sie ihn überspringen.
 
 ## 1. Zonen prüfen (3 min)
 

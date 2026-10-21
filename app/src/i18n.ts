@@ -320,6 +320,8 @@ const de = {
   vuln_not_affected: 'nicht betroffen',
   vuln_create_threat: 'Bedrohung anlegen',
   vuln_threat_title: 'Bekannte Schwachstelle',
+  with_example: 'Mit Beispielmodell',
+  with_example_hint: 'Füllt das Modell mit einem kleinen Beispiel der ersten gewählten Produktart: Elemente, Verbindungen, bewertete Bedrohungen, Maßnahmen und eine Akzeptanz. Gut zum Ausprobieren; für ein echtes Produkt ohne Beispiel anlegen.',
   change_evidence: 'Änderungsnachweis',
   change_evidence_help:
     'Was sich seit einem Release-Tag oder dem letzten Commit inhaltlich geändert hat: neue, entfernte und geänderte Objekte, Statuswechsel und Risikoänderungen. Verglichen wird mit dem Stand im Editor, auch vor dem Speichern. Dasselbe liefert threatwright diff auf der Kommandozeile und in der CI.',
@@ -671,6 +673,8 @@ const en: Record<Key, string> = {
   vuln_not_affected: 'not affected',
   vuln_create_threat: 'Create threat',
   vuln_threat_title: 'Known vulnerability',
+  with_example: 'With example model',
+  with_example_hint: 'Fills the model with a small example of the first selected product type: elements, connections, assessed threats, measures and an acceptance. Good for trying things out; create a real product without the example.',
   change_evidence: 'Change evidence',
   change_evidence_help:
     'What changed in content since a release tag or the last commit: new, removed and changed objects, status changes and risk changes. The comparison uses the state in the editor, also before saving. threatwright diff gives the same on the command line and in CI.',

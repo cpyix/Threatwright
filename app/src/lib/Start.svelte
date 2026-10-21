@@ -11,6 +11,7 @@
   let template = $state<'tr' | 'empty'>('tr')
   const PRODUCT_TYPES = ['ot', 'iot', 'software'] as const // order of scaffold.PRODUCT_LIBRARIES
   let libraries = $state<string[]>(['ot'])
+  let example = $state(false)
   let language = $state(app.lang)
   let error = $state('')
   const lang = $derived(app.lang)
@@ -87,9 +88,10 @@
         template,
         libraries,
         language,
+        example: example && template === 'tr',
       }),
-      // new projects start in the setup wizard
-      { kind: 'setup', step: 0 },
+      // new projects start in the setup wizard, an example in its diagram
+      example && template === 'tr' ? { kind: 'diagram' } : { kind: 'setup', step: 0 },
     )
 </script>
 
@@ -234,6 +236,13 @@
       {/each}
       <p class="muted">{tr(lang, 'product_type_hint')}</p>
     </fieldset>
+    {#if template === 'tr'}
+      <label class="check">
+        <input type="checkbox" bind:checked={example} data-testid="new-example" />
+        {tr(lang, 'with_example')}
+      </label>
+      <p class="muted">{tr(lang, 'with_example_hint')}</p>
+    {/if}
     <button class="primary" type="submit" disabled={!libraries.length} data-testid="create-project">{tr(lang, 'create')}</button>
   </form>
   {/if}

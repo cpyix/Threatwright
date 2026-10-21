@@ -182,10 +182,15 @@ def init_cmd(
         list[ProductType],
         typer.Option("--library", "-l", help="Product type (library); repeatable."),
     ] = [ProductType.ot],  # noqa: B006 - typer needs the list default
+    example: Annotated[
+        bool, typer.Option(help="Fill the model with an example of the first product type.")
+    ] = False,
 ) -> None:
     """Create a new project."""
     try:
-        create_project(path, template.value, name, language.value, [x.value for x in library])
+        create_project(
+            path, template.value, name, language.value, [x.value for x in library], example
+        )
     except (ProjectExists, ValueError) as exc:
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(1) from exc

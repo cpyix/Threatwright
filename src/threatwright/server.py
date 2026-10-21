@@ -308,6 +308,7 @@ class NewProject(BaseModel):
     template: Literal["tr", "empty"] = "tr"
     language: Literal["de", "en"] = "de"
     libraries: list[str] | None = None
+    example: bool = False
 
 
 class AddLibraries(BaseModel):
@@ -476,7 +477,12 @@ def create_app(
         with session.lock:
             try:
                 create_project(
-                    path, body.template, body.name or None, body.language, body.libraries
+                    path,
+                    body.template,
+                    body.name or None,
+                    body.language,
+                    body.libraries,
+                    body.example,
                 )
             except ValueError as exc:
                 raise HTTPException(422, str(exc)) from exc

@@ -35,7 +35,7 @@
   const libraries = $derived(app.project?.config.libraries ?? [])
   const productQuestions = $derived([
     ...t.product_q.common,
-    ...libraries.flatMap((id) => t.product_q[id as 'ot' | 'iot' | 'software'] ?? []),
+    ...libraries.flatMap((id) => t.product_q[id as keyof typeof t.product_q] ?? []),
   ])
   const title = (id: string) => [...elements, ...flows, ...assets].find((o) => o.id === id)?.title ?? id
 
@@ -307,7 +307,7 @@
       {#each app.project?.product_libraries ?? [] as id (id)}
         <label class="check">
           <input type="checkbox" checked={libraries.includes(id)} disabled data-testid="setup-lib-{id}" />
-          {tr(lang, `lib_${id as 'ot' | 'iot' | 'software'}`)}
+          {tr(lang, `lib_${id as 'ot' | 'iot' | 'software' | 'embedded-linux'}`)}
         </label>
         {#if !libraries.includes(id)}
           <button type="button" onclick={() => addLibrary(id)} disabled={busy} data-testid="setup-add-lib-{id}">{t.add_library}</button>

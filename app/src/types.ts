@@ -75,6 +75,7 @@ export interface ModelPayload {
   objects: Record<Collection, Obj[]>
   evaluations: Record<string, ThreatEvaluation>
   max_risks: Record<string, number>
+  refine_targets?: { value: string; label: string }[] // elements of the other models
   layout: {
     nodes: Record<string, { x: number; y: number }>
     edges?: Record<string, EdgeLayout>
@@ -111,6 +112,7 @@ export interface ElementType {
   description: I18n | null
   environment: { interface: string | null; access: string | null; user: string | null }
   assets: { title: I18n; asset_class: string }[]
+  library?: string // library the type comes from
 }
 
 export interface Suggestion {

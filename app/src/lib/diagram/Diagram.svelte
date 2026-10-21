@@ -4,7 +4,7 @@
   import StickyNote from '@lucide/svelte/icons/sticky-note'
   import '@xyflow/svelte/dist/style.css'
   import { api, save } from '../../api'
-  import { tr } from '../../i18n'
+  import { dict, tr } from '../../i18n'
   import { track } from '../../loading.svelte'
   import { CATEGORIES } from '../../setup-text'
   import { app } from '../../state.svelte'
@@ -15,6 +15,33 @@
   import Canvas from './Canvas.svelte'
 
   let types = $state<ElementType[]>([])
+  let libraries = $state<{ id: string; title: Record<string, string> }[]>([])
+  // palette filter by library (product type); empty = all, remembered per browser
+  const LIB_KEY = 'tw-palette-libraries'
+  let libFilter = $state<string[]>(readLibFilter())
+  function readLibFilter(): string[] {
+    try {
+      return JSON.parse(localStorage.getItem(LIB_KEY) ?? '[]')
+    } catch {
+      return []
+    }
+  }
+  $effect(() => {
+    try {
+      localStorage.setItem(LIB_KEY, JSON.stringify(libFilter))
+    } catch {
+      /* storage unavailable */
+    }
+  })
+  // bundled libraries by their short product type name, own ones by their title
+  const libName = (l: { id: string; title: Record<string, string> }) =>
+    (dict[lang] as Record<string, string>)[`lib_${l.id}`] ?? l.title[lang] ?? l.id
+  function toggleLib(id: string, on: boolean) {
+    libFilter = on ? [...libFilter, id] : libFilter.filter((x) => x !== id)
+  }
+  // a remembered library that is no longer active filters nothing
+  const activeLibFilter = $derived(libFilter.filter((id) => libraries.some((l) => l.id === id)))
+  const inLibrary = (t: ElementType) => !activeLibFilter.length || activeLibFilter.includes(t.library ?? '')
   let flowType = $state('')
   let configuration = $state<string[]>([]) // selected variants; empty = all
   const configs = $derived(app.model?.meta.configurations ?? [])
@@ -56,7 +83,7 @@
   let selected = $state<{ collection: 'elements' | 'flows'; id: string } | null>(null)
   let canvas: Canvas | undefined = $state()
   const lang = $derived(app.lang)
-  const elementTypes = $derived(types.filter((t) => t.kind !== 'flow'))
+  const elementTypes = $derived(types.filter((t) => t.kind !== 'flow' && inLibrary(t)))
   let paletteFilter = $state('')
   // grouped like the setup wizard; the search also looks at the description
   const paletteGroups = $derived.by(() => {
@@ -69,11 +96,14 @@
     for (const t of shown) (by[t.category && order.includes(t.category) ? t.category : 'other'] ??= []).push(t)
     return order.filter((c) => by[c]).map((c) => [c, by[c]] as const)
   })
-  const flowTypes = $derived(types.filter((t) => t.kind === 'flow'))
+  const flowTypes = $derived(types.filter((t) => t.kind === 'flow' && inLibrary(t)))
   const current = $derived(selected ? app.objects(selected.collection).find((o) => o.id === selected!.id) : null)
 
   $effect(() => {
-    api<{ elements: ElementType[] }>('GET', '/library').then((r) => (types = r.elements))
+    api<{ elements: ElementType[]; libraries: typeof libraries }>('GET', '/library').then((r) => {
+      types = r.elements
+      libraries = r.libraries ?? []
+    })
   })
 
   function select(collection: 'elements' | 'flows', id: string | null) {
@@ -88,6 +118,17 @@
   <aside class="palette" aria-label={tr(lang, 'palette')} tabindex="0">
     <h2>{tr(lang, 'palette')} <Info term="palette" /></h2>
     <p class="muted">{tr(lang, 'palette_help')}</p>
+    {#if libraries.length > 1}
+      <fieldset class="libraries" data-testid="palette-libraries">
+        <legend>{tr(lang, 'palette_libraries')}</legend>
+        {#each libraries as l (l.id)}
+          <label class="chip">
+            <input type="checkbox" checked={activeLibFilter.includes(l.id)} onchange={(e) => toggleLib(l.id, e.currentTarget.checked)} data-testid="palette-library-{l.id}" />
+            {libName(l)}
+          </label>
+        {/each}
+      </fieldset>
+    {/if}
     <label class="new-flow">
       <span>{tr(lang, 'flow_type')} <Info term="flow" /></span>
       <select bind:value={flowType} data-testid="flow-type">
@@ -257,6 +298,24 @@
   .palette h2 {
     font-size: 1rem;
     margin: 0;
+  }
+  .libraries {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.6rem;
+    border: none;
+    padding: 0;
+    margin: 0 0 0.5rem;
+    font-size: 12px;
+  }
+  .libraries legend {
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
   }
   .new-flow {
     display: grid;

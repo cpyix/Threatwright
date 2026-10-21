@@ -69,7 +69,12 @@ from threatwright.render import (
     preview_html,
 )
 from threatwright.rules import relative, validate
-from threatwright.scaffold import PRODUCT_LIBRARIES, ProjectExists, create_project
+from threatwright.scaffold import (
+    PRODUCT_LIBRARIES,
+    REQUIRED_LIBRARIES,
+    ProjectExists,
+    create_project,
+)
 from threatwright.vcs import (
     VcsError,
     changed_objects,
@@ -592,7 +597,8 @@ def create_app(
         with session.lock:
             project = session.require()
             config = project.config
-            missing = [n for n in PRODUCT_LIBRARIES if n in body.add and n not in config.libraries]
+            wanted = {*body.add, *(r for n in body.add for r in REQUIRED_LIBRARIES.get(n, []))}
+            missing = [n for n in PRODUCT_LIBRARIES if n in wanted and n not in config.libraries]
             if missing:  # add-only: existing entries (own libraries too) keep their place
                 libraries = [*config.libraries, *missing]
                 libs = load_libraries(libraries, project.root)  # may raise: assign only afterwards
@@ -655,6 +661,13 @@ def create_app(
             "asset_impacts": {aid: asset_impact(session.method, assets, aid) for aid in assets}
             if session.method
             else {},
+            # elements of the other models, for `refines` (sub-models)
+            "refine_targets": [
+                {"value": f"{m.name}/{e.id}", "label": f"{m.name}/{e.id} {e.title}"}
+                for m in project.models.values()
+                if m.name != sub.name
+                for e in m.objects["elements"].values()
+            ],
         }
 
     @app.get("/api/models/{name}")
@@ -772,9 +785,16 @@ def create_app(
     @app.get("/api/library")
     def library_info() -> dict[str, Any]:
         with session.lock:
+            lib = libs()
             return {
-                "elements": [e.model_dump(mode="json") for e in libs().elements.values()],
-                "issues": len(libs().issues),
+                "elements": [
+                    {**e.model_dump(mode="json"), "library": lib.origin[("element", e.id)]}
+                    for e in lib.elements.values()
+                ],
+                "libraries": [
+                    {"id": name, "title": m.title.model_dump()} for name, m in lib.manifests.items()
+                ],
+                "issues": len(lib.issues),
             }
 
     @app.put("/api/models/{name}/layout")

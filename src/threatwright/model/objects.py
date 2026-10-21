@@ -62,6 +62,7 @@ class ProjectConfig(Versioned):
     next_review: datetime.date | None = None  # when the threat model is reviewed next
     libraries: list[str] = []
     templates: list[str] = []
+    archived: bool = False  # hidden from project lists until searched for
 
 
 class CustomField(Strict):

@@ -145,6 +145,13 @@ class Session:
             # marks the unsaved autosave as seen, so it is offered once, not on every open
             history.record(project.root, project.models, "open")
 
+    def close(self) -> None:
+        self.project = self.method = self.libs = None
+        self.undo.clear()
+        self.redo.clear()
+        self.dirty = False
+        self.pending = None
+
     def changed(self) -> None:
         self.changes += 1
         self.dirty = True
@@ -406,7 +413,9 @@ def create_app(
             "version": __version__,
             "server": jail is not None,
             # the recent list holds paths of this machine; on a server the workspace replaces it
-            "recent": [] if jail is not None else _recent(),
+            "recent": []
+            if jail is not None
+            else [{"path": p, **archive.describe(Path(p))} for p in _recent()],
         }
 
     @app.get("/api/workspace")
@@ -456,6 +465,48 @@ def create_app(
                 raise HTTPException(400, str(exc)) from exc
             _recent(path)
             return project_info()
+
+    def project_folder(raw: str) -> Path:
+        path = client_path(raw)
+        if path.is_symlink() or not (path / PROJECT_FILE).is_file():
+            raise HTTPException(404, "not a project folder")
+        return path
+
+    def is_open(path: Path) -> bool:
+        return session.project is not None and session.project.root.resolve() == path.resolve()
+
+    @app.post("/api/projects/archive")
+    def archive_project(body: dict[str, Any]) -> dict[str, Any]:
+        """Archive (hide from the lists) or restore a project; only threatwright.yaml changes."""
+        path = project_folder(str(body.get("path", "")))
+        archived = body.get("archived") is True
+        with session.lock:
+            if is_open(path) and session.dirty:
+                raise HTTPException(409, "save your changes first")
+            try:
+                archive.set_archived(path, archived)
+            except (LoadError, OSError) as exc:
+                raise HTTPException(400, str(exc)) from exc
+            if is_open(path):
+                session.open(path)  # pick up the changed config
+            return {"path": str(path), **archive.describe(path)}
+
+    @app.delete("/api/projects")
+    def delete_project(path: str) -> dict[str, bool]:
+        """Delete an archived project folder for good (the GUI asks for confirmation first)."""
+        folder = project_folder(path)
+        if jail is not None and folder.resolve() == jail:
+            raise HTTPException(409, "the workspace itself is never deleted")
+        if not archive.describe(folder)["archived"]:
+            raise HTTPException(409, "only archived projects can be deleted")
+        with session.lock:
+            if is_open(folder):
+                session.close()
+            try:
+                shutil.rmtree(folder)
+            except OSError as exc:
+                raise HTTPException(500, f"could not delete everything: {exc}") from exc
+        return {"deleted": True}
 
     dialog_lock = threading.Lock()
 

@@ -25,6 +25,13 @@ export interface HistoryEntry {
   counts: Record<Collection, number>
 }
 
+/** A project in a list: recently opened (local) or in the workspace (server). */
+export interface ProjectRef {
+  path: string
+  name: string
+  archived: boolean
+}
+
 export interface SbomInfo {
   sboms: { file: string; components: number; elements: string[] }[]
   vulnerability_files: string[]
@@ -59,7 +66,7 @@ class AppState {
     }
   }
   version = $state('')
-  recent = $state<string[]>([])
+  recent = $state<ProjectRef[]>([])
   server = $state(false) // runs as a shared server: workspace and upload instead of local folders
   project = $state<ProjectInfo | null>(null)
   /** An open project fixes the language, so what the UI shows is what lands in the project. */
@@ -110,7 +117,7 @@ class AppState {
     // from the start page), their view wins over the landing view. Taken before the first
     // request, so a click during /app counts as navigation too.
     const before = this.view
-    const info = await api<{ version: string; recent: string[]; server: boolean }>('GET', '/app')
+    const info = await api<{ version: string; recent: ProjectRef[]; server: boolean }>('GET', '/app')
     this.version = info.version
     this.recent = info.recent
     this.server = info.server
@@ -143,6 +150,10 @@ class AppState {
   /** Landing view: the diagram once there is something to see, else the setup wizard. */
   home(): View {
     return this.model && this.objects('elements').length ? { kind: 'diagram' } : { kind: 'setup', step: 0 }
+  }
+
+  async refreshRecent(): Promise<void> {
+    this.recent = (await api<{ recent: ProjectRef[] }>('GET', '/app')).recent
   }
 
   async refreshSbom(): Promise<void> {

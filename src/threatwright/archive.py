@@ -6,11 +6,12 @@ import shutil
 import stat
 import zipfile
 from pathlib import Path
+from typing import Any
 
 from threatwright.auth import STATE_DIR
 from threatwright.branding import PROJECT_FILE
 from threatwright.history import HISTORY_DIR
-from threatwright.model.store import LoadError, read_yaml
+from threatwright.model.store import LoadError, read_yaml, write_yaml
 
 MAX_UPLOAD = 50 << 20  # compressed size of an uploaded archive
 MAX_UNPACKED = 200 << 20  # sum of the declared file sizes (zip bombs)
@@ -79,19 +80,30 @@ def unpack(data: bytes, workspace: Path, folder: str) -> Path:
     return Path(base)
 
 
-def _name(folder: Path) -> str:
-    """Project name from its config; the folder name if the config cannot be read."""
+def describe(folder: Path) -> dict[str, Any]:
+    """Name and archive flag from the project config; the folder name if it cannot be read."""
     try:
-        name = read_yaml(folder / PROJECT_FILE).get("name")
-    except (LoadError, OSError, AttributeError):
-        name = None
-    return str(name) if name else folder.name
+        doc = read_yaml(folder / PROJECT_FILE)
+    except (LoadError, OSError):
+        doc = {}
+    name = doc.get("name")
+    return {"name": str(name) if name else folder.name, "archived": doc.get("archived") is True}
 
 
-def projects_in(root: Path) -> list[dict[str, str]]:
+def set_archived(folder: Path, archived: bool) -> None:
+    """Change only the archive flag in threatwright.yaml (comments and the rest stay)."""
+    doc = read_yaml(folder / PROJECT_FILE)
+    if archived:
+        doc["archived"] = True
+    else:
+        doc.pop("archived", None)
+    write_yaml(folder / PROJECT_FILE, doc)
+
+
+def projects_in(root: Path) -> list[dict[str, Any]]:
     """Project folders in `root` and one level below, relative to `root`."""
     found = [p for p in [root, *root.glob("*"), *root.glob("*/*")] if (p / PROJECT_FILE).is_file()]
     return sorted(
-        ({"path": p.relative_to(root).as_posix() or ".", "name": _name(p)} for p in found),
+        ({"path": p.relative_to(root).as_posix() or ".", **describe(p)} for p in found),
         key=lambda x: x["path"],
     )

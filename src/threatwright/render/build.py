@@ -26,6 +26,7 @@ from threatwright.render.package import (
     available,
     load_package,
 )
+from threatwright.topology import parent_model
 
 OutFormat = Literal["docx", "odt", "md", "html", "pdf"]
 OUT_FORMATS: tuple[OutFormat, ...] = ("docx", "odt", "md", "html", "pdf")
@@ -124,7 +125,9 @@ def build_documents(
         if pkg.meta.scope == "project":
             targets: list[str | None] = [None]
         else:
-            targets = [model] if model else list(sorted(project.models))
+            # a sub-model is part of the document of the model it refines (one assessment)
+            products = [n for n, s in project.models.items() if parent_model(project, s) is None]
+            targets = [model] if model else [*sorted(products)]
         for name in targets:
             ctx = _context(project, method, pkg, name)
             for f in fmts:

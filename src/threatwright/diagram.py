@@ -2,12 +2,14 @@
 
 Pure Python, deterministic, no external renderer (ADR-0007). Positions come
 from diagram.layout.yaml; elements without a position are placed on a grid.
-Zones are drawn as dashed frames around their member elements.
+Zones are drawn as dashed frames around their member elements, hosts (`runs_on`)
+as solid frames and privilege contexts on a host as dotted frames inside.
 """
 
 from html import escape
 from itertools import pairwise
 
+from threatwright import topology
 from threatwright.model.objects import Element, Flow
 from threatwright.model.store import SubModel
 from threatwright.topology import effective_zone
@@ -15,6 +17,7 @@ from threatwright.topology import effective_zone
 W, H = 170, 64  # node size
 PAD = 24
 LINE = 'stroke="#1b1f24" stroke-width="1.5"'
+HOST = "#2f5f8a"
 RISK_FILL = {1: "#d7f0dc", 2: "#e9f3c7", 3: "#fbe7b5", 4: "#f8cdb0", 5: "#f3b6b6"}
 
 
@@ -112,6 +115,22 @@ def _short(text: str, n: int = 26) -> str:
     return text if len(text) <= n else text[: n - 1] + "…"
 
 
+def _frame(members: list[Pt], title: str, pad: float, dash: str, colour: str) -> str:
+    """Labelled frame around member nodes (zone, host or privilege context)."""
+    if not members:
+        return ""
+    x0 = min(p[0] for p in members) - pad
+    y0 = min(p[1] for p in members) - pad - 14
+    x1 = max(p[0] for p in members) + W + pad
+    y1 = max(p[1] for p in members) + H + pad
+    return (
+        f'<rect x="{x0}" y="{y0}" width="{x1 - x0}" height="{y1 - y0}" fill="none" '
+        f'stroke="{colour}" {dash} rx="8"/>'
+        f'<text x="{x0 + 8}" y="{y0 + 12}" font-size="11" font-family="sans-serif" '
+        f'fill="{colour}">{escape(title)}</text>'
+    )
+
+
 def render_svg(sub: SubModel, risks: dict[str, int] | None = None) -> str:
     """SVG of the model; `risks` maps element/flow id to its highest risk (colour)."""
     risks = risks or {}
@@ -121,18 +140,21 @@ def render_svg(sub: SubModel, risks: dict[str, int] | None = None) -> str:
 
     for zone in sub.meta.zones:
         members = [pos[i] for i, e in elements.items() if effective_zone(sub, e) == zone.id]
-        if not members:
+        parts.append(_frame(members, zone.title, PAD, 'stroke-dasharray="6 4"', "#555e69"))
+    # hosts (solid) around a device and everything running on it, privilege contexts (dotted)
+    for eid, e in sorted(elements.items()):
+        hosted = topology.hosted(sub, eid) if e.kind == "device" else []
+        if not hosted:
             continue
-        x0 = min(p[0] for p in members) - PAD
-        y0 = min(p[1] for p in members) - PAD - 14
-        x1 = max(p[0] for p in members) + W + PAD
-        y1 = max(p[1] for p in members) + H + PAD
-        parts.append(
-            f'<rect x="{x0}" y="{y0}" width="{x1 - x0}" height="{y1 - y0}" fill="none" '
-            f'stroke="#555e69" stroke-dasharray="6 4" rx="8"/>'
-            f'<text x="{x0 + 8}" y="{y0 + 16}" font-size="12" font-family="sans-serif" '
-            f'fill="#555e69">{escape(zone.title)}</text>'
-        )
+        parts.append(_frame([pos[eid], *(pos[h.id] for h in hosted)], e.title, PAD / 2, "", HOST))
+        contexts: dict[tuple[str, str, str | None], list[Element]] = {}
+        for h in hosted:
+            if (key := topology.context(h)) and key[0] == eid:
+                contexts.setdefault(key, []).append(h)
+        for (_, level, account), procs in sorted(contexts.items(), key=str):
+            label = level + (f" ({account})" if account else "")
+            box = [pos[m.id] for m in procs]
+            parts.append(_frame(box, label, PAD / 4, 'stroke-dasharray="2 3"', HOST))
 
     for fid in sorted(sub.objects["flows"]):
         f = sub.objects["flows"][fid]
@@ -141,6 +163,9 @@ def render_svg(sub: SubModel, risks: dict[str, int] | None = None) -> str:
         points = route(sub, f, pos)
         colour = "#a4161a" if risks.get(fid, 0) >= 4 else "#1b1f24"
         marker = ' marker-start="url(#arrow)"' if f.bidirectional else ""
+        if topology.boundary(sub, f) == "privilege":  # crosses a rights context on one host
+            marker += ' stroke-dasharray="5 3"'
+
         mx, my = _middle(points)
         path = " ".join(f"{x:g},{y:g}" for x, y in points)
         parts.append(

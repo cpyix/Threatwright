@@ -8,7 +8,7 @@ from collections.abc import Callable
 from dataclasses import asdict
 from typing import Any
 
-from threatwright import sbom
+from threatwright import sbom, topology
 from threatwright.branding import PRODUCT_NAME
 from threatwright.cra import coverage as cra_coverage
 from threatwright.library import load_catalog
@@ -20,7 +20,7 @@ from threatwright.method import (
     evaluate,
     risk,
 )
-from threatwright.model.objects import Asset, Element, ModelObject, Threat
+from threatwright.model.objects import Asset, Element, Flow, Listener, ModelObject, Threat
 from threatwright.model.store import Project, SubModel, read_yaml, to_plain
 from threatwright.render.env import make_env, make_filters, sort_by_risk
 from threatwright.render.labels import Lang, t
@@ -75,9 +75,9 @@ def _builtin_method(method: Method) -> Method:
     return Method.model_validate(to_plain(read_yaml(path)))
 
 
-def _base(obj: ModelObject, sub: SubModel) -> Ctx:
+def _base(obj: ModelObject, sub: SubModel, prefix: str = "") -> Ctx:
     return {
-        "id": obj.id,
+        "id": prefix + obj.id,
         "uuid": str(obj.uuid),
         "title": obj.title,
         "short_name": obj.short_name,
@@ -92,8 +92,46 @@ def _titles(sub: SubModel) -> dict[str, str]:
     return {i: o.title for objs in sub.objects.values() for i, o in objs.items()}
 
 
-def _refs(ids: list[str], titles: dict[str, str]) -> list[Ctx]:
-    return [{"id": i, "title": titles.get(i, "")} for i in ids]
+def _refs(ids: list[str], titles: dict[str, str], prefix: str = "") -> list[Ctx]:
+    return [{"id": prefix + i, "title": titles.get(i, "")} for i in ids]
+
+
+def _privilege(el: Element, lang: Lang) -> str | None:
+    p = el.privilege
+    if p is None:
+        return None
+    return t(f"privilege.{p.level}", lang) + (f" ({p.account})" if p.account else "")
+
+
+def _listener(x: Listener) -> str:
+    where = x.path if x.protocol == "unix" else str(x.port)
+    return f"{x.protocol}/{where} ({x.interfaces})"
+
+
+def _topology(project: Project, sub: SubModel, el: Element, lang: Lang, prefix: str) -> Ctx:
+    """runs_on, privilege context, refines and the technical attack surface of an element."""
+    titles = _titles(sub)
+    target = topology.resolve_refines(project, el.refines) if el.refines else None
+    ref = el.sbom_ref
+    return {
+        "runs_on": prefix + el.runs_on if el.runs_on else None,
+        "runs_on_title": titles.get(el.runs_on or "", ""),
+        "privilege": el.privilege.model_dump() if el.privilege else None,
+        "privilege_label": _privilege(el, lang),
+        "refines": el.refines,
+        "refines_title": target.title if target else "",
+        "refined_by": [
+            f"{s.name}/{e.id}" for s, e in topology.refined_by(project, sub.name, el.id)
+        ],
+        "listens_on": [x.model_dump() for x in el.listens_on],
+        "listens_on_label": "; ".join(_listener(x) for x in el.listens_on),
+        "authentication": el.authentication,
+        "authentication_label": t(f"authentication.{el.authentication}", lang)
+        if el.authentication
+        else None,
+        "memory_safe": el.memory_safe,
+        "sbom_ref": " / ".join(v for v in (ref.purl, ref.cpe) if v) if ref else None,
+    }
 
 
 def _evaluation(method: Method, threat: Threat, project: Project, residual: bool) -> Ctx | None:
@@ -121,8 +159,14 @@ def _env_labels(method: Method, env: Any, lang: Lang) -> Ctx:
 
 
 def _model_data(
-    project: Project, sub: SubModel, method: Method, lang: Lang, cra: dict[str, str]
+    project: Project,
+    sub: SubModel,
+    method: Method,
+    lang: Lang,
+    cra: dict[str, str],
+    prefix: str = "",
 ) -> Ctx:
+    """`prefix` (`<model>/`) qualifies the ids of a sub-model shown in its parent's document."""
     titles = _titles(sub)
     objs = sub.objects
     zones = {z.id: z.title for z in sub.meta.zones}
@@ -135,12 +179,12 @@ def _model_data(
         cia = asset_impact(method, assets_typed, asset.id)
         assets.append(
             {
-                **_base(asset, sub),
+                **_base(asset, sub, prefix),
                 "asset_class": asset.asset_class,
                 "c": cia["C"],
                 "i": cia["I"],
                 "a": cia["A"],
-                "protects": asset.protects,
+                "protects": [prefix + i for i in asset.protects],
                 "configurations": asset.configurations,
             }
         )
@@ -148,10 +192,13 @@ def _model_data(
     elements = []
     for el in objs["elements"].values():
         d = el.model_dump()
-        d["zone"] = effective_zone(sub, el) if isinstance(el, Element) else d["zone"]
+        if not isinstance(el, Element):
+            continue
+        d["zone"] = effective_zone(sub, el)
         elements.append(
             {
-                **_base(el, sub),
+                **_base(el, sub, prefix),
+                **_topology(project, sub, el, lang, prefix),
                 "kind": d["kind"],
                 "kind_label": t(f"kind.{d['kind']}", lang),
                 "zone": d["zone"],
@@ -166,15 +213,17 @@ def _model_data(
         d = fl.model_dump()
         flows.append(
             {
-                **_base(fl, sub),
-                "source": d["source"],
+                **_base(fl, sub, prefix),
+                "source": prefix + d["source"],
                 "source_title": titles.get(d["source"], ""),
-                "target": d["target"],
+                "target": prefix + d["target"],
                 "target_title": titles.get(d["target"], ""),
                 "protocol": d["protocol"],
                 "bidirectional": d["bidirectional"],
-                "assets": d["assets"],
+                "assets": [prefix + a for a in d["assets"]],
                 "configurations": d["configurations"],
+                "boundary": (b := topology.boundary(sub, fl)) if isinstance(fl, Flow) else None,
+                "boundary_label": t(f"boundary.{b}", lang) if isinstance(fl, Flow) and b else None,
             }
         )
 
@@ -191,11 +240,11 @@ def _model_data(
             "unassessed" if acceptable is None else ("acceptable" if acceptable else "to_treat")
         )
         item = {
-            **_base(th, sub),
+            **_base(th, sub, prefix),
             "stride": list(th.stride),
             "stride_names": [t(f"stride.{s}", lang) for s in th.stride],
-            "targets": _refs(th.targets, titles),
-            "assets": _refs(th.assets, titles),
+            "targets": _refs(th.targets, titles, prefix),
+            "assets": _refs(th.assets, titles, prefix),
             "configurations": th.configurations,
             "cyber_cause": th.cyber_cause,
             "scenario": th.scenario,
@@ -219,7 +268,7 @@ def _model_data(
             },
             "measures": [
                 {
-                    "id": i,
+                    "id": prefix + i,
                     "title": titles.get(i, ""),
                     "status": measure_status.get(i),
                     "status_label": t(f"measure_status.{measure_status.get(i)}", lang)
@@ -228,7 +277,7 @@ def _model_data(
                 }
                 for i in th.measures
             ],
-            "questions": _refs(th.questions, titles),
+            "questions": _refs(th.questions, titles, prefix),
             "cra_refs": [{"id": c, "title": cra.get(c, "")} for c in th.cra_refs],
             "vulnerabilities": list(th.vulnerabilities),
             "status": th.status,
@@ -243,7 +292,7 @@ def _model_data(
         d = ms.model_dump(mode="json")
         measures.append(
             {
-                **_base(ms, sub),
+                **_base(ms, sub, prefix),
                 "kind": d["kind"],
                 "kind_label": t(f"measure_kind.{d['kind']}", lang) if d["kind"] else "–",
                 "compensating": d["compensating"],
@@ -257,7 +306,7 @@ def _model_data(
                 "threats": [
                     {"id": th["id"], "title": th["title"]}
                     for th in threats
-                    if any(m["id"] == ms.id for m in th["measures"])
+                    if any(m["id"] == prefix + ms.id for m in th["measures"])
                 ],
             }
         )
@@ -267,12 +316,12 @@ def _model_data(
         d = q.model_dump()
         questions.append(
             {
-                **_base(q, sub),
+                **_base(q, sub, prefix),
                 "addressee": d["addressee"],
                 "status": d["status"],
                 "status_label": t(f"question_status.{d['status']}", lang),
                 "answer": d["answer"],
-                "threats": _refs(d["threats"], titles),
+                "threats": _refs(d["threats"], titles, prefix),
             }
         )
 
@@ -545,14 +594,22 @@ def build_context(
     lang: Lang = meta.language or project.config.language
     risk_labels = {k: _i18n(v, lang) for k, v in method.risk_levels.levels.items()}
     filters = filters_for(method, lang)
-    subs = [project.models[model_name]] if model_name else list(project.models.values())
+    if model_name:  # one document per product: the model plus the sub-models refining it
+        subs = [project.models[model_name], *topology.submodels(project, model_name)]
+    else:
+        subs = list(project.models.values())
+    names = {s.name for s in subs}
+    # ids of a sub-model shown with its parent are qualified (`software/T-0001`)
+    prefixes = {
+        s.name: f"{s.name}/" if topology.parent_model(project, s) in names else "" for s in subs
+    }
     cra_cat = load_catalog("cra").entries
     inv = sbom.inventory(project)
     cra = {k: (v.get(lang, "") if isinstance(v, dict) else v) for k, v in cra_cat.items()}
 
     data: dict[str, list[Ctx]] = {}
     for sub in subs:
-        for key, value in _model_data(project, sub, method, lang, cra).items():
+        for key, value in _model_data(project, sub, method, lang, cra, prefixes[sub.name]).items():
             data.setdefault(key, []).extend(value)
     for key in ("assets", "elements", "flows", "rejected_threats", "measures", "questions"):
         data.setdefault(key, [])
@@ -623,11 +680,13 @@ def build_context(
                 "model": sub.name,
             }
             for sub in subs
-            for r in cra_coverage(sub)
+            if not prefixes[sub.name]  # covered with the model it refines
+            for r in cra_coverage(sub, [s for s in subs if s is not sub and prefixes[s.name]])
         ],
         "vulnerabilities": [
             {
                 **asdict(v),
+                "element": prefixes[sub.name] + v.element,
                 "open": v.open,
                 "element_title": _titles(sub).get(v.element, ""),
                 "state_label": t(f"vuln_state.{v.state}", lang),

@@ -5,6 +5,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from conftest import AppIdle
 from playwright.sync_api import Page, expect
 
 GIT = shutil.which("git")
@@ -17,7 +18,9 @@ def git(repo: Path, *args: str) -> None:
 
 
 @pytest.mark.skipif(GIT is None, reason="git not installed")
-def test_changes_since_tag(gui: str, page: Page, offline: list[str], project_dir: Path) -> None:
+def test_changes_since_tag(
+    gui: str, page: Page, idle: AppIdle, offline: list[str], project_dir: Path
+) -> None:
     git(project_dir, "init", "-q", "-b", "main")
     git(project_dir, "add", "-A")
     git(project_dir, "commit", "-q", "-m", "v1")
@@ -28,7 +31,9 @@ def test_changes_since_tag(gui: str, page: Page, offline: list[str], project_dir
     form = page.get_by_test_id("object-form")
     form.get_by_test_id("field-status").select_option("implemented")
     form.get_by_test_id("apply").click()
+    idle.settle()
     page.get_by_test_id("nav-changes").click()
+    idle.settle()
     expect(page.get_by_test_id("diff-since")).to_have_value("v1.0")
     expect(page.get_by_test_id("diff-M-0001")).to_contain_text("implemented")
     assert offline == [], f"unexpected outbound requests: {offline}"

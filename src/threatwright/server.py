@@ -29,7 +29,7 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ValidationError
 
-from threatwright import __version__, archive, assistant, history, sbom
+from threatwright import __version__, archive, assistant, history, sbom, topology
 from threatwright.arc import ArcOverride, applicability, set_override
 from threatwright.auth import REALM, BasicAuth, users_from
 from threatwright.branding import PRODUCT_NAME, PROJECT_FILE
@@ -874,7 +874,9 @@ def create_app(
     def cra_requirements(name: str) -> list[dict[str, Any]]:
         """CRA Annex I requirements with the threats and measures addressing them."""
         with session.lock:
-            return [asdict(r) for r in cra_coverage(session.model(name))]
+            project = session.require()
+            parts = topology.submodels(project, name)  # one assessment per product
+            return [asdict(r) for r in cra_coverage(session.model(name), parts)]
 
     # --- SBOMs and vulnerabilities (ADR-0016) --------------------------------------
 

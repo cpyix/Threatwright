@@ -9,11 +9,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
 
-from threatwright import sbom
+from threatwright import sbom, topology
 from threatwright.branding import PROJECT_FILE
 from threatwright.cra import coverage as cra_coverage
 from threatwright.library import check_library_refs, load_catalog, load_libraries
-from threatwright.method import Method, MethodError, evaluate, load_method
+from threatwright.method import Method, MethodError, asset_impact, evaluate, load_method
 from threatwright.model.objects import (
     Asset,
     CustomField,
@@ -22,6 +22,7 @@ from threatwright.model.objects import (
     Measure,
     ModelObject,
     Question,
+    Stride,
     Threat,
 )
 from threatwright.model.store import DEFAULT_PREFIXES, MODEL_FILE, Issue, Project, SubModel
@@ -73,6 +74,7 @@ def validate(project: Project, today: datetime.date | None = None) -> list[Issue
     for sub in project.models.values():
         ctx = _Ctx(project, sub, method, uuids)
         _check_model(ctx)
+        _check_topology(ctx)
         _check_cra_requirements(ctx, cra)
         _check_vulnerabilities(ctx, inv)
         for coll, objects in sub.objects.items():
@@ -368,6 +370,9 @@ def _check_coverage(ctx: _Ctx, threats: list[Threat]) -> None:
         return
     covered = {(target, s) for t in threats for target in t.targets for s in t.stride}
     targeted = {target for t in threats for target in t.targets}
+    for el_id, stride in _shared_coverage(ctx):
+        covered.add((el_id, stride))
+        targeted.add(el_id)
     for obj in _elements_and_flows(ctx.sub):
         coll = "elements" if isinstance(obj, Element) else "flows"
         kind = obj.kind if isinstance(obj, Element) else "flow"
@@ -387,6 +392,194 @@ def _check_coverage(ctx: _Ctx, threats: list[Threat]) -> None:
                 )
 
 
+def _threats_on(sub: SubModel, ids: set[str]) -> list[Threat]:
+    return [t for t in _of(sub, "threats", Threat) if ids & set(t.targets)]
+
+
+def _shared_coverage(ctx: _Ctx) -> set[tuple[str, Stride]]:
+    """(element, STRIDE) of this model covered by threats in a refining or refined model.
+
+    A refined element is analysed in its sub-model: threats on the refining element and
+    on everything running on it count for it, and threats on the refined element count
+    for the refining one. So neither model needs a second assessment of the same risk.
+    """
+    project, sub = ctx.project, ctx.sub
+    out: set[tuple[str, Stride]] = set()
+    for el in _of(sub, "elements", Element):
+        for other, refining in topology.refined_by(project, sub.name, el.id):
+            ids = {refining.id, *(h.id for h in topology.hosted(other, refining.id))}
+            out |= {(el.id, s) for t in _threats_on(other, ids) for s in t.stride}
+        if el.refines and (parent := topology.resolve_refines(project, el.refines)):
+            model = project.models[topology.split_ref(el.refines)[0]]
+            out |= {(el.id, s) for t in _threats_on(model, {parent.id}) for s in t.stride}
+    return out
+
+
+PURL = re.compile(r"^pkg:[A-Za-z][A-Za-z0-9.+-]*/[^\s/?#@][^\s]*$")
+# CPE 2.3 formatted string (13 colon separated parts, `\:` escapes) or CPE 2.2 URI
+CPE23 = re.compile(r"^cpe:2\.3:[aho*-](?::(?:[^:\s\\]|\\.)+){10}$")
+CPE22 = re.compile(r"^cpe:/[aho](?::[^:\s]*){0,6}$")
+UNAUTHENTICATED = {None, "none", "unknown"}
+
+
+def _check_topology(ctx: _Ctx) -> None:
+    """runs_on, refines, exposed services, privilege boundaries, host takeover, sbom_ref."""
+    sub = ctx.sub
+    elements = {e.id: e for e in _of(sub, "elements", Element)}
+    threats = _of(sub, "threats", Threat)
+    parents = topology.parent_models(sub) - {sub.name}
+
+    for e in elements.values():
+        host = elements.get(e.runs_on) if e.runs_on else None
+        if e.runs_on and (host is None or host.kind != "device"):
+            what = "does not exist" if host is None else f"is a {host.kind}, not a device"
+            ctx.add("error", "runs-on-invalid", "elements", e, "runs_on", f"'{e.runs_on}' {what}")
+        elif host is not None and topology.runs_on_cycle(sub, e):
+            ctx.add("error", "runs-on-cycle", "elements", e, "runs_on", "runs_on forms a cycle")
+        if e.refines:
+            _check_refines(ctx, e, e.refines, parents)
+        _check_exposed_service(ctx, e, threats)
+        _check_sbom_ref(ctx, e)
+
+    for f in _of(sub, "flows", Flow):
+        if topology.boundary(sub, f) == "privilege":
+            _check_privilege_boundary(ctx, f, elements, threats)
+    if ctx.method is not None:
+        for t in threats:
+            _check_host_takeover(ctx, t, elements)
+    _check_duplicate_assessment(ctx)
+
+
+def _check_refines(ctx: _Ctx, e: Element, refines: str, parents: set[str]) -> None:
+    model, _ = topology.split_ref(refines)
+    if model == ctx.sub.name or topology.resolve_refines(ctx.project, refines) is None:
+        why = "must name an element of another model" if model == ctx.sub.name else "not found"
+        ctx.add("error", "refines-unresolved", "elements", e, "refines", f"'{refines}' {why}")
+        return
+    if len(parents) > 1:
+        ctx.add(
+            "error",
+            "refines-multiple-parents",
+            "elements",
+            e,
+            "refines",
+            f"model '{ctx.sub.name}' refines several models ({', '.join(sorted(parents))})",
+        )
+    seen = {f"{ctx.sub.name}/{e.id}"}
+    ref: str | None = refines
+    while ref is not None:
+        if ref in seen:
+            ctx.add("error", "refines-cycle", "elements", e, "refines", "refines forms a cycle")
+            return
+        seen.add(ref)
+        target = topology.resolve_refines(ctx.project, ref)
+        ref = target.refines if target else None
+
+
+def _check_exposed_service(ctx: _Ctx, e: Element, threats: list[Threat]) -> None:
+    if e.authentication not in UNAUTHENTICATED:
+        return
+    exposed = [x for x in e.listens_on if x.interfaces == "all"]
+    if not exposed or any(e.id in t.targets and {"S", "E"} & set(t.stride) for t in threats):
+        return
+    ports = ", ".join(f"{x.protocol}/{x.port}" for x in exposed)
+    ctx.add(
+        "warning",
+        "exposed-service-unauthenticated",
+        "elements",
+        e,
+        "listens_on",
+        f"listens on all interfaces ({ports}) with authentication "
+        f"'{e.authentication or 'unknown'}' and no threat for STRIDE S or E",
+    )
+
+
+def _check_sbom_ref(ctx: _Ctx, e: Element) -> None:
+    ref = e.sbom_ref
+    if ref is None:
+        return
+    if ref.purl is not None and not PURL.match(ref.purl):
+        ctx.add("warning", "sbom-ref-invalid", "elements", e, "sbom_ref.purl", "not a package URL")
+    if ref.cpe is not None and not (CPE23.match(ref.cpe) or CPE22.match(ref.cpe)):
+        ctx.add("warning", "sbom-ref-invalid", "elements", e, "sbom_ref.cpe", "not a CPE 2.3 name")
+
+
+def _check_privilege_boundary(
+    ctx: _Ctx, f: Flow, elements: dict[str, Element], threats: list[Threat]
+) -> None:
+    higher = topology.more_privileged(elements[f.source], elements[f.target])
+    for s in ("S", "E"):
+        hit = any(s in t.stride and {f.id, higher.id} & set(t.targets) for t in threats)
+        if not hit and s not in f.stride_not_relevant:
+            ctx.add(
+                "warning",
+                "privilege-boundary-gap",
+                "flows",
+                f,
+                f"stride.{s}",
+                f"crosses a privilege boundary into {higher.id}: no threat for STRIDE '{s}' on "
+                "the flow or the more privileged side and not marked as not relevant",
+            )
+
+
+def _check_host_takeover(ctx: _Ctx, t: Threat, elements: dict[str, Element]) -> None:
+    """An E threat on a host also hits everything running on it (and on what it refines)."""
+    impact = t.assessment.impact
+    if "E" not in t.stride or impact is None or ctx.method is None:
+        return
+    method = ctx.method
+    for target in t.targets:
+        host = elements.get(target)
+        if host is None or host.kind != "device":
+            continue
+        places = [(ctx.sub, host.id)]
+        places += [(m, r.id) for m, r in topology.refined_by(ctx.project, ctx.sub.name, host.id)]
+        for model, host_id in places:
+            assets = {i: a for i, a in model.objects["assets"].items() if isinstance(a, Asset)}
+            for el in topology.hosted(model, host_id):
+                for a in topology.handled_assets(model, el.id):
+                    values = [v for v in asset_impact(method, assets, a).values() if v]
+                    listed = model is ctx.sub and a in t.assets
+                    if values and max(values) > impact and not listed:
+                        where = el.id if model is ctx.sub else f"{model.name}/{el.id}"
+                        ctx.add(
+                            "warning",
+                            "host-takeover-understated",
+                            "threats",
+                            t,
+                            "assessment.impact",
+                            f"taking over {host.id} also hits {where}: asset {a} (impact "
+                            f"{max(values)}) is missing; add the asset or check the impact",
+                        )
+
+
+def _check_duplicate_assessment(ctx: _Ctx) -> None:
+    """Same library threat assessed on a refined element and again in its sub-model."""
+    project, sub = ctx.project, ctx.sub
+    for el in _of(sub, "elements", Element):
+        if not el.refines or (parent := topology.resolve_refines(project, el.refines)) is None:
+            continue
+        model = project.models[topology.split_ref(el.refines)[0]]
+        upstream = {_template(t): t.id for t in _threats_on(model, {parent.id}) if _template(t)}
+        ids = {el.id, *(h.id for h in topology.hosted(sub, el.id))}
+        for t in _threats_on(sub, ids):
+            if (key := _template(t)) and key in upstream:
+                ctx.add(
+                    "warning",
+                    "duplicate-assessment",
+                    "threats",
+                    t,
+                    "library_ref",
+                    f"same library threat as {model.name}/{upstream[key]} on the refined "
+                    f"element {el.refines}: assess it once",
+                )
+
+
+def _template(t: Threat) -> str | None:
+    """Library entry of a threat without its revision."""
+    return t.library_ref.rsplit("@", 1)[0] if t.library_ref else None
+
+
 def _check_cra_requirements(ctx: _Ctx, catalog: set[str]) -> None:
     path = ctx.project.root / "models" / ctx.sub.name / MODEL_FILE
 
@@ -399,9 +592,12 @@ def _check_cra_requirements(ctx: _Ctx, catalog: set[str]) -> None:
             add("warning", "unknown-cra-ref", loc, f"'{req}' is not in the CRA catalog")
         if not why.strip():
             add("error", "missing-rationale", loc, "'not applicable' needs a rationale")
-    if not ctx.sub.objects["threats"]:
+    if topology.parent_model(ctx.project, ctx.sub) is not None:
+        return  # a sub-model is covered together with the model it refines
+    parts = topology.submodels(ctx.project, ctx.sub.name)
+    if not any(m.objects["threats"] for m in (ctx.sub, *parts)):
         return  # analysis not started yet: no list of 21 gaps on an empty model
-    for row in cra_coverage(ctx.sub):
+    for row in cra_coverage(ctx.sub, parts):
         if row.status == "open":
             add(
                 "warning",

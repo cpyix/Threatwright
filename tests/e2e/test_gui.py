@@ -2,11 +2,12 @@
 
 from pathlib import Path
 
+from conftest import AppIdle
 from playwright.sync_api import Page, expect
 
 
 def test_create_assess_link_save(
-    ui: dict[str, str], gui: str, page: Page, offline: list[str], project_dir: Path
+    ui: dict[str, str], gui: str, page: Page, idle: AppIdle, offline: list[str], project_dir: Path
 ) -> None:
     page.goto(gui)
     page.get_by_test_id("nav-threats").click()
@@ -30,7 +31,7 @@ def test_create_assess_link_save(
     form.get_by_test_id("apply").click()
     expect(form.locator("h2")).to_contain_text("T-0002")
 
-    page.keyboard.press("Control+s")
+    idle.save()
     target = project_dir / "models/main/threats/T-0002.yaml"
     expect(page.get_by_test_id("toast")).to_contain_text(ui["saved"], timeout=15_000)
     text = target.read_text(encoding="utf-8")

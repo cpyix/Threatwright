@@ -3,6 +3,7 @@
 import re
 from pathlib import Path
 
+from conftest import AppIdle
 from playwright.sync_api import Page, expect
 
 TEXT = {
@@ -21,7 +22,13 @@ def _snapshot(root: Path) -> dict[str, bytes]:
 
 
 def test_cra_class_is_orientation_only(
-    ui_lang: str, ui: dict[str, str], gui: str, page: Page, offline: list[str], project_dir: Path
+    ui_lang: str,
+    ui: dict[str, str],
+    gui: str,
+    page: Page,
+    idle: AppIdle,
+    offline: list[str],
+    project_dir: Path,
 ) -> None:
     smart_home, class_one, none, default = TEXT[ui_lang]
     before = _snapshot(project_dir)
@@ -39,7 +46,7 @@ def test_cra_class_is_orientation_only(
 
     page.get_by_test_id("setup-next").click()
     expect(page.get_by_test_id("setup-zone-Z-CABINET")).to_be_visible()
-    page.keyboard.press("Control+s")
+    idle.save()
     expect(page.get_by_test_id("toast")).to_contain_text(ui["saved"], timeout=15_000)
     assert _snapshot(project_dir) == before
     assert offline == [], f"unexpected outbound requests: {offline}"

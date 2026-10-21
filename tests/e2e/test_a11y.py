@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import pytest
-from conftest import ROOT
+from conftest import ROOT, AppIdle
 from playwright.sync_api import Page
 
 AXE = ROOT / "app" / "node_modules" / "axe-core" / "axe.min.js"
@@ -32,14 +32,14 @@ def project_dir(project_dir: Path) -> Path:
 @pytest.mark.skipif(not AXE.exists(), reason="axe-core not installed (npm ci in app/)")
 @pytest.mark.parametrize("scheme", ["light", "dark"])
 def test_main_views_have_no_wcag_aa_violations(
-    gui: str, page: Page, offline: list[str], scheme: str
+    gui: str, page: Page, idle: AppIdle, offline: list[str], scheme: str
 ) -> None:
     page.emulate_media(color_scheme=scheme)
     page.goto(gui)
     failures: list[str] = []
     for view in VIEWS:
         page.get_by_test_id(f"nav-{view}").click()
-        page.wait_for_timeout(400)
+        idle.settle()  # the view has loaded its data
         # evaluate() runs via the DevTools protocol, so the app's strict CSP stays on
         page.evaluate(AXE.read_text(encoding="utf-8"))
         result = page.evaluate(

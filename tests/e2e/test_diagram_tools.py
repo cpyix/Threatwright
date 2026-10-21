@@ -3,13 +3,14 @@
 import re
 from pathlib import Path
 
+from conftest import AppIdle
 from playwright.sync_api import Page, expect
 
 from threatwright.model.store import Project
 
 
 def test_filter_search_arrange_notes(
-    ui: dict[str, str], gui: str, page: Page, project_dir: Path
+    ui: dict[str, str], gui: str, page: Page, idle: AppIdle, project_dir: Path
 ) -> None:
     page.goto(gui)
     page.get_by_test_id("nav-diagram").click()
@@ -37,7 +38,7 @@ def test_filter_search_arrange_notes(
     page.get_by_test_id("node-E-0003").click(modifiers=["ControlOrMeta"])
     expect(page.get_by_test_id("arrange")).to_contain_text("2")
     page.get_by_test_id("arrange-top").click()
-    page.wait_for_timeout(300)  # layout is saved and the canvas rebuilt
+    idle.settle()  # layout is saved and the canvas rebuilt
     a = page.get_by_test_id("node-E-0002").bounding_box()
     b = page.get_by_test_id("node-E-0003").bounding_box()
     assert a and b and abs(a["y"] - b["y"]) < 1
@@ -47,7 +48,7 @@ def test_filter_search_arrange_notes(
     page.get_by_test_id("note-input").press("ControlOrMeta+Enter")
     expect(page.get_by_test_id("note-N1")).to_contain_text("nur vor Ort")
 
-    page.keyboard.press("Control+s")
+    idle.save()
     expect(page.get_by_test_id("toast")).to_contain_text(ui["saved"], timeout=15_000)
     layout = Project.load(project_dir).models["main"].layout
     assert layout.nodes["E-0002"].y == layout.nodes["E-0003"].y == 120

@@ -15,6 +15,7 @@ VIEWS = [
     "coverage",
     "threats",
     "validation",
+    "cra",
     "settings",
 ]
 

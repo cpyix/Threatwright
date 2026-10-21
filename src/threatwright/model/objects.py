@@ -113,6 +113,8 @@ class ModelMeta(Versioned):
     configurations: list[Configuration] = []
     zones: list[Zone] = []
     changelog: list[ChangelogEntry] = []
+    # CRA Annex I requirement id -> why it does not apply to this product
+    cra_not_applicable: dict[str, str] = {}
 
 
 class NodeLayout(Strict):

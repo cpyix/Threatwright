@@ -148,6 +148,16 @@ def _getters(f: Filters) -> dict[str, dict[str, Callable[[Ctx], str]]]:
             "rationale": lambda r: _s(r["rationale"]),
             "model": lambda r: r["model"],
         },
+        "cra_requirements": {
+            "id": lambda r: r["id"],
+            "tr_id": lambda r: _s(r["tr_id"]),
+            "title": lambda r: r["title"],
+            "status": lambda r: r["status_label"],
+            "threats": lambda r: _s(r["threats"]),
+            "measures": lambda r: _s(r["measures"]),
+            "rationale": lambda r: _s(r["rationale"]),
+            "model": lambda r: r["model"],
+        },
         "custom_fields": {
             "object": lambda c: c["object"],
             "field": lambda c: c["label"],
@@ -387,6 +397,12 @@ class _Builder:
 
     def custom_fields(self, s: Section) -> list[Block]:
         return self.table("custom_fields", self.ctx["custom_fields"], s.columns)
+
+    def cra_requirements(self, s: Section) -> list[Block]:
+        return [
+            {"kind": "p", "text": self.t("cra_requirements_note")},
+            *self.table("cra_requirements", self.ctx["cra_requirements"], s.columns),
+        ]
 
     def approvals(self, s: Section) -> list[Block]:
         rev = self.ctx["revision"]

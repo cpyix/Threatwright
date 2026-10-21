@@ -11,6 +11,7 @@ export type View =
   | { kind: 'coverage' }
   | { kind: 'settings' }
   | { kind: 'controls' }
+  | { kind: 'cra' }
   | { kind: 'documents' }
   | { kind: 'objects'; collection: Collection; selected: string | null }
   | { kind: 'history' }

@@ -23,6 +23,22 @@ LABELS: dict[str, tuple[str, str]] = {
     "section.decisions": ("Entscheidungspunkte", "Decision points"),
     "section.signatures": ("Freigabe", "Approval"),
     "section.approvals": ("Freigaben", "Approvals"),
+    "section.cra_requirements": (
+        "Grundlegende Anforderungen des CRA (Anhang I)",
+        "CRA essential requirements (Annex I)",
+    ),
+    "cra_requirements_note": (
+        "Je Anforderung: Bedrohungen mit diesem CRA-Bezug und die Maßnahmen, die sie "
+        "adressieren. Nicht anwendbare Anforderungen sind begründet (CRA Art. 13 Abs. 4).",
+        "Per requirement: threats with this CRA reference and the measures addressing it. "
+        "Requirements that do not apply carry a rationale (CRA Art. 13(4)).",
+    ),
+    "col.tr_id": ("TR-Anforderung", "TR requirement"),
+    "cra_status.not_applicable": ("nicht anwendbar", "not applicable"),
+    "cra_status.implemented": ("umgesetzt", "implemented"),
+    "cra_status.planned": ("Maßnahme geplant", "measure planned"),
+    "cra_status.threats_only": ("nur Bedrohung, keine Maßnahme", "threat only, no measure"),
+    "cra_status.open": ("offen", "open"),
     "section.acceptance_impact": (
         "Anhang: Auswirkung der Optionen auf bestehende Modelle",
         "Appendix: effect of the options on existing models",

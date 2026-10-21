@@ -33,6 +33,7 @@ from threatwright.auth import REALM, BasicAuth, users_from
 from threatwright.branding import PRODUCT_NAME, PROJECT_FILE
 from threatwright.ci import render_ci
 from threatwright.ci import target_path as ci_target_path
+from threatwright.cra import coverage as cra_coverage
 from threatwright.diagram import render_svg
 from threatwright.library import CATALOG_NAMES, Libraries, load_catalog, load_libraries
 from threatwright.method import (
@@ -764,6 +765,12 @@ def create_app(
     def coverage(name: str) -> list[dict[str, Any]]:
         with session.lock:
             return [asdict(r) for r in assistant.coverage(session.model(name), need_method())]
+
+    @app.get("/api/models/{name}/cra")
+    def cra_requirements(name: str) -> list[dict[str, Any]]:
+        """CRA Annex I requirements with the threats and measures addressing them."""
+        with session.lock:
+            return [asdict(r) for r in cra_coverage(session.model(name))]
 
     @app.get("/api/models/{name}/diagram.svg")
     def diagram_svg(name: str) -> Response:

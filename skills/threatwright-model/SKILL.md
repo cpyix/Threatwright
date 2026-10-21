@@ -62,7 +62,11 @@ zones:                            # trust zones; the environment sets the exposu
   - id: Z-EXTERNAL
     title: External network
     environment: {interface: external_network, access: non_restricted, user: skilled}
+cra_not_applicable:               # CRA Annex I requirements that do not apply, rationale required
+  AI-I-2-m: The device stores no user data or settings.
 ```
+
+`threatwright validate` warns about every Annex I requirement (`AI-…` in the CRA catalog) that no threat or measure references and that is not in `cra_not_applicable` (`cra-requirement-uncovered`). Only mark a requirement as not applicable when the user confirms the reason.
 
 Environment values (TR-03183-1 Annex D):
 - `interface`: `physical`, `local`, `dedicated_known_network`, `known_network`, `external_network`

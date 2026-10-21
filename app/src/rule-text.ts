@@ -15,7 +15,7 @@ export const RULES: Record<Lang, Record<string, string>> = {
     'unknown-asset-class': 'Asset-Klasse gibt es in der Methode nicht',
     'unknown-indicator-value': 'Wert für Schnittstelle, Zugang oder Nutzer gibt es in der Methode nicht',
     'security-asset-without-protects': 'Sicherheits-Asset ohne geschützte Assets, daher kein Impact ableitbar',
-    'missing-rationale': 'Verstärker oder „nicht relevant“ ohne Begründung',
+    'missing-rationale': 'Verstärker, „nicht relevant“ oder „nicht anwendbar“ ohne Begründung',
     'incomplete-assessment': 'Status „bewertet“ oder höher, aber Bewertung unvollständig',
     'threat-without-measure': 'Offene Bedrohung ohne Maßnahme, Akzeptanz oder Verwerfung',
     'acceptance-without-rationale': 'Akzeptanz ohne Begründung',
@@ -37,6 +37,7 @@ export const RULES: Record<Lang, Record<string, string>> = {
     'library-ref-unknown': 'Verweis auf einen Bibliothekseintrag, den es nicht (mehr) gibt',
     'unknown-cra-ref': 'CRA-Bezug ist nicht im CRA-Katalog',
     'acceptance-undocumented': 'Bei der Akzeptanz fehlt, wer sie in welcher Rolle und wann erteilt hat',
+    'cra-requirement-uncovered': 'Grundlegende CRA-Anforderung (Anhang I) ohne Bedrohung oder Maßnahme und nicht als „nicht anwendbar“ begründet',
   },
   en: {
     schema: 'File violates the schema (wrong type, unknown field, invalid YAML)',
@@ -50,7 +51,7 @@ export const RULES: Record<Lang, Record<string, string>> = {
     'unknown-asset-class': 'Asset class does not exist in the method',
     'unknown-indicator-value': 'Value for interface, access or user does not exist in the method',
     'security-asset-without-protects': 'Security asset without protected assets, so no impact can be derived',
-    'missing-rationale': 'Amplifier or "not relevant" without rationale',
+    'missing-rationale': 'Amplifier, "not relevant" or "not applicable" without rationale',
     'incomplete-assessment': 'Status "assessed" or later, but the assessment is incomplete',
     'threat-without-measure': 'Open threat without measure, acceptance or rejection',
     'acceptance-without-rationale': 'Acceptance without rationale',
@@ -72,5 +73,6 @@ export const RULES: Record<Lang, Record<string, string>> = {
     'library-ref-unknown': 'Reference to a library entry that does not exist (any more)',
     'unknown-cra-ref': 'CRA reference is not in the CRA catalog',
     'acceptance-undocumented': 'The acceptance does not say who granted it, in which role and when',
+    'cra-requirement-uncovered': 'CRA essential requirement (Annex I) without threat or measure and not justified as "not applicable"',
   },
 }

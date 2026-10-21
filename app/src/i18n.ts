@@ -288,6 +288,14 @@ const de = {
   setup: 'Einrichtung',
   setup_hint: 'Das Modell ist noch leer. Der Einrichtungsassistent führt Sie Schritt für Schritt zu einem ersten Bedrohungsmodell.',
   setup_open: 'Einrichtungsassistent starten',
+  cra: 'CRA-Anforderungen',
+  cra_help:
+    'Die grundlegenden Anforderungen aus Anhang I des CRA und was sie im Modell abdeckt: Bedrohungen mit diesem CRA-Bezug und deren Maßnahmen sowie Maßnahmen mit diesem CRA-Bezug. Was für das Produkt nicht gilt, markieren Sie mit Begründung als nicht anwendbar; das verlangt die technische Dokumentation.',
+  cra_open: 'offen',
+  cra_threats_only: 'nur Bedrohung',
+  cra_planned: 'Maßnahme geplant',
+  cra_implemented: 'umgesetzt',
+  cra_not_applicable: 'nicht anwendbar',
 } as const
 
 export type Key = keyof typeof de
@@ -579,6 +587,14 @@ const en: Record<Key, string> = {
   setup: 'Setup',
   setup_hint: 'The model is still empty. The setup wizard guides you step by step to a first threat model.',
   setup_open: 'Start setup wizard',
+  cra: 'CRA requirements',
+  cra_help:
+    'The essential requirements of CRA Annex I and what covers them in the model: threats with this CRA reference and their measures, plus measures with this CRA reference. Mark what does not apply to the product as not applicable, with a rationale; the technical documentation needs it.',
+  cra_open: 'open',
+  cra_threats_only: 'threat only',
+  cra_planned: 'measure planned',
+  cra_implemented: 'implemented',
+  cra_not_applicable: 'not applicable',
 }
 
 // Enum values stored in files (English identifiers) -> display labels.

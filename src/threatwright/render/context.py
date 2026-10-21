@@ -9,6 +9,7 @@ from dataclasses import asdict
 from typing import Any
 
 from threatwright.branding import PRODUCT_NAME
+from threatwright.cra import coverage as cra_coverage
 from threatwright.library import load_catalog
 from threatwright.method import (
     BUILTIN_METHODS,
@@ -53,6 +54,7 @@ KNOWN_VARIABLES = frozenset(
         "acceptance",
         "approvals",
         "revision",
+        "cra_requirements",
         "outline",
     }
 )
@@ -603,6 +605,16 @@ def build_context(
         "acceptance": _acceptance(project, method, lang, risk_labels),
         "approvals": _approvals(data["threats"], data["rejected_threats"], lang),
         "revision": asdict(rev) if (rev := revision(project.root)) else None,
+        "cra_requirements": [
+            {
+                **asdict(r),
+                "title": r.title[lang],
+                "status_label": t(f"cra_status.{r.status}", lang),
+                "model": sub.name,
+            }
+            for sub in subs
+            for r in cra_coverage(sub)
+        ],
     }
     env = make_env(filters)
     ctx["outline"] = build_outline(meta.outline, ctx, env, filters)

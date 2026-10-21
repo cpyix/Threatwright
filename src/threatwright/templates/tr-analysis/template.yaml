@@ -24,6 +24,7 @@ outline:
   - type: rejected
   - type: measures
   - type: traceability
+  - type: cra_requirements
   - type: questions
   - type: custom_fields
   - type: approvals

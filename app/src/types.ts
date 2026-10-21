@@ -53,6 +53,7 @@ export interface ModelPayload {
     description: string | null
     zones: { id: string; title: string; environment: Record<string, string | null> }[]
     configurations: { id: string; title: string }[]
+    cra_not_applicable?: Record<string, string>
   }
   objects: Record<Collection, Obj[]>
   evaluations: Record<string, ThreatEvaluation>

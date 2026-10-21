@@ -2,6 +2,7 @@
   import ArrowRightLeft from '@lucide/svelte/icons/arrow-right-left'
   import Box from '@lucide/svelte/icons/box'
   import CircleCheckBig from '@lucide/svelte/icons/circle-check-big'
+  import ClipboardCheck from '@lucide/svelte/icons/clipboard-check'
   import FileText from '@lucide/svelte/icons/file-text'
   import FolderOpen from '@lucide/svelte/icons/folder-open'
   import Gem from '@lucide/svelte/icons/gem'
@@ -23,6 +24,7 @@
   import { tr, type Key } from './i18n'
   import Assistant from './lib/Assistant.svelte'
   import Controls from './lib/Controls.svelte'
+  import CraRequirements from './lib/CraRequirements.svelte'
   import Coverage from './lib/Coverage.svelte'
   import CyberCauseDialog from './lib/CyberCauseDialog.svelte'
   import Diagram from './lib/diagram/Diagram.svelte'
@@ -131,7 +133,12 @@
           },
           {
             title: 'nav_check',
-            items: [simple('validation', CircleCheckBig), simple('documents', FileText), simple('controls', ListChecks)],
+            items: [
+              simple('validation', CircleCheckBig),
+              simple('cra', ClipboardCheck),
+              simple('documents', FileText),
+              simple('controls', ListChecks),
+            ],
           },
           {
             title: 'nav_project',
@@ -269,6 +276,8 @@
       <SettingsView />
     {:else if app.view.kind === 'controls'}
       <Controls />
+    {:else if app.view.kind === 'cra'}
+      <CraRequirements />
     {:else if app.view.kind === 'documents'}
       <Documents />
     {:else if app.view.kind === 'objects'}

@@ -38,6 +38,7 @@ SectionType = Literal[
     "signatures",
     "acceptance_impact",
     "approvals",
+    "cra_requirements",
 ]
 
 # Selectable table columns per section type; the first list is the default.
@@ -99,6 +100,10 @@ COLUMNS: dict[str, tuple[list[str], list[str]]] = {
     "approvals": (
         ["threat", "status", "by", "role", "date", "rationale"],
         ["threat", "status", "risk", "by", "role", "date", "rationale", "model"],
+    ),
+    "cra_requirements": (
+        ["id", "title", "status", "threats", "measures", "rationale"],
+        ["id", "tr_id", "title", "status", "threats", "measures", "rationale", "model"],
     ),
 }
 

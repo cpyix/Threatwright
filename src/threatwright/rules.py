@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
 
+from threatwright.cra import coverage as cra_coverage
 from threatwright.library import check_library_refs, load_catalog, load_libraries
 from threatwright.method import Method, MethodError, evaluate, load_method
 from threatwright.model.objects import (
@@ -20,7 +21,7 @@ from threatwright.model.objects import (
     Question,
     Threat,
 )
-from threatwright.model.store import DEFAULT_PREFIXES, Issue, Project, SubModel
+from threatwright.model.store import DEFAULT_PREFIXES, MODEL_FILE, Issue, Project, SubModel
 
 TEXT_FIELDS = ("title", "description", "scenario", "consequence", "evidence", "answer")
 ASSESSED = {"assessed", "treated", "accepted"}
@@ -66,6 +67,7 @@ def validate(project: Project) -> list[Issue]:
     for sub in project.models.values():
         ctx = _Ctx(project, sub, method, uuids)
         _check_model(ctx)
+        _check_cra_requirements(ctx, cra)
         for coll, objects in sub.objects.items():
             for obj in objects.values():
                 for ref in getattr(obj, "cra_refs", []):
@@ -324,6 +326,31 @@ def _check_coverage(ctx: _Ctx, threats: list[Threat]) -> None:
                     f"stride.{s}",
                     f"no threat for STRIDE '{s}' and not marked as not relevant",
                 )
+
+
+def _check_cra_requirements(ctx: _Ctx, catalog: set[str]) -> None:
+    path = ctx.project.root / "models" / ctx.sub.name / MODEL_FILE
+
+    def add(severity: Literal["error", "warning"], code: str, loc: str, msg: str) -> None:
+        ctx.issues.append(Issue(path, loc, msg, code, severity, ctx.sub.name))
+
+    for req, why in ctx.sub.meta.cra_not_applicable.items():
+        loc = f"cra_not_applicable.{req}"
+        if req not in catalog:
+            add("warning", "unknown-cra-ref", loc, f"'{req}' is not in the CRA catalog")
+        if not why.strip():
+            add("error", "missing-rationale", loc, "'not applicable' needs a rationale")
+    if not ctx.sub.objects["threats"]:
+        return  # analysis not started yet: no list of 21 gaps on an empty model
+    for row in cra_coverage(ctx.sub):
+        if row.status == "open":
+            add(
+                "warning",
+                "cra-requirement-uncovered",
+                f"cra_not_applicable.{row.id}",
+                f"CRA requirement {row.id} has no threat or measure and is not marked "
+                "as not applicable",
+            )
 
 
 def _of[T: ModelObject](sub: SubModel, collection: str, cls: type[T]) -> list[T]:

@@ -24,7 +24,7 @@ Die Oberfläche zeigt dieselben Meldungen, weil sie dieselbe Prüfung aufruft.
 | `unknown-asset-class` | Asset-Klasse gibt es in der Methode nicht |
 | `unknown-indicator-value` | Wert für Schnittstelle, Zugang oder Nutzer gibt es in der Methode nicht |
 | `security-asset-without-protects` | Sicherheits-Asset ohne geschützte Assets, daher kein Impact ableitbar |
-| `missing-rationale` | Verstärker oder „nicht relevant“ ohne Begründung |
+| `missing-rationale` | Verstärker, „nicht relevant“ oder „nicht anwendbar“ (CRA-Anforderung) ohne Begründung |
 | `incomplete-assessment` | Status „bewertet“ oder höher, aber Bewertung unvollständig |
 | `threat-without-measure` | offene Bedrohung ohne Maßnahme, Akzeptanz oder Verwerfung |
 | `acceptance-without-rationale` | Akzeptanz ohne Begründung |
@@ -50,4 +50,5 @@ Die Oberfläche zeigt dieselben Meldungen, weil sie dieselbe Prüfung aufruft.
 | `library-outdated` | Die Bibliothek hat eine neuere Fassung des übernommenen Eintrags |
 | `library-ref-unknown` | `library_ref` verweist auf einen Eintrag, den es nicht (mehr) gibt |
 | `unknown-cra-ref` | CRA-Bezug ist nicht im CRA-Katalog |
+| `cra-requirement-uncovered` | Grundlegende Anforderung aus CRA Anhang I ohne Bedrohung oder Maßnahme mit diesem CRA-Bezug und nicht in `cra_not_applicable` (`model.yaml`) begründet; erst geprüft, sobald das Modell Bedrohungen hat |
 | `acceptance-undocumented` | Bei einer Akzeptanz fehlt Name (`by`), Rolle (`role`) oder Datum (`date`) der Freigabe |

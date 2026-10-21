@@ -110,6 +110,7 @@ Abschnittstypen und wählbare Spalten (Standardspalten **fett**):
 | `risk_distribution` | Anzahl je Risikostufe, akzeptabel/zu behandeln | **level, label, count, treatment** |
 | `changelog` | Änderungshistorie der Modelle | **version, date, summary, author**, model |
 | `custom_fields` | eigene Felder (`custom`) aller Objekte | **object, field, value** |
+| `cra_requirements` | grundlegende Anforderungen aus CRA Anhang I mit Bedrohungen, Maßnahmen und Stand (umgesetzt, Maßnahme geplant, nur Bedrohung, offen, nicht anwendbar mit Begründung) | **id, title, status, threats, measures, rationale**, tr_id, model |
 | `approvals` | Freigaben: akzeptierte und verworfene Bedrohungen mit Name, Rolle, Datum und Begründung, dazu der Git-Stand (Commit, Tag, nicht eingecheckte Änderungen) | **threat, status, by, role, date, rationale**, risk, model |
 | `text` | Freitext | – |
 | `decisions` | Entscheidungspunkte der Akzeptanzkriterien | – |
@@ -222,6 +223,7 @@ Alle Werte werden bei jedem Erzeugen neu berechnet und nie gespeichert. Die Vorl
 | `acceptance` | Entscheidungsvorlage: `threats_total`, `assessed_total`, `current_to_treat`, `approvers`, `decisions[]` (`id`, `title`, `question`, `note`, `current`, `recommended`, `options[]` mit `label`, `current`, `recommended`, `to_treat`) |
 | `approvals[]` | akzeptierte und verworfene Bedrohungen, nach Datum: `threat`, `threat_title`, `model`, `decision` (`accepted`/`rejected`), `decision_label`, `risk`, `by`, `role`, `date`, `rationale` |
 | `revision` | Git-Stand des Projekts beim Erzeugen: `commit`, `tag` (Tag auf dem Commit oder `None`), `dirty` (nicht eingecheckte Änderungen); `None` ohne Git |
+| `cra_requirements[]` | je Modell und Anforderung aus CRA Anhang I: `id`, `tr_id`, `title`, `status` (`implemented`, `planned`, `threats_only`, `open`, `not_applicable`), `status_label`, `threats`, `measures` (IDs), `rationale`, `model` |
 | `outline[]` | Abschnitte der Gliederung: `type`, `title`, `blocks[]` |
 
 Felder einer Bedrohung (`threats[]`):

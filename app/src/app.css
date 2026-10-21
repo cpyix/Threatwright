@@ -92,6 +92,12 @@ textarea {
   width: 100%;
 }
 
+input[type='checkbox'],
+input[type='radio'] {
+  width: auto;
+  padding: 0;
+}
+
 fieldset {
   min-inline-size: 0; /* browsers default to min-content, which breaks grid columns */
 }

@@ -1,4 +1,5 @@
 from pathlib import Path
+from xml.etree import ElementTree
 
 import pytest
 from fastapi.testclient import TestClient
@@ -109,6 +110,7 @@ def test_coverage_and_svg(loaded) -> None:  # type: ignore[no-untyped-def]
     svg = render_svg(sub, {"E-0002": 5})
     assert svg == render_svg(sub, {"E-0002": 5})  # deterministic
     assert svg.startswith("<svg") and "E-0001" in svg and "F-0001" in svg and "#f3b6b6" in svg
+    ElementTree.fromstring(svg)  # well-formed XML (no duplicate attributes)
     sub.objects["elements"]["E-0001"].title = "<script>&"
     assert "&lt;script&gt;&amp;" in render_svg(sub)
     sub.layout.notes["N1"] = DiagramNote(x=900, y=700, text="Line one\n<b>two</b>")

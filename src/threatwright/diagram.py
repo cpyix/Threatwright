@@ -93,7 +93,10 @@ def _shape(e: Element, x: float, y: float, fill: str) -> str:
             f'<line x1="{x}" y1="{y + H}" x2="{x + W}" y2="{y + H}" {LINE}/>'
         )
     if e.kind == "external":
-        return f'<rect x="{x}" y="{y}" width="{W}" height="{H}" {style} stroke-width="3"/>'
+        return (
+            f'<rect x="{x}" y="{y}" width="{W}" height="{H}" fill="{fill}"'
+            ' stroke="#1b1f24" stroke-width="3"/>'
+        )
     return f'<rect x="{x}" y="{y}" width="{W}" height="{H}" rx="6" {style}/>'
 
 

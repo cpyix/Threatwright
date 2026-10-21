@@ -3,7 +3,7 @@
   import Search from '@lucide/svelte/icons/search'
   import StickyNote from '@lucide/svelte/icons/sticky-note'
   import '@xyflow/svelte/dist/style.css'
-  import { api, download } from '../../api'
+  import { api, save } from '../../api'
   import { tr } from '../../i18n'
   import { track } from '../../loading.svelte'
   import { CATEGORIES } from '../../setup-text'
@@ -80,7 +80,7 @@
     selected = id ? { collection, id } : null
   }
 
-  const exportSvg = () => download(`/models/${app.modelName}/diagram.svg`, `${app.modelName}-diagram.svg`)
+  const exportSvg = () => canvas && save(new Blob([canvas.svg()], { type: 'image/svg+xml' }), `${app.modelName}-diagram.svg`)
 </script>
 
 <section class="diagram">
@@ -215,7 +215,7 @@
         {tr(lang, 'snap_grid')}
       </label>
       <button onclick={() => canvas && track(canvas.autoLayout())} data-testid="auto-layout">{tr(lang, 'auto_layout')}</button>
-      <button onclick={exportSvg}>{tr(lang, 'export_svg')}</button>
+      <button onclick={exportSvg} data-testid="export-svg">{tr(lang, 'export_svg')}</button>
     </div>
     <SvelteFlowProvider>
       <Canvas

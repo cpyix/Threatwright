@@ -20,6 +20,7 @@
   import AlignStartVertical from '@lucide/svelte/icons/align-start-vertical'
   import AlignVerticalDistributeCenter from '@lucide/svelte/icons/align-vertical-distribute-center'
   import { untrack } from 'svelte'
+  import { canvasSvg } from './export'
   import { facing, type Side } from './route'
   import { api } from '../../api'
   import { tr, type Key } from '../../i18n'
@@ -408,6 +409,9 @@
   }
 
   let host: HTMLDivElement | undefined = $state()
+
+  /** The diagram as currently drawn, as an SVG file. */
+  export const svg = () => canvasSvg(host!)
 
   async function ondrop(event: DragEvent) {
     event.preventDefault()

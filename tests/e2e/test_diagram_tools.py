@@ -2,6 +2,7 @@
 
 import re
 from pathlib import Path
+from xml.etree import ElementTree
 
 from conftest import AppIdle
 from playwright.sync_api import Page, expect
@@ -53,3 +54,21 @@ def test_filter_search_arrange_notes(
     layout = Project.load(project_dir).models["main"].layout
     assert layout.nodes["E-0002"].y == layout.nodes["E-0003"].y == 120
     assert layout.notes["N1"].text == "Wartungszugang\nnur vor Ort"
+
+
+def test_export_svg_matches_canvas(gui: str, page: Page, tmp_path: Path) -> None:
+    page.goto(gui)
+    page.get_by_test_id("nav-diagram").click()
+    expect(page.get_by_test_id("node-E-0003")).to_be_visible()
+    with page.expect_download() as dl:
+        page.get_by_test_id("export-svg").click()
+    path = tmp_path / "diagram.svg"
+    dl.value.save_as(path)
+    svg = path.read_text(encoding="utf-8")
+    root = ElementTree.fromstring(svg)  # well-formed
+    texts = " ".join(t.text or "" for t in root.iter("{http://www.w3.org/2000/svg}text"))
+    for node in ("E-0001", "E-0002", "E-0003"):
+        title = page.locator(f"[data-testid=node-{node}] .title").inner_text()
+        assert node in texts and title.split()[0] in texts
+    assert "foreignObject" not in svg and "<button" not in svg
+    assert svg.count("<path") > 3  # the connection plus the element icons

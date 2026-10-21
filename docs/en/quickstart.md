@@ -16,7 +16,7 @@ You have three options:
 threatwright init mein-produkt --name "Mein Produkt"
 ```
 
-Choose the product type with `--library` (short `-l`): `ot` (machines and plants, default), `iot` (connected devices, consumer) or `software`. The option can be repeated, e.g. `-l iot -l software`. In the GUI you choose the product type with a checkbox on the start page when creating a project.
+Choose the product type with `--library` (short `-l`): `ot` (machines and plants, default), `iot` (connected devices, consumer), `software` or `embedded-linux` (control software on a Linux industrial PC, brings `ot` along; the example creates a machine model and a sub-model `software`). The option can be repeated, e.g. `-l iot -l software`. In the GUI you choose the product type with a checkbox on the start page when creating a project.
 
 The tool creates a folder with a submodel `main`. It contains:
 - four default zones: device internal, local interfaces, plant network, external network. Without `ot`, the third zone is called "Local network (LAN/WLAN)" (Z-LAN).

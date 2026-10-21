@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import pytest
+from conftest import AppIdle
 from playwright.sync_api import Page, expect
 
 from threatwright.model.store import Project
@@ -15,7 +16,7 @@ def project_dir(project_dir: Path) -> Path:
     return project_dir
 
 
-def test_adopt_single_then_all(gui: str, page: Page, project_dir: Path) -> None:
+def test_adopt_single_then_all(gui: str, page: Page, idle: AppIdle, project_dir: Path) -> None:
     page.goto(gui)
     # a drive from the library: its own templates (an untyped element gets every device template)
     page.request.post(
@@ -31,6 +32,7 @@ def test_adopt_single_then_all(gui: str, page: Page, project_dir: Path) -> None:
     expect(first).to_be_visible()  # suggestions loaded
     open_before = page.locator("details[open]").count()
     first.click()
+    idle.settle()
     expect(page.get_by_test_id("cyber-dialog")).to_be_hidden()  # rule 3.3 answered by the template
     expect(page.locator("span.ok").first).to_be_visible()  # adopted
     expect(page.locator("details[open]")).to_have_count(open_before)  # nothing collapsed
@@ -45,10 +47,10 @@ def test_adopt_single_then_all(gui: str, page: Page, project_dir: Path) -> None:
     count = int(remaining.rsplit("(", 1)[1].rstrip(")"))
     expect(page.get_by_test_id("adopt-bar")).to_contain_text(str(count))
     page.get_by_test_id("adopt-chosen").click()
+    idle.settle()  # one request per adopted template
     expect(page.get_by_test_id("select-all-suggestions")).to_have_count(0)  # all adopted
 
-    page.keyboard.press("Control+s")
-    expect(page.get_by_test_id("toast")).not_to_be_empty(timeout=15_000)
+    idle.save()
     threats = Project.load(project_dir).models["main"].objects["threats"].values()
     adopted = [t for t in threats if "E-0004" in t.targets and t.library_ref]
     assert len(adopted) == count + 1 and all(t.cyber_cause is True for t in adopted)

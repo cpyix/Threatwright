@@ -3,11 +3,12 @@
 import re
 from pathlib import Path
 
+from conftest import AppIdle
 from playwright.sync_api import Page, expect
 
 
 def test_setup_wizard(
-    ui: dict[str, str], gui: str, page: Page, offline: list[str], tmp_path: Path
+    ui: dict[str, str], gui: str, page: Page, idle: AppIdle, offline: list[str], tmp_path: Path
 ) -> None:
     target = tmp_path / "neu"
     page.goto(gui)
@@ -15,6 +16,7 @@ def test_setup_wizard(
     page.get_by_test_id("new-path").fill(str(target))
     page.get_by_test_id("new-name").fill("Testanlage")
     page.get_by_test_id("create-project").click()
+    idle.settle()  # creating loads method, catalogs, library, model and validation
 
     expect(page.get_by_test_id("setup")).to_be_visible()
     page.get_by_test_id("setup-start").click()

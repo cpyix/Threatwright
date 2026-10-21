@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 
 import pytest
 import uvicorn
-from playwright.sync_api import Page, Route
+from playwright.sync_api import Page, Request, Route
 
 from threatwright.server import WEB_DIR, create_app
 
@@ -160,14 +160,20 @@ class AppIdle:
 
     def __init__(self, page: Page) -> None:
         self.page = page
-        self.open = 0
-        page.on("request", lambda r: self._count(r.url, 1))
-        page.on("requestfinished", lambda r: self._count(r.url, -1))
-        page.on("requestfailed", lambda r: self._count(r.url, -1))
+        self.pending: set[Request] = set()
+        page.on("request", self._started)
+        page.on("requestfinished", lambda r: self.pending.discard(r))  # handlers: functions
+        page.on("requestfailed", lambda r: self.pending.discard(r))
+        # a reload drops the old page's requests, which may never report back
+        page.on("framenavigated", lambda f: f == page.main_frame and self.pending.clear())
 
-    def _count(self, url: str, step: int) -> None:
-        if "/api/" in urlparse(url).path:
-            self.open += step
+    def _started(self, request: Request) -> None:
+        if urlparse(request.url).path.startswith("/api/"):
+            self.pending.add(request)
+
+    @property
+    def open(self) -> int:
+        return len(self.pending)
 
     def settle(self, timeout: float = 20) -> None:
         """Return once no API request has been open for 300 ms."""

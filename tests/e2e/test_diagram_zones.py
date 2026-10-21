@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from conftest import AppIdle
 from playwright.sync_api import Page, expect
 
 from threatwright.model.store import Project
@@ -36,13 +37,15 @@ def test_variant_filter_is_a_multi_select(gui: str, page: Page) -> None:
 
 
 def test_auto_layout_and_zone_assignment(
-    ui: dict[str, str], gui: str, page: Page, project_dir: Path
+    gui: str, page: Page, idle: AppIdle, project_dir: Path
 ) -> None:
     page.goto(gui)
     page.get_by_test_id("nav-diagram").click()
+    idle.settle()
     page.get_by_test_id("auto-layout").click()
     expect(page.get_by_test_id("zone-Z-FIELD")).to_be_visible()
-    page.wait_for_timeout(500)  # layout is saved and the canvas rebuilt
+    idle.settle()  # layout is saved and the canvas rebuilt
+    page.wait_for_timeout(300)  # fitView animation
     assert not _overlap(_box(page, "zone-Z-CABINET"), _box(page, "zone-Z-FIELD"))
 
     # move the cabinet device into the field zone
@@ -54,9 +57,9 @@ def test_auto_layout_and_zone_assignment(
         field["x"] + 30 + node["width"] / 2, field["y"] + field["height"] - 30, steps=10
     )
     page.mouse.up()
+    idle.settle()  # layout and zone change are saved one after the other
     expect(page.get_by_test_id("zone-Z-CABINET")).to_have_count(0)  # no members left
 
-    page.keyboard.press("Control+s")
-    expect(page.get_by_test_id("toast")).to_contain_text(ui["saved"], timeout=15_000)
+    idle.save()
     sub = Project.load(project_dir).models["main"]
     assert sub.objects["elements"]["E-0001"].zone == "Z-FIELD"

@@ -10,7 +10,7 @@
 [![signed with Sigstore](https://img.shields.io/badge/releases-signed%20(Sigstore)-informational)](SECURITY.md)
 [![AI-assisted](https://img.shields.io/badge/code-AI--assisted-8a2be2)](#ai-assisted-development)
 
-Local-first threat modelling and risk analysis for products with digital elements under the EU Cyber Resilience Act (CRA), following **BSI TR-03183-1**. Built for manufacturers of products with digital elements, e.g. machines and plants (OT), connected devices (IoT/consumer) and software, whose engineers are not security specialists. Status: **alpha** (0.1.0).
+Local-first threat modelling and risk analysis for products with digital elements under the EU Cyber Resilience Act (CRA), following **BSI TR-03183-1**. Built for manufacturers of products with digital elements, e.g. machines and plants (OT), connected devices (IoT/consumer) and software, whose engineers are not security specialists.
 
 - **Offline and local:** Windows, Linux and macOS, no admin rights, no network access at runtime, no telemetry.
 - **Git is the database:** one YAML file per object, stable IDs, saving without changes produces no diff. Merge requests are the change history; `threatwright diff` creates change evidence between releases.

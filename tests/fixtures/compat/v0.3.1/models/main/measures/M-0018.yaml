@@ -1,0 +1,9 @@
+schema_version: 1
+id: M-0018
+uuid: 3a4b91cb-b78e-4f30-ba43-b4c58dd656d3
+title: Tenant isolation in the remote maintenance system
+description: In the remote maintenance portal, the machines of different operators are strictly separated. A technician sees and reaches only the machines for which they have a current job. Connections between customer networks via the portal are technically impossible.
+library_ref: lib:ot/measure/jumphost-tenant-isolation@1
+kind: technical
+evidence: Authorisation concept of the portal, test report of denied access to another tenant.
+cra_refs: [AI-I-2-d, AI-I-2-i]

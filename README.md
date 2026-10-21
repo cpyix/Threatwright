@@ -10,7 +10,7 @@
 [![signed with Sigstore](https://img.shields.io/badge/releases-signed%20(Sigstore)-informational)](SECURITY.md)
 [![AI-assisted](https://img.shields.io/badge/code-AI--assisted-8a2be2)](#ai-assisted-development)
 
-Local-first threat modelling and risk analysis for products with digital elements under the EU Cyber Resilience Act (CRA), following **BSI TR-03183-1**. Built for manufacturers of products with digital elements, e.g. machines and plants (OT), connected devices (IoT/consumer) and software, whose engineers are not security specialists. Status: **alpha** (0.1.0).
+Local-first threat modelling and risk analysis for products with digital elements under the EU Cyber Resilience Act (CRA), following **BSI TR-03183-1**. Built for manufacturers of products with digital elements, e.g. machines and plants (OT), connected devices (IoT/consumer) and software, whose engineers are not security specialists.
 
 - **Offline and local:** Windows, Linux and macOS, no admin rights, no network access at runtime, no telemetry.
 - **Git is the database:** one YAML file per object, stable IDs, saving without changes produces no diff. Merge requests are the change history; `threatwright diff` creates change evidence between releases.
@@ -72,7 +72,7 @@ threatwright ci gitlab my-product                  # GitLab pipeline for this pr
 threatwright --help                                # all commands
 ```
 
-Started inside a project folder, `threatwright` opens that project directly. By default the GUI runs on `127.0.0.1` only, on a random port, is not reachable from other machines and needs no login; a strict Content Security Policy applies and nothing leaves your machine. The GUI follows your browser language (German or English). Projects created with an older release open in newer ones; their files are brought up to date on the next save ([details](#compatibility-and-releases)).
+Started inside a project folder, `threatwright` opens that project directly. By default the GUI runs on `127.0.0.1` only, on a random port, is not reachable from other machines and needs no login; a strict Content Security Policy applies and nothing leaves your machine. The GUI shows the language of the open project (German or English, chosen when the project is created); without an open project it follows your browser language. Projects created with an older release open in newer ones; their files are brought up to date on the next save ([details](#compatibility-and-releases)).
 
 ### Docker (CLI and pipelines)
 

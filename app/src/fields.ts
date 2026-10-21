@@ -30,6 +30,12 @@ const stride = (): Option[] => STRIDE.map((s) => ({ value: s, label: `${s} – $
 const cra = (): Option[] =>
   Object.entries(app.cra).map(([id, e]) => ({ value: id, label: `${id} ${e[app.lang] ?? ''}` }))
 const targets = (): Option[] => [...refs('elements')(), ...refs('flows')()]
+// suggestions only: protocol stays free text (imports and custom protocols)
+const protocols = (): Option[] =>
+  [...new Set([...app.flowProtocols, ...app.objects('flows').map((f) => f.protocol as string)])]
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b))
+    .map((v) => ({ value: v, label: v }))
 
 export const FIELDS: Record<Collection, Field[]> = {
   elements: [
@@ -44,7 +50,7 @@ export const FIELDS: Record<Collection, Field[]> = {
     { key: 'title', label: 'title', type: 'text', required: true },
     { key: 'source', label: 'source', type: 'select', options: refs('elements'), required: true },
     { key: 'target', label: 'target', type: 'select', options: refs('elements'), required: true },
-    { key: 'protocol', label: 'protocol', type: 'text' },
+    { key: 'protocol', label: 'protocol', type: 'text', options: protocols },
     { key: 'bidirectional', label: 'bidirectional', type: 'bool' },
     { key: 'assets', label: 'assets', type: 'multi', options: refs('assets') },
     { key: 'configurations', label: 'configurations', type: 'multi', options: configurations },

@@ -5,6 +5,7 @@
   import '@xyflow/svelte/dist/style.css'
   import { api, download } from '../../api'
   import { tr } from '../../i18n'
+  import { track } from '../../loading.svelte'
   import { CATEGORIES } from '../../setup-text'
   import { app } from '../../state.svelte'
   import type { ElementType } from '../../types'
@@ -213,7 +214,7 @@
         <input type="checkbox" bind:checked={snap} data-testid="snap-grid" />
         {tr(lang, 'snap_grid')}
       </label>
-      <button onclick={() => canvas?.autoLayout()} data-testid="auto-layout">{tr(lang, 'auto_layout')}</button>
+      <button onclick={() => canvas && track(canvas.autoLayout())} data-testid="auto-layout">{tr(lang, 'auto_layout')}</button>
       <button onclick={exportSvg}>{tr(lang, 'export_svg')}</button>
     </div>
     <SvelteFlowProvider>
@@ -246,7 +247,7 @@
 <style>
   .diagram {
     display: grid;
-    grid-template-columns: 13rem minmax(0, 1fr) auto;
+    grid-template-columns: 15rem minmax(0, 1fr) auto;
     gap: 0.75rem;
     height: calc(100vh - 6rem);
   }
@@ -262,6 +263,11 @@
     gap: 0.15rem;
     font-size: 0.9em;
     margin-bottom: 0.25rem;
+  }
+  /* a select is as wide as its longest option; long flow type names would widen the palette */
+  .new-flow select {
+    width: 100%;
+    min-width: 0;
   }
   .palette .small {
     font-size: 0.85em;
@@ -295,6 +301,7 @@
     gap: 0.5rem;
     align-items: center;
     text-align: left;
+    overflow-wrap: anywhere;
   }
   .palette button:hover {
     border-color: var(--accent);

@@ -11,17 +11,24 @@
   let template = $state<'tr' | 'empty'>('tr')
   const PRODUCT_TYPES = ['ot', 'iot', 'software'] as const // order of scaffold.PRODUCT_LIBRARIES
   let libraries = $state<string[]>(['ot'])
+  let language = $state(app.lang)
   let error = $state('')
   const lang = $derived(app.lang)
 
-  async function run(fn: () => Promise<ProjectInfo>, view?: View) {
+  let busy = $state<string | null>(null) // what is loading ('' = no specific project card)
+
+  async function run(fn: () => Promise<ProjectInfo>, view?: View, path = '') {
+    if (busy !== null) return // a second click must not start a parallel load
     error = ''
+    busy = path
     try {
       await app.loadProject(await fn())
       app.view = view ?? app.home()
     } catch (e) {
       app.view = { kind: 'start' }
       error = e instanceof ApiError ? e.message : String(e)
+    } finally {
+      busy = null
     }
   }
 
@@ -71,7 +78,7 @@
     }
   }
 
-  const open = (path: string) => run(() => api<ProjectInfo>('POST', '/project/open', { path }))
+  const open = (path: string) => run(() => api<ProjectInfo>('POST', '/project/open', { path }), undefined, path)
   const create = () =>
     run(() =>
       api<ProjectInfo>('POST', '/project/new', {
@@ -79,7 +86,7 @@
         name: newName,
         template,
         libraries,
-        language: app.lang,
+        language,
       }),
       // new projects start in the setup wizard
       { kind: 'setup', step: 0 },
@@ -89,6 +96,12 @@
 <section class="start">
   <h1>{PRODUCT_NAME} <span class="muted">{app.version}</span></h1>
   {#if error}<p class="error" role="alert">{error}</p>{/if}
+  {#if busy !== null}
+    <div class="loading" role="status" data-testid="loading-project">
+      {tr(lang, 'loading_project')}
+      <progress aria-label={tr(lang, 'loading_project')}></progress>
+    </div>
+  {/if}
 
   {#if app.project}
     <div class="card">
@@ -115,12 +128,16 @@
           <button
             class="project"
             class:current
+            class:busy={busy === p.path}
+            disabled={busy !== null}
+            aria-busy={busy === p.path}
             onclick={() => (current ? (app.view = app.home()) : open(p.path))}
             data-testid="open-server-{p.path}"
           >
             <strong>{p.name}</strong>
             <span class="muted">{p.path}</span>
-            {#if current}<span class="badge">{tr(lang, 'is_open')}</span>{/if}
+            {#if busy === p.path}<span class="badge">{tr(lang, 'loading_project')}</span>
+            {:else if current}<span class="badge">{tr(lang, 'is_open')}</span>{/if}
           </button>
         </li>
       {:else}
@@ -201,6 +218,12 @@
       <option value="tr">{tr(lang, 'template_tr')}</option>
       <option value="empty">{tr(lang, 'template_empty')}</option>
     </select>
+    <label for="new-language">{tr(lang, 'project_language')}</label>
+    <select id="new-language" bind:value={language} data-testid="new-language">
+      <option value="de">Deutsch</option>
+      <option value="en">English</option>
+    </select>
+    <p class="muted">{tr(lang, 'project_language_hint')}</p>
     <fieldset>
       <legend>{tr(lang, 'product_type')}</legend>
       {#each PRODUCT_TYPES as id (id)}
@@ -254,6 +277,22 @@
   }
   .project:hover {
     border-color: var(--accent);
+  }
+  .project:disabled {
+    cursor: progress;
+  }
+  .project:disabled:not(.busy) {
+    opacity: 0.6;
+  }
+  .project.busy {
+    border-color: var(--accent);
+  }
+  .loading {
+    display: grid;
+    gap: 0.25rem;
+  }
+  .loading progress {
+    width: 100%;
   }
   .project.current {
     border-color: var(--accent);

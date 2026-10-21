@@ -1,5 +1,5 @@
 import { api } from './api'
-import type { Collection, I18n, Issue, Lang, Method, ModelPayload, Obj, ProjectInfo } from './types'
+import type { Collection, ElementType, I18n, Issue, Lang, Method, ModelPayload, Obj, ProjectInfo } from './types'
 
 export type View =
   | { kind: 'start' }
@@ -37,11 +37,11 @@ function initialLang(): Lang {
 }
 
 class AppState {
-  lang = $state<Lang>(initialLang())
+  uiLang = $state<Lang>(initialLang())
 
-  /** Toggle by the viewer; remembered per browser. The project language only drives documents. */
+  /** Toggle by the viewer while no project is open; remembered per browser. */
   setLang(lang: Lang): void {
-    this.lang = lang
+    this.uiLang = lang
     try {
       localStorage.setItem(LANG_KEY, lang)
     } catch {
@@ -52,8 +52,11 @@ class AppState {
   recent = $state<string[]>([])
   server = $state(false) // runs as a shared server: workspace and upload instead of local folders
   project = $state<ProjectInfo | null>(null)
+  /** An open project fixes the language, so what the UI shows is what lands in the project. */
+  lang = $derived<Lang>(this.project?.config.language ?? this.uiLang)
   method = $state<Method | null>(null)
   cra = $state<Record<string, I18n>>({})
+  flowProtocols = $state<string[]>([]) // library flow types; their English name becomes the protocol
   modelName = $state<string | null>(null)
   model = $state<ModelPayload | null>(null)
   issues = $state<Issue[]>([])
@@ -71,7 +74,7 @@ class AppState {
   /** Snapshot unsaved edits into the version history (never into the project files). */
   async autosave(): Promise<void> {
     if (!this.project?.dirty) return
-    const r = await api<{ saved: boolean; time: string | null }>('POST', '/autosave')
+    const r = await api<{ saved: boolean; time: string | null }>('POST', '/autosave', undefined, true)
     if (r.saved) this.lastAutosave = r.time
   }
 
@@ -115,6 +118,8 @@ class AppState {
     this.method = await api<Method>('GET', '/method').catch(() => null)
     const cra = await api<{ entries: Record<string, I18n> }>('GET', '/catalog/cra')
     this.cra = cra.entries
+    const lib = await api<{ elements: ElementType[] }>('GET', '/library').catch(() => ({ elements: [] }))
+    this.flowProtocols = lib.elements.filter((t) => t.kind === 'flow').map((t) => t.name.en)
     const names = Object.keys(info.models)
     if (!this.modelName || !names.includes(this.modelName)) this.modelName = names[0] ?? null
     await this.refreshModel()
@@ -178,7 +183,7 @@ class AppState {
 
   async pollChanges(): Promise<void> {
     if (!this.project) return
-    const r = await api<{ changed: string[]; dirty: boolean }>('GET', '/changes')
+    const r = await api<{ changed: string[]; dirty: boolean }>('GET', '/changes', undefined, true)
     if (r.changed.length === 0) return
     if (r.dirty) {
       this.externalChange = true

@@ -1,0 +1,9 @@
+schema_version: 1
+id: F-0005
+uuid: 3bcb5103-0907-40f3-a93a-0c8b30a6f69e
+title: VPN tunnel
+library_ref: lib:ot/element/vpn-tunnel@1
+source: E-0006
+target: E-0005
+protocol: VPN tunnel
+assets: [A-0018]

@@ -87,4 +87,12 @@ git add . && git commit -m "Teilmodell Feldbus"
 threatwright build --format docx
 ```
 
-Für eine Freigabe setzen Sie einen Tag (`git tag v1.0`). Später zeigt `threatwright diff v1.0` als Änderungsnachweis, was sich seither fachlich geändert hat; siehe [Git-Arbeitsweise](git-arbeitsweise.md).
+Für eine Freigabe setzen Sie einen Tag (`git tag v1.0`). Später zeigt `threatwright diff v1.0` als Änderungsnachweis, was sich seither fachlich geändert hat; siehe [Git-Arbeitsweise](git-arbeitsweise.md). In der Oberfläche zeigt **Änderungen (Git)** dasselbe, auch vor dem Speichern.
+
+## 8. Für die CRA-Dokumentation (optional)
+
+- **CRA-Anforderungen:** zeigt je grundlegender Anforderung aus Anhang I, welche Bedrohungen und Maßnahmen sie abdecken. Was für Ihr Produkt nicht gilt, markieren Sie mit Begründung als nicht anwendbar.
+- **Schwachstellen:** Laden Sie die SBOM der Steuerungssoftware (CycloneDX JSON) hoch und ordnen Sie sie dem Element zu. Schwachstellenmeldungen (VEX, CSAF) zeigen, welche Komponente betroffen ist; jede betroffene Schwachstelle braucht eine Bedrohung ([SBOM und Schwachstellen](sbom.md)).
+- **Freigaben:** Akzeptierte Risiken bekommen Name, Rolle und Datum. Der Bericht listet sie mit dem Git-Stand im Abschnitt „Freigaben“.
+- **Nachweise:** Umgesetzte Maßnahmen bekommen einen Nachweis als Text, Datei (wird nach `evidence/` kopiert) oder Link.
+- **Einstellungen → Produkt und Lebenszyklus:** Supportzeitraum und nächste Überprüfung des Modells.

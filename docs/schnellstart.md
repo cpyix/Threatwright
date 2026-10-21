@@ -23,6 +23,8 @@ Das Werkzeug legt einen Ordner mit einem Teilmodell `main` an. Er enthält:
 
 Machen Sie den Ordner am besten gleich zum Git-Repository (`git init`).
 
+**Erst ausprobieren?** `threatwright init beispiel -l iot --example` legt ein fertiges kleines Beispielmodell der Produktart an (Elemente, Verbindungen, bewertete Bedrohungen, Maßnahmen, eine Akzeptanz). In der Oberfläche heißt das Ankreuzfeld „Mit Beispielmodell“.
+
 ## 3. Oberfläche starten
 
 ```

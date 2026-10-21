@@ -16,6 +16,8 @@ SCHEMA_VERSION: Literal[1] = 1
 Uuid = Annotated[uuidlib.UUID, PlainSerializer(str, return_type=str)]
 ObjectId = Annotated[str, Field(pattern=r"^[A-Za-z][A-Za-z0-9_]*-[0-9]{4,}$")]
 Stride = Literal["S", "T", "R", "I", "D", "E"]
+# plain file name in the project folder sbom/ (no paths)
+SbomFile = Annotated[str, Field(pattern=r"^[A-Za-z0-9_][A-Za-z0-9._-]*\.json$")]
 
 
 def new_uuid() -> uuidlib.UUID:
@@ -147,6 +149,7 @@ class Element(ModelObject):
     zone: str | None = None
     configurations: list[str] = []
     stride_not_relevant: dict[Stride, str] = {}  # category -> rationale
+    sbom: list[SbomFile] = []  # CycloneDX files in sbom/ describing this element's software
 
 
 class Flow(ModelObject):
@@ -207,6 +210,7 @@ class Threat(ModelObject):
     measures: list[ObjectId] = []
     questions: list[ObjectId] = []
     cra_refs: list[str] = []
+    vulnerabilities: list[str] = []  # ids (CVE, GHSA, ...) this threat treats
     status: ThreatStatus = "identified"
     acceptance: Decision | None = None
     rejection: Decision | None = None

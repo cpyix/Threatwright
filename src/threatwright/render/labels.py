@@ -34,6 +34,25 @@ LABELS: dict[str, tuple[str, str]] = {
         "Requirements that do not apply carry a rationale (CRA Art. 13(4)).",
     ),
     "col.tr_id": ("TR-Anforderung", "TR requirement"),
+    "section.vulnerabilities": ("Bekannte Schwachstellen", "Known vulnerabilities"),
+    "vulnerabilities_note": (
+        "Schwachstellen in Komponenten der Elemente laut SBOM und Schwachstellenmeldungen "
+        "(CycloneDX VEX, CSAF) im Projekt. Jede betroffene Schwachstelle braucht eine "
+        "Bedrohung (CRA Anhang I Teil II).",
+        "Vulnerabilities in components of the elements according to the SBOMs and "
+        "vulnerability statements (CycloneDX VEX, CSAF) in the project. Every affecting "
+        "vulnerability needs a threat (CRA Annex I part II).",
+    ),
+    "col.vulnerability": ("Schwachstelle", "Vulnerability"),
+    "col.element": ("Element", "Element"),
+    "col.component": ("Komponente (purl)", "Component (purl)"),
+    "col.state": ("Stand", "State"),
+    "col.detail": ("Erläuterung", "Detail"),
+    "col.sources": ("Quelle", "Source"),
+    "vuln_state.affected": ("betroffen", "affected"),
+    "vuln_state.under_investigation": ("in Prüfung", "under investigation"),
+    "vuln_state.fixed": ("behoben", "fixed"),
+    "vuln_state.not_affected": ("nicht betroffen", "not affected"),
     "cra_status.not_applicable": ("nicht anwendbar", "not applicable"),
     "cra_status.implemented": ("umgesetzt", "implemented"),
     "cra_status.planned": ("Maßnahme geplant", "measure planned"),

@@ -158,6 +158,16 @@ def _getters(f: Filters) -> dict[str, dict[str, Callable[[Ctx], str]]]:
             "rationale": lambda r: _s(r["rationale"]),
             "model": lambda r: r["model"],
         },
+        "vulnerabilities": {
+            "vulnerability": lambda v: v["vuln"],
+            "element": lambda v: f"{v['element']} {v['element_title']}".strip(),
+            "component": lambda v: v["purl"],
+            "state": lambda v: v["state_label"],
+            "threats": lambda v: _s(v["threats"]),
+            "detail": lambda v: _s(v["detail"]),
+            "sources": lambda v: _s(v["sources"]),
+            "model": lambda v: v["model"],
+        },
         "custom_fields": {
             "object": lambda c: c["object"],
             "field": lambda c: c["label"],
@@ -363,6 +373,8 @@ class _Builder:
                 pairs.append(("acceptance", f"{who}{when}: {acc['rationale']}"))
             if th["questions"]:
                 pairs.append(("questions", _refs(th["questions"], with_title=True)))
+            if th["vulnerabilities"]:
+                pairs.append(("col.vulnerability", ", ".join(th["vulnerabilities"])))
             out.append({"kind": "h2", "text": f"{th['id']} {th['title']}"})
             out.append(self.fields(pairs))
         return out
@@ -402,6 +414,12 @@ class _Builder:
         return [
             {"kind": "p", "text": self.t("cra_requirements_note")},
             *self.table("cra_requirements", self.ctx["cra_requirements"], s.columns),
+        ]
+
+    def vulnerabilities(self, s: Section) -> list[Block]:
+        return [
+            {"kind": "p", "text": self.t("vulnerabilities_note")},
+            *self.table("vulnerabilities", self.ctx["vulnerabilities"], s.columns),
         ]
 
     def approvals(self, s: Section) -> list[Block]:

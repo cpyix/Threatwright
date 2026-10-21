@@ -8,6 +8,7 @@ from collections.abc import Callable
 from dataclasses import asdict
 from typing import Any
 
+from threatwright import sbom
 from threatwright.branding import PRODUCT_NAME
 from threatwright.cra import coverage as cra_coverage
 from threatwright.library import load_catalog
@@ -55,6 +56,7 @@ KNOWN_VARIABLES = frozenset(
         "approvals",
         "revision",
         "cra_requirements",
+        "vulnerabilities",
         "outline",
     }
 )
@@ -153,6 +155,7 @@ def _model_data(
                 "zone": d["zone"],
                 "zone_title": zones.get(d["zone"] or "", d["zone"]),
                 "configurations": d["configurations"],
+                "sbom": d["sbom"],
             }
         )
 
@@ -225,6 +228,7 @@ def _model_data(
             ],
             "questions": _refs(th.questions, titles),
             "cra_refs": [{"id": c, "title": cra.get(c, "")} for c in th.cra_refs],
+            "vulnerabilities": list(th.vulnerabilities),
             "status": th.status,
             "status_label": t(f"threat_status.{th.status}", lang),
             "acceptance": th.acceptance.model_dump() if th.acceptance else None,
@@ -540,6 +544,7 @@ def build_context(
     filters = filters_for(method, lang)
     subs = [project.models[model_name]] if model_name else list(project.models.values())
     cra_cat = load_catalog("cra").entries
+    inv = sbom.inventory(project)
     cra = {k: (v.get(lang, "") if isinstance(v, dict) else v) for k, v in cra_cat.items()}
 
     data: dict[str, list[Ctx]] = {}
@@ -614,6 +619,17 @@ def build_context(
             }
             for sub in subs
             for r in cra_coverage(sub)
+        ],
+        "vulnerabilities": [
+            {
+                **asdict(v),
+                "open": v.open,
+                "element_title": _titles(sub).get(v.element, ""),
+                "state_label": t(f"vuln_state.{v.state}", lang),
+                "model": sub.name,
+            }
+            for sub in subs
+            for v in sbom.findings(sub, inv)
         ],
     }
     env = make_env(filters)

@@ -356,6 +356,14 @@
       "format": "uuid",
       "title": "Uuid",
       "type": "string"
+    },
+    "vulnerabilities": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Vulnerabilities",
+      "type": "array"
     }
   },
   "required": [

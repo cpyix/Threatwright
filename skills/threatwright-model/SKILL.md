@@ -84,6 +84,7 @@ library_ref: lib:ot/element/plc@1     # optional: library building block it came
 kind: device                          # process | device | datastore | external
 zone: Z-INTERNAL
 configurations: []                    # empty = all variants
+sbom: [firmware.cdx.json]             # optional: CycloneDX files in <project>/sbom/
 stride_not_relevant:                  # optional, rationale required
   R: No user actions on this device; logging happens in the HMI.
 ```
@@ -152,6 +153,7 @@ residual:                             # optional: after measures, same fields
 measures: [M-0001, M-0002]
 questions: []
 cra_refs: [AI-I-2-d, AI-I-2-f]        # ids from the CRA catalog only
+vulnerabilities: []                   # vulnerability ids this threat treats, e.g. CVE-2024-0001
 status: identified                    # identified | assessed | treated | accepted | rejected
 acceptance:                           # only with status accepted; only what the user tells you
   by: <name given by the user>
@@ -183,6 +185,10 @@ cra_refs: []
 ```
 
 Several threats may share one measure: reference the existing id instead of duplicating it.
+
+### SBOMs and vulnerabilities
+
+CycloneDX JSON SBOMs live in `<project>/sbom/`, vulnerability statements (CycloneDX VEX, CSAF) in `<project>/vulnerabilities/`. Never write or edit these files yourself: they come from the user's tools. `threatwright vulnerabilities <project>` lists every vulnerability per element. Each one with state `affected` or `under_investigation` needs a threat on that element with the id in `vulnerabilities` (error `vulnerability-untreated`); see `docs/sbom.md`.
 
 ### Question
 

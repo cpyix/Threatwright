@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
 
+from threatwright import sbom
 from threatwright.cra import coverage as cra_coverage
 from threatwright.library import check_library_refs, load_catalog, load_libraries
 from threatwright.method import Method, MethodError, evaluate, load_method
@@ -63,11 +64,14 @@ def validate(project: Project) -> list[Issue]:
     issues += libs.issues
     issues += check_library_refs(project, libs)[0]
     cra = set(load_catalog("cra").entries)
+    inv = sbom.inventory(project)
+    issues += inv.issues
     uuids: dict[str, str] = {}
     for sub in project.models.values():
         ctx = _Ctx(project, sub, method, uuids)
         _check_model(ctx)
         _check_cra_requirements(ctx, cra)
+        _check_vulnerabilities(ctx, inv)
         for coll, objects in sub.objects.items():
             for obj in objects.values():
                 for ref in getattr(obj, "cra_refs", []):
@@ -350,6 +354,25 @@ def _check_cra_requirements(ctx: _Ctx, catalog: set[str]) -> None:
                 f"cra_not_applicable.{row.id}",
                 f"CRA requirement {row.id} has no threat or measure and is not marked "
                 "as not applicable",
+            )
+
+
+def _check_vulnerabilities(ctx: _Ctx, inv: sbom.Inventory) -> None:
+    invalid = {i.path.name for i in inv.issues if i.path is not None}
+    for e in _of(ctx.sub, "elements", Element):
+        for name in e.sbom:
+            if name not in inv.sboms and name not in invalid:
+                ctx.add("error", "sbom-missing", "elements", e, "sbom", f"{sbom.SBOM_DIR}/{name}")
+    for f in sbom.findings(ctx.sub, inv):
+        if f.open and not f.threats:
+            element = ctx.sub.objects["elements"][f.element]
+            ctx.add(
+                "error",
+                "vulnerability-untreated",
+                "elements",
+                element,
+                "sbom",
+                f"{f.vuln} ({f.state}) in {f.purl}: no threat lists it in `vulnerabilities`",
             )
 
 

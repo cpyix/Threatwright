@@ -14,6 +14,7 @@ VIEWS = [
     "assistant",
     "coverage",
     "threats",
+    "vulnerabilities",
     "validation",
     "cra",
     "settings",

@@ -33,6 +33,9 @@ Die Oberfläche zeigt dieselben Meldungen, weil sie dieselbe Prüfung aufruft.
 | `rejection-without-rationale` | Verwerfung ohne Begründung |
 | `custom-required` | eigenes Pflichtfeld ist leer |
 | `custom-invalid` | eigenes Feld hat einen ungültigen Wert |
+| `sbom-missing` | Element nennt in `sbom` eine Datei, die es in `sbom/` nicht gibt |
+| `sbom-invalid` | Datei in `sbom/` oder `vulnerabilities/` ist kein lesbares CycloneDX- bzw. CSAF-JSON |
+| `vulnerability-untreated` | Eine Schwachstelle betrifft eine Komponente des Elements (Stand betroffen oder in Prüfung), aber keine Bedrohung des Modells nennt sie in `vulnerabilities` ([SBOM und Schwachstellen](sbom.md)) |
 
 ## Warnungen
 

@@ -1,6 +1,7 @@
 <script lang="ts">
   import ArrowRightLeft from '@lucide/svelte/icons/arrow-right-left'
   import Box from '@lucide/svelte/icons/box'
+  import Bug from '@lucide/svelte/icons/bug'
   import CircleCheckBig from '@lucide/svelte/icons/circle-check-big'
   import ClipboardCheck from '@lucide/svelte/icons/clipboard-check'
   import FileText from '@lucide/svelte/icons/file-text'
@@ -36,6 +37,7 @@
   import Setup from './lib/Setup.svelte'
   import Start from './lib/Start.svelte'
   import Validation from './lib/Validation.svelte'
+  import Vulnerabilities from './lib/Vulnerabilities.svelte'
   import { loading } from './loading.svelte'
   import { app, type View } from './state.svelte'
   import type { Collection } from './types'
@@ -127,6 +129,7 @@
               simple('assistant', ShieldQuestion, () => ({ kind: 'assistant', target: null })),
               simple('coverage', Grid3x3),
               collection('threats', ShieldAlert),
+              simple('vulnerabilities', Bug),
               collection('measures', ShieldCheck),
               collection('questions', MessageCircleQuestion),
             ],
@@ -278,6 +281,8 @@
       <Controls />
     {:else if app.view.kind === 'cra'}
       <CraRequirements />
+    {:else if app.view.kind === 'vulnerabilities'}
+      <Vulnerabilities />
     {:else if app.view.kind === 'documents'}
       <Documents />
     {:else if app.view.kind === 'objects'}

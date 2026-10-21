@@ -27,7 +27,7 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ValidationError
 
-from threatwright import __version__, archive, assistant, history
+from threatwright import __version__, archive, assistant, history, sbom
 from threatwright.arc import ArcOverride, applicability, set_override
 from threatwright.auth import REALM, BasicAuth, users_from
 from threatwright.branding import PRODUCT_NAME, PROJECT_FILE
@@ -75,6 +75,7 @@ MODEL_NAME = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 MAX_BODY = 1 << 20
 UPLOAD_PATH = "/api/project/upload"
 OSCAL_UPLOAD_PATH = "/api/oscal/upload"
+SBOM_UPLOAD_PATH = "/api/sbom/upload"
 CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
     "font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; "
@@ -365,7 +366,7 @@ def create_app(
         if request.url.path.startswith("/api/"):
             if API_HEADER.lower() not in request.headers:  # cross-site requests cannot set it
                 return JSONResponse({"detail": f"missing {API_HEADER} header"}, status_code=403)
-            uploads = (UPLOAD_PATH, OSCAL_UPLOAD_PATH)
+            uploads = (UPLOAD_PATH, OSCAL_UPLOAD_PATH, SBOM_UPLOAD_PATH)
             limit = archive.MAX_UPLOAD if request.url.path in uploads else MAX_BODY
             if int(request.headers.get("content-length") or 0) > limit:
                 return JSONResponse({"detail": "request too large"}, status_code=413)
@@ -771,6 +772,77 @@ def create_app(
         """CRA Annex I requirements with the threats and measures addressing them."""
         with session.lock:
             return [asdict(r) for r in cra_coverage(session.model(name))]
+
+    # --- SBOMs and vulnerabilities (ADR-0016) --------------------------------------
+
+    @app.get("/api/sbom")
+    def sbom_files() -> dict[str, Any]:
+        """SBOM and vulnerability files of the project, with the elements using each SBOM."""
+        with session.lock:
+            project = session.require()
+            inv = sbom.inventory(project)
+            used: dict[str, list[str]] = {}
+            for sub in project.models.values():
+                for e in sub.objects["elements"].values():
+                    for file in getattr(e, "sbom", []):
+                        used.setdefault(file, []).append(f"{sub.name}/{e.id}")
+            root = project.root
+            return {
+                "sboms": [
+                    {
+                        "file": p.name,
+                        "components": len(inv.sboms.get(p.name, [])),
+                        "elements": used.get(p.name, []),
+                    }
+                    for p in sbom.files(root, sbom.SBOM_DIR)
+                ],
+                "vulnerability_files": [p.name for p in sbom.files(root, sbom.VULN_DIR)],
+                "statements": len(inv.statements),
+                "issues": [f"{relative(i, root)}: {i.message}" for i in inv.issues],
+            }
+
+    @app.post(SBOM_UPLOAD_PATH)
+    async def sbom_upload(request: Request, name: str, kind: str = "sbom") -> dict[str, Any]:
+        """Store an SBOM (sbom/) or a VEX/CSAF document (vulnerabilities/) in the project."""
+        folder = {"sbom": sbom.SBOM_DIR, "vulnerabilities": sbom.VULN_DIR}.get(kind)
+        if folder is None:
+            raise HTTPException(422, "kind: sbom|vulnerabilities")
+        base_name = Path(name).name
+        if not re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9._-]*\.json", base_name):
+            raise HTTPException(422, "file name: letters, digits, . _ - and the suffix .json")
+        data = bytearray()
+        async for chunk in request.stream():
+            data += chunk
+            if len(data) > sbom.MAX_BYTES:
+                raise HTTPException(413, f"file larger than {sbom.MAX_BYTES >> 20} MB")
+        with session.lock:
+            root = session.require().root.resolve()
+            target_dir = os.path.normpath(os.path.join(root, folder))
+            target = os.path.normpath(os.path.join(target_dir, base_name))
+            if not target.startswith(target_dir + os.sep):  # ".." (the check CodeQL recognises)
+                raise HTTPException(400, "invalid file name")
+            with tempfile.TemporaryDirectory() as tmp:
+                check = Path(tmp) / base_name
+                check.write_bytes(bytes(data))
+                try:  # only files Threatwright can read land in the project
+                    if kind == "sbom":
+                        count = len(sbom.read_sbom(check))
+                    else:
+                        count = len(sbom.read_statements(check, base_name))
+                except sbom.SbomError as exc:
+                    raise HTTPException(422, str(exc)) from exc
+            replaced = os.path.exists(target)
+            os.makedirs(target_dir, exist_ok=True)
+            Path(target).write_bytes(bytes(data))
+            return {"written": f"{folder}/{base_name}", "replaced": replaced, "count": count}
+
+    @app.get("/api/models/{name}/vulnerabilities")
+    def vulnerabilities(name: str) -> list[dict[str, Any]]:
+        """Vulnerabilities concerning components of the model's elements."""
+        with session.lock:
+            sub = session.model(name)
+            found = sbom.findings(sub, sbom.inventory(session.require()))
+            return [{**asdict(f), "open": f.open} for f in found]
 
     @app.get("/api/models/{name}/diagram.svg")
     def diagram_svg(name: str) -> Response:

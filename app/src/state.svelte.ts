@@ -12,6 +12,7 @@ export type View =
   | { kind: 'settings' }
   | { kind: 'controls' }
   | { kind: 'cra' }
+  | { kind: 'vulnerabilities' }
   | { kind: 'documents' }
   | { kind: 'objects'; collection: Collection; selected: string | null }
   | { kind: 'history' }
@@ -21,6 +22,13 @@ export interface HistoryEntry {
   time: string
   kind: 'auto' | 'save' | 'open'
   counts: Record<Collection, number>
+}
+
+export interface SbomInfo {
+  sboms: { file: string; components: number; elements: string[] }[]
+  vulnerability_files: string[]
+  statements: number
+  issues: string[]
 }
 
 const LANG_KEY = 'tw-lang'
@@ -69,6 +77,7 @@ class AppState {
   changed = $state<Set<string>>(new Set())
   tags = $state<{ name: string; date: string }[]>([])
   vcs = $state(false)
+  sbom = $state<SbomInfo>({ sboms: [], vulnerability_files: [], statements: 0, issues: [] })
   lastAutosave = $state<string | null>(null) // ISO time of the latest autosave in this session
   recovery = $state<HistoryEntry | null>(null) // unsaved autosave found when the project was opened
 
@@ -121,6 +130,7 @@ class AppState {
     this.cra = cra.entries
     const lib = await api<{ elements: ElementType[] }>('GET', '/library').catch(() => ({ elements: [] }))
     this.flowProtocols = lib.elements.filter((t) => t.kind === 'flow').map((t) => t.name.en)
+    await this.refreshSbom().catch(() => {})
     const names = Object.keys(info.models)
     if (!this.modelName || !names.includes(this.modelName)) this.modelName = names[0] ?? null
     await this.refreshModel()
@@ -132,6 +142,10 @@ class AppState {
   /** Landing view: the diagram once there is something to see, else the setup wizard. */
   home(): View {
     return this.model && this.objects('elements').length ? { kind: 'diagram' } : { kind: 'setup', step: 0 }
+  }
+
+  async refreshSbom(): Promise<void> {
+    this.sbom = await api<SbomInfo>('GET', '/sbom')
   }
 
   async refreshProject(): Promise<void> {

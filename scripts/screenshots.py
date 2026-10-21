@@ -75,6 +75,28 @@ def build_model(call: Call) -> dict[str, str]:
                 t for t in adopted["model"]["objects"]["threats"] if t["id"] == adopted["id"]
             )
             call("PUT", f"/models/main/threats/{threat['id']}", {**threat, "cyber_cause": True})
+
+    # fields added in 0.4.0, so the compatibility sample covers them
+    call(
+        "PUT",
+        "/project/settings",
+        {"lifecycle": "development", "support_until": "2031-12-31", "next_review": "2027-06-30"},
+    )
+    model = call("GET", "/models/main")
+    meta = {
+        **model["meta"],
+        "cra_not_applicable": {"AI-I-2-m": "Demo: no user data on the machine."},
+    }
+    call("PUT", "/models/main/meta", meta)
+    measure = model["objects"]["measures"][0]
+    call(
+        "PUT",
+        f"/models/main/measures/{measure['id']}",
+        {**measure, "evidence_refs": ["https://example.invalid/test-report"]},
+    )
+    flow = model["objects"]["flows"][0]["id"]
+    route = {"source_side": "bottom", "target_side": "top", "points": []}
+    call("PUT", "/models/main/layout", {"nodes": model["layout"]["nodes"], "edges": {flow: route}})
     call("POST", "/save", {})
     return ids
 

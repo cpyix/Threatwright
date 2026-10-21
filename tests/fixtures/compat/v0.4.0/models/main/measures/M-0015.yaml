@@ -1,0 +1,9 @@
+schema_version: 1
+id: M-0015
+uuid: fb7f1875-8f03-4856-947d-50485e42a63d
+title: Local confirmation of remote commands
+description: Remote commands that trigger motion, change the operating mode or modify programs or safety-relevant parameters are executed only after confirmation by a person at the machine. The person can see the hazard zone and can reject execution. Pure diagnostics are possible without confirmation.
+library_ref: lib:ot/measure/operator-confirmation-remote@1
+kind: design
+evidence: Functional description, test report of a remote command without and with confirmation.
+cra_refs: [AI-I-2-d, AI-I-2-f]

@@ -1,0 +1,5 @@
+schema_version: 1
+id: A-0018
+uuid: 98bea6cb-c3d3-46c1-b8b1-d0e743d5d737
+title: Remote maintenance connection (F-0005)
+asset_class: Functions.CommunicationNetwork

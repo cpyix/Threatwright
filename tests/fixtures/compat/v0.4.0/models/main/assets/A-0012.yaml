@@ -1,0 +1,5 @@
+schema_version: 1
+id: A-0012
+uuid: a446b4af-30f6-47bf-a156-3e8677de5b80
+title: VPN keys and certificates (Remote service gateway)
+asset_class: Security.Secrets

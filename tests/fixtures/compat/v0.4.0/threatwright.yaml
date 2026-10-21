@@ -1,0 +1,7 @@
+schema_version: 1
+name: Demo machine
+uuid: d80fc5c7-9f01-4133-af58-d556b1afd872
+language: en
+support_until: 2031-12-31
+next_review: 2027-06-30
+libraries: [ot]

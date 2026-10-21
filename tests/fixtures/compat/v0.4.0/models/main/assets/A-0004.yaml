@@ -1,0 +1,6 @@
+schema_version: 1
+id: A-0004
+uuid: dbce274e-113a-4775-88d6-771a6ebe060c
+title: Drive parameters (Axis drive)
+description: Raise integrity if no safe speed monitoring exists
+asset_class: Other.Configuration

@@ -15,7 +15,8 @@ Local-first threat modelling and risk analysis for products with digital element
 - **Offline and local:** Windows, Linux and macOS, no admin rights, no network access at runtime, no telemetry.
 - **Git is the database:** one YAML file per object, stable IDs, saving without changes produces no diff. Merge requests are the change history; `threatwright diff` creates change evidence between releases.
 - **TR-03183-1 as configuration:** scales, factors, risk matrix and acceptance rules live in a method file with page references and can be overridden per project ([Methodik](docs/methodik.md)).
-- **Building blocks instead of empty forms:** libraries for OT (80 element types, 239 threat and 111 measure templates), IoT/consumer (19, 49, 37; ETSI EN 303 645 references) and software (18, 48, 38; OWASP ASVS/MASVS references), chosen when you create a project; STRIDE assistant, coverage matrix, data flow diagram.
+- **Building blocks instead of empty forms:** libraries for OT (80 element types, 239 threat and 111 measure templates), IoT/consumer (19, 49, 37; ETSI EN 303 645 references) and software (18, 48, 38; OWASP ASVS/MASVS references), chosen when you create a project; example project per product type; STRIDE assistant, coverage matrix, data flow diagram with routed connections.
+- **CRA evidence:** coverage of every essential requirement of Annex I with justified "not applicable"; SBOMs (CycloneDX) and vulnerability statements (VEX, CSAF) linked to elements, with an error for every known vulnerability without a threat ([SBOM](docs/sbom.md)); approvals with name, role, date and Git revision; evidence files and links on measures; support period and review date; change evidence since a release in the GUI.
 - **Documents from your own templates:** DOCX, ODT, Markdown, HTML, PDF via LibreOffice; layout and outline without code changes ([Vorlagenreferenz](docs/vorlagenreferenz.md)).
 - **CI:** the same checks as the GUI in GitLab or GitHub pipelines, template pre-filled per project ([CI](docs/ci.md)).
 - **Interop:** OSCAL import (catalogs such as Grundschutz++, profiles, component definitions), Threat Dragon and CSV import, CSV/JSON/XLSX export.
@@ -41,7 +42,7 @@ Local-first threat modelling and risk analysis for products with digital element
 
 The screenshots show a neutral demo model built from the library building blocks; `uv run python scripts/screenshots.py` regenerates them.
 
-**Contents:** [Install](#install) · [Usage](#usage) · [Docker](#docker-cli-and-pipelines) · [Hosting the GUI](#hosting-the-gui-container-or-server) · [AI assistants](#editing-models-with-an-ai-assistant) · [Documentation](#documentation-german) · [Develop and contribute](#develop-and-contribute) · [License](#license)
+**Contents:** [Install](#install) · [Usage](#usage) · [Docker](#docker-cli-and-pipelines) · [Hosting the GUI](#hosting-the-gui-container-or-server) · [AI assistants](#editing-models-with-an-ai-assistant) · [Documentation](#documentation) · [Develop and contribute](#develop-and-contribute) · [License](#license)
 
 ## Use Threatwright
 
@@ -63,11 +64,13 @@ Optional: Git (change evidence between releases), LibreOffice (PDF output). To b
 ```
 threatwright init my-product --name "My product"   # new project (TR-03183-1 standard, OT library)
 threatwright init my-device -l iot -l software      # other product types: ot, iot, software (repeatable)
+threatwright init try-it -l iot --example           # small ready-made example model to explore
 threatwright --project my-product                  # GUI in the default browser
 threatwright --project my-product --no-browser     # GUI, prints the URL instead
 threatwright validate my-product                   # all rules; exit code 1 on errors
 threatwright build my-product --format docx        # documents into my-product/build
 threatwright diff v1.0 --path my-product           # change evidence since tag v1.0
+threatwright vulnerabilities my-product            # known vulnerabilities per element (SBOM, VEX, CSAF)
 threatwright ci gitlab my-product                  # GitLab pipeline for this project
 threatwright --help                                # all commands
 ```
@@ -179,6 +182,7 @@ Run `threatwright --project my-product --no-browser --port 8080` (bound to `127.
 #### Before you host it
 
 - **Login and TLS.** Keep the login on (default), use long passwords, and serve it over HTTPS beyond your own machine.
+- **Archive instead of clutter.** Projects can be archived on the start page; archived projects only show up when you search for them and can then be deleted for good after a confirmation.
 - **One shared session per instance.** Everyone works on the same open project and in-memory state; it suits one person or a coordinated team. Run one instance per team if several people work in parallel.
 - **Persistent storage.** Mount `/work` (see above), or the data is lost with the container.
 - **Git stays with you.** The GUI saves files into the workspace; commit, push and merge requests happen outside, as with the local GUI.
@@ -194,9 +198,11 @@ Project files are plain YAML, so an AI assistant can create or change a model di
 
 Review what the assistant changed (e.g. with `git diff` or `threatwright diff`) before you rely on it.
 
-### Documentation (German)
+### Documentation
 
-[Schnellstart](docs/schnellstart.md) · [Tutorial](docs/tutorial.md) · [Methodik](docs/methodik.md) · [Prüfregeln](docs/pruefregeln.md) · [Ist das ein Cyberrisiko?](docs/faq-cyberrisiko.md) · [Bibliotheksformat](docs/bibliotheksformat.md) · [Vorlagenreferenz](docs/vorlagenreferenz.md) · [Git-Arbeitsweise](docs/git-arbeitsweise.md) · [OSCAL](docs/oscal.md) · [CI](docs/ci.md) · [Offene Prüfpunkte](docs/VERIFY.md) · [CRA-Selbstbewertung](docs/cra-self-assessment.md)
+English: [Quick start](docs/en/quickstart.md) · [Tutorial](docs/en/tutorial.md)
+
+German: [Schnellstart](docs/schnellstart.md) · [Tutorial](docs/tutorial.md) · [Methodik](docs/methodik.md) · [Prüfregeln](docs/pruefregeln.md) · [SBOM und Schwachstellen](docs/sbom.md) · [Ist das ein Cyberrisiko?](docs/faq-cyberrisiko.md) · [Bibliotheksformat](docs/bibliotheksformat.md) · [Vorlagenreferenz](docs/vorlagenreferenz.md) · [Git-Arbeitsweise](docs/git-arbeitsweise.md) · [OSCAL](docs/oscal.md) · [CI](docs/ci.md) · [Offene Prüfpunkte](docs/VERIFY.md) · [CRA-Selbstbewertung](docs/cra-self-assessment.md)
 
 ## Develop and contribute
 

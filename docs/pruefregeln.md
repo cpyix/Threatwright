@@ -56,4 +56,7 @@ Die Oberfläche zeigt dieselben Meldungen, weil sie dieselbe Prüfung aufruft.
 | `unknown-cra-ref` | CRA-Bezug ist nicht im CRA-Katalog |
 | `cra-requirement-uncovered` | Grundlegende Anforderung aus CRA Anhang I ohne Bedrohung oder Maßnahme mit diesem CRA-Bezug und nicht in `cra_not_applicable` (`model.yaml`) begründet; erst geprüft, sobald das Modell Bedrohungen hat |
 | `implemented-without-evidence` | Maßnahme mit Status „umgesetzt“ ohne Nachweis: weder `evidence` (Text) noch `evidence_refs` (Datei oder Link) |
+| `support-period-missing` | `support_until` in `threatwright.yaml` fehlt, obwohl das Projekt Bedrohungen hat oder `lifecycle: post_market` ist (CRA Art. 13 Abs. 8) |
+| `support-period-ended` | Der Supportzeitraum (`support_until`) liegt in der Vergangenheit |
+| `review-overdue` | Die nächste Überprüfung (`next_review`) liegt in der Vergangenheit |
 | `acceptance-undocumented` | Bei einer Akzeptanz fehlt Name (`by`), Rolle (`role`) oder Datum (`date`) der Freigabe |

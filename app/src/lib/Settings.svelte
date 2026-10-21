@@ -10,6 +10,29 @@
   let note = $state('')
   const lang = $derived(app.lang)
 
+  // lifecycle, support period (CRA Art. 13(8)) and next review of the threat model
+  let product = $state({ lifecycle: 'development', support_until: '', next_review: '' })
+  let productNote = $state('')
+  $effect(() => {
+    const c = app.project?.config
+    if (c) product = { lifecycle: c.lifecycle, support_until: c.support_until ?? '', next_review: c.next_review ?? '' }
+  })
+
+  async function saveProduct() {
+    productNote = ''
+    try {
+      app.project = await api('PUT', '/project/settings', {
+        lifecycle: product.lifecycle,
+        support_until: product.support_until || null,
+        next_review: product.next_review || null,
+      })
+      await app.afterChange()
+      productNote = tr(lang, 'settings_applied')
+    } catch (e) {
+      productNote = e instanceof ApiError ? e.message : String(e)
+    }
+  }
+
   async function load() {
     note = ''
     const q = image ? `?image=${encodeURIComponent(image)}` : ''
@@ -42,6 +65,23 @@
 
 <section class="settings">
   <h1>{tr(lang, 'settings')}</h1>
+
+  <h2>{tr(lang, 'product_lifecycle')}</h2>
+  <p class="muted">{tr(lang, 'product_lifecycle_help')}</p>
+  <form class="grid" onsubmit={(e) => { e.preventDefault(); saveProduct() }}>
+    <label for="s-lifecycle">{tr(lang, 'lifecycle')}</label>
+    <select id="s-lifecycle" bind:value={product.lifecycle} data-testid="settings-lifecycle">
+      <option value="development">{tr(lang, 'lifecycle_development')}</option>
+      <option value="post_market">{tr(lang, 'lifecycle_post_market')}</option>
+    </select>
+    <label for="s-support">{tr(lang, 'support_until')}</label>
+    <input id="s-support" type="date" bind:value={product.support_until} data-testid="settings-support-until" />
+    <label for="s-review">{tr(lang, 'next_review')}</label>
+    <input id="s-review" type="date" bind:value={product.next_review} data-testid="settings-next-review" />
+    <span></span>
+    <button type="submit" class="primary" data-testid="settings-apply">{tr(lang, 'apply')}</button>
+  </form>
+  {#if productNote}<p role="status">{productNote}</p>{/if}
 
   <h2>{tr(lang, 'method')}</h2>
   <p>
@@ -88,6 +128,15 @@
   h2 {
     font-size: 1.05rem;
     margin-top: 1.5rem;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 16rem);
+    gap: 0.5rem 0.75rem;
+    align-items: center;
+  }
+  .grid button {
+    justify-self: start;
   }
   .row {
     display: flex;

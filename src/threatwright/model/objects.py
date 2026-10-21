@@ -58,6 +58,8 @@ class ProjectConfig(Versioned):
     method: str = "tr-03183-1"
     language: Literal["de", "en"] = "de"
     lifecycle: Literal["development", "post_market"] = "development"
+    support_until: datetime.date | None = None  # end of the support period (CRA Art. 13(8))
+    next_review: datetime.date | None = None  # when the threat model is reviewed next
     libraries: list[str] = []
     templates: list[str] = []
 

@@ -222,6 +222,10 @@ class _Builder:
             ("method", c["method"]["title"]),
             ("lifecycle", c["project"]["lifecycle_label"]),
         ]
+        if c["project"]["support_until"]:
+            pairs.append(("support_until", self.f["date"](c["project"]["support_until"], "long")))
+        if c["project"]["next_review"]:
+            pairs.append(("next_review", self.f["date"](c["project"]["next_review"], "long")))
         return [
             {"kind": "title", "text": c["document"]["title"]},
             {"kind": "subtitle", "text": subtitle},

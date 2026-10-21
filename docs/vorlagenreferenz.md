@@ -97,7 +97,7 @@ Abschnittstypen und wählbare Spalten (Standardspalten **fett**):
 
 | Typ | Inhalt | Spalten |
 |---|---|---|
-| `cover` | Titel, Projekt, Modell, Version, Stand, Methode, Lebenszyklus; danach Seitenumbruch | – |
+| `cover` | Titel, Projekt, Modell, Version, Stand, Methode, Lebenszyklus, Supportzeitraum und nächste Überprüfung (falls gesetzt); danach Seitenumbruch | – |
 | `scope` | Modellbeschreibung, Ausbaustufen / Varianten, Zonen mit Umgebung | – |
 | `method` | Methode, Expositionsformel, **Hinweis zur Matrix-Lesart** (`inverted`/`literal`), **Akzeptanzgrenze**, wirksame Risikomatrix, Sonderregeln, Freigabeberechtigte | – |
 | `assets` | Assets mit TR-Klasse und C/I/A-Impact (inkl. Vererbung und Verstärker) | **id, title, asset_class, c, i, a**, protects, configurations, description |
@@ -204,7 +204,7 @@ Alle Werte werden bei jedem Erzeugen neu berechnet und nie gespeichert. Die Vorl
 | Variable | Inhalt |
 |---|---|
 | `lang` | `de` oder `en` |
-| `project` | `name`, `uuid`, `method`, `language`, `lifecycle`, `lifecycle_label` |
+| `project` | `name`, `uuid`, `method`, `language`, `lifecycle`, `lifecycle_label`, `support_until` (Ende des Supportzeitraums), `next_review` (nächste Überprüfung; beide Datum oder `None`) |
 | `model` | aktuelles Modell (bei `scope: project`: `None`): `name`, `title`, `uuid`, `description`, `configurations[]` (`id`, `title`, `description`), `zones[]` (`id`, `title`, `description`, `interface`, `interface_label`, `access`, `access_label`, `user`, `user_label`), `changelog[]` |
 | `models` | Liste aller Modelle im Dokument, Felder wie `model` |
 | `document` | `title` (Name der Vorlage), `template` (ID), `scope`, `version` und `date` (jüngster Eintrag der Änderungshistorie), `generator` |

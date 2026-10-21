@@ -3,12 +3,14 @@
 Rule codes are stable identifiers; docs/validation-rules.md describes each.
 """
 
+import datetime
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
 
 from threatwright import sbom
+from threatwright.branding import PROJECT_FILE
 from threatwright.cra import coverage as cra_coverage
 from threatwright.library import check_library_refs, load_catalog, load_libraries
 from threatwright.method import Method, MethodError, evaluate, load_method
@@ -53,8 +55,9 @@ class _Ctx:
         return set(self.sub.objects[collection])
 
 
-def validate(project: Project) -> list[Issue]:
+def validate(project: Project, today: datetime.date | None = None) -> list[Issue]:
     issues = list(project.issues)
+    issues += _check_lifecycle(project, today or datetime.date.today())
     method: Method | None = None
     try:
         method = load_method(project.root, project.config)
@@ -86,6 +89,45 @@ def validate(project: Project) -> list[Issue]:
                         )
         issues += ctx.issues
     return issues
+
+
+def _check_lifecycle(project: Project, today: datetime.date) -> list[Issue]:
+    """Support period (CRA Art. 13(8)) and review date of the threat model."""
+    path = project.root / PROJECT_FILE
+    cfg = project.config
+    out = []
+    has_threats = any(sub.objects["threats"] for sub in project.models.values())
+    if cfg.support_until is None and (has_threats or cfg.lifecycle == "post_market"):
+        out.append(
+            Issue(
+                path,
+                "support_until",
+                "set the end of the support period",
+                "support-period-missing",
+                "warning",
+            )
+        )
+    elif cfg.support_until is not None and cfg.support_until < today:
+        out.append(
+            Issue(
+                path,
+                "support_until",
+                f"support period ended on {cfg.support_until.isoformat()}",
+                "support-period-ended",
+                "warning",
+            )
+        )
+    if cfg.next_review is not None and cfg.next_review < today:
+        out.append(
+            Issue(
+                path,
+                "next_review",
+                f"review of the threat model was due on {cfg.next_review.isoformat()}",
+                "review-overdue",
+                "warning",
+            )
+        )
+    return out
 
 
 def _check_model(ctx: _Ctx) -> None:

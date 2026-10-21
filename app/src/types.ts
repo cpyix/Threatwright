@@ -7,7 +7,15 @@ export type Collection = (typeof COLLECTIONS)[number]
 
 export interface ProjectInfo {
   root: string
-  config: { name: string; language: Lang; method: string; libraries: string[]; lifecycle: string }
+  config: {
+    name: string
+    language: Lang
+    method: string
+    libraries: string[]
+    lifecycle: 'development' | 'post_market'
+    support_until: string | null
+    next_review: string | null
+  }
   custom_fields: { fields: Record<string, CustomField[]> }
   models: Record<string, { title: string; counts: Record<Collection, number> }>
   product_libraries: string[]

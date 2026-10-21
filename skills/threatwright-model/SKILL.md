@@ -23,7 +23,8 @@ Threatwright is a local-first tool for threat modelling and risk analysis of pro
 
 ```
 my-product/
-  threatwright.yaml            project: name, method, language, libraries
+  threatwright.yaml            project: name, method, language, libraries, lifecycle,
+                               support_until and next_review (dates, only from the user)
   custom-fields.yaml           optional extra fields per object type
   method-overrides.yaml        optional project overrides of the risk method
   models/

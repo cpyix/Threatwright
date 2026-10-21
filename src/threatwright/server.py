@@ -9,6 +9,7 @@ The server holds exactly one open project in memory; files are written only
 on an explicit save.
 """
 
+import datetime
 import json
 import os
 import re
@@ -306,6 +307,14 @@ class AddLibraries(BaseModel):
     add: list[str]
 
 
+class ProjectSettings(BaseModel):
+    """Project settings editable in the GUI: lifecycle, support period, next review."""
+
+    lifecycle: Literal["development", "post_market"]
+    support_until: datetime.date | None = None
+    next_review: datetime.date | None = None
+
+
 def create_app(
     port: int | None = None,
     project: Path | None = None,
@@ -515,6 +524,16 @@ def create_app(
                 config.libraries = libraries
                 session.libs = libs
                 session.changed()
+            return project_info()
+
+    @app.put("/api/project/settings")
+    def put_settings(body: ProjectSettings) -> dict[str, Any]:
+        with session.lock:
+            project = session.require()
+            update = body.model_dump()
+            if any(getattr(project.config, k) != v for k, v in update.items()):
+                project.config = project.config.model_copy(update=update)
+                session.changed()  # written on save, like the libraries
             return project_info()
 
     @app.get("/api/method")

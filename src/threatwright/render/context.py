@@ -566,8 +566,10 @@ def build_context(
         "lang": lang,
         "project": {
             **project.config.model_dump(
-                mode="json", include={"name", "uuid", "method", "language", "lifecycle"}
+                include={"name", "uuid", "method", "language", "lifecycle"}, mode="json"
             ),
+            "support_until": project.config.support_until,
+            "next_review": project.config.next_review,
             "lifecycle_label": t(f"lifecycle.{project.config.lifecycle}", lang),
         },
         "model": models[0] if meta.scope == "model" and models else None,

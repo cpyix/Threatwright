@@ -10,6 +10,7 @@ from itertools import pairwise
 
 from threatwright.model.objects import Element, Flow
 from threatwright.model.store import SubModel
+from threatwright.topology import effective_zone
 
 W, H = 170, 64  # node size
 PAD = 24
@@ -119,7 +120,7 @@ def render_svg(sub: SubModel, risks: dict[str, int] | None = None) -> str:
     parts: list[str] = []
 
     for zone in sub.meta.zones:
-        members = [pos[i] for i, e in elements.items() if e.zone == zone.id]
+        members = [pos[i] for i, e in elements.items() if effective_zone(sub, e) == zone.id]
         if not members:
             continue
         x0 = min(p[0] for p in members) - PAD

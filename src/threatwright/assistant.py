@@ -24,6 +24,7 @@ from threatwright.model.objects import (
     Threat,
 )
 from threatwright.model.store import SubModel
+from threatwright.topology import effective_zone
 
 Lang = Literal["de", "en"]
 
@@ -47,7 +48,7 @@ def _zone_env(sub: SubModel, target: ModelObject) -> Environment:
     element = target
     if isinstance(target, Flow):
         element = sub.objects["elements"].get(target.target, target)
-    zone_id = element.zone if isinstance(element, Element) else None
+    zone_id = effective_zone(sub, element) if isinstance(element, Element) else None
     zone = next((z for z in sub.meta.zones if z.id == zone_id), None)
     return zone.environment if zone else Environment()
 

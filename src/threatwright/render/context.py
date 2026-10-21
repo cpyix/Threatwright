@@ -20,12 +20,13 @@ from threatwright.method import (
     evaluate,
     risk,
 )
-from threatwright.model.objects import Asset, ModelObject, Threat
+from threatwright.model.objects import Asset, Element, ModelObject, Threat
 from threatwright.model.store import Project, SubModel, read_yaml, to_plain
 from threatwright.render.env import make_env, make_filters, sort_by_risk
 from threatwright.render.labels import Lang, t
 from threatwright.render.package import TemplateMeta
 from threatwright.render.sections import build_outline
+from threatwright.topology import effective_zone
 from threatwright.vcs import revision
 
 Ctx = dict[str, Any]
@@ -147,6 +148,7 @@ def _model_data(
     elements = []
     for el in objs["elements"].values():
         d = el.model_dump()
+        d["zone"] = effective_zone(sub, el) if isinstance(el, Element) else d["zone"]
         elements.append(
             {
                 **_base(el, sub),

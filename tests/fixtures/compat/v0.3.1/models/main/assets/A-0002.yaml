@@ -1,0 +1,5 @@
+schema_version: 1
+id: A-0002
+uuid: 75ebe000-ba91-4b54-949d-fe08248c7b09
+title: Control function (Machine controller)
+asset_class: Functions.Essential

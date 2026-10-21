@@ -72,7 +72,7 @@ threatwright ci gitlab my-product                  # GitLab pipeline for this pr
 threatwright --help                                # all commands
 ```
 
-Started inside a project folder, `threatwright` opens that project directly. By default the GUI runs on `127.0.0.1` only, on a random port, is not reachable from other machines and needs no login; a strict Content Security Policy applies and nothing leaves your machine. The GUI follows your browser language (German or English). Projects created with an older release open in newer ones; their files are brought up to date on the next save ([details](#compatibility-and-releases)).
+Started inside a project folder, `threatwright` opens that project directly. By default the GUI runs on `127.0.0.1` only, on a random port, is not reachable from other machines and needs no login; a strict Content Security Policy applies and nothing leaves your machine. The GUI shows the language of the open project (German or English, chosen when the project is created); without an open project it follows your browser language. Projects created with an older release open in newer ones; their files are brought up to date on the next save ([details](#compatibility-and-releases)).
 
 ### Docker (CLI and pipelines)
 

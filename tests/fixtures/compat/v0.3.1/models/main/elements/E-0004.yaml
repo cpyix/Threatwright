@@ -1,0 +1,7 @@
+schema_version: 1
+id: E-0004
+uuid: eceb8a10-c2ec-4f34-8fae-811a098832bf
+title: Operator panel
+library_ref: lib:ot/element/hmi@1
+kind: device
+zone: Z-LOCAL

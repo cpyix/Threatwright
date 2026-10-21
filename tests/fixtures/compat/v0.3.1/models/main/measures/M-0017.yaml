@@ -1,0 +1,9 @@
+schema_version: 1
+id: M-0017
+uuid: 4116d343-c937-4d19-aa65-6215a1056358
+title: Time-limited service access
+description: Service access with extended rights (service account, manufacturer password, diagnostic interface) is enabled only for a specific job and a limited time, e.g. via a one-time password valid for one day or an approval by the operator. After expiry, access is locked automatically. There is no permanently valid master password.
+library_ref: lib:ot/measure/time-limited-service-access@1
+kind: technical
+evidence: Description of the enabling procedure, test report with expired access, log extract of enablements.
+cra_refs: [AI-I-2-d]

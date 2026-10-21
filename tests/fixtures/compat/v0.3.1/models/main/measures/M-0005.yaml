@@ -1,0 +1,9 @@
+schema_version: 1
+id: M-0005
+uuid: 8691a7ca-b8f6-446f-ab97-f64e3700a69e
+title: Safety-rated operating mode selection
+description: The operating mode (automatic, setup, service) is selected via a safety-rated mode selector with key and evaluated by the safety controller. Changing the mode via the network or HMI alone is not possible. An attacker thus cannot unnoticed switch the machine into a mode with reduced protective measures.
+library_ref: lib:ot/measure/mode-selection-safety-rated@1
+kind: design
+evidence: Electrical drawing with mode selector, safety concept, validation report.
+cra_refs: [AI-I-2-d, AI-I-2-k]

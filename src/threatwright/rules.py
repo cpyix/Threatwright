@@ -184,9 +184,9 @@ def _check_model(ctx: _Ctx) -> None:
     referenced_measures = {m for t in threats for m in t.measures}
     for m in _of(sub, "measures", Measure):
         for ref in m.evidence_refs:
-            if not ref.startswith(("http://", "https://")):
-                if not (ctx.project.root / ref).is_file():
-                    ctx.add("error", "evidence-missing", "measures", m, "evidence_refs", ref)
+            is_link = ref.startswith(("http://", "https://"))
+            if not is_link and not (ctx.project.root / ref).is_file():
+                ctx.add("error", "evidence-missing", "measures", m, "evidence_refs", ref)
         if m.status == "implemented" and not (m.evidence or "").strip() and not m.evidence_refs:
             ctx.add(
                 "warning",

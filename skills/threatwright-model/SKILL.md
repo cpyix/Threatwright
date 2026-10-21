@@ -23,7 +23,8 @@ Threatwright is a local-first tool for threat modelling and risk analysis of pro
 
 ```
 my-product/
-  threatwright.yaml            project: name, method, language, libraries
+  threatwright.yaml            project: name, method, language, libraries, lifecycle,
+                               support_until and next_review (dates, only from the user)
   custom-fields.yaml           optional extra fields per object type
   method-overrides.yaml        optional project overrides of the risk method
   models/
@@ -62,7 +63,11 @@ zones:                            # trust zones; the environment sets the exposu
   - id: Z-EXTERNAL
     title: External network
     environment: {interface: external_network, access: non_restricted, user: skilled}
+cra_not_applicable:               # CRA Annex I requirements that do not apply, rationale required
+  AI-I-2-m: The device stores no user data or settings.
 ```
+
+`threatwright validate` warns about every Annex I requirement (`AI-…` in the CRA catalog) that no threat or measure references and that is not in `cra_not_applicable` (`cra-requirement-uncovered`). Only mark a requirement as not applicable when the user confirms the reason.
 
 Environment values (TR-03183-1 Annex D):
 - `interface`: `physical`, `local`, `dedicated_known_network`, `known_network`, `external_network`
@@ -80,6 +85,7 @@ library_ref: lib:ot/element/plc@1     # optional: library building block it came
 kind: device                          # process | device | datastore | external
 zone: Z-INTERNAL
 configurations: []                    # empty = all variants
+sbom: [firmware.cdx.json]             # optional: CycloneDX files in <project>/sbom/
 stride_not_relevant:                  # optional, rationale required
   R: No user actions on this device; logging happens in the HMI.
 ```
@@ -148,11 +154,16 @@ residual:                             # optional: after measures, same fields
 measures: [M-0001, M-0002]
 questions: []
 cra_refs: [AI-I-2-d, AI-I-2-f]        # ids from the CRA catalog only
+vulnerabilities: []                   # vulnerability ids this threat treats, e.g. CVE-2024-0001
 status: identified                    # identified | assessed | treated | accepted | rejected
-acceptance:                           # only with status accepted
-  by: <role or name given by the user>
+acceptance:                           # only with status accepted; only what the user tells you
+  by: <name given by the user>
+  role: <role, e.g. Product Owner>     # approvers in the method may be names or roles
+  date: 2026-10-01                     # day of the decision, YYYY-MM-DD
   rationale: …
 rejection:                            # only with status rejected
+  by: <optional>
+  date: <optional>
   rationale: …
 ```
 
@@ -171,10 +182,15 @@ owner: null                           # only if the user names one
 status: proposed                      # proposed | decided | in_progress | implemented
 due: null                             # YYYY-MM-DD
 evidence: null                        # only real evidence (document, test, link)
+evidence_refs: []                     # https links or files under <project>/evidence/, e.g. evidence/pentest-2026.pdf
 cra_refs: []
 ```
 
 Several threats may share one measure: reference the existing id instead of duplicating it.
+
+### SBOMs and vulnerabilities
+
+CycloneDX JSON SBOMs live in `<project>/sbom/`, vulnerability statements (CycloneDX VEX, CSAF) in `<project>/vulnerabilities/`. Never write or edit these files yourself: they come from the user's tools. `threatwright vulnerabilities <project>` lists every vulnerability per element. Each one with state `affected` or `under_investigation` needs a threat on that element with the id in `vulnerabilities` (error `vulnerability-untreated`); see `docs/sbom.md`.
 
 ### Question
 

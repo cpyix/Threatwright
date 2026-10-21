@@ -14,7 +14,10 @@ VIEWS = [
     "assistant",
     "coverage",
     "threats",
+    "vulnerabilities",
     "validation",
+    "cra",
+    "changes",
     "settings",
 ]
 

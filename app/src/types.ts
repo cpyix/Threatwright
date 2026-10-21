@@ -7,7 +7,15 @@ export type Collection = (typeof COLLECTIONS)[number]
 
 export interface ProjectInfo {
   root: string
-  config: { name: string; language: Lang; method: string; libraries: string[]; lifecycle: string }
+  config: {
+    name: string
+    language: Lang
+    method: string
+    libraries: string[]
+    lifecycle: 'development' | 'post_market'
+    support_until: string | null
+    next_review: string | null
+  }
   custom_fields: { fields: Record<string, CustomField[]> }
   models: Record<string, { title: string; counts: Record<Collection, number> }>
   product_libraries: string[]
@@ -46,6 +54,15 @@ export interface Note {
   text: string
 }
 
+export type Side = 'top' | 'right' | 'bottom' | 'left'
+
+/** Route of a data flow in the diagram: attached sides and bend points. */
+export interface EdgeLayout {
+  source_side?: Side | null
+  target_side?: Side | null
+  points?: { x: number; y: number }[]
+}
+
 export interface ModelPayload {
   name: string
   meta: {
@@ -53,11 +70,16 @@ export interface ModelPayload {
     description: string | null
     zones: { id: string; title: string; environment: Record<string, string | null> }[]
     configurations: { id: string; title: string }[]
+    cra_not_applicable?: Record<string, string>
   }
   objects: Record<Collection, Obj[]>
   evaluations: Record<string, ThreatEvaluation>
   max_risks: Record<string, number>
-  layout: { nodes: Record<string, { x: number; y: number }>; notes: Record<string, Note> }
+  layout: {
+    nodes: Record<string, { x: number; y: number }>
+    edges?: Record<string, EdgeLayout>
+    notes: Record<string, Note>
+  }
   asset_impacts: Record<string, Record<'C' | 'I' | 'A', number | null>>
 }
 

@@ -50,5 +50,7 @@ def rename_id(project: Project, model: str, collection: str, old: str, new: str)
     if old in sub.layout.nodes:
         node = sub.layout.nodes.pop(old)
         sub.layout.nodes[new] = NodeLayout.model_validate(node.model_dump())
+    if old in sub.layout.edges:
+        sub.layout.edges[new] = sub.layout.edges.pop(old)
     project.move_document(model, collection, old, new)
     return changed

@@ -182,10 +182,15 @@ def init_cmd(
         list[ProductType],
         typer.Option("--library", "-l", help="Product type (library); repeatable."),
     ] = [ProductType.ot],  # noqa: B006 - typer needs the list default
+    example: Annotated[
+        bool, typer.Option(help="Fill the model with an example of the first product type.")
+    ] = False,
 ) -> None:
     """Create a new project."""
     try:
-        create_project(path, template.value, name, language.value, [x.value for x in library])
+        create_project(
+            path, template.value, name, language.value, [x.value for x in library], example
+        )
     except (ProjectExists, ValueError) as exc:
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(1) from exc
@@ -392,6 +397,27 @@ def migrate_cmd(path: Annotated[Path, typer.Argument(help="Project folder.")] = 
     count = len(project.migrated)
     project.save()
     typer.echo(f"migrated {count} file(s) to schema version {SCHEMA_VERSION}")
+
+
+@app.command("vulnerabilities")
+def vulnerabilities_cmd(
+    path: Annotated[Path, typer.Argument(help="Project folder.")] = Path("."),
+) -> None:
+    """Known vulnerabilities in the components of each element (SBOM, VEX, CSAF files)."""
+    from threatwright import sbom
+
+    project = _load(path)
+    inv = sbom.inventory(project)
+    for issue in inv.issues:
+        typer.echo(str(issue), err=True)
+    untreated = 0
+    for name, sub in project.models.items():
+        for f in sbom.findings(sub, inv):
+            threats = ", ".join(f.threats) or ("UNTREATED" if f.open else "–")
+            untreated += f.open and not f.threats
+            typer.echo(f"{name}/{f.element} {f.vuln} {f.state} {f.purl}: {threats}")
+    typer.echo(f"{len(inv.sboms)} SBOM(s), {untreated} untreated vulnerability(ies)")
+    raise typer.Exit(1 if untreated else 0)
 
 
 class CiKind(StrEnum):

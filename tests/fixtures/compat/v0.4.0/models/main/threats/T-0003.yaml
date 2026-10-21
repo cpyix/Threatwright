@@ -1,0 +1,18 @@
+schema_version: 1
+id: T-0003
+uuid: e95cfbc9-f15f-4ea8-816f-f2efe6895261
+title: Counterfeit or manipulated spare part installed as Machine controller
+library_ref: lib:ot/threat/counterfeit-spare-parts@1
+stride: [S, T]
+targets: [E-0001]
+cyber_cause: true
+scenario: During a repair, a replacement device from an unauthorised source, for example an online marketplace, is installed. The device poses as a genuine part but contains modified firmware or additional hardware. The machine does not detect the exchange and trusts the device like the original.
+consequence: Hidden malfunction, data leakage or a persistent access for third parties. Faulty control can endanger persons.
+safety_related: true
+assessment:
+  interface: physical
+  access: restricted
+  user: non_user_related
+  impact: 4
+measures: [M-0008, M-0009, M-0010, M-0011]
+cra_refs: [AI-I-2-f, AI-II-1]

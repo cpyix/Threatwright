@@ -24,7 +24,7 @@ Die Oberfläche zeigt dieselben Meldungen, weil sie dieselbe Prüfung aufruft.
 | `unknown-asset-class` | Asset-Klasse gibt es in der Methode nicht |
 | `unknown-indicator-value` | Wert für Schnittstelle, Zugang oder Nutzer gibt es in der Methode nicht |
 | `security-asset-without-protects` | Sicherheits-Asset ohne geschützte Assets, daher kein Impact ableitbar |
-| `missing-rationale` | Verstärker oder „nicht relevant“ ohne Begründung |
+| `missing-rationale` | Verstärker, „nicht relevant“ oder „nicht anwendbar“ (CRA-Anforderung) ohne Begründung |
 | `incomplete-assessment` | Status „bewertet“ oder höher, aber Bewertung unvollständig |
 | `threat-without-measure` | offene Bedrohung ohne Maßnahme, Akzeptanz oder Verwerfung |
 | `acceptance-without-rationale` | Akzeptanz ohne Begründung |
@@ -33,6 +33,10 @@ Die Oberfläche zeigt dieselben Meldungen, weil sie dieselbe Prüfung aufruft.
 | `rejection-without-rationale` | Verwerfung ohne Begründung |
 | `custom-required` | eigenes Pflichtfeld ist leer |
 | `custom-invalid` | eigenes Feld hat einen ungültigen Wert |
+| `evidence-missing` | Maßnahme verweist in `evidence_refs` auf eine Datei, die es unter `evidence/` nicht gibt |
+| `sbom-missing` | Element nennt in `sbom` eine Datei, die es in `sbom/` nicht gibt |
+| `sbom-invalid` | Datei in `sbom/` oder `vulnerabilities/` ist kein lesbares CycloneDX- bzw. CSAF-JSON |
+| `vulnerability-untreated` | Eine Schwachstelle betrifft eine Komponente des Elements (Stand betroffen oder in Prüfung), aber keine Bedrohung des Modells nennt sie in `vulnerabilities` ([SBOM und Schwachstellen](sbom.md)) |
 
 ## Warnungen
 
@@ -50,3 +54,9 @@ Die Oberfläche zeigt dieselben Meldungen, weil sie dieselbe Prüfung aufruft.
 | `library-outdated` | Die Bibliothek hat eine neuere Fassung des übernommenen Eintrags |
 | `library-ref-unknown` | `library_ref` verweist auf einen Eintrag, den es nicht (mehr) gibt |
 | `unknown-cra-ref` | CRA-Bezug ist nicht im CRA-Katalog |
+| `cra-requirement-uncovered` | Grundlegende Anforderung aus CRA Anhang I ohne Bedrohung oder Maßnahme mit diesem CRA-Bezug und nicht in `cra_not_applicable` (`model.yaml`) begründet; erst geprüft, sobald das Modell Bedrohungen hat |
+| `implemented-without-evidence` | Maßnahme mit Status „umgesetzt“ ohne Nachweis: weder `evidence` (Text) noch `evidence_refs` (Datei oder Link) |
+| `support-period-missing` | `support_until` in `threatwright.yaml` fehlt, obwohl das Projekt Bedrohungen hat oder `lifecycle: post_market` ist (CRA Art. 13 Abs. 8) |
+| `support-period-ended` | Der Supportzeitraum (`support_until`) liegt in der Vergangenheit |
+| `review-overdue` | Die nächste Überprüfung (`next_review`) liegt in der Vergangenheit |
+| `acceptance-undocumented` | Bei einer Akzeptanz fehlt Name (`by`), Rolle (`role`) oder Datum (`date`) der Freigabe |

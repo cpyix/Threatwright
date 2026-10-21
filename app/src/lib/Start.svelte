@@ -2,7 +2,7 @@
   import { api, ApiError, download, upload } from '../api'
   import { PRODUCT_NAME } from '../branding'
   import { tr } from '../i18n'
-  import { app, type View } from '../state.svelte'
+  import { app, type ProjectRef, type View } from '../state.svelte'
   import type { ProjectInfo } from '../types'
 
   let openPath = $state('')
@@ -11,6 +11,7 @@
   let template = $state<'tr' | 'empty'>('tr')
   const PRODUCT_TYPES = ['ot', 'iot', 'software'] as const // order of scaffold.PRODUCT_LIBRARIES
   let libraries = $state<string[]>(['ot'])
+  let example = $state(false)
   let language = $state(app.lang)
   let error = $state('')
   const lang = $derived(app.lang)
@@ -47,18 +48,67 @@
     }
   }
 
+  // --- archive: archived projects only show up when searched for -------------------
+  let query = $state('')
+  let listVersion = $state(0) // bumped after archiving or deleting to reload the lists
+  const visible = (p: ProjectRef) => {
+    const q = query.trim().toLowerCase()
+    return q ? `${p.name} ${p.path}`.toLowerCase().includes(q) : !p.archived
+  }
+  let deleting = $state<ProjectRef | null>(null)
+  let confirmDialog: HTMLDialogElement | undefined = $state()
+
+  async function setArchived(p: ProjectRef, archived: boolean) {
+    error = ''
+    try {
+      await api('POST', '/projects/archive', { path: p.path, archived })
+      if (app.project && isOpen(p.path)) await app.refreshProject()
+      if (!app.server) await app.refreshRecent()
+      listVersion++
+      app.flash(archived ? 'archived_done' : 'unarchived_done')
+    } catch (e) {
+      error = e instanceof ApiError ? e.message : String(e)
+    }
+  }
+
+  function askDelete(p: ProjectRef) {
+    deleting = p
+    confirmDialog?.showModal()
+  }
+
+  async function deleteNow() {
+    const p = deleting!
+    confirmDialog?.close()
+    error = ''
+    try {
+      const wasOpen = isOpen(p.path)
+      await api('DELETE', `/projects?${new URLSearchParams({ path: p.path })}`)
+      if (wasOpen) {
+        app.project = null
+        app.model = null
+      }
+      if (!app.server) await app.refreshRecent()
+      listVersion++
+      app.flash('deleted_done')
+    } catch (e) {
+      error = e instanceof ApiError ? e.message : String(e)
+    }
+  }
+
   // --- server mode: projects in the workspace, upload from the user's machine --------
-  let serverProjects = $state<{ path: string; name: string }[]>([])
+  let serverProjects = $state<ProjectRef[]>([])
   let panel = $state<'new' | 'upload' | null>(null) // server mode: which form is unfolded
+  const norm = (p: string) => p.replace(/\\/g, '/').replace(/\/$/, '')
   const isOpen = (path: string) =>
-    !!app.project && app.project.root.replace(/\\/g, '/').replace(/\/$/, '').endsWith(`/${path}`)
+    !!app.project && (norm(app.project.root) === norm(path) || norm(app.project.root).endsWith(`/${norm(path)}`))
   let zip = $state<File | null>(null)
   let zipFolder = $state('')
 
   $effect(() => {
     if (!app.server) return
     void app.project // refresh after opening, creating or uploading
-    api<{ projects: { path: string; name: string }[] }>('GET', '/workspace')
+    void listVersion
+    api<{ projects: ProjectRef[] }>('GET', '/workspace')
       .then((r) => (serverProjects = r.projects))
       .catch(() => (serverProjects = []))
   })
@@ -87,9 +137,10 @@
         template,
         libraries,
         language,
+        example: example && template === 'tr',
       }),
-      // new projects start in the setup wizard
-      { kind: 'setup', step: 0 },
+      // new projects start in the setup wizard, an example in its diagram
+      example && template === 'tr' ? { kind: 'diagram' } : { kind: 'setup', step: 0 },
     )
 </script>
 
@@ -111,6 +162,9 @@
     </div>
   {/if}
 
+  <label for="project-search">{tr(lang, 'search_projects')}</label>
+  <input id="project-search" type="search" bind:value={query} placeholder={tr(lang, 'search_projects_hint')} data-testid="project-search" />
+
   {#if app.server}
     <div class="overview-head">
       <h2>{tr(lang, 'server_projects')}</h2>
@@ -122,9 +176,9 @@
       </button>
     </div>
     <ul class="projects" data-testid="server-projects">
-      {#each serverProjects as p (p.path)}
+      {#each serverProjects.filter(visible) as p (p.path)}
         {@const current = isOpen(p.path)}
-        <li>
+        <li class="with-actions">
           <button
             class="project"
             class:current
@@ -136,9 +190,11 @@
           >
             <strong>{p.name}</strong>
             <span class="muted">{p.path}</span>
+            {#if p.archived}<span class="badge archived">{tr(lang, 'archived')}</span>{/if}
             {#if busy === p.path}<span class="badge">{tr(lang, 'loading_project')}</span>
             {:else if current}<span class="badge">{tr(lang, 'is_open')}</span>{/if}
           </button>
+          {@render actions(p)}
         </li>
       {:else}
         <li class="muted">{tr(lang, 'no_server_projects')}</li>
@@ -164,13 +220,21 @@
     </form>
     {/if}
   {:else}
-  {#if app.recent.length}
+  {#if app.recent.some(visible)}
     <h2>{tr(lang, 'recent')}</h2>
-    <ul>
-      {#each app.recent as path}
-        <li><button class="rowlink" onclick={() => open(path)}>{path}</button></li>
+    <ul class="recent" data-testid="recent-projects">
+      {#each app.recent.filter(visible) as p (p.path)}
+        <li>
+          <button class="rowlink" onclick={() => open(p.path)} data-testid="open-recent">
+            <strong>{p.name}</strong> <span class="muted">{p.path}</span>
+          </button>
+          {#if p.archived}<span class="badge archived">{tr(lang, 'archived')}</span>{/if}
+          {@render actions(p)}
+        </li>
       {/each}
     </ul>
+  {:else if query.trim()}
+    <p class="muted">{tr(lang, 'no_projects_found')}</p>
   {/if}
 
   <form onsubmit={(e) => { e.preventDefault(); open(openPath) }}>
@@ -234,12 +298,88 @@
       {/each}
       <p class="muted">{tr(lang, 'product_type_hint')}</p>
     </fieldset>
+    {#if template === 'tr'}
+      <label class="check">
+        <input type="checkbox" bind:checked={example} data-testid="new-example" />
+        {tr(lang, 'with_example')}
+      </label>
+      <p class="muted">{tr(lang, 'with_example_hint')}</p>
+    {/if}
     <button class="primary" type="submit" disabled={!libraries.length} data-testid="create-project">{tr(lang, 'create')}</button>
   </form>
   {/if}
 </section>
 
+{#snippet actions(p: ProjectRef)}
+  <span class="actions">
+    {#if p.archived}
+      <button class="small" onclick={() => setArchived(p, false)} data-testid="unarchive">{tr(lang, 'unarchive')}</button>
+      <button class="small danger" onclick={() => askDelete(p)} data-testid="delete-project">{tr(lang, 'delete_project')}</button>
+    {:else}
+      <button class="small" onclick={() => setArchived(p, true)} data-testid="archive">{tr(lang, 'archive')}</button>
+    {/if}
+  </span>
+{/snippet}
+
+<dialog bind:this={confirmDialog} onclose={() => (deleting = null)} aria-labelledby="delete-project-q" data-testid="delete-project-dialog">
+  {#if deleting}
+    <h2 id="delete-project-q">{tr(lang, 'delete_project_q')}</h2>
+    <p><strong>{deleting.name}</strong><br /><span class="muted">{deleting.path}</span></p>
+    <p>{tr(lang, 'delete_project_text')}</p>
+    <div class="dialog-actions">
+      <button class="danger" onclick={deleteNow} data-testid="delete-project-confirm">{tr(lang, 'delete_project')}</button>
+      <button onclick={() => confirmDialog?.close()}>{tr(lang, 'cancel')}</button>
+    </div>
+  {/if}
+</dialog>
+
 <style>
+  .with-actions {
+    display: grid;
+    gap: 0.3rem;
+  }
+  .actions {
+    display: inline-flex;
+    gap: 0.3rem;
+  }
+  .small {
+    font-size: 0.85em;
+    padding: 0.15rem 0.5rem;
+  }
+  .danger {
+    color: var(--error);
+    border-color: var(--error);
+  }
+  .recent {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: 0.35rem;
+  }
+  .recent li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  .badge.archived {
+    color: var(--muted);
+  }
+  dialog {
+    max-width: 32rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    padding: 1rem 1.25rem;
+  }
+  dialog::backdrop {
+    background: rgb(0 0 0 / 0.4);
+  }
+  .dialog-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
   .start {
     max-width: 40rem;
     display: grid;

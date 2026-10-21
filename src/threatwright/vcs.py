@@ -332,6 +332,24 @@ def changed_objects(project_root: Path, since_rev: str | None = None) -> dict[st
 
 
 @dataclass(frozen=True)
+class Revision:
+    commit: str
+    tag: str | None  # tag pointing at the commit, if any
+    dirty: bool  # project files differ from the commit
+
+
+def revision(project_root: Path) -> Revision | None:
+    """Commit the project files are at, for approval evidence; None without Git."""
+    try:
+        commit = _git(project_root, "rev-parse", "HEAD").decode().strip()
+        tags = _git(project_root, "tag", "--points-at", "HEAD").decode().split()
+        status = _git(project_root, "status", "--porcelain", "--", ".").decode()
+    except VcsError:
+        return None
+    return Revision(commit, tags[0] if tags else None, bool(status.strip()))
+
+
+@dataclass(frozen=True)
 class ReleaseTag:
     name: str
     date: str  # ISO 8601 (tagger date for annotated tags, else commit date)

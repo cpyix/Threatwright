@@ -22,6 +22,42 @@ LABELS: dict[str, tuple[str, str]] = {
     "section.text": ("", ""),
     "section.decisions": ("Entscheidungspunkte", "Decision points"),
     "section.signatures": ("Freigabe", "Approval"),
+    "section.approvals": ("Freigaben", "Approvals"),
+    "section.cra_requirements": (
+        "Grundlegende Anforderungen des CRA (Anhang I)",
+        "CRA essential requirements (Annex I)",
+    ),
+    "cra_requirements_note": (
+        "Je Anforderung: Bedrohungen mit diesem CRA-Bezug und die Maßnahmen, die sie "
+        "adressieren. Nicht anwendbare Anforderungen sind begründet (CRA Art. 13 Abs. 4).",
+        "Per requirement: threats with this CRA reference and the measures addressing it. "
+        "Requirements that do not apply carry a rationale (CRA Art. 13(4)).",
+    ),
+    "col.tr_id": ("TR-Anforderung", "TR requirement"),
+    "section.vulnerabilities": ("Bekannte Schwachstellen", "Known vulnerabilities"),
+    "vulnerabilities_note": (
+        "Schwachstellen in Komponenten der Elemente laut SBOM und Schwachstellenmeldungen "
+        "(CycloneDX VEX, CSAF) im Projekt. Jede betroffene Schwachstelle braucht eine "
+        "Bedrohung (CRA Anhang I Teil II).",
+        "Vulnerabilities in components of the elements according to the SBOMs and "
+        "vulnerability statements (CycloneDX VEX, CSAF) in the project. Every affecting "
+        "vulnerability needs a threat (CRA Annex I part II).",
+    ),
+    "col.vulnerability": ("Schwachstelle", "Vulnerability"),
+    "col.element": ("Element", "Element"),
+    "col.component": ("Komponente (purl)", "Component (purl)"),
+    "col.state": ("Stand", "State"),
+    "col.detail": ("Erläuterung", "Detail"),
+    "col.sources": ("Quelle", "Source"),
+    "vuln_state.affected": ("betroffen", "affected"),
+    "vuln_state.under_investigation": ("in Prüfung", "under investigation"),
+    "vuln_state.fixed": ("behoben", "fixed"),
+    "vuln_state.not_affected": ("nicht betroffen", "not affected"),
+    "cra_status.not_applicable": ("nicht anwendbar", "not applicable"),
+    "cra_status.implemented": ("umgesetzt", "implemented"),
+    "cra_status.planned": ("Maßnahme geplant", "measure planned"),
+    "cra_status.threats_only": ("nur Bedrohung, keine Maßnahme", "threat only, no measure"),
+    "cra_status.open": ("offen", "open"),
     "section.acceptance_impact": (
         "Anhang: Auswirkung der Optionen auf bestehende Modelle",
         "Appendix: effect of the options on existing models",
@@ -86,6 +122,13 @@ LABELS: dict[str, tuple[str, str]] = {
     "col.role": ("Rolle", "Role"),
     "col.signature": ("Unterschrift", "Signature"),
     "col.model": ("Modell", "Model"),
+    # approvals
+    "revision": ("Stand im Git (Commit)", "Git revision (commit)"),
+    "revision_none": ("kein Git-Repository", "no Git repository"),
+    "revision_dirty": (
+        "mit nicht eingecheckten Änderungen",
+        "with uncommitted changes",
+    ),
     # field labels
     "project": ("Projekt", "Project"),
     "model": ("Modell", "Model"),
@@ -94,6 +137,8 @@ LABELS: dict[str, tuple[str, str]] = {
     "date": ("Stand", "Date"),
     "method": ("Methode", "Method"),
     "lifecycle": ("Lebenszyklusphase", "Lifecycle phase"),
+    "support_until": ("Supportzeitraum bis", "Support period until"),
+    "next_review": ("Nächste Überprüfung", "Next review"),
     "configurations": ("Ausbaustufen / Varianten", "Configurations / variants"),
     "zones": ("Zonen", "Zones"),
     "elements": ("Elemente", "Elements"),

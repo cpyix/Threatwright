@@ -1,9 +1,12 @@
 <script lang="ts">
   import ArrowRightLeft from '@lucide/svelte/icons/arrow-right-left'
   import Box from '@lucide/svelte/icons/box'
+  import Bug from '@lucide/svelte/icons/bug'
   import CircleCheckBig from '@lucide/svelte/icons/circle-check-big'
+  import ClipboardCheck from '@lucide/svelte/icons/clipboard-check'
   import FileText from '@lucide/svelte/icons/file-text'
   import FolderOpen from '@lucide/svelte/icons/folder-open'
+  import GitCompare from '@lucide/svelte/icons/git-compare'
   import Gem from '@lucide/svelte/icons/gem'
   import Grid3x3 from '@lucide/svelte/icons/grid-3x3'
   import HistoryIcon from '@lucide/svelte/icons/history'
@@ -22,7 +25,9 @@
   import { PRODUCT_NAME } from './branding'
   import { tr, type Key } from './i18n'
   import Assistant from './lib/Assistant.svelte'
+  import Changes from './lib/Changes.svelte'
   import Controls from './lib/Controls.svelte'
+  import CraRequirements from './lib/CraRequirements.svelte'
   import Coverage from './lib/Coverage.svelte'
   import CyberCauseDialog from './lib/CyberCauseDialog.svelte'
   import Diagram from './lib/diagram/Diagram.svelte'
@@ -34,6 +39,7 @@
   import Setup from './lib/Setup.svelte'
   import Start from './lib/Start.svelte'
   import Validation from './lib/Validation.svelte'
+  import Vulnerabilities from './lib/Vulnerabilities.svelte'
   import { loading } from './loading.svelte'
   import { app, type View } from './state.svelte'
   import type { Collection } from './types'
@@ -125,13 +131,20 @@
               simple('assistant', ShieldQuestion, () => ({ kind: 'assistant', target: null })),
               simple('coverage', Grid3x3),
               collection('threats', ShieldAlert),
+              simple('vulnerabilities', Bug),
               collection('measures', ShieldCheck),
               collection('questions', MessageCircleQuestion),
             ],
           },
           {
             title: 'nav_check',
-            items: [simple('validation', CircleCheckBig), simple('documents', FileText), simple('controls', ListChecks)],
+            items: [
+              simple('validation', CircleCheckBig),
+              simple('cra', ClipboardCheck),
+              simple('changes', GitCompare),
+              simple('documents', FileText),
+              simple('controls', ListChecks),
+            ],
           },
           {
             title: 'nav_project',
@@ -269,6 +282,12 @@
       <SettingsView />
     {:else if app.view.kind === 'controls'}
       <Controls />
+    {:else if app.view.kind === 'cra'}
+      <CraRequirements />
+    {:else if app.view.kind === 'changes'}
+      <Changes />
+    {:else if app.view.kind === 'vulnerabilities'}
+      <Vulnerabilities />
     {:else if app.view.kind === 'documents'}
       <Documents />
     {:else if app.view.kind === 'objects'}

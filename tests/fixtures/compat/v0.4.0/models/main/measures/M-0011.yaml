@@ -1,0 +1,8 @@
+schema_version: 1
+id: M-0011
+uuid: 8d0c94fd-8339-477d-8c84-bbc5411ac160
+title: Training of service personnel
+description: 'Commissioning engineers, service technicians and programmers are trained regularly on cybersecurity: handling of credentials, media and remote access, recognising phishing and social engineering, reporting anomalies. Participation is documented.'
+library_ref: lib:ot/measure/service-personnel-training@1
+kind: organizational
+evidence: Training material, attendance lists.

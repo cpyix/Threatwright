@@ -9,6 +9,7 @@ The server holds exactly one open project in memory; files are written only
 on an explicit save.
 """
 
+import datetime
 import json
 import os
 import re
@@ -22,17 +23,19 @@ import time
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Literal
+from urllib.parse import quote
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ValidationError
 
-from threatwright import __version__, archive, assistant, history
+from threatwright import __version__, archive, assistant, history, sbom
 from threatwright.arc import ArcOverride, applicability, set_override
 from threatwright.auth import REALM, BasicAuth, users_from
 from threatwright.branding import PRODUCT_NAME, PROJECT_FILE
 from threatwright.ci import render_ci
 from threatwright.ci import target_path as ci_target_path
+from threatwright.cra import coverage as cra_coverage
 from threatwright.diagram import render_svg
 from threatwright.library import CATALOG_NAMES, Libraries, load_catalog, load_libraries
 from threatwright.method import (
@@ -46,6 +49,7 @@ from threatwright.method import (
 from threatwright.model.delete import delete_with_refs, deletion_plan
 from threatwright.model.objects import (
     COLLECTIONS,
+    EVIDENCE_DIR,
     Asset,
     DiagramLayout,
     ModelMeta,
@@ -66,7 +70,14 @@ from threatwright.render import (
 )
 from threatwright.rules import relative, validate
 from threatwright.scaffold import PRODUCT_LIBRARIES, ProjectExists, create_project
-from threatwright.vcs import VcsError, changed_objects, release_tags
+from threatwright.vcs import (
+    VcsError,
+    changed_objects,
+    load_project_at,
+    release_tags,
+    render_diff,
+    semantic_diff,
+)
 
 WEB_DIR = Path(__file__).parent / "web"
 API_HEADER = "X-Threatwright"  # any value; its presence forces a CORS preflight (CSRF)
@@ -74,6 +85,8 @@ MODEL_NAME = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 MAX_BODY = 1 << 20
 UPLOAD_PATH = "/api/project/upload"
 OSCAL_UPLOAD_PATH = "/api/oscal/upload"
+SBOM_UPLOAD_PATH = "/api/sbom/upload"
+EVIDENCE_UPLOAD_PATH = "/api/evidence/upload"
 CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
     "font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; "
@@ -131,6 +144,13 @@ class Session:
         if self.pending:
             # marks the unsaved autosave as seen, so it is offered once, not on every open
             history.record(project.root, project.models, "open")
+
+    def close(self) -> None:
+        self.project = self.method = self.libs = None
+        self.undo.clear()
+        self.redo.clear()
+        self.dirty = False
+        self.pending = None
 
     def changed(self) -> None:
         self.changes += 1
@@ -295,10 +315,19 @@ class NewProject(BaseModel):
     template: Literal["tr", "empty"] = "tr"
     language: Literal["de", "en"] = "de"
     libraries: list[str] | None = None
+    example: bool = False
 
 
 class AddLibraries(BaseModel):
     add: list[str]
+
+
+class ProjectSettings(BaseModel):
+    """Project settings editable in the GUI: lifecycle, support period, next review."""
+
+    lifecycle: Literal["development", "post_market"]
+    support_until: datetime.date | None = None
+    next_review: datetime.date | None = None
 
 
 def create_app(
@@ -364,7 +393,7 @@ def create_app(
         if request.url.path.startswith("/api/"):
             if API_HEADER.lower() not in request.headers:  # cross-site requests cannot set it
                 return JSONResponse({"detail": f"missing {API_HEADER} header"}, status_code=403)
-            uploads = (UPLOAD_PATH, OSCAL_UPLOAD_PATH)
+            uploads = (UPLOAD_PATH, OSCAL_UPLOAD_PATH, SBOM_UPLOAD_PATH, EVIDENCE_UPLOAD_PATH)
             limit = archive.MAX_UPLOAD if request.url.path in uploads else MAX_BODY
             if int(request.headers.get("content-length") or 0) > limit:
                 return JSONResponse({"detail": "request too large"}, status_code=413)
@@ -384,7 +413,9 @@ def create_app(
             "version": __version__,
             "server": jail is not None,
             # the recent list holds paths of this machine; on a server the workspace replaces it
-            "recent": [] if jail is not None else _recent(),
+            "recent": []
+            if jail is not None
+            else [{"path": p, **archive.describe(Path(p))} for p in _recent()],
         }
 
     @app.get("/api/workspace")
@@ -435,6 +466,59 @@ def create_app(
             _recent(path)
             return project_info()
 
+    def project_folder(raw: str) -> Path:
+        """A project this server lists (workspace on a server, recent or open project locally).
+
+        Archiving and deleting only work on those: the path used comes from that list,
+        never from the request, so a request cannot point them at an arbitrary folder.
+        """
+        if jail is not None:
+            known = [str(jail / p["path"]) for p in archive.projects_in(jail) if p["path"] != "."]
+        else:
+            known = _recent() + ([str(session.project.root)] if session.project else [])
+        wanted = os.path.realpath(raw if jail is None else os.path.join(jail, raw))
+        match = next((k for k in known if os.path.realpath(k) == wanted), None)
+        if match is None:
+            raise HTTPException(404, "not a project folder")
+        path = Path(match)
+        if path.is_symlink() or not (path / PROJECT_FILE).is_file():
+            raise HTTPException(404, "not a project folder")
+        return path
+
+    def is_open(path: Path) -> bool:
+        return session.project is not None and session.project.root.resolve() == path.resolve()
+
+    @app.post("/api/projects/archive")
+    def archive_project(body: dict[str, Any]) -> dict[str, Any]:
+        """Archive (hide from the lists) or restore a project; only threatwright.yaml changes."""
+        path = project_folder(str(body.get("path", "")))
+        archived = body.get("archived") is True
+        with session.lock:
+            if is_open(path) and session.dirty:
+                raise HTTPException(409, "save your changes first")
+            try:
+                archive.set_archived(path, archived)
+            except (LoadError, OSError) as exc:
+                raise HTTPException(400, str(exc)) from exc
+            if is_open(path):
+                session.open(path)  # pick up the changed config
+            return {"path": str(path), **archive.describe(path)}
+
+    @app.delete("/api/projects")
+    def delete_project(path: str) -> dict[str, bool]:
+        """Delete an archived project folder for good (the GUI asks for confirmation first)."""
+        folder = project_folder(path)  # never the workspace itself: it is not in the list
+        if not archive.describe(folder)["archived"]:
+            raise HTTPException(409, "only archived projects can be deleted")
+        with session.lock:
+            if is_open(folder):
+                session.close()
+            try:
+                shutil.rmtree(folder)
+            except OSError as exc:
+                raise HTTPException(500, f"could not delete everything: {exc}") from exc
+        return {"deleted": True}
+
     dialog_lock = threading.Lock()
 
     @app.post("/api/pick-folder")
@@ -455,7 +539,12 @@ def create_app(
         with session.lock:
             try:
                 create_project(
-                    path, body.template, body.name or None, body.language, body.libraries
+                    path,
+                    body.template,
+                    body.name or None,
+                    body.language,
+                    body.libraries,
+                    body.example,
                 )
             except ValueError as exc:
                 raise HTTPException(422, str(exc)) from exc
@@ -510,6 +599,16 @@ def create_app(
                 config.libraries = libraries
                 session.libs = libs
                 session.changed()
+            return project_info()
+
+    @app.put("/api/project/settings")
+    def put_settings(body: ProjectSettings) -> dict[str, Any]:
+        with session.lock:
+            project = session.require()
+            update = body.model_dump()
+            if any(getattr(project.config, k) != v for k, v in update.items()):
+                project.config = project.config.model_copy(update=update)
+                session.changed()  # written on save, like the libraries
             return project_info()
 
     @app.get("/api/method")
@@ -683,10 +782,16 @@ def create_app(
         with session.lock:
             sub = session.model(name)
             try:
-                # notes are optional in the body, so a positions-only update keeps them
-                notes = body.get("notes", sub.layout.model_dump(mode="json")["notes"])
+                # notes and routes are optional in the body, so a positions-only update keeps them
+                current = sub.layout.model_dump(mode="json")
+                notes = body.get("notes", current["notes"])
+                edges = body.get("edges", current["edges"])
+                if isinstance(edges, dict):  # routes of deleted flows are dropped
+                    edges = {k: v for k, v in edges.items() if k in sub.objects["flows"]}
                 nodes = body.get("nodes", {})
-                layout = DiagramLayout.model_validate({"nodes": nodes, "notes": notes})
+                layout = DiagramLayout.model_validate(
+                    {"nodes": nodes, "edges": edges, "notes": notes}
+                )
             except ValidationError as exc:
                 raise HTTPException(422, json.loads(exc.json(include_url=False))) from exc
             if layout != sub.layout:
@@ -765,6 +870,134 @@ def create_app(
         with session.lock:
             return [asdict(r) for r in assistant.coverage(session.model(name), need_method())]
 
+    @app.get("/api/models/{name}/cra")
+    def cra_requirements(name: str) -> list[dict[str, Any]]:
+        """CRA Annex I requirements with the threats and measures addressing them."""
+        with session.lock:
+            return [asdict(r) for r in cra_coverage(session.model(name))]
+
+    # --- SBOMs and vulnerabilities (ADR-0016) --------------------------------------
+
+    @app.get("/api/sbom")
+    def sbom_files() -> dict[str, Any]:
+        """SBOM and vulnerability files of the project, with the elements using each SBOM."""
+        with session.lock:
+            project = session.require()
+            inv = sbom.inventory(project)
+            used: dict[str, list[str]] = {}
+            for sub in project.models.values():
+                for e in sub.objects["elements"].values():
+                    for file in getattr(e, "sbom", []):
+                        used.setdefault(file, []).append(f"{sub.name}/{e.id}")
+            root = project.root
+            return {
+                "sboms": [
+                    {
+                        "file": p.name,
+                        "components": len(inv.sboms.get(p.name, [])),
+                        "elements": used.get(p.name, []),
+                    }
+                    for p in sbom.files(root, sbom.SBOM_DIR)
+                ],
+                "vulnerability_files": [p.name for p in sbom.files(root, sbom.VULN_DIR)],
+                "statements": len(inv.statements),
+                "issues": [f"{relative(i, root)}: {i.message}" for i in inv.issues],
+            }
+
+    @app.post(SBOM_UPLOAD_PATH)
+    async def sbom_upload(request: Request, name: str, kind: str = "sbom") -> dict[str, Any]:
+        """Store an SBOM (sbom/) or a VEX/CSAF document (vulnerabilities/) in the project."""
+        folder = {"sbom": sbom.SBOM_DIR, "vulnerabilities": sbom.VULN_DIR}.get(kind)
+        if folder is None:
+            raise HTTPException(422, "kind: sbom|vulnerabilities")
+        base_name = Path(name).name
+        # suffix checked apart: a class containing "." followed by "\.json" backtracks (ReDoS)
+        if not (
+            re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9._-]*", base_name) and base_name.endswith(".json")
+        ):
+            raise HTTPException(422, "file name: letters, digits, . _ - and the suffix .json")
+        data = bytearray()
+        async for chunk in request.stream():
+            data += chunk
+            if len(data) > sbom.MAX_BYTES:
+                raise HTTPException(413, f"file larger than {sbom.MAX_BYTES >> 20} MB")
+        with session.lock:
+            root = session.require().root.resolve()
+            target_dir = os.path.normpath(os.path.join(root, folder))
+            target = os.path.normpath(os.path.join(target_dir, base_name))
+            if not target.startswith(target_dir + os.sep):  # ".." (the check CodeQL recognises)
+                raise HTTPException(400, "invalid file name")
+            with tempfile.TemporaryDirectory() as tmp:
+                check = Path(tmp) / "upload.json"  # fixed name: nothing from the request
+                check.write_bytes(bytes(data))
+                try:  # only files Threatwright can read land in the project
+                    if kind == "sbom":
+                        count = len(sbom.read_sbom(check))
+                    else:
+                        count = len(sbom.read_statements(check, base_name))
+                except sbom.SbomError as exc:
+                    raise HTTPException(422, str(exc)) from exc
+            replaced = os.path.exists(target)
+            os.makedirs(target_dir, exist_ok=True)
+            Path(target).write_bytes(bytes(data))
+            return {"written": f"{folder}/{base_name}", "replaced": replaced, "count": count}
+
+    # --- evidence files of measures ------------------------------------------------
+
+    @app.post(EVIDENCE_UPLOAD_PATH)
+    async def evidence_upload(request: Request, name: str) -> dict[str, str]:
+        """Store a file in <project>/evidence/; the measure then references the returned path."""
+        stem = re.sub(r"[^\w. -]", "_", Path(name).name).strip(" .") or "evidence"
+        stem = stem if re.match(r"\w", stem) else f"_{stem}"
+        data = bytearray()
+        async for chunk in request.stream():
+            data += chunk
+            if len(data) > archive.MAX_UPLOAD:
+                raise HTTPException(413, f"file larger than {archive.MAX_UPLOAD >> 20} MB")
+        with session.lock:
+            folder = os.path.normpath(os.path.join(session.require().root.resolve(), EVIDENCE_DIR))
+            base, dot, ext = stem.rpartition(".")
+            candidate, n = stem, 1
+            while True:  # never overwrite evidence
+                target = os.path.normpath(os.path.join(folder, candidate))
+                if not target.startswith(folder + os.sep):  # checked before any use of the path
+                    raise HTTPException(400, "invalid file name")
+                if not os.path.exists(target):
+                    break
+                n += 1
+                candidate = f"{base}-{n}.{ext}" if dot and base else f"{stem}-{n}"
+            os.makedirs(folder, exist_ok=True)
+            Path(target).write_bytes(bytes(data))
+            return {"ref": f"{EVIDENCE_DIR}/{candidate}"}
+
+    @app.get("/api/evidence")
+    def evidence_file(ref: str) -> Response:
+        """An evidence file of the project, always as a download (never rendered inline)."""
+        with session.lock:
+            root = session.require().root.resolve()
+        folder = os.path.normpath(os.path.join(root, EVIDENCE_DIR))
+        target = os.path.normpath(os.path.join(root, ref))
+        if not target.startswith(folder + os.sep):  # checked before any use of the path
+            raise HTTPException(404, "no such evidence file")
+        path = Path(target)
+        inside = [p for p in [path, *path.parents] if p.is_relative_to(folder)]  # incl. folder
+        if any(p.is_symlink() for p in inside) or not path.is_file():  # no way out via a link
+            raise HTTPException(404, "no such evidence file")
+        return Response(
+            path.read_bytes(),
+            media_type="application/octet-stream",
+            # RFC 6266/5987: non-ASCII names (umlauts) only in the encoded form
+            headers={"Content-Disposition": f"attachment; filename*=UTF-8''{quote(path.name)}"},
+        )
+
+    @app.get("/api/models/{name}/vulnerabilities")
+    def vulnerabilities(name: str) -> list[dict[str, Any]]:
+        """Vulnerabilities concerning components of the model's elements."""
+        with session.lock:
+            sub = session.model(name)
+            found = sbom.findings(sub, sbom.inventory(session.require()))
+            return [{**asdict(f), "open": f.open} for f in found]
+
     @app.get("/api/models/{name}/diagram.svg")
     def diagram_svg(name: str) -> Response:
         with session.lock:
@@ -789,6 +1022,22 @@ def create_app(
             "models": {m: sorted(ids) for m, ids in changed.items()},
             "tags": tags,
         }
+
+    @app.get("/api/vcs/diff")
+    def vcs_diff(since: str = "HEAD", format: str = "json") -> Any:
+        """Semantic change evidence: revision `since` against the state in the editor."""
+        with session.lock:
+            project = session.require()
+            method = need_method()
+            try:
+                old = load_project_at(project.root, since)
+            except VcsError as exc:
+                raise HTTPException(422, str(exc)) from exc
+            diff = semantic_diff(old, project, method, since, "")  # "": the working copy
+        if format == "md":
+            text = render_diff(diff, "md", project.config.language)
+            return Response(text, media_type="text/markdown; charset=utf-8")
+        return asdict(diff)
 
     # --- OSCAL import and ARC applicability (M6) ------------------------------------
 

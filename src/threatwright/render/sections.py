@@ -106,7 +106,7 @@ def _getters(f: Filters) -> dict[str, dict[str, Callable[[Ctx], str]]]:
             "status": lambda m: m["status_label"],
             "owner": lambda m: _s(m["owner"]),
             "due": lambda m: f["date"](m["due"]) if m["due"] else DASH,
-            "evidence": lambda m: _s(m["evidence"]),
+            "evidence": lambda m: _s([x for x in (m["evidence"], *m["evidence_refs"]) if x]),
             "threats": lambda m: _refs(m["threats"]),
             "cra_refs": lambda m: _refs(m["cra_refs"]),
         },
@@ -137,6 +137,36 @@ def _getters(f: Filters) -> dict[str, dict[str, Callable[[Ctx], str]]]:
             "date": lambda c: f["date"](c["date"]),
             "summary": lambda c: c["summary"],
             "author": lambda c: _s(c["author"]),
+        },
+        "approvals": {
+            "threat": lambda r: f"{r['threat']} {r['threat_title']}",
+            "status": lambda r: r["decision_label"],
+            "risk": lambda r: _level(r["risk"], f),
+            "by": lambda r: _s(r["by"]),
+            "role": lambda r: _s(r["role"]),
+            "date": lambda r: f["date"](r["date"]) if r["date"] else DASH,
+            "rationale": lambda r: _s(r["rationale"]),
+            "model": lambda r: r["model"],
+        },
+        "cra_requirements": {
+            "id": lambda r: r["id"],
+            "tr_id": lambda r: _s(r["tr_id"]),
+            "title": lambda r: r["title"],
+            "status": lambda r: r["status_label"],
+            "threats": lambda r: _s(r["threats"]),
+            "measures": lambda r: _s(r["measures"]),
+            "rationale": lambda r: _s(r["rationale"]),
+            "model": lambda r: r["model"],
+        },
+        "vulnerabilities": {
+            "vulnerability": lambda v: v["vuln"],
+            "element": lambda v: f"{v['element']} {v['element_title']}".strip(),
+            "component": lambda v: v["purl"],
+            "state": lambda v: v["state_label"],
+            "threats": lambda v: _s(v["threats"]),
+            "detail": lambda v: _s(v["detail"]),
+            "sources": lambda v: _s(v["sources"]),
+            "model": lambda v: v["model"],
         },
         "custom_fields": {
             "object": lambda c: c["object"],
@@ -192,6 +222,10 @@ class _Builder:
             ("method", c["method"]["title"]),
             ("lifecycle", c["project"]["lifecycle_label"]),
         ]
+        if c["project"]["support_until"]:
+            pairs.append(("support_until", self.f["date"](c["project"]["support_until"], "long")))
+        if c["project"]["next_review"]:
+            pairs.append(("next_review", self.f["date"](c["project"]["next_review"], "long")))
         return [
             {"kind": "title", "text": c["document"]["title"]},
             {"kind": "subtitle", "text": subtitle},
@@ -338,9 +372,13 @@ class _Builder:
             ]
             if th["acceptance"]:
                 acc = th["acceptance"]
-                pairs.append(("acceptance", f"{acc['by'] or DASH}: {acc['rationale']}"))
+                who = (acc["by"] or DASH) + (f" ({acc['role']})" if acc["role"] else "")
+                when = f", {self.f['date'](acc['date'])}" if acc["date"] else ""
+                pairs.append(("acceptance", f"{who}{when}: {acc['rationale']}"))
             if th["questions"]:
                 pairs.append(("questions", _refs(th["questions"], with_title=True)))
+            if th["vulnerabilities"]:
+                pairs.append(("col.vulnerability", ", ".join(th["vulnerabilities"])))
             out.append({"kind": "h2", "text": f"{th['id']} {th['title']}"})
             out.append(self.fields(pairs))
         return out
@@ -375,6 +413,31 @@ class _Builder:
 
     def custom_fields(self, s: Section) -> list[Block]:
         return self.table("custom_fields", self.ctx["custom_fields"], s.columns)
+
+    def cra_requirements(self, s: Section) -> list[Block]:
+        return [
+            {"kind": "p", "text": self.t("cra_requirements_note")},
+            *self.table("cra_requirements", self.ctx["cra_requirements"], s.columns),
+        ]
+
+    def vulnerabilities(self, s: Section) -> list[Block]:
+        return [
+            {"kind": "p", "text": self.t("vulnerabilities_note")},
+            *self.table("vulnerabilities", self.ctx["vulnerabilities"], s.columns),
+        ]
+
+    def approvals(self, s: Section) -> list[Block]:
+        rev = self.ctx["revision"]
+        if rev is None:
+            basis = self.t("revision_none")
+        else:
+            basis = rev["commit"][:12] + (f" ({rev['tag']})" if rev["tag"] else "")
+            if rev["dirty"]:
+                basis += f", {self.t('revision_dirty')}"
+        return [
+            self.fields([("revision", basis)]),
+            *self.table("approvals", self.ctx["approvals"], s.columns),
+        ]
 
     def text(self, s: Section) -> list[Block]:
         source = s.text if isinstance(s.text, str) else getattr(s.text, self.ctx["lang"])

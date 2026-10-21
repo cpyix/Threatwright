@@ -54,8 +54,12 @@ def create_project(
     name: str | None = None,
     language: Literal["de", "en"] = "de",
     libraries: list[str] | None = None,
+    example: bool = False,
 ) -> Project:
+    """`example`: fill the main model with the example of the first product type."""
     libs = ["ot"] if libraries is None else libraries
+    if example and template != "tr":
+        raise ValueError("an example project needs the template 'tr'")
     unknown = [lib for lib in libs if lib not in PRODUCT_LIBRARIES]
     if not libs or unknown:
         raise ValueError(
@@ -90,6 +94,10 @@ def create_project(
         (path / "method-overrides.yaml").write_text(
             OVERRIDES_TEMPLATE, encoding="utf-8", newline="\n"
         )
+        if example:
+            from threatwright.examples import fill_example  # imports the library machinery
+
+            fill_example(project, libs[0])
     project.save()
     gitignore = path / ".gitignore"
     if not gitignore.exists():

@@ -97,7 +97,7 @@ Abschnittstypen und wählbare Spalten (Standardspalten **fett**):
 
 | Typ | Inhalt | Spalten |
 |---|---|---|
-| `cover` | Titel, Projekt, Modell, Version, Stand, Methode, Lebenszyklus; danach Seitenumbruch | – |
+| `cover` | Titel, Projekt, Modell, Version, Stand, Methode, Lebenszyklus, Supportzeitraum und nächste Überprüfung (falls gesetzt); danach Seitenumbruch | – |
 | `scope` | Modellbeschreibung, Ausbaustufen / Varianten, Zonen mit Umgebung | – |
 | `method` | Methode, Expositionsformel, **Hinweis zur Matrix-Lesart** (`inverted`/`literal`), **Akzeptanzgrenze**, wirksame Risikomatrix, Sonderregeln, Freigabeberechtigte | – |
 | `assets` | Assets mit TR-Klasse und C/I/A-Impact (inkl. Vererbung und Verstärker) | **id, title, asset_class, c, i, a**, protects, configurations, description |
@@ -110,6 +110,9 @@ Abschnittstypen und wählbare Spalten (Standardspalten **fett**):
 | `risk_distribution` | Anzahl je Risikostufe, akzeptabel/zu behandeln | **level, label, count, treatment** |
 | `changelog` | Änderungshistorie der Modelle | **version, date, summary, author**, model |
 | `custom_fields` | eigene Felder (`custom`) aller Objekte | **object, field, value** |
+| `cra_requirements` | grundlegende Anforderungen aus CRA Anhang I mit Bedrohungen, Maßnahmen und Stand (umgesetzt, Maßnahme geplant, nur Bedrohung, offen, nicht anwendbar mit Begründung) | **id, title, status, threats, measures, rationale**, tr_id, model |
+| `vulnerabilities` | bekannte Schwachstellen in Komponenten der Elemente laut SBOM und Schwachstellenmeldungen ([SBOM und Schwachstellen](sbom.md)) | **vulnerability, element, component, state, threats**, detail, sources, model |
+| `approvals` | Freigaben: akzeptierte und verworfene Bedrohungen mit Name, Rolle, Datum und Begründung, dazu der Git-Stand (Commit, Tag, nicht eingecheckte Änderungen) | **threat, status, by, role, date, rationale**, risk, model |
 | `text` | Freitext | – |
 | `decisions` | Entscheidungspunkte der Akzeptanzkriterien | – |
 | `signatures` | Unterschriftstabelle | – |
@@ -201,17 +204,17 @@ Alle Werte werden bei jedem Erzeugen neu berechnet und nie gespeichert. Die Vorl
 | Variable | Inhalt |
 |---|---|
 | `lang` | `de` oder `en` |
-| `project` | `name`, `uuid`, `method`, `language`, `lifecycle`, `lifecycle_label` |
+| `project` | `name`, `uuid`, `method`, `language`, `lifecycle`, `lifecycle_label`, `support_until` (Ende des Supportzeitraums), `next_review` (nächste Überprüfung; beide Datum oder `None`) |
 | `model` | aktuelles Modell (bei `scope: project`: `None`): `name`, `title`, `uuid`, `description`, `configurations[]` (`id`, `title`, `description`), `zones[]` (`id`, `title`, `description`, `interface`, `interface_label`, `access`, `access_label`, `user`, `user_label`), `changelog[]` |
 | `models` | Liste aller Modelle im Dokument, Felder wie `model` |
 | `document` | `title` (Name der Vorlage), `template` (ID), `scope`, `version` und `date` (jüngster Eintrag der Änderungshistorie), `generator` |
 | `method` | `id`, `title`, `matrix_reading` (`inverted`/`literal`), `matrix_note`, `max_acceptable_risk`, `max_acceptable_label`, `acceptance_text`, `exposure_text`, `risk_levels[]` und `impact_levels[]` (`level`, `label`), `rules[]` (`id`, `label`, `enabled`, `source`, `max_acceptable_risk`, `impact_delta`), `approvers` ({Stufe: [Namen]}), `matrix[]` (`exposure`, `risks[]`, Lesart bereits angewendet) |
 | `assets[]` | `id`, `title`, `description`, `asset_class`, `c`, `i`, `a` (Impact 1–5 oder `None`), `protects`, `configurations`, `custom`, `model` |
-| `elements[]` | `id`, `title`, `description`, `kind`, `kind_label`, `zone`, `zone_title`, `configurations`, `custom` |
+| `elements[]` | `id`, `title`, `description`, `kind`, `kind_label`, `zone`, `zone_title`, `configurations`, `sbom` (Dateien in `sbom/`), `custom` |
 | `flows[]` | `id`, `title`, `source`, `source_title`, `target`, `target_title`, `protocol`, `bidirectional`, `assets`, `configurations`, `custom` |
 | `threats[]` | alle **nicht verworfenen** Bedrohungen, nach Risiko absteigend (siehe unten) |
 | `rejected_threats[]` | verworfene Bedrohungen, gleiche Felder |
-| `measures[]` | `id`, `title`, `kind`, `kind_label`, `compensating`, `owner`, `status`, `status_label`, `due`, `evidence`, `cra_refs[]` (`id`, `title`), `threats[]` (Rückverweise `id`, `title`), `custom` |
+| `measures[]` | `id`, `title`, `kind`, `kind_label`, `compensating`, `owner`, `status`, `status_label`, `due`, `evidence`, `evidence_refs` (Links und Dateien unter `evidence/`), `cra_refs[]` (`id`, `title`), `threats[]` (Rückverweise `id`, `title`), `custom` |
 | `questions[]` | `id`, `title`, `addressee`, `status`, `status_label`, `answer`, `threats[]` |
 | `traceability[]` | je Bedrohung und Maßnahme: `threat`, `threat_title`, `risk`, `measure`, `measure_title`, `measure_status`, `cra_refs[]` |
 | `risk_distribution[]` | je Risikostufe (hoch nach niedrig): `level`, `label`, `count`, `acceptable` |
@@ -219,6 +222,10 @@ Alle Werte werden bei jedem Erzeugen neu berechnet und nie gespeichert. Die Vorl
 | `changelog[]` | Einträge aller Modelle, neueste zuerst: `version`, `date`, `summary`, `author`, `model` |
 | `custom_fields[]` | `object`, `object_type`, `field`, `label`, `value` |
 | `acceptance` | Entscheidungsvorlage: `threats_total`, `assessed_total`, `current_to_treat`, `approvers`, `decisions[]` (`id`, `title`, `question`, `note`, `current`, `recommended`, `options[]` mit `label`, `current`, `recommended`, `to_treat`) |
+| `approvals[]` | akzeptierte und verworfene Bedrohungen, nach Datum: `threat`, `threat_title`, `model`, `decision` (`accepted`/`rejected`), `decision_label`, `risk`, `by`, `role`, `date`, `rationale` |
+| `revision` | Git-Stand des Projekts beim Erzeugen: `commit`, `tag` (Tag auf dem Commit oder `None`), `dirty` (nicht eingecheckte Änderungen); `None` ohne Git |
+| `cra_requirements[]` | je Modell und Anforderung aus CRA Anhang I: `id`, `tr_id`, `title`, `status` (`implemented`, `planned`, `threats_only`, `open`, `not_applicable`), `status_label`, `threats`, `measures` (IDs), `rationale`, `model` |
+| `vulnerabilities[]` | je Modell, Element, Schwachstelle und Komponente: `vuln`, `element`, `element_title`, `purl`, `state` (`affected`, `under_investigation`, `fixed`, `not_affected`), `state_label`, `open`, `sources`, `detail`, `threats`, `model` |
 | `outline[]` | Abschnitte der Gliederung: `type`, `title`, `blocks[]` |
 
 Felder einer Bedrohung (`threats[]`):
@@ -236,7 +243,8 @@ Felder einer Bedrohung (`threats[]`):
 | `residual` | Restrisiko (gleiche Felder wie die Bewertung) oder `None` |
 | `measures[]` | `id`, `title`, `status`, `status_label` |
 | `cra_refs[]` | `id`, `title` (aus dem CRA-Katalog) |
-| `status`, `status_label`, `acceptance`, `rejection`, `custom` | Status, Entscheidungen (`by`, `rationale`), eigene Felder |
+| `vulnerabilities` | IDs der Schwachstellen, die die Bedrohung behandelt (`CVE-…`) |
+| `status`, `status_label`, `acceptance`, `rejection`, `custom` | Status, Entscheidungen (`by`, `role`, `date`, `rationale`), eigene Felder |
 
 ### Filter und Funktionen
 
@@ -294,6 +302,6 @@ Danach:
 
 ## Reproduzierbarkeit
 
-Datum und Version eines Dokuments stammen aus der Änderungshistorie des Modells (`changelog` in `model.yaml`), nie aus der Uhrzeit. Bei unveränderten Eingaben erzeugt `build` byteweise identische Markdown-, HTML-, DOCX- und ODT-Dateien; Zeitstempel in den ZIP-Containern sind fest. Für PDF gilt das nicht, weil LibreOffice eigene Metadaten schreibt.
+Datum und Version eines Dokuments stammen aus der Änderungshistorie des Modells (`changelog` in `model.yaml`), nie aus der Uhrzeit. Bei unveränderten Eingaben erzeugt `build` byteweise identische Markdown-, HTML-, DOCX- und ODT-Dateien; Zeitstempel in den ZIP-Containern sind fest. Zu den Eingaben zählt auch der Git-Stand (`revision`), den der Abschnitt `approvals` zeigt. Für PDF gilt das nicht, weil LibreOffice eigene Metadaten schreibt.
 
 Die mitgelieferten DOCX/ODT-Dateien erzeugt `uv run python scripts/make_templates.py` aus Code. Änderungen am Layout gehören dorthin, nicht in die Binärdateien.

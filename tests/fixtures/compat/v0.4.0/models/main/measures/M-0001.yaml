@@ -1,0 +1,11 @@
+schema_version: 1
+id: M-0001
+uuid: c909126b-b7f9-45f2-9e38-659a83b6d15f
+title: Physical protection of the fieldbus
+description: Fieldbus cables, branches and connectors are routed inside lockable control cabinets, cable ducts or protected machine areas. Free ports on fieldbus devices and junctions are closed with blanking plugs or lockable covers. This prevents anyone from connecting a foreign device to the bus without tools and keys.
+library_ref: lib:ot/measure/fieldbus-physical-protection@1
+kind: technical
+compensating: true
+evidence: Electrical or layout drawing with cable routing, photo documentation of closed ports, acceptance checklist.
+evidence_refs: [https://example.invalid/test-report]
+cra_refs: [AI-I-2-j]

@@ -71,7 +71,7 @@
     },
     "Decision": {
       "additionalProperties": false,
-      "description": "Acceptance or rejection of a threat: who and why.",
+      "description": "Acceptance or rejection of a threat: who, in which role, when and why.",
       "properties": {
         "by": {
           "anyOf": [
@@ -85,9 +85,34 @@
           "default": null,
           "title": "By"
         },
+        "date": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Date"
+        },
         "rationale": {
           "title": "Rationale",
           "type": "string"
+        },
+        "role": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Role"
         }
       },
       "required": [
@@ -331,6 +356,14 @@
       "format": "uuid",
       "title": "Uuid",
       "type": "string"
+    },
+    "vulnerabilities": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Vulnerabilities",
+      "type": "array"
     }
   },
   "required": [

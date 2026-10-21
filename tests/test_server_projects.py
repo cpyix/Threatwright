@@ -35,7 +35,7 @@ def test_workspace_open_and_new(workspace: Path) -> None:
     c = server(workspace)
     assert c.get("/api/app").json()["server"] is True
     assert c.get("/api/workspace").json()["projects"] == [
-        {"path": "machine-a", "name": "Test fixture project"}  # name from threatwright.yaml
+        {"path": "machine-a", "name": "Test fixture project", "archived": False}  # from the config
     ]
     assert c.post("/api/project/open", json={"path": "machine-a"}).status_code == 200
     r = c.post("/api/project/new", json={"path": "machine-b", "name": "B", "language": "en"})
@@ -103,3 +103,51 @@ def test_new_project_libraries(workspace: Path) -> None:
         body = {"path": "x", **body}
         assert c.post("/api/project/new", json=body).status_code == 422, body
         assert not (workspace / "x").exists(), body
+
+
+def test_archive_search_and_delete(workspace: Path) -> None:
+    c = server(workspace)
+    c.post("/api/project/open", json={"path": "machine-a"})
+    r = c.post("/api/projects/archive", json={"path": "machine-a", "archived": True})
+    assert r.status_code == 200 and r.json()["archived"] is True
+    assert "archived: true" in (workspace / "machine-a" / PROJECT_FILE).read_text("utf-8")
+    assert c.get("/api/project").json()["config"]["archived"] is True  # open project reloaded
+    (project,) = c.get("/api/workspace").json()["projects"]
+    assert project["archived"] is True
+
+    c.post("/api/project/new", json={"path": "machine-b"})
+    assert c.delete("/api/projects?path=machine-b").status_code == 409  # not archived
+    assert c.delete("/api/projects?path=../outside").status_code == 404  # not a listed project
+    assert c.delete("/api/projects?path=.").status_code == 404  # workspace is no project
+
+    c.post("/api/project/open", json={"path": "machine-a"})
+    assert c.delete("/api/projects?path=machine-a").json() == {"deleted": True}
+    assert not (workspace / "machine-a").exists()
+    assert c.get("/api/project").status_code == 409  # the open project was closed
+    c.post("/api/projects/archive", json={"path": "machine-b", "archived": True})
+    c.post("/api/projects/archive", json={"path": "machine-b", "archived": False})
+    assert "archived" not in (workspace / "machine-b" / PROJECT_FILE).read_text("utf-8")
+
+
+def test_archive_needs_saved_changes(workspace: Path) -> None:
+    c = server(workspace)
+    c.post("/api/project/open", json={"path": "machine-a"})
+    c.post("/api/models/main/measures", json={"title": "unsaved"})
+    r = c.post("/api/projects/archive", json={"path": "machine-a", "archived": True})
+    assert r.status_code == 409
+
+
+def test_local_archive_and_delete_only_known_projects(project_dir: Path, tmp_path: Path) -> None:
+    import shutil
+
+    stranger = tmp_path / "stranger"
+    shutil.copytree(project_dir, stranger)
+    archive.set_archived(stranger, True)  # archived, but never opened here
+    c = TestClient(
+        create_app(None, project_dir), base_url="http://127.0.0.1", headers={API_HEADER: "1"}
+    )
+    assert c.delete(f"/api/projects?path={stranger}").status_code == 404
+    assert c.post("/api/projects/archive", json={"path": str(stranger)}).status_code == 404
+    assert stranger.exists()
+    r = c.post("/api/projects/archive", json={"path": str(project_dir), "archived": True})
+    assert r.status_code == 200  # the open project is known

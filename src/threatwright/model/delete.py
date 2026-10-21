@@ -37,8 +37,10 @@ def delete_with_refs(sub: SubModel, collection: str, obj_id: str, cascade: bool)
     plan = deletion_plan(sub, collection, obj_id)
     del sub.objects[collection][obj_id]
     sub.layout.nodes.pop(obj_id, None)
+    sub.layout.edges.pop(obj_id, None)
     for f in plan["flows"]:
         del sub.objects["flows"][f]
+        sub.layout.edges.pop(f, None)
     gone = {obj_id, *plan["flows"]}
     removed_threats = set(plan["threats"]) if cascade else set()
     removed_measures = set(plan["measures"]) if cascade else set()

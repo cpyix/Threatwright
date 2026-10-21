@@ -100,6 +100,15 @@
       "default": null,
       "title": "Evidence"
     },
+    "evidence_refs": {
+      "default": [],
+      "items": {
+        "pattern": "^(https?://\\S+|evidence(/\\w[\\w. -]*)+)$",
+        "type": "string"
+      },
+      "title": "Evidence Refs",
+      "type": "array"
+    },
     "id": {
       "pattern": "^[A-Za-z][A-Za-z0-9_]*-[0-9]{4,}$",
       "title": "Id",

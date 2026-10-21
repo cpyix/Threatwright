@@ -15,6 +15,7 @@ from threatwright.vcs import (
     load_project_at,
     release_tags,
     render_diff,
+    revision,
     semantic_diff,
 )
 
@@ -44,6 +45,40 @@ def repo(tmp_path: Path) -> Path:
     git(root, "commit", "-q", "-m", "v1")
     git(root, "tag", "-a", "v1.0", "-m", "release")
     return root / "Ordner ä" / "project"
+
+
+def test_revision_names_commit_tag_and_uncommitted_changes(repo: Path, tmp_path: Path) -> None:
+    rev = revision(repo)
+    assert rev is not None and len(rev.commit) == 40 and rev.tag == "v1.0" and not rev.dirty
+    (repo / "models" / "main" / "model.yaml").write_text("title: changed\n", encoding="utf-8")
+    rev = revision(repo)
+    assert rev is not None and rev.dirty
+    plain = tmp_path / "plain"
+    plain.mkdir()
+    assert revision(plain) is None  # not a Git repository
+
+
+def test_diff_endpoint_compares_the_editor_state(repo: Path) -> None:
+    from fastapi.testclient import TestClient
+
+    from threatwright.server import API_HEADER, create_app
+
+    client = TestClient(
+        create_app(None, repo), base_url="http://127.0.0.1", headers={API_HEADER: "1"}
+    )
+    assert client.get("/api/vcs/diff?since=v1.0").json()["models"] == []
+    measure = next(
+        m
+        for m in client.get("/api/models/main").json()["objects"]["measures"]
+        if m["id"] == "M-0001"
+    )
+    client.put("/api/models/main/measures/M-0001", json={**measure, "status": "implemented"})
+    (model,) = client.get("/api/vcs/diff?since=v1.0").json()["models"]
+    (change,) = model["objects"]
+    assert change["id"] == "M-0001" and change["status"] == ["decided", "implemented"]
+    md = client.get("/api/vcs/diff?since=v1.0&format=md").text
+    assert "M-0001" in md and "v1.0" in md
+    assert client.get("/api/vcs/diff?since=nope").status_code == 422
 
 
 def edit_and_commit(project_dir: Path) -> None:

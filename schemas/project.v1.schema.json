@@ -3,6 +3,11 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
+    "archived": {
+      "default": false,
+      "title": "Archived",
+      "type": "boolean"
+    },
     "language": {
       "default": "de",
       "enum": [
@@ -38,11 +43,37 @@
       "title": "Name",
       "type": "string"
     },
+    "next_review": {
+      "anyOf": [
+        {
+          "format": "date",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Next Review"
+    },
     "schema_version": {
       "const": 1,
       "default": 1,
       "title": "Schema Version",
       "type": "integer"
+    },
+    "support_until": {
+      "anyOf": [
+        {
+          "format": "date",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Support Until"
     },
     "templates": {
       "default": [],

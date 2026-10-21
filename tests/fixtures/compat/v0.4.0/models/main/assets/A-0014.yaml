@@ -1,0 +1,5 @@
+schema_version: 1
+id: A-0014
+uuid: e5e736ba-3a68-4ab6-b066-f2a172d6debb
+title: Transmitted data (F-0001)
+asset_class: Functions.CommunicationNetwork

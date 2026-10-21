@@ -5,9 +5,12 @@ numbers and dates (see docs/vorlagenreferenz.md for the data model).
 """
 
 from collections.abc import Callable
+from dataclasses import asdict
 from typing import Any
 
+from threatwright import sbom
 from threatwright.branding import PRODUCT_NAME
+from threatwright.cra import coverage as cra_coverage
 from threatwright.library import load_catalog
 from threatwright.method import (
     BUILTIN_METHODS,
@@ -23,6 +26,7 @@ from threatwright.render.env import make_env, make_filters, sort_by_risk
 from threatwright.render.labels import Lang, t
 from threatwright.render.package import TemplateMeta
 from threatwright.render.sections import build_outline
+from threatwright.vcs import revision
 
 Ctx = dict[str, Any]
 Filters = dict[str, Callable[..., Any]]
@@ -49,6 +53,10 @@ KNOWN_VARIABLES = frozenset(
         "unassessed_count",
         "custom_fields",
         "acceptance",
+        "approvals",
+        "revision",
+        "cra_requirements",
+        "vulnerabilities",
         "outline",
     }
 )
@@ -147,6 +155,7 @@ def _model_data(
                 "zone": d["zone"],
                 "zone_title": zones.get(d["zone"] or "", d["zone"]),
                 "configurations": d["configurations"],
+                "sbom": d["sbom"],
             }
         )
 
@@ -219,6 +228,7 @@ def _model_data(
             ],
             "questions": _refs(th.questions, titles),
             "cra_refs": [{"id": c, "title": cra.get(c, "")} for c in th.cra_refs],
+            "vulnerabilities": list(th.vulnerabilities),
             "status": th.status,
             "status_label": t(f"threat_status.{th.status}", lang),
             "acceptance": th.acceptance.model_dump() if th.acceptance else None,
@@ -240,6 +250,7 @@ def _model_data(
                 "status_label": t(f"measure_status.{d['status']}", lang),
                 "due": ms.model_dump()["due"],
                 "evidence": d["evidence"],
+                "evidence_refs": d["evidence_refs"],
                 "cra_refs": [{"id": c, "title": cra.get(c, "")} for c in d["cra_refs"]],
                 "threats": [
                     {"id": th["id"], "title": th["title"]}
@@ -473,6 +484,30 @@ def _risk_distribution(threats: list[Ctx], method: Ctx) -> list[Ctx]:
     return rows
 
 
+def _approvals(threats: list[Ctx], rejected: list[Ctx], lang: Lang) -> list[Ctx]:
+    """Accepted and rejected threats with who decided, in which role and when."""
+    rows = []
+    for th in [*threats, *rejected]:
+        decision = th["acceptance"] if th["status"] == "accepted" else th["rejection"]
+        if th["status"] not in ("accepted", "rejected") or decision is None:
+            continue
+        rows.append(
+            {
+                "threat": th["id"],
+                "threat_title": th["title"],
+                "model": th["model"],
+                "decision": th["status"],
+                "decision_label": t(f"threat_status.{th['status']}", lang),
+                "risk": th["risk"],
+                "by": decision["by"],
+                "role": decision["role"],
+                "date": decision["date"],
+                "rationale": decision["rationale"],
+            }
+        )
+    return sorted(rows, key=lambda r: (r["date"] is None, r["date"] or "", r["threat"]))
+
+
 def _custom_fields(project: Project, items: dict[str, list[Ctx]], lang: Lang) -> list[Ctx]:
     labels: dict[tuple[str, str], str] = {}
     for obj_type, defs in project.custom_fields.fields.items():
@@ -510,6 +545,7 @@ def build_context(
     filters = filters_for(method, lang)
     subs = [project.models[model_name]] if model_name else list(project.models.values())
     cra_cat = load_catalog("cra").entries
+    inv = sbom.inventory(project)
     cra = {k: (v.get(lang, "") if isinstance(v, dict) else v) for k, v in cra_cat.items()}
 
     data: dict[str, list[Ctx]] = {}
@@ -530,8 +566,10 @@ def build_context(
         "lang": lang,
         "project": {
             **project.config.model_dump(
-                mode="json", include={"name", "uuid", "method", "language", "lifecycle"}
+                include={"name", "uuid", "method", "language", "lifecycle"}, mode="json"
             ),
+            "support_until": project.config.support_until,
+            "next_review": project.config.next_review,
             "lifecycle_label": t(f"lifecycle.{project.config.lifecycle}", lang),
         },
         "model": models[0] if meta.scope == "model" and models else None,
@@ -573,6 +611,29 @@ def build_context(
             lang,
         ),
         "acceptance": _acceptance(project, method, lang, risk_labels),
+        "approvals": _approvals(data["threats"], data["rejected_threats"], lang),
+        "revision": asdict(rev) if (rev := revision(project.root)) else None,
+        "cra_requirements": [
+            {
+                **asdict(r),
+                "title": r.title[lang],
+                "status_label": t(f"cra_status.{r.status}", lang),
+                "model": sub.name,
+            }
+            for sub in subs
+            for r in cra_coverage(sub)
+        ],
+        "vulnerabilities": [
+            {
+                **asdict(v),
+                "open": v.open,
+                "element_title": _titles(sub).get(v.element, ""),
+                "state_label": t(f"vuln_state.{v.state}", lang),
+                "model": sub.name,
+            }
+            for sub in subs
+            for v in sbom.findings(sub, inv)
+        ],
     }
     env = make_env(filters)
     ctx["outline"] = build_outline(meta.outline, ctx, env, filters)

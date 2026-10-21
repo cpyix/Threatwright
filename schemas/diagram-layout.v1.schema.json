@@ -25,6 +25,58 @@
       "title": "DiagramNote",
       "type": "object"
     },
+    "EdgeLayout": {
+      "additionalProperties": false,
+      "description": "Route of one data flow: the node sides it attaches to and its bend points.",
+      "properties": {
+        "points": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Point"
+          },
+          "title": "Points",
+          "type": "array"
+        },
+        "source_side": {
+          "anyOf": [
+            {
+              "enum": [
+                "top",
+                "right",
+                "bottom",
+                "left"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Side"
+        },
+        "target_side": {
+          "anyOf": [
+            {
+              "enum": [
+                "top",
+                "right",
+                "bottom",
+                "left"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target Side"
+        }
+      },
+      "title": "EdgeLayout",
+      "type": "object"
+    },
     "NodeLayout": {
       "additionalProperties": false,
       "properties": {
@@ -67,13 +119,40 @@
       ],
       "title": "NodeLayout",
       "type": "object"
+    },
+    "Point": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "title": "Point",
+      "type": "object"
     }
   },
   "$id": "diagram-layout.v1.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Content of diagram.layout.yaml: positions and canvas notes, never model content.",
+  "description": "Content of diagram.layout.yaml: positions, routes and canvas notes, never model content.",
   "properties": {
+    "edges": {
+      "additionalProperties": {
+        "$ref": "#/$defs/EdgeLayout"
+      },
+      "default": {},
+      "title": "Edges",
+      "type": "object"
+    },
     "nodes": {
       "additionalProperties": {
         "$ref": "#/$defs/NodeLayout"

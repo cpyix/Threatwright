@@ -6,6 +6,7 @@
   import type { Collection, ModelPayload, Obj, ThreatEvaluation } from '../types'
   import { termForField } from '../glossary'
   import Assessment from './Assessment.svelte'
+  import EvidenceRefs from './EvidenceRefs.svelte'
   import Info from './Info.svelte'
   import CustomFieldInput from './CustomField.svelte'
   import MultiSelect from './MultiSelect.svelte'
@@ -180,6 +181,11 @@
         {#if f.type === 'text' || f.type === 'date'}
           <input id={fid(f.key)} type={f.type === 'date' ? 'date' : 'text'} value={value ?? ''} oninput={(e) => set(f.key, e.currentTarget.value)} list={f.options ? `${fid(f.key)}-list` : undefined} data-testid="field-{f.key}" />
           {#if f.options}<datalist id="{fid(f.key)}-list">{#each f.options() as o}<option value={o.value}></option>{/each}</datalist>{/if}
+        {:else if f.type === 'evidence'}
+          <EvidenceRefs id={fid(f.key)} value={value ?? []} onchange={(v) => set(f.key, v.length ? v : '')} />
+        {:else if f.type === 'list'}
+          <!-- comma separated; an empty list removes the key -->
+          <input id={fid(f.key)} type="text" value={(value ?? []).join(', ')} onchange={(e) => { const items = e.currentTarget.value.split(/[\s,;]+/).filter(Boolean); set(f.key, items.length ? items : '') }} data-testid="field-{f.key}" />
         {:else if f.type === 'number'}
           <input id={fid(f.key)} type="number" step="0.1" min="0" value={value ?? ''} oninput={(e) => set(f.key, e.currentTarget.value === '' ? '' : Number(e.currentTarget.value))} />
         {:else if f.type === 'longtext'}

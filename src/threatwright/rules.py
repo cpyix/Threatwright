@@ -3,11 +3,15 @@
 Rule codes are stable identifiers; docs/validation-rules.md describes each.
 """
 
+import datetime
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
 
+from threatwright import sbom
+from threatwright.branding import PROJECT_FILE
+from threatwright.cra import coverage as cra_coverage
 from threatwright.library import check_library_refs, load_catalog, load_libraries
 from threatwright.method import Method, MethodError, evaluate, load_method
 from threatwright.model.objects import (
@@ -20,7 +24,7 @@ from threatwright.model.objects import (
     Question,
     Threat,
 )
-from threatwright.model.store import DEFAULT_PREFIXES, Issue, Project, SubModel
+from threatwright.model.store import DEFAULT_PREFIXES, MODEL_FILE, Issue, Project, SubModel
 
 TEXT_FIELDS = ("title", "description", "scenario", "consequence", "evidence", "answer")
 ASSESSED = {"assessed", "treated", "accepted"}
@@ -51,8 +55,9 @@ class _Ctx:
         return set(self.sub.objects[collection])
 
 
-def validate(project: Project) -> list[Issue]:
+def validate(project: Project, today: datetime.date | None = None) -> list[Issue]:
     issues = list(project.issues)
+    issues += _check_lifecycle(project, today or datetime.date.today())
     method: Method | None = None
     try:
         method = load_method(project.root, project.config)
@@ -62,10 +67,14 @@ def validate(project: Project) -> list[Issue]:
     issues += libs.issues
     issues += check_library_refs(project, libs)[0]
     cra = set(load_catalog("cra").entries)
+    inv = sbom.inventory(project)
+    issues += inv.issues
     uuids: dict[str, str] = {}
     for sub in project.models.values():
         ctx = _Ctx(project, sub, method, uuids)
         _check_model(ctx)
+        _check_cra_requirements(ctx, cra)
+        _check_vulnerabilities(ctx, inv)
         for coll, objects in sub.objects.items():
             for obj in objects.values():
                 for ref in getattr(obj, "cra_refs", []):
@@ -80,6 +89,45 @@ def validate(project: Project) -> list[Issue]:
                         )
         issues += ctx.issues
     return issues
+
+
+def _check_lifecycle(project: Project, today: datetime.date) -> list[Issue]:
+    """Support period (CRA Art. 13(8)) and review date of the threat model."""
+    path = project.root / PROJECT_FILE
+    cfg = project.config
+    out = []
+    has_threats = any(sub.objects["threats"] for sub in project.models.values())
+    if cfg.support_until is None and (has_threats or cfg.lifecycle == "post_market"):
+        out.append(
+            Issue(
+                path,
+                "support_until",
+                "set the end of the support period",
+                "support-period-missing",
+                "warning",
+            )
+        )
+    elif cfg.support_until is not None and cfg.support_until < today:
+        out.append(
+            Issue(
+                path,
+                "support_until",
+                f"support period ended on {cfg.support_until.isoformat()}",
+                "support-period-ended",
+                "warning",
+            )
+        )
+    if cfg.next_review is not None and cfg.next_review < today:
+        out.append(
+            Issue(
+                path,
+                "next_review",
+                f"review of the threat model was due on {cfg.next_review.isoformat()}",
+                "review-overdue",
+                "warning",
+            )
+        )
+    return out
 
 
 def _check_model(ctx: _Ctx) -> None:
@@ -177,6 +225,19 @@ def _check_model(ctx: _Ctx) -> None:
 
     referenced_measures = {m for t in threats for m in t.measures}
     for m in _of(sub, "measures", Measure):
+        for ref in m.evidence_refs:
+            is_link = ref.startswith(("http://", "https://"))
+            if not is_link and not (ctx.project.root / ref).is_file():
+                ctx.add("error", "evidence-missing", "measures", m, "evidence_refs", ref)
+        if m.status == "implemented" and not (m.evidence or "").strip() and not m.evidence_refs:
+            ctx.add(
+                "warning",
+                "implemented-without-evidence",
+                "measures",
+                m,
+                "evidence",
+                "an implemented measure needs evidence (text, file or link)",
+            )
         if m.id not in referenced_measures:
             ctx.add(
                 "warning",
@@ -262,13 +323,25 @@ def _check_threat(
                     f"risk {ev.risk} exceeds the acceptable limit {ev.max_acceptable_risk}",
                 )
             allowed = method.acceptance.approvers.get(ev.risk) if ev.risk is not None else None
-            by = t.acceptance.by if t.acceptance else None
-            if allowed is not None and by not in allowed:
+            acc = t.acceptance
+            # approvers may be named as persons or as roles
+            if allowed is not None and (acc is None or not {acc.by, acc.role} & set(allowed)):
                 err(
                     "acceptance-not-authorized",
                     "acceptance.by",
                     f"risk {ev.risk} may only be accepted by: {', '.join(allowed)}",
                 )
+        missing = [
+            f
+            for f in ("by", "role", "date")
+            if t.acceptance is None or getattr(t.acceptance, f) in (None, "")
+        ]
+        if missing:
+            warn(
+                "acceptance-undocumented",
+                f"acceptance.{missing[0]}",
+                f"the approval needs who, role and date (missing: {', '.join(missing)})",
+            )
     if t.status == "rejected" and (t.rejection is None or not t.rejection.rationale.strip()):
         err("rejection-without-rationale", "rejection.rationale", "rejection needs a rationale")
 
@@ -312,6 +385,50 @@ def _check_coverage(ctx: _Ctx, threats: list[Threat]) -> None:
                     f"stride.{s}",
                     f"no threat for STRIDE '{s}' and not marked as not relevant",
                 )
+
+
+def _check_cra_requirements(ctx: _Ctx, catalog: set[str]) -> None:
+    path = ctx.project.root / "models" / ctx.sub.name / MODEL_FILE
+
+    def add(severity: Literal["error", "warning"], code: str, loc: str, msg: str) -> None:
+        ctx.issues.append(Issue(path, loc, msg, code, severity, ctx.sub.name))
+
+    for req, why in ctx.sub.meta.cra_not_applicable.items():
+        loc = f"cra_not_applicable.{req}"
+        if req not in catalog:
+            add("warning", "unknown-cra-ref", loc, f"'{req}' is not in the CRA catalog")
+        if not why.strip():
+            add("error", "missing-rationale", loc, "'not applicable' needs a rationale")
+    if not ctx.sub.objects["threats"]:
+        return  # analysis not started yet: no list of 21 gaps on an empty model
+    for row in cra_coverage(ctx.sub):
+        if row.status == "open":
+            add(
+                "warning",
+                "cra-requirement-uncovered",
+                f"cra_not_applicable.{row.id}",
+                f"CRA requirement {row.id} has no threat or measure and is not marked "
+                "as not applicable",
+            )
+
+
+def _check_vulnerabilities(ctx: _Ctx, inv: sbom.Inventory) -> None:
+    invalid = {i.path.name for i in inv.issues if i.path is not None}
+    for e in _of(ctx.sub, "elements", Element):
+        for name in e.sbom:
+            if name not in inv.sboms and name not in invalid:
+                ctx.add("error", "sbom-missing", "elements", e, "sbom", f"{sbom.SBOM_DIR}/{name}")
+    for f in sbom.findings(ctx.sub, inv):
+        if f.open and not f.threats:
+            element = ctx.sub.objects["elements"][f.element]
+            ctx.add(
+                "error",
+                "vulnerability-untreated",
+                "elements",
+                element,
+                "sbom",
+                f"{f.vuln} ({f.state}) in {f.purl}: no threat lists it in `vulnerabilities`",
+            )
 
 
 def _of[T: ModelObject](sub: SubModel, collection: str, cls: type[T]) -> list[T]:

@@ -11,6 +11,9 @@ export type View =
   | { kind: 'coverage' }
   | { kind: 'settings' }
   | { kind: 'controls' }
+  | { kind: 'cra' }
+  | { kind: 'vulnerabilities' }
+  | { kind: 'changes' }
   | { kind: 'documents' }
   | { kind: 'objects'; collection: Collection; selected: string | null }
   | { kind: 'history' }
@@ -20,6 +23,20 @@ export interface HistoryEntry {
   time: string
   kind: 'auto' | 'save' | 'open'
   counts: Record<Collection, number>
+}
+
+/** A project in a list: recently opened (local) or in the workspace (server). */
+export interface ProjectRef {
+  path: string
+  name: string
+  archived: boolean
+}
+
+export interface SbomInfo {
+  sboms: { file: string; components: number; elements: string[] }[]
+  vulnerability_files: string[]
+  statements: number
+  issues: string[]
 }
 
 const LANG_KEY = 'tw-lang'
@@ -49,7 +66,7 @@ class AppState {
     }
   }
   version = $state('')
-  recent = $state<string[]>([])
+  recent = $state<ProjectRef[]>([])
   server = $state(false) // runs as a shared server: workspace and upload instead of local folders
   project = $state<ProjectInfo | null>(null)
   /** An open project fixes the language, so what the UI shows is what lands in the project. */
@@ -68,6 +85,7 @@ class AppState {
   changed = $state<Set<string>>(new Set())
   tags = $state<{ name: string; date: string }[]>([])
   vcs = $state(false)
+  sbom = $state<SbomInfo>({ sboms: [], vulnerability_files: [], statements: 0, issues: [] })
   lastAutosave = $state<string | null>(null) // ISO time of the latest autosave in this session
   recovery = $state<HistoryEntry | null>(null) // unsaved autosave found when the project was opened
 
@@ -99,7 +117,7 @@ class AppState {
     // from the start page), their view wins over the landing view. Taken before the first
     // request, so a click during /app counts as navigation too.
     const before = this.view
-    const info = await api<{ version: string; recent: string[]; server: boolean }>('GET', '/app')
+    const info = await api<{ version: string; recent: ProjectRef[]; server: boolean }>('GET', '/app')
     this.version = info.version
     this.recent = info.recent
     this.server = info.server
@@ -120,6 +138,7 @@ class AppState {
     this.cra = cra.entries
     const lib = await api<{ elements: ElementType[] }>('GET', '/library').catch(() => ({ elements: [] }))
     this.flowProtocols = lib.elements.filter((t) => t.kind === 'flow').map((t) => t.name.en)
+    await this.refreshSbom().catch(() => {})
     const names = Object.keys(info.models)
     if (!this.modelName || !names.includes(this.modelName)) this.modelName = names[0] ?? null
     await this.refreshModel()
@@ -131,6 +150,14 @@ class AppState {
   /** Landing view: the diagram once there is something to see, else the setup wizard. */
   home(): View {
     return this.model && this.objects('elements').length ? { kind: 'diagram' } : { kind: 'setup', step: 0 }
+  }
+
+  async refreshRecent(): Promise<void> {
+    this.recent = (await api<{ recent: ProjectRef[] }>('GET', '/app')).recent
+  }
+
+  async refreshSbom(): Promise<void> {
+    this.sbom = await api<SbomInfo>('GET', '/sbom')
   }
 
   async refreshProject(): Promise<void> {

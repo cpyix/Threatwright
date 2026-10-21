@@ -1,0 +1,5 @@
+schema_version: 1
+id: A-0003
+uuid: f1798c7a-d48a-4c3e-822d-e4a2c7332dcd
+title: Machine parameters (Machine controller)
+asset_class: Other.Configuration

@@ -6,6 +6,7 @@ Zones are drawn as dashed frames around their member elements.
 """
 
 from html import escape
+from itertools import pairwise
 
 from threatwright.model.objects import Element, Flow
 from threatwright.model.store import SubModel
@@ -27,6 +28,58 @@ def positions(sub: SubModel) -> dict[str, tuple[float, float]]:
             pos[eid] = (40 + (free % 4) * (W + 80), 40 + (free // 4) * (H + 90))
             free += 1
     return pos
+
+
+Pt = tuple[float, float]
+STUB = 16  # a line leaves a node straight for this distance before turning
+
+
+def facing(a: Pt, b: Pt) -> tuple[str, str]:
+    """Sides facing each other: side by side -> right/left, above each other -> bottom/top."""
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    if abs(dx) * H >= abs(dy) * W:
+        return ("right", "left") if dx >= 0 else ("left", "right")
+    return ("bottom", "top") if dy >= 0 else ("top", "bottom")
+
+
+def anchor(p: Pt, side: str, out: float = 0) -> Pt:
+    x, y = p
+    return {
+        "top": (x + W / 2, y - out),
+        "right": (x + W + out, y + H / 2),
+        "bottom": (x + W / 2, y + H + out),
+        "left": (x - out, y + H / 2),
+    }[side]
+
+
+def route(sub: SubModel, f: Flow, pos: dict[str, Pt]) -> list[Pt]:
+    """Polyline of a flow: stored sides and bend points, right angles in between.
+
+    Same rules as the GUI's FlowEdge (app/src/lib/diagram/route.ts).
+    """
+    s, t = pos[f.source], pos[f.target]
+    layout = sub.layout.edges.get(f.id)
+    auto_s, auto_t = facing(s, t)
+    s_side = (layout.source_side if layout else None) or auto_s
+    t_side = (layout.target_side if layout else None) or auto_t
+    via = [(p.x, p.y) for p in layout.points] if layout else []
+    if not via:
+        return [anchor(s, s_side), anchor(t, t_side)]
+    stops = [anchor(s, s_side), anchor(s, s_side, STUB), *via, anchor(t, t_side, STUB)]
+    out = [stops[0]]
+    for p in stops[1:]:
+        c = out[-1]
+        if c[0] != p[0] and c[1] != p[1]:
+            out.append((p[0], c[1]))  # horizontal first, then vertical
+        out.append(p)
+    out.append(anchor(t, t_side))
+    return out
+
+
+def _middle(points: list[Pt]) -> Pt:
+    """Middle of the longest segment: room for the label."""
+    a, b = max(pairwise(points), key=lambda s: abs(s[1][0] - s[0][0]) + abs(s[1][1] - s[0][1]))
+    return (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
 
 
 def _shape(e: Element, x: float, y: float, fill: str) -> str:
@@ -81,14 +134,15 @@ def render_svg(sub: SubModel, risks: dict[str, int] | None = None) -> str:
         f = sub.objects["flows"][fid]
         if not isinstance(f, Flow) or f.source not in pos or f.target not in pos:
             continue
-        (sx, sy), (tx, ty) = pos[f.source], pos[f.target]
-        x1, y1, x2, y2 = sx + W / 2, sy + H / 2, tx + W / 2, ty + H / 2
+        points = route(sub, f, pos)
         colour = "#a4161a" if risks.get(fid, 0) >= 4 else "#1b1f24"
         marker = ' marker-start="url(#arrow)"' if f.bidirectional else ""
+        mx, my = _middle(points)
+        path = " ".join(f"{x:g},{y:g}" for x, y in points)
         parts.append(
-            f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="{colour}" stroke-width="1.5" '
+            f'<polyline points="{path}" fill="none" stroke="{colour}" stroke-width="1.5" '
             f'marker-end="url(#arrow)"{marker}/>'
-            + _text((x1 + x2) / 2, (y1 + y2) / 2 - 6, f"{fid} {_short(f.title, 22)}", 11)
+            + _text(mx, my - 6, f"{fid} {_short(f.title, 22)}", 11)
         )
 
     for eid in sorted(elements):

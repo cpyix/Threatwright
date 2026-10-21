@@ -4,7 +4,7 @@ import { app } from './state.svelte'
 import type { Collection, Obj } from './types'
 
 export type Option = { value: string; label: string }
-export type FieldType = 'text' | 'longtext' | 'select' | 'multi' | 'bool' | 'tristate' | 'number' | 'date'
+export type FieldType = 'text' | 'longtext' | 'select' | 'multi' | 'bool' | 'tristate' | 'number' | 'date' | 'list' | 'evidence'
 
 export interface Field {
   key: string // dotted path into the object
@@ -29,6 +29,7 @@ const assetClasses = (): Option[] =>
 const stride = (): Option[] => STRIDE.map((s) => ({ value: s, label: `${s} – ${label(app.lang, s)}` }))
 const cra = (): Option[] =>
   Object.entries(app.cra).map(([id, e]) => ({ value: id, label: `${id} ${e[app.lang] ?? ''}` }))
+const sbomFiles = (): Option[] => app.sbom.sboms.map((s) => ({ value: s.file, label: s.file }))
 const targets = (): Option[] => [...refs('elements')(), ...refs('flows')()]
 // suggestions only: protocol stays free text (imports and custom protocols)
 const protocols = (): Option[] =>
@@ -43,6 +44,7 @@ export const FIELDS: Record<Collection, Field[]> = {
     { key: 'kind', label: 'kind', type: 'select', options: values('device', 'process', 'datastore', 'external'), required: true },
     { key: 'zone', label: 'zone', type: 'select', options: zones },
     { key: 'configurations', label: 'configurations', type: 'multi', options: configurations },
+    { key: 'sbom', label: 'sbom', type: 'multi', options: sbomFiles },
     { key: 'short_name', label: 'short_name', type: 'text' },
     { key: 'description', label: 'description', type: 'longtext' },
   ],
@@ -80,9 +82,14 @@ export const FIELDS: Record<Collection, Field[]> = {
     { key: 'measures', label: 'measures', type: 'multi', options: refs('measures') },
     { key: 'questions', label: 'questions', type: 'multi', options: refs('questions') },
     { key: 'cra_refs', label: 'cra_refs', type: 'multi', options: cra },
+    { key: 'vulnerabilities', label: 'vulnerabilities', type: 'list' },
     { key: 'status', label: 'status', type: 'select', options: values('identified', 'assessed', 'treated', 'accepted', 'rejected'), required: true },
     { key: 'acceptance.by', label: 'acceptance_by', type: 'text' },
+    { key: 'acceptance.role', label: 'acceptance_role', type: 'text' },
+    { key: 'acceptance.date', label: 'acceptance_date', type: 'date' },
     { key: 'acceptance.rationale', label: 'acceptance_rationale', type: 'longtext' },
+    { key: 'rejection.by', label: 'rejection_by', type: 'text' },
+    { key: 'rejection.date', label: 'rejection_date', type: 'date' },
     { key: 'rejection.rationale', label: 'rejection_rationale', type: 'longtext' },
   ],
   measures: [
@@ -93,6 +100,7 @@ export const FIELDS: Record<Collection, Field[]> = {
     { key: 'owner', label: 'owner', type: 'text' },
     { key: 'due', label: 'due', type: 'date' },
     { key: 'evidence', label: 'evidence', type: 'longtext' },
+    { key: 'evidence_refs', label: 'evidence_refs', type: 'evidence' },
     { key: 'cra_refs', label: 'cra_refs', type: 'multi', options: cra },
     { key: 'description', label: 'description', type: 'longtext' },
   ],

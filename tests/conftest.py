@@ -1,10 +1,13 @@
+import asyncio
 import ipaddress
+import os
 import shutil
 import socket
 import threading
 import time
 from collections.abc import Iterator
 from pathlib import Path
+from typing import Any
 from urllib.parse import urlparse
 
 import pytest
@@ -96,6 +99,17 @@ def _serve(project: Path | None, root: Path | None = None) -> Iterator[str]:
     sock.bind(("127.0.0.1", 0))
     port = sock.getsockname()[1]
     app = create_app(port, project, root=root)
+    # THREATWRIGHT_E2E_DELAY_MS=300 slows every API answer, like a busy CI runner, so tests
+    # that do not wait for the app show their races locally too
+    delay = int(os.environ.get("THREATWRIGHT_E2E_DELAY_MS", "0")) / 1000
+    if delay:
+
+        @app.middleware("http")
+        async def slow(request: Any, call_next: Any) -> Any:
+            if request.url.path.startswith("/api/"):
+                await asyncio.sleep(delay)
+            return await call_next(request)
+
     server = uvicorn.Server(uvicorn.Config(app, log_level="warning"))
     thread = threading.Thread(target=server.run, kwargs={"sockets": [sock]}, daemon=True)
     thread.start()
@@ -138,6 +152,47 @@ def server_gui(workspace: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
     """GUI in server mode (ADR-0013): no project open, workspace confined."""
     monkeypatch.setenv("THREATWRIGHT_CONFIG_DIR", str(tmp_path / "config"))
     yield from _serve(None, root=workspace)
+
+
+class AppIdle:
+    """Waits for the app instead of for the clock: every click starts API requests whose
+    answers re-render the page, and the next step must not overtake them."""
+
+    def __init__(self, page: Page) -> None:
+        self.page = page
+        self.open = 0
+        page.on("request", lambda r: self._count(r.url, 1))
+        page.on("requestfinished", lambda r: self._count(r.url, -1))
+        page.on("requestfailed", lambda r: self._count(r.url, -1))
+
+    def _count(self, url: str, step: int) -> None:
+        if "/api/" in urlparse(url).path:
+            self.open += step
+
+    def settle(self, timeout: float = 20) -> None:
+        """Return once no API request has been open for 300 ms."""
+        deadline = time.monotonic() + timeout
+        quiet = 0
+        while quiet < 3:
+            if time.monotonic() > deadline:
+                raise TimeoutError(f"{self.open} API request(s) still open")
+            self.page.wait_for_timeout(100)  # lets Playwright deliver the request events
+            quiet = quiet + 1 if self.open == 0 else 0
+
+    def save(self) -> None:
+        """Ctrl+S after all pending edits arrived, and wait until the files are written."""
+        self.settle()
+        with self.page.expect_response(
+            lambda r: urlparse(r.url).path == "/api/save" and r.request.method == "POST",
+            timeout=20_000,
+        ):
+            self.page.keyboard.press("Control+s")
+        self.settle()
+
+
+@pytest.fixture
+def idle(page: Page) -> AppIdle:
+    return AppIdle(page)
 
 
 @pytest.fixture

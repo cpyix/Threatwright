@@ -16,6 +16,13 @@ SCHEMA_VERSION: Literal[1] = 1
 Uuid = Annotated[uuidlib.UUID, PlainSerializer(str, return_type=str)]
 ObjectId = Annotated[str, Field(pattern=r"^[A-Za-z][A-Za-z0-9_]*-[0-9]{4,}$")]
 Stride = Literal["S", "T", "R", "I", "D", "E"]
+EVIDENCE_DIR = "evidence"
+EvidenceRef = Annotated[
+    # every path segment starts with a word character: no "..", no absolute paths
+    str, Field(pattern=r"^(https?://\S+|evidence(/\w[\w. -]*)+)$")
+]
+# plain file name in the project folder sbom/ (no paths)
+SbomFile = Annotated[str, Field(pattern=r"^[A-Za-z0-9_][A-Za-z0-9._-]*\.json$")]
 
 
 def new_uuid() -> uuidlib.UUID:
@@ -51,8 +58,11 @@ class ProjectConfig(Versioned):
     method: str = "tr-03183-1"
     language: Literal["de", "en"] = "de"
     lifecycle: Literal["development", "post_market"] = "development"
+    support_until: datetime.date | None = None  # end of the support period (CRA Art. 13(8))
+    next_review: datetime.date | None = None  # when the threat model is reviewed next
     libraries: list[str] = []
     templates: list[str] = []
+    archived: bool = False  # hidden from project lists until searched for
 
 
 class CustomField(Strict):
@@ -113,6 +123,8 @@ class ModelMeta(Versioned):
     configurations: list[Configuration] = []
     zones: list[Zone] = []
     changelog: list[ChangelogEntry] = []
+    # CRA Annex I requirement id -> why it does not apply to this product
+    cra_not_applicable: dict[str, str] = {}
 
 
 class NodeLayout(Strict):
@@ -130,10 +142,27 @@ class DiagramNote(Strict):
     text: str
 
 
+Side = Literal["top", "right", "bottom", "left"]
+
+
+class Point(Strict):
+    x: float
+    y: float
+
+
+class EdgeLayout(Strict):
+    """Route of one data flow: the node sides it attaches to and its bend points."""
+
+    source_side: Side | None = None  # None: the side facing the other end
+    target_side: Side | None = None
+    points: list[Point] = []  # absolute canvas coordinates; empty: automatic route
+
+
 class DiagramLayout(Versioned):
-    """Content of diagram.layout.yaml: positions and canvas notes, never model content."""
+    """Content of diagram.layout.yaml: positions, routes and canvas notes, never model content."""
 
     nodes: dict[str, NodeLayout] = {}
+    edges: dict[str, EdgeLayout] = {}  # flow id -> route
     notes: dict[str, DiagramNote] = {}
 
 
@@ -145,6 +174,7 @@ class Element(ModelObject):
     zone: str | None = None
     configurations: list[str] = []
     stride_not_relevant: dict[Stride, str] = {}  # category -> rationale
+    sbom: list[SbomFile] = []  # CycloneDX files in sbom/ describing this element's software
 
 
 class Flow(ModelObject):
@@ -179,9 +209,11 @@ class Assessment(Environment):
 
 
 class Decision(Strict):
-    """Acceptance or rejection of a threat: who and why."""
+    """Acceptance or rejection of a threat: who, in which role, when and why."""
 
     by: str | None = None
+    role: str | None = None
+    date: datetime.date | None = None
     rationale: str
 
 
@@ -203,6 +235,7 @@ class Threat(ModelObject):
     measures: list[ObjectId] = []
     questions: list[ObjectId] = []
     cra_refs: list[str] = []
+    vulnerabilities: list[str] = []  # ids (CVE, GHSA, ...) this threat treats
     status: ThreatStatus = "identified"
     acceptance: Decision | None = None
     rejection: Decision | None = None
@@ -225,6 +258,8 @@ class Measure(ModelObject):
     status: MeasureStatus = "proposed"
     due: datetime.date | None = None
     evidence: str | None = None
+    # https links or files in the project folder evidence/ (path relative to the project)
+    evidence_refs: list[EvidenceRef] = []
     cra_refs: list[str] = []
     oscal_ref: OscalRef | None = None
 

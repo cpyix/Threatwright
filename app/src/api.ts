@@ -66,7 +66,12 @@ export async function download(path: string, filename: string): Promise<void> {
     const data = await response.json().catch(() => ({ detail: response.statusText }))
     throw new ApiError(response.status, data.detail)
   }
-  const url = URL.createObjectURL(await response.blob())
+  save(await response.blob(), filename)
+}
+
+/** Hand a blob to the browser as a file to save. */
+export function save(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
   a.download = filename

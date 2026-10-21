@@ -467,7 +467,20 @@ def create_app(
             return project_info()
 
     def project_folder(raw: str) -> Path:
-        path = client_path(raw)
+        """A project this server lists (workspace on a server, recent or open project locally).
+
+        Archiving and deleting only work on those: the path used comes from that list,
+        never from the request, so a request cannot point them at an arbitrary folder.
+        """
+        if jail is not None:
+            known = [str(jail / p["path"]) for p in archive.projects_in(jail) if p["path"] != "."]
+        else:
+            known = _recent() + ([str(session.project.root)] if session.project else [])
+        wanted = os.path.realpath(raw if jail is None else os.path.join(jail, raw))
+        match = next((k for k in known if os.path.realpath(k) == wanted), None)
+        if match is None:
+            raise HTTPException(404, "not a project folder")
+        path = Path(match)
         if path.is_symlink() or not (path / PROJECT_FILE).is_file():
             raise HTTPException(404, "not a project folder")
         return path
@@ -494,9 +507,7 @@ def create_app(
     @app.delete("/api/projects")
     def delete_project(path: str) -> dict[str, bool]:
         """Delete an archived project folder for good (the GUI asks for confirmation first)."""
-        folder = project_folder(path)
-        if jail is not None and folder.resolve() == jail:
-            raise HTTPException(409, "the workspace itself is never deleted")
+        folder = project_folder(path)  # never the workspace itself: it is not in the list
         if not archive.describe(folder)["archived"]:
             raise HTTPException(409, "only archived projects can be deleted")
         with session.lock:
@@ -900,7 +911,10 @@ def create_app(
         if folder is None:
             raise HTTPException(422, "kind: sbom|vulnerabilities")
         base_name = Path(name).name
-        if not re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9._-]*\.json", base_name):
+        # suffix checked apart: a class containing "." followed by "\.json" backtracks (ReDoS)
+        if not (
+            re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9._-]*", base_name) and base_name.endswith(".json")
+        ):
             raise HTTPException(422, "file name: letters, digits, . _ - and the suffix .json")
         data = bytearray()
         async for chunk in request.stream():
@@ -914,7 +928,7 @@ def create_app(
             if not target.startswith(target_dir + os.sep):  # ".." (the check CodeQL recognises)
                 raise HTTPException(400, "invalid file name")
             with tempfile.TemporaryDirectory() as tmp:
-                check = Path(tmp) / base_name
+                check = Path(tmp) / "upload.json"  # fixed name: nothing from the request
                 check.write_bytes(bytes(data))
                 try:  # only files Threatwright can read land in the project
                     if kind == "sbom":
@@ -944,12 +958,14 @@ def create_app(
             folder = os.path.normpath(os.path.join(session.require().root.resolve(), EVIDENCE_DIR))
             base, dot, ext = stem.rpartition(".")
             candidate, n = stem, 1
-            while os.path.exists(os.path.join(folder, candidate)):  # never overwrite evidence
+            while True:  # never overwrite evidence
+                target = os.path.normpath(os.path.join(folder, candidate))
+                if not target.startswith(folder + os.sep):  # checked before any use of the path
+                    raise HTTPException(400, "invalid file name")
+                if not os.path.exists(target):
+                    break
                 n += 1
                 candidate = f"{base}-{n}.{ext}" if dot and base else f"{stem}-{n}"
-            target = os.path.normpath(os.path.join(folder, candidate))
-            if not target.startswith(folder + os.sep):  # the check CodeQL recognises
-                raise HTTPException(400, "invalid file name")
             os.makedirs(folder, exist_ok=True)
             Path(target).write_bytes(bytes(data))
             return {"ref": f"{EVIDENCE_DIR}/{candidate}"}
@@ -961,13 +977,11 @@ def create_app(
             root = session.require().root.resolve()
         folder = os.path.normpath(os.path.join(root, EVIDENCE_DIR))
         target = os.path.normpath(os.path.join(root, ref))
+        if not target.startswith(folder + os.sep):  # checked before any use of the path
+            raise HTTPException(404, "no such evidence file")
         path = Path(target)
         inside = [p for p in [path, *path.parents] if p.is_relative_to(folder)]  # incl. folder
-        if (
-            not target.startswith(folder + os.sep)
-            or any(p.is_symlink() for p in inside)  # no way out of the project via a link
-            or not path.is_file()
-        ):
+        if any(p.is_symlink() for p in inside) or not path.is_file():  # no way out via a link
             raise HTTPException(404, "no such evidence file")
         return Response(
             path.read_bytes(),

@@ -179,9 +179,11 @@ class Assessment(Environment):
 
 
 class Decision(Strict):
-    """Acceptance or rejection of a threat: who and why."""
+    """Acceptance or rejection of a threat: who, in which role, when and why."""
 
     by: str | None = None
+    role: str | None = None
+    date: datetime.date | None = None
     rationale: str
 
 

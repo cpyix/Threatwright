@@ -26,4 +26,5 @@ outline:
   - type: traceability
   - type: questions
   - type: custom_fields
+  - type: approvals
   - type: changelog

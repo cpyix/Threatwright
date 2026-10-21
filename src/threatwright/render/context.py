@@ -5,6 +5,7 @@ numbers and dates (see docs/vorlagenreferenz.md for the data model).
 """
 
 from collections.abc import Callable
+from dataclasses import asdict
 from typing import Any
 
 from threatwright.branding import PRODUCT_NAME
@@ -23,6 +24,7 @@ from threatwright.render.env import make_env, make_filters, sort_by_risk
 from threatwright.render.labels import Lang, t
 from threatwright.render.package import TemplateMeta
 from threatwright.render.sections import build_outline
+from threatwright.vcs import revision
 
 Ctx = dict[str, Any]
 Filters = dict[str, Callable[..., Any]]
@@ -49,6 +51,8 @@ KNOWN_VARIABLES = frozenset(
         "unassessed_count",
         "custom_fields",
         "acceptance",
+        "approvals",
+        "revision",
         "outline",
     }
 )
@@ -473,6 +477,30 @@ def _risk_distribution(threats: list[Ctx], method: Ctx) -> list[Ctx]:
     return rows
 
 
+def _approvals(threats: list[Ctx], rejected: list[Ctx], lang: Lang) -> list[Ctx]:
+    """Accepted and rejected threats with who decided, in which role and when."""
+    rows = []
+    for th in [*threats, *rejected]:
+        decision = th["acceptance"] if th["status"] == "accepted" else th["rejection"]
+        if th["status"] not in ("accepted", "rejected") or decision is None:
+            continue
+        rows.append(
+            {
+                "threat": th["id"],
+                "threat_title": th["title"],
+                "model": th["model"],
+                "decision": th["status"],
+                "decision_label": t(f"threat_status.{th['status']}", lang),
+                "risk": th["risk"],
+                "by": decision["by"],
+                "role": decision["role"],
+                "date": decision["date"],
+                "rationale": decision["rationale"],
+            }
+        )
+    return sorted(rows, key=lambda r: (r["date"] is None, r["date"] or "", r["threat"]))
+
+
 def _custom_fields(project: Project, items: dict[str, list[Ctx]], lang: Lang) -> list[Ctx]:
     labels: dict[tuple[str, str], str] = {}
     for obj_type, defs in project.custom_fields.fields.items():
@@ -573,6 +601,8 @@ def build_context(
             lang,
         ),
         "acceptance": _acceptance(project, method, lang, risk_labels),
+        "approvals": _approvals(data["threats"], data["rejected_threats"], lang),
+        "revision": asdict(rev) if (rev := revision(project.root)) else None,
     }
     env = make_env(filters)
     ctx["outline"] = build_outline(meta.outline, ctx, env, filters)

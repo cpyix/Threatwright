@@ -138,6 +138,16 @@ def _getters(f: Filters) -> dict[str, dict[str, Callable[[Ctx], str]]]:
             "summary": lambda c: c["summary"],
             "author": lambda c: _s(c["author"]),
         },
+        "approvals": {
+            "threat": lambda r: f"{r['threat']} {r['threat_title']}",
+            "status": lambda r: r["decision_label"],
+            "risk": lambda r: _level(r["risk"], f),
+            "by": lambda r: _s(r["by"]),
+            "role": lambda r: _s(r["role"]),
+            "date": lambda r: f["date"](r["date"]) if r["date"] else DASH,
+            "rationale": lambda r: _s(r["rationale"]),
+            "model": lambda r: r["model"],
+        },
         "custom_fields": {
             "object": lambda c: c["object"],
             "field": lambda c: c["label"],
@@ -338,7 +348,9 @@ class _Builder:
             ]
             if th["acceptance"]:
                 acc = th["acceptance"]
-                pairs.append(("acceptance", f"{acc['by'] or DASH}: {acc['rationale']}"))
+                who = (acc["by"] or DASH) + (f" ({acc['role']})" if acc["role"] else "")
+                when = f", {self.f['date'](acc['date'])}" if acc["date"] else ""
+                pairs.append(("acceptance", f"{who}{when}: {acc['rationale']}"))
             if th["questions"]:
                 pairs.append(("questions", _refs(th["questions"], with_title=True)))
             out.append({"kind": "h2", "text": f"{th['id']} {th['title']}"})
@@ -375,6 +387,19 @@ class _Builder:
 
     def custom_fields(self, s: Section) -> list[Block]:
         return self.table("custom_fields", self.ctx["custom_fields"], s.columns)
+
+    def approvals(self, s: Section) -> list[Block]:
+        rev = self.ctx["revision"]
+        if rev is None:
+            basis = self.t("revision_none")
+        else:
+            basis = rev["commit"][:12] + (f" ({rev['tag']})" if rev["tag"] else "")
+            if rev["dirty"]:
+                basis += f", {self.t('revision_dirty')}"
+        return [
+            self.fields([("revision", basis)]),
+            *self.table("approvals", self.ctx["approvals"], s.columns),
+        ]
 
     def text(self, s: Section) -> list[Block]:
         source = s.text if isinstance(s.text, str) else getattr(s.text, self.ctx["lang"])

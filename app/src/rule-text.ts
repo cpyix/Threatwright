@@ -36,6 +36,7 @@ export const RULES: Record<Lang, Record<string, string>> = {
     'library-outdated': 'Die Bibliothek hat eine neuere Fassung des übernommenen Eintrags',
     'library-ref-unknown': 'Verweis auf einen Bibliothekseintrag, den es nicht (mehr) gibt',
     'unknown-cra-ref': 'CRA-Bezug ist nicht im CRA-Katalog',
+    'acceptance-undocumented': 'Bei der Akzeptanz fehlt, wer sie in welcher Rolle und wann erteilt hat',
   },
   en: {
     schema: 'File violates the schema (wrong type, unknown field, invalid YAML)',
@@ -70,5 +71,6 @@ export const RULES: Record<Lang, Record<string, string>> = {
     'library-outdated': 'The library has a newer version of the adopted entry',
     'library-ref-unknown': 'Reference to a library entry that does not exist (any more)',
     'unknown-cra-ref': 'CRA reference is not in the CRA catalog',
+    'acceptance-undocumented': 'The acceptance does not say who granted it, in which role and when',
   },
 }

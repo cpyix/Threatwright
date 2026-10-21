@@ -110,6 +110,7 @@ Abschnittstypen und wählbare Spalten (Standardspalten **fett**):
 | `risk_distribution` | Anzahl je Risikostufe, akzeptabel/zu behandeln | **level, label, count, treatment** |
 | `changelog` | Änderungshistorie der Modelle | **version, date, summary, author**, model |
 | `custom_fields` | eigene Felder (`custom`) aller Objekte | **object, field, value** |
+| `approvals` | Freigaben: akzeptierte und verworfene Bedrohungen mit Name, Rolle, Datum und Begründung, dazu der Git-Stand (Commit, Tag, nicht eingecheckte Änderungen) | **threat, status, by, role, date, rationale**, risk, model |
 | `text` | Freitext | – |
 | `decisions` | Entscheidungspunkte der Akzeptanzkriterien | – |
 | `signatures` | Unterschriftstabelle | – |
@@ -219,6 +220,8 @@ Alle Werte werden bei jedem Erzeugen neu berechnet und nie gespeichert. Die Vorl
 | `changelog[]` | Einträge aller Modelle, neueste zuerst: `version`, `date`, `summary`, `author`, `model` |
 | `custom_fields[]` | `object`, `object_type`, `field`, `label`, `value` |
 | `acceptance` | Entscheidungsvorlage: `threats_total`, `assessed_total`, `current_to_treat`, `approvers`, `decisions[]` (`id`, `title`, `question`, `note`, `current`, `recommended`, `options[]` mit `label`, `current`, `recommended`, `to_treat`) |
+| `approvals[]` | akzeptierte und verworfene Bedrohungen, nach Datum: `threat`, `threat_title`, `model`, `decision` (`accepted`/`rejected`), `decision_label`, `risk`, `by`, `role`, `date`, `rationale` |
+| `revision` | Git-Stand des Projekts beim Erzeugen: `commit`, `tag` (Tag auf dem Commit oder `None`), `dirty` (nicht eingecheckte Änderungen); `None` ohne Git |
 | `outline[]` | Abschnitte der Gliederung: `type`, `title`, `blocks[]` |
 
 Felder einer Bedrohung (`threats[]`):
@@ -236,7 +239,7 @@ Felder einer Bedrohung (`threats[]`):
 | `residual` | Restrisiko (gleiche Felder wie die Bewertung) oder `None` |
 | `measures[]` | `id`, `title`, `status`, `status_label` |
 | `cra_refs[]` | `id`, `title` (aus dem CRA-Katalog) |
-| `status`, `status_label`, `acceptance`, `rejection`, `custom` | Status, Entscheidungen (`by`, `rationale`), eigene Felder |
+| `status`, `status_label`, `acceptance`, `rejection`, `custom` | Status, Entscheidungen (`by`, `role`, `date`, `rationale`), eigene Felder |
 
 ### Filter und Funktionen
 
@@ -294,6 +297,6 @@ Danach:
 
 ## Reproduzierbarkeit
 
-Datum und Version eines Dokuments stammen aus der Änderungshistorie des Modells (`changelog` in `model.yaml`), nie aus der Uhrzeit. Bei unveränderten Eingaben erzeugt `build` byteweise identische Markdown-, HTML-, DOCX- und ODT-Dateien; Zeitstempel in den ZIP-Containern sind fest. Für PDF gilt das nicht, weil LibreOffice eigene Metadaten schreibt.
+Datum und Version eines Dokuments stammen aus der Änderungshistorie des Modells (`changelog` in `model.yaml`), nie aus der Uhrzeit. Bei unveränderten Eingaben erzeugt `build` byteweise identische Markdown-, HTML-, DOCX- und ODT-Dateien; Zeitstempel in den ZIP-Containern sind fest. Zu den Eingaben zählt auch der Git-Stand (`revision`), den der Abschnitt `approvals` zeigt. Für PDF gilt das nicht, weil LibreOffice eigene Metadaten schreibt.
 
 Die mitgelieferten DOCX/ODT-Dateien erzeugt `uv run python scripts/make_templates.py` aus Code. Änderungen am Layout gehören dorthin, nicht in die Binärdateien.

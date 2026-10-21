@@ -262,13 +262,25 @@ def _check_threat(
                     f"risk {ev.risk} exceeds the acceptable limit {ev.max_acceptable_risk}",
                 )
             allowed = method.acceptance.approvers.get(ev.risk) if ev.risk is not None else None
-            by = t.acceptance.by if t.acceptance else None
-            if allowed is not None and by not in allowed:
+            acc = t.acceptance
+            # approvers may be named as persons or as roles
+            if allowed is not None and (acc is None or not {acc.by, acc.role} & set(allowed)):
                 err(
                     "acceptance-not-authorized",
                     "acceptance.by",
                     f"risk {ev.risk} may only be accepted by: {', '.join(allowed)}",
                 )
+        missing = [
+            f
+            for f in ("by", "role", "date")
+            if t.acceptance is None or getattr(t.acceptance, f) in (None, "")
+        ]
+        if missing:
+            warn(
+                "acceptance-undocumented",
+                f"acceptance.{missing[0]}",
+                f"the approval needs who, role and date (missing: {', '.join(missing)})",
+            )
     if t.status == "rejected" and (t.rejection is None or not t.rejection.rationale.strip()):
         err("rejection-without-rationale", "rejection.rationale", "rejection needs a rationale")
 

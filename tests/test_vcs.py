@@ -15,6 +15,7 @@ from threatwright.vcs import (
     load_project_at,
     release_tags,
     render_diff,
+    revision,
     semantic_diff,
 )
 
@@ -44,6 +45,17 @@ def repo(tmp_path: Path) -> Path:
     git(root, "commit", "-q", "-m", "v1")
     git(root, "tag", "-a", "v1.0", "-m", "release")
     return root / "Ordner ä" / "project"
+
+
+def test_revision_names_commit_tag_and_uncommitted_changes(repo: Path, tmp_path: Path) -> None:
+    rev = revision(repo)
+    assert rev is not None and len(rev.commit) == 40 and rev.tag == "v1.0" and not rev.dirty
+    (repo / "models" / "main" / "model.yaml").write_text("title: changed\n", encoding="utf-8")
+    rev = revision(repo)
+    assert rev is not None and rev.dirty
+    plain = tmp_path / "plain"
+    plain.mkdir()
+    assert revision(plain) is None  # not a Git repository
 
 
 def edit_and_commit(project_dir: Path) -> None:

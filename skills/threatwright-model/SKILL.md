@@ -149,10 +149,14 @@ measures: [M-0001, M-0002]
 questions: []
 cra_refs: [AI-I-2-d, AI-I-2-f]        # ids from the CRA catalog only
 status: identified                    # identified | assessed | treated | accepted | rejected
-acceptance:                           # only with status accepted
-  by: <role or name given by the user>
+acceptance:                           # only with status accepted; only what the user tells you
+  by: <name given by the user>
+  role: <role, e.g. Product Owner>     # approvers in the method may be names or roles
+  date: 2026-10-01                     # day of the decision, YYYY-MM-DD
   rationale: …
 rejection:                            # only with status rejected
+  by: <optional>
+  date: <optional>
   rationale: …
 ```
 

@@ -22,6 +22,7 @@ LABELS: dict[str, tuple[str, str]] = {
     "section.text": ("", ""),
     "section.decisions": ("Entscheidungspunkte", "Decision points"),
     "section.signatures": ("Freigabe", "Approval"),
+    "section.approvals": ("Freigaben", "Approvals"),
     "section.acceptance_impact": (
         "Anhang: Auswirkung der Optionen auf bestehende Modelle",
         "Appendix: effect of the options on existing models",
@@ -86,6 +87,13 @@ LABELS: dict[str, tuple[str, str]] = {
     "col.role": ("Rolle", "Role"),
     "col.signature": ("Unterschrift", "Signature"),
     "col.model": ("Modell", "Model"),
+    # approvals
+    "revision": ("Stand im Git (Commit)", "Git revision (commit)"),
+    "revision_none": ("kein Git-Repository", "no Git repository"),
+    "revision_dirty": (
+        "mit nicht eingecheckten Änderungen",
+        "with uncommitted changes",
+    ),
     # field labels
     "project": ("Projekt", "Project"),
     "model": ("Modell", "Model"),

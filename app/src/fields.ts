@@ -82,7 +82,11 @@ export const FIELDS: Record<Collection, Field[]> = {
     { key: 'cra_refs', label: 'cra_refs', type: 'multi', options: cra },
     { key: 'status', label: 'status', type: 'select', options: values('identified', 'assessed', 'treated', 'accepted', 'rejected'), required: true },
     { key: 'acceptance.by', label: 'acceptance_by', type: 'text' },
+    { key: 'acceptance.role', label: 'acceptance_role', type: 'text' },
+    { key: 'acceptance.date', label: 'acceptance_date', type: 'date' },
     { key: 'acceptance.rationale', label: 'acceptance_rationale', type: 'longtext' },
+    { key: 'rejection.by', label: 'rejection_by', type: 'text' },
+    { key: 'rejection.date', label: 'rejection_date', type: 'date' },
     { key: 'rejection.rationale', label: 'rejection_rationale', type: 'longtext' },
   ],
   measures: [

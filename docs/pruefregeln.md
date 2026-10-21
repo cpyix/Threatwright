@@ -50,3 +50,4 @@ Die Oberfläche zeigt dieselben Meldungen, weil sie dieselbe Prüfung aufruft.
 | `library-outdated` | Die Bibliothek hat eine neuere Fassung des übernommenen Eintrags |
 | `library-ref-unknown` | `library_ref` verweist auf einen Eintrag, den es nicht (mehr) gibt |
 | `unknown-cra-ref` | CRA-Bezug ist nicht im CRA-Katalog |
+| `acceptance-undocumented` | Bei einer Akzeptanz fehlt Name (`by`), Rolle (`role`) oder Datum (`date`) der Freigabe |

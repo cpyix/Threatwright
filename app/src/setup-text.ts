@@ -54,6 +54,11 @@ const de = {
       'Wie wird sie ausgeliefert: Store, Installationsprogramm, eigener Updater?',
       'Gibt es ein Backend oder eine API, und mit welchen Rechten laufen die Nutzer?',
     ],
+    'embedded-linux': [
+      'Welche Prozesse laufen auf dem Steuerungsrechner, und mit welchen Rechten (root, Dienstkonto, Bedienkonto)?',
+      'Welche Dienste lauschen auf welchen Ports und Interfaces, und wie authentisieren sie?',
+      'Wie kommen Kernel, Kernelmodule, Applikationsprogramme und Updates auf das Gerät?',
+    ],
   },
   model_title: 'Titel des Modells',
   description: 'Beschreibung (Zweck, Verwendung, Umgebung, Systemgrenze)',
@@ -219,6 +224,11 @@ const en: Text = {
       'How is it distributed: store, installer, own updater?',
       'Is there a backend or an API, and with which rights do the users run it?',
     ],
+    'embedded-linux': [
+      'Which processes run on the industrial PC, and with which rights (root, service account, operator account)?',
+      'Which services listen on which ports and interfaces, and how do they authenticate?',
+      'How do the kernel, kernel modules, application programs and updates get onto the device?',
+    ],
   },
   model_title: 'Model title',
   description: 'Description (purpose, use, environment, system boundary)',
@@ -346,6 +356,9 @@ export const CATEGORIES: Record<Lang, Record<string, string>> = {
     backend: 'Cloud und Backend',
     distribution: 'Auslieferung und Updates',
     components: 'Drittkomponenten',
+    'linux-processes': 'Prozesse auf dem Linux-Host',
+    'linux-platform': 'Firmware, Kernel und Treiber',
+    'linux-actors': 'Personen mit Systemzugang',
     other: 'Weitere',
   },
   en: {
@@ -366,6 +379,9 @@ export const CATEGORIES: Record<Lang, Record<string, string>> = {
     backend: 'Cloud and backend',
     distribution: 'Delivery and updates',
     components: 'Third-party components',
+    'linux-processes': 'Processes on the Linux host',
+    'linux-platform': 'Firmware, kernel and drivers',
+    'linux-actors': 'People with system access',
     other: 'Other',
   },
 }

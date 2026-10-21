@@ -21,6 +21,10 @@
         {tr(lang, 'legend_cross_zone')}
       </li>
       <li>
+        <svg width="28" height="8" aria-hidden="true"><line x1="0" y1="4" x2="28" y2="4" class="cross-privilege" /></svg>
+        {tr(lang, 'boundary_privilege')}
+      </li>
+      <li>
         <svg width="28" height="8" aria-hidden="true"><line x1="0" y1="4" x2="28" y2="4" class="high" /></svg>
         {tr(lang, 'legend_high_risk_flow')}
       </li>
@@ -75,6 +79,9 @@
   }
   .cross {
     stroke-dasharray: 7 4;
+  }
+  .cross-privilege {
+    stroke-dasharray: 2 3;
   }
   .high {
     stroke: var(--error);

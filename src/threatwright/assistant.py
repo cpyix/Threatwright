@@ -24,6 +24,7 @@ from threatwright.model.objects import (
     Threat,
 )
 from threatwright.model.store import SubModel
+from threatwright.topology import effective_zone
 
 Lang = Literal["de", "en"]
 
@@ -47,7 +48,7 @@ def _zone_env(sub: SubModel, target: ModelObject) -> Environment:
     element = target
     if isinstance(target, Flow):
         element = sub.objects["elements"].get(target.target, target)
-    zone_id = element.zone if isinstance(element, Element) else None
+    zone_id = effective_zone(sub, element) if isinstance(element, Element) else None
     zone = next((z for z in sub.meta.zones if z.id == zone_id), None)
     return zone.environment if zone else Environment()
 
@@ -76,8 +77,9 @@ def add_element(
     title: str | None = None,
     zone: str | None = None,
     position: tuple[float, float] | None = None,
+    runs_on: str | None = None,
 ) -> Element:
-    """New element from a library element type, with its typical assets."""
+    """New element from a library element type, with its typical assets and defaults."""
     etype = libs.elements[type_id]
     if etype.kind == "flow":
         raise ValueError(f"'{type_id}' is a data flow type")
@@ -89,6 +91,10 @@ def add_element(
         zone=zone,
         library_ref=libs.ref("element", type_id),
         description=getattr(etype.description, lang) if etype.description else None,
+        runs_on=runs_on,
+        privilege=etype.privilege,
+        authentication=etype.authentication,
+        listens_on=etype.listens_on,
     )
     sub.objects["elements"][element.id] = element
     _new_assets(sub, libs, etype, element.title, lang)

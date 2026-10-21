@@ -4,7 +4,7 @@ import { app } from './state.svelte'
 import type { Collection, Obj } from './types'
 
 export type Option = { value: string; label: string }
-export type FieldType = 'text' | 'longtext' | 'select' | 'multi' | 'bool' | 'tristate' | 'number' | 'date' | 'list' | 'evidence'
+export type FieldType = 'text' | 'longtext' | 'select' | 'multi' | 'bool' | 'tristate' | 'number' | 'date' | 'list' | 'evidence' | 'listeners'
 
 export interface Field {
   key: string // dotted path into the object
@@ -12,6 +12,7 @@ export interface Field {
   type: FieldType
   options?: () => Option[]
   required?: boolean
+  kinds?: string[] // element kinds the field applies to (default: all)
 }
 
 const STRIDE = ['S', 'T', 'R', 'I', 'D', 'E']
@@ -29,6 +30,11 @@ const assetClasses = (): Option[] =>
 const stride = (): Option[] => STRIDE.map((s) => ({ value: s, label: `${s} – ${label(app.lang, s)}` }))
 const cra = (): Option[] =>
   Object.entries(app.cra).map(([id, e]) => ({ value: id, label: `${id} ${e[app.lang] ?? ''}` }))
+// hosts for runs_on: devices of this model, except the element itself (the form filters it)
+const devices = (): Option[] =>
+  app.objects('elements').filter((e) => e.kind === 'device').map((e) => ({ value: e.id, label: `${e.id} ${e.title}` }))
+const refineTargets = (): Option[] => app.model?.refine_targets ?? []
+const HOSTED = ['process', 'device']
 const sbomFiles = (): Option[] => app.sbom.sboms.map((s) => ({ value: s.file, label: s.file }))
 const targets = (): Option[] => [...refs('elements')(), ...refs('flows')()]
 // suggestions only: protocol stays free text (imports and custom protocols)
@@ -44,7 +50,17 @@ export const FIELDS: Record<Collection, Field[]> = {
     { key: 'kind', label: 'kind', type: 'select', options: values('device', 'process', 'datastore', 'external'), required: true },
     { key: 'zone', label: 'zone', type: 'select', options: zones },
     { key: 'configurations', label: 'configurations', type: 'multi', options: configurations },
+    { key: 'runs_on', label: 'runs_on', type: 'select', options: devices, kinds: HOSTED },
+    { key: 'privilege.level', label: 'privilege_level', type: 'select', options: values('kernel', 'root', 'service', 'user'), kinds: HOSTED },
+    { key: 'privilege.account', label: 'privilege_account', type: 'text', kinds: HOSTED },
+    { key: 'privilege.capabilities', label: 'privilege_capabilities', type: 'list', kinds: HOSTED },
+    { key: 'listens_on', label: 'listens_on', type: 'listeners', kinds: HOSTED },
+    { key: 'authentication', label: 'authentication', type: 'select', options: values('none', 'password', 'shared-secret', 'key', 'certificate', 'unknown'), kinds: HOSTED },
+    { key: 'memory_safe', label: 'memory_safe', type: 'tristate', kinds: HOSTED },
     { key: 'sbom', label: 'sbom', type: 'multi', options: sbomFiles },
+    { key: 'sbom_ref.purl', label: 'sbom_purl', type: 'text', kinds: ['process', 'device', 'datastore'] },
+    { key: 'sbom_ref.cpe', label: 'sbom_cpe', type: 'text', kinds: ['process', 'device', 'datastore'] },
+    { key: 'refines', label: 'refines', type: 'select', options: refineTargets },
     { key: 'short_name', label: 'short_name', type: 'text' },
     { key: 'description', label: 'description', type: 'longtext' },
   ],

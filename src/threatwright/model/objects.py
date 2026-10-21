@@ -9,7 +9,7 @@ import datetime
 import uuid as uuidlib
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, PlainSerializer
+from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, model_validator
 
 SCHEMA_VERSION: Literal[1] = 1
 
@@ -169,12 +169,69 @@ class DiagramLayout(Versioned):
 # --- per-object files --------------------------------------------------------
 
 
+PrivilegeLevel = Literal["kernel", "root", "service", "user"]
+Authentication = Literal["none", "password", "shared-secret", "key", "certificate", "unknown"]
+# <model>/<object id>: an element of another model of the same project
+RefinesRef = Annotated[
+    str, Field(pattern=r"^[a-z0-9][a-z0-9._-]*/[A-Za-z][A-Za-z0-9_]*-[0-9]{4,}$")
+]
+# only meaningful for running software or hardware, not for data stores or external entities
+HOST_FIELDS = ("runs_on", "privilege", "listens_on", "authentication", "memory_safe")
+
+
+class Privilege(Strict):
+    """Rights of a process; a different level or account on the same host is a trust boundary."""
+
+    level: PrivilegeLevel
+    account: str | None = None
+    capabilities: list[str] = []  # documentation only (e.g. CAP_NET_ADMIN), no boundary
+
+
+class Listener(Strict):
+    protocol: Literal["tcp", "udp", "unix"]
+    port: int | None = Field(default=None, ge=1, le=65535)
+    path: str | None = None  # unix sockets
+    interfaces: str = "all"  # all | loopback | interface name
+
+    @model_validator(mode="after")
+    def _address(self) -> "Listener":
+        if self.protocol == "unix" and self.port is not None:
+            raise ValueError("a unix socket has a path, not a port")
+        if self.protocol != "unix" and (self.port is None or self.path is not None):
+            raise ValueError(f"{self.protocol} needs a port and no path")
+        return self
+
+
+class SbomRef(Strict):
+    """Identity of the software component (package URL and/or CPE), for later SBOM matching."""
+
+    purl: str | None = None
+    cpe: str | None = None
+
+
 class Element(ModelObject):
     kind: Literal["process", "device", "datastore", "external"]
-    zone: str | None = None
+    zone: str | None = None  # unset: the zone of the host (runs_on)
     configurations: list[str] = []
     stride_not_relevant: dict[Stride, str] = {}  # category -> rationale
     sbom: list[SbomFile] = []  # CycloneDX files in sbom/ describing this element's software
+    runs_on: ObjectId | None = None  # device of the same model this element runs on
+    privilege: Privilege | None = None
+    listens_on: list[Listener] = []
+    authentication: Authentication | None = None
+    memory_safe: bool | None = None
+    sbom_ref: SbomRef | None = None
+    refines: RefinesRef | None = None  # element of another model this one details
+
+    @model_validator(mode="after")
+    def _host_fields(self) -> "Element":
+        if self.kind in ("datastore", "external"):
+            used = [f for f in HOST_FIELDS if getattr(self, f) not in (None, [])]
+            if used:
+                raise ValueError(f"{', '.join(used)} only apply to processes and devices")
+        if self.kind == "external" and self.sbom_ref is not None:
+            raise ValueError("sbom_ref does not apply to external entities")
+        return self
 
 
 class Flow(ModelObject):

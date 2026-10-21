@@ -23,7 +23,8 @@
   import { canvasSvg } from './export'
   import { facing, type Side } from './route'
   import { api } from '../../api'
-  import { tr, type Key } from '../../i18n'
+  import { label, tr, type Key } from '../../i18n'
+  import { boundary, context, effectiveZone, hostChain } from '../../topology'
   import { app } from '../../state.svelte'
   import type { EdgeLayout, ElementType, ModelPayload, Note, Obj } from '../../types'
   import Legend from './Legend.svelte'
@@ -84,30 +85,46 @@
   /** Stored routes (sides, bend points) of the data flows; layout data, never model content. */
   const routes = (): Record<string, EdgeLayout> => structuredClone($state.snapshot(app.model?.layout.edges ?? {}))
 
-  function zoneNodes(positions: Map<string, { x: number; y: number }>, shown: Set<string>): Node[] {
-    const out: Node[] = []
-    for (const zone of app.model?.meta.zones ?? []) {
-      const members = app
-        .objects('elements')
-        .filter((e) => e.zone === zone.id && positions.has(e.id) && shown.has(e.id))
-        .map((e) => positions.get(e.id)!)
-      if (!members.length) continue
-      const x0 = Math.min(...members.map((p) => p.x)) - PAD
-      const y0 = Math.min(...members.map((p) => p.y)) - PAD - 14
-      const x1 = Math.max(...members.map((p) => p.x)) + W + PAD
-      const y1 = Math.max(...members.map((p) => p.y)) + H + PAD
-      out.push({
-        id: `zone:${zone.id}`,
-        type: 'zone',
-        position: { x: x0, y: y0 },
-        data: { id: zone.id, title: zone.title, width: x1 - x0, height: y1 - y0 },
-        draggable: false,
-        selectable: false,
-        connectable: false,
-        zIndex: -1,
-      })
+  const byId = () => new Map(app.objects('elements').map((e) => [e.id, e]))
+
+  /** Frame around member positions; zones (dashed), hosts (solid), privilege contexts (dotted). */
+  function frame(id: string, title: string, members: { x: number; y: number }[], pad: number, variant: string): Node | null {
+    if (!members.length) return null
+    const x0 = Math.min(...members.map((p) => p.x)) - pad
+    const y0 = Math.min(...members.map((p) => p.y)) - pad - 14
+    const x1 = Math.max(...members.map((p) => p.x)) + W + pad
+    const y1 = Math.max(...members.map((p) => p.y)) + H + pad
+    return {
+      id,
+      type: 'zone',
+      position: { x: x0, y: y0 },
+      data: { id: id.split(':').slice(1).join(':'), title, width: x1 - x0, height: y1 - y0, variant },
+      draggable: false,
+      selectable: false,
+      connectable: false,
+      zIndex: -1,
     }
-    return out
+  }
+
+  function zoneNodes(positions: Map<string, { x: number; y: number }>, shown: Set<string>): Node[] {
+    const elements = app.objects('elements').filter((e) => positions.has(e.id) && shown.has(e.id))
+    const all = byId()
+    const out: (Node | null)[] = (app.model?.meta.zones ?? []).map((zone) =>
+      frame(`zone:${zone.id}`, zone.title, elements.filter((e) => effectiveZone(all, e) === zone.id).map((e) => positions.get(e.id)!), PAD, 'zone'),
+    )
+    for (const host of elements.filter((e) => e.kind === 'device')) {
+      const hosted = elements.filter((e) => hostChain(all, e).some((h) => h.id === host.id))
+      if (!hosted.length) continue
+      out.push(frame(`host:${host.id}`, host.title, [host, ...hosted].map((e) => positions.get(e.id)!), PAD / 2, 'host'))
+      const contexts = new Map<string, Obj[]>()
+      for (const e of hosted) if (e.runs_on === host.id && context(e)) contexts.set(context(e)!, [...(contexts.get(context(e)!) ?? []), e])
+      for (const [key, members] of contexts) {
+        const p = members[0].privilege
+        const title = `${label(app.lang, p.level)}${p.account ? ` (${p.account})` : ''}`
+        out.push(frame(`context:${key}`, title, members.map((e) => positions.get(e.id)!), PAD / 4, 'context'))
+      }
+    }
+    return out.filter((n): n is Node => n !== null)
   }
 
   function build() {
@@ -160,7 +177,7 @@
       }
     })
     nodes = [...zoneNodes(positions, shown), ...elementNodes, ...noteNodes]
-    const zoneOf = new Map(app.objects('elements').map((e) => [e.id, e.zone]))
+    const all = byId()
     const stored = model.layout.edges ?? {}
     // parallel connections without an own route get spread apart instead of drawn on top
     const pairKey = (f: Obj) => [f.source, f.target].sort().join('|')
@@ -195,7 +212,7 @@
       hidden: !flowShown(f),
       class: [
         (model.max_risks[f.id] ?? 0) >= 4 ? 'high-risk' : '',
-        zoneOf.get(f.source) !== zoneOf.get(f.target) ? 'cross-zone' : '',
+        ({ zone: 'cross-zone', privilege: 'cross-privilege', none: '' } as const)[boundary(all, f) ?? 'none'],
         hit ? '' : 'dimmed',
       ].join(' '),
       }
@@ -216,7 +233,7 @@
   function zoneAt(x: number, y: number): string | null {
     let best: { id: string; area: number } | null = null
     for (const n of nodes) {
-      if (n.type !== 'zone') continue
+      if (!n.id.startsWith('zone:')) continue
       const { width, height } = n.data as { width: number; height: number }
       const inside = x >= n.position.x && x <= n.position.x + width && y >= n.position.y && y <= n.position.y + height
       if (inside && (!best || width * height < best.area)) best = { id: n.id.slice('zone:'.length), area: width * height }
@@ -232,7 +249,7 @@
     await saveLayout(currentLayout())
     // ponytail: leaving a zone into empty space keeps the zone (its box grows); reassigning needs a target zone
     for (const { element, zone } of moves) {
-      if (!element || !zone || zone === element.zone) continue
+      if (!element || !zone || zone === effectiveZone(byId(), element)) continue
       const r = await api<{ model: ModelPayload }>('PUT', `/models/${app.modelName}/elements/${element.id}`, {
         ...$state.snapshot(element),
         zone,
@@ -467,16 +484,30 @@
       'elk.spacing.edgeEdge': '20',
       'elk.layered.spacing.edgeNodeBetweenLayers': '25',
     }
-    // Zones become compound nodes so ELK keeps trust boundaries apart; the padding
-    // matches the box zoneNodes() draws around the members afterwards.
+    // Zones and hosts become compound nodes so ELK keeps trust boundaries apart; the
+    // padding matches the box zoneNodes() draws around the members afterwards.
+    // ponytail: privilege contexts are not nested in ELK, their frames may overlap after auto layout
+    const all = byId()
+    const zoneOfEl = new Map(elements.map((e) => [e.id, effectiveZone(all, e)]))
+    const hostOf = new Map<string, string>() // element -> top host in the same zone
+    for (const e of elements) {
+      const top = hostChain(all, e).filter((h) => zoneOfEl.get(h.id) === zoneOfEl.get(e.id)).at(-1)
+      if (top) hostOf.set(e.id, top.id)
+    }
+    const hostPad = { ...spacing, 'elk.padding': `[top=${PAD / 2 + 14},left=${PAD / 2},bottom=${PAD / 2},right=${PAD / 2}]` }
+    const node = (e: Obj): ElkNode => {
+      const members = elements.filter((m) => hostOf.get(m.id) === e.id)
+      return members.length ? { id: `host:${e.id}`, layoutOptions: hostPad, children: [leaf(e.id), ...members.map((m) => leaf(m.id))] } : leaf(e.id)
+    }
+    const tops = elements.filter((e) => !hostOf.has(e.id))
     const zones = (app.model?.meta.zones ?? [])
       .map((z) => ({
         id: `zone:${z.id}`,
         layoutOptions: { ...spacing, 'elk.padding': `[top=${PAD + 14},left=${PAD},bottom=${PAD},right=${PAD}]` },
-        children: elements.filter((e) => e.zone === z.id).map((e) => leaf(e.id)),
+        children: tops.filter((e) => zoneOfEl.get(e.id) === z.id).map(node),
       }))
       .filter((z) => z.children.length)
-    const zoned = new Set(zones.flatMap((z) => z.children.map((c) => c.id)))
+    const zoned = new Set(tops.filter((e) => zones.some((z) => z.id === `zone:${zoneOfEl.get(e.id)}`)).map((e) => e.id))
     const graph = await elk.layout({
       id: 'root',
       layoutOptions: {
@@ -487,7 +518,7 @@
         'elk.edgeRouting': 'ORTHOGONAL',
         'elk.edgeLabels.inline': 'true',
       },
-      children: [...zones, ...elements.filter((e) => !zoned.has(e.id)).map((e) => leaf(e.id))],
+      children: [...zones, ...tops.filter((e) => !zoned.has(e.id)).map(node)],
       // labels with their size, so ELK keeps space for them between the layers
       edges: app.objects('flows').map((f) => ({
         id: f.id,
@@ -498,16 +529,22 @@
     })
     const layout: Record<string, { x: number; y: number }> = {}
     const origin = new Map<string, { x: number; y: number }>([['root', { x: 40, y: 40 }]]) // container -> offset
-    for (const c of graph.children ?? []) {
-      const ox = (c.x ?? 0) + 40
-      const oy = (c.y ?? 0) + 40
-      origin.set(c.id, { x: ox, y: oy })
-      if (!c.children?.length) layout[c.id] = { x: Math.round(ox), y: Math.round(oy) }
-      for (const g of c.children ?? []) layout[g.id] = { x: Math.round(ox + (g.x ?? 0)), y: Math.round(oy + (g.y ?? 0)) }
+    // containers (zones, hosts) nest; leaves are elements
+    const walk = (children: ElkNode[], base: { x: number; y: number }) => {
+      for (const c of children) {
+        const at = { x: base.x + (c.x ?? 0), y: base.y + (c.y ?? 0) }
+        if (c.children?.length) {
+          origin.set(c.id, at)
+          walk(c.children, at)
+        } else layout[c.id] = { x: Math.round(at.x), y: Math.round(at.y) }
+      }
     }
+    walk(graph.children ?? [], { x: 40, y: 40 })
     await saveLayout(layout, currentNotes(), elkRoutes(graph.edges ?? [], layout, origin))
     fitView({ maxZoom: 1 })
   }
+
+  type ElkNode = { id: string; x?: number; y?: number; width?: number; height?: number; layoutOptions?: Record<string, string>; children?: ElkNode[] }
 
   type ElkEdge = {
     id: string
@@ -636,6 +673,11 @@
   /* crosses a trust boundary */
   .canvas :global(.svelte-flow__edge.cross-zone path) {
     stroke-dasharray: 7 4;
+    stroke-width: 2px;
+  }
+  /* crosses a privilege context on the same host */
+  .canvas :global(.svelte-flow__edge.cross-privilege path) {
+    stroke-dasharray: 2 3;
     stroke-width: 2px;
   }
   /* not a search hit */

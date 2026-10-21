@@ -38,3 +38,13 @@ def test_init_library_option(tmp_path: Path) -> None:
 
 def test_cli_product_types_match_scaffold() -> None:
     assert [t.value for t in ProductType] == list(PRODUCT_LIBRARIES)
+
+
+def test_embedded_linux_brings_ot(tmp_path: Path) -> None:
+    requested = ["embedded-linux"]
+    create_project(tmp_path / "e", libraries=requested)
+    assert requested == ["embedded-linux"]  # caller's list untouched
+    assert Project.load(tmp_path / "e").config.libraries == ["ot", "embedded-linux"]
+    assert "Z-PLANT" in zone_ids(tmp_path / "e")
+    r = CliRunner().invoke(app, ["init", str(tmp_path / "f"), "-l", "embedded-linux"])
+    assert r.exit_code == 0, r.output

@@ -1,0 +1,297 @@
+# Threat templates for firmware, boot chain, kernel and kernel modules.
+threats:
+  - id: lx-boot-removable-media
+    rev: 1
+    stride: [T, I, E]
+    applies_to: [lx-firmware-uefi, ipc-linux]
+    title:
+      de: Start eines fremden Systems von Wechselmedium auf {element}
+      en: Boot of a foreign system from removable media on {element}
+    scenario:
+      de: >-
+        Die Firmware erlaubt den Start von USB-Stick, SD-Karte oder über das
+        Netzwerk (PXE), und das Setup ist nicht mit einem Passwort geschützt. Ein
+        Angreifer mit kurzem Zugang zur Maschine steckt einen Stick mit einem
+        Live-System ein, wählt im Bootmenü das Medium und hängt die
+        unverschlüsselte Systempartition ein.
+      en: >-
+        The firmware allows booting from USB stick, SD card or via the network
+        (PXE), and the setup is not protected by a password. An attacker with
+        brief access to the machine plugs in a stick with a live system, selects
+        the medium in the boot menu and mounts the unencrypted system partition.
+    consequence:
+      de: >-
+        Der Angreifer liest Schlüssel, Passwort-Hashes und Programme aus und
+        baut eine Hintertür in das installierte System ein, die nach dem
+        nächsten regulären Start mit root-Rechten läuft.
+      en: >-
+        The attacker reads keys, password hashes and programs and plants a
+        backdoor in the installed system that runs with root privileges after
+        the next regular boot.
+    environment: {interface: local, access: public_restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f, AI-I-2-e]
+    attack_ics: [T0847]
+    emb3d: [TID-201, TID-111]
+    iec62443: [FR1, FR3]
+    measures: [lx-boot-protection, secure-boot, data-encryption-rest, physical-access-control, usb-port-control]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-bootloader-cmdline-edit
+    rev: 1
+    stride: [S, E]
+    applies_to: [lx-firmware-uefi, lx-kernel]
+    title:
+      de: Umgehen der Anmeldung über die Kernel-Kommandozeile von {element}
+      en: Bypassing login via the kernel command line of {element}
+    scenario:
+      de: >-
+        Der Bootloader zeigt beim Start ein Menü oder lässt sich mit einer Taste
+        unterbrechen. Ein Angreifer an der Maschine ergänzt die
+        Kernel-Kommandozeile um init=/bin/sh, single oder einen Rescue-Modus und
+        erhält ohne Passwort eine root-Shell.
+      en: >-
+        The boot loader shows a menu at start or can be interrupted by a key. An
+        attacker at the machine adds init=/bin/sh, single or a rescue mode to the
+        kernel command line and obtains a root shell without a password.
+    consequence:
+      de: >-
+        Volle Kontrolle über Betriebssystem und Steuerungssoftware ohne
+        Zugangsdaten, mit wenigen Sekunden Vor-Ort-Zugang.
+      en: >-
+        Full control of the operating system and control software without
+        credentials, with a few seconds of on-site access.
+    environment: {interface: local, access: public_restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-b]
+    attack_ics: [T0858]
+    emb3d: [TID-201]
+    iec62443: [FR1, FR2]
+    measures: [lx-boot-protection, secure-boot, physical-access-control]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-uefi-firmware-implant
+    rev: 1
+    stride: [T, D, E]
+    applies_to: [lx-firmware-uefi]
+    title:
+      de: Manipulation oder Zerstörung der Firmware {element}
+      en: Manipulation or destruction of the firmware {element}
+    scenario:
+      de: >-
+        Der SPI-Flash der Firmware ist aus dem laufenden System beschreibbar, und
+        Firmware-Updates werden nicht signiert geprüft. Ein Angreifer mit root
+        schreibt mit einem Flash-Werkzeug eine veränderte Firmware mit Implantat,
+        ändert Setup-Optionen wie Secure Boot und Bootreihenfolge oder löscht den
+        Flash-Inhalt.
+      en: >-
+        The SPI flash of the firmware is writable from the running system, and
+        firmware updates are not verified by signature. An attacker with root
+        writes a modified firmware with an implant using a flash tool, changes
+        setup options such as secure boot and boot order or erases the flash
+        content.
+    consequence:
+      de: >-
+        Das Implantat überlebt Neuinstallation und Festplattentausch und steht
+        unterhalb aller Schutzmechanismen des Betriebssystems. Gelöschte
+        Firmware macht den Rechner unbrauchbar, die Maschine steht bis zum
+        Hardwaretausch.
+      en: >-
+        The implant survives reinstallation and disk replacement and sits below
+        all protection of the operating system. Erased firmware renders the
+        machine unusable until the hardware is replaced.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: false
+    cra_refs: [AI-I-2-f, AI-I-2-h, AI-II-7]
+    attack_ics: [T1693, T0851]
+    emb3d: [TID-218, TID-211, TID-113]
+    iec62443: [FR3, FR7]
+    measures: [lx-boot-protection, signed-firmware, secure-boot, backup-restore, supplier-vulnerability-monitoring]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-foreign-kernel-module
+    rev: 1
+    stride: [S, T, E]
+    applies_to: [lx-kernel, lx-kernel-module]
+    title:
+      de: Laden eines fremden Kernelmoduls in {element}
+      en: Loading of a foreign kernel module into {element}
+    scenario:
+      de: >-
+        Der Kernel lädt beliebige, nicht signierte Module. Ein Angreifer mit
+        root-Rechten lädt ein eigenes Modul, das den Namen eines legitimen
+        Treibers trägt, oder ersetzt eine Moduldatei unter /lib/modules. Das
+        Modul verbirgt Prozesse und Dateien, hängt sich in die
+        Feldbus-Netzwerkkarte ein oder verändert Daten zwischen Steuerung und
+        Hardware.
+      en: >-
+        The kernel loads arbitrary unsigned modules. An attacker with root
+        privileges loads their own module bearing the name of a legitimate
+        driver or replaces a module file under /lib/modules. The module hides
+        processes and files, hooks into the fieldbus network card or alters data
+        between controller and hardware.
+    consequence:
+      de: >-
+        Ein Rootkit im Kernel ist für Prüfungen im Benutzerbereich unsichtbar und
+        kann Ausgänge unabhängig von der Steuerungslogik verändern. Personen
+        können gefährdet werden.
+      en: >-
+        A rootkit in the kernel is invisible to checks in user space and can
+        alter outputs independently of the control logic. Persons can be
+        endangered.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-I-2-k]
+    attack_ics: [T0851, T0874]
+    emb3d: [TID-203, TID-218]
+    iec62443: [FR3]
+    measures: [lx-kernel-module-signing, secure-boot, security-logging]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-kernel-privilege-escalation
+    rev: 1
+    stride: [E]
+    applies_to: [lx-kernel, lx-kernel-module]
+    title:
+      de: Rechteausweitung über eine Schwachstelle in {element}
+      en: Privilege escalation through a vulnerability in {element}
+    scenario:
+      de: >-
+        Der Echtzeit-Kernel ist auf einem älteren Stand eingefroren, weil der
+        Echtzeit-Patch und eigene Treiber an eine Version gebunden sind.
+        Bekannte Kernel-Schwachstellen bleiben offen. Ein Angreifer mit einem
+        unprivilegierten Konto, etwa dem Bedienerkonto, nutzt eine davon aus und
+        wird root.
+      en: >-
+        The real-time kernel is frozen at an older version because the real-time
+        patch and own drivers are tied to one version. Known kernel
+        vulnerabilities remain open. An attacker with an unprivileged account,
+        for example the operator account, exploits one of them and becomes
+        root.
+    consequence:
+      de: >-
+        Alle Trennungen zwischen Prozessen und Benutzern fallen weg; der
+        Angreifer kontrolliert Steuerung und Feldbus.
+      en: >-
+        All separation between processes and users is lost; the attacker
+        controls the controller and the fieldbus.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-a, AI-I-2-c, AI-I-2-k]
+    attack_ics: [T0890]
+    emb3d: [TID-219, TID-210]
+    iec62443: [FR2, FR3]
+    measures: [patch-management-os, os-hardening, exploit-mitigations, supplier-vulnerability-monitoring]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-driver-ioctl-abuse
+    rev: 1
+    stride: [T, I, E]
+    applies_to: [lx-kernel-module]
+    title:
+      de: Unprivilegierter Zugriff auf Hardware über die Geräteschnittstelle von {element}
+      en: Unprivileged access to hardware via the device interface of {element}
+    scenario:
+      de: >-
+        Das eigene Kernelmodul legt eine Gerätedatei unter /dev an, die für alle
+        Benutzer les- und schreibbar ist. Über ioctl oder mmap lassen sich
+        Register der E/A- oder Feldbuskarte und physischer Speicher einblenden,
+        ohne dass der Treiber Aufrufer und Argumente prüft. Ein Angreifer mit
+        einem beliebigen Konto schreibt Ausgänge direkt oder liest Kernelspeicher.
+      en: >-
+        The own kernel module creates a device file under /dev that is readable
+        and writable by all users. Via ioctl or mmap, registers of the I/O or
+        fieldbus card and physical memory can be mapped without the driver
+        checking caller and arguments. An attacker with any account writes
+        outputs directly or reads kernel memory.
+    consequence:
+      de: >-
+        Direkte Ansteuerung der Hardware an der Steuerung vorbei sowie
+        Rechteausweitung zu root. Unerwartete Bewegungen können Personen
+        gefährden.
+      en: >-
+        Direct control of the hardware bypassing the controller, and privilege
+        escalation to root. Unexpected movements can endanger persons.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-k]
+    attack_ics: [T0834, T0890]
+    emb3d: [TID-204, TID-206]
+    iec62443: [FR2, FR3]
+    measures: [lx-driver-access-control, lx-memory-safe-parsing, security-testing]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-usb-driver-exploit
+    rev: 1
+    stride: [D, E]
+    applies_to: [lx-usb-hid, lx-kernel, lx-kernel-module]
+    title:
+      de: Präpariertes USB-Gerät greift über {element} den Kernel an
+      en: Crafted USB device attacks the kernel via {element}
+    scenario:
+      de: >-
+        Der Kernel lädt für jedes angesteckte USB-Gerät automatisch einen
+        passenden Treiber. Ein Angreifer steckt ein programmierbares Gerät an,
+        das sich nacheinander als verschiedene Geräteklassen meldet und
+        fehlerhafte Deskriptoren liefert, um Schwachstellen in selten genutzten
+        Treibern auszulösen.
+      en: >-
+        The kernel automatically loads a matching driver for every USB device
+        plugged in. An attacker plugs in a programmable device that successively
+        reports as different device classes and supplies malformed descriptors
+        to trigger vulnerabilities in rarely used drivers.
+    consequence:
+      de: >-
+        Kernel-Absturz mit Stillstand der Maschine oder Codeausführung im Kernel.
+      en: >-
+        Kernel crash with machine standstill, or code execution in the kernel.
+    environment: {interface: local, access: public_restricted}
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-I-2-j, AI-I-2-h, AI-I-2-k]
+    attack_ics: [T0847, T0816]
+    emb3d: [TID-219]
+    iec62443: [FR3, FR7]
+    measures: [usb-port-control, os-hardening, lx-kernel-module-signing]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-platform-changes-unlogged
+    rev: 1
+    stride: [R]
+    applies_to: [lx-firmware-uefi, lx-kernel, lx-kernel-module]
+    title:
+      de: Änderungen an {element} hinterlassen keine Spuren
+      en: Changes to {element} leave no traces
+    scenario:
+      de: >-
+        Geänderte Firmware-Einstellungen, abweichende Bootkomponenten,
+        nachgeladene Kernelmodule und geänderte Kernelparameter werden weder
+        gemessen noch protokolliert. Ein Angreifer verändert die Plattform und
+        stellt anschließend die sichtbaren Spuren im Dateisystem wieder her.
+      en: >-
+        Changed firmware settings, deviating boot components, loaded kernel
+        modules and changed kernel parameters are neither measured nor logged.
+        An attacker modifies the platform and afterwards restores the visible
+        traces in the file system.
+    consequence:
+      de: >-
+        Eine kompromittierte Plattform fällt weder dem Betreiber noch dem
+        Service auf. Untersuchungen nach einem Vorfall bleiben ohne Ergebnis.
+      en: >-
+        A compromised platform is noticed neither by the operator nor by service.
+        Investigations after an incident remain without result.
+    environment: {interface: local, access: restricted}
+    impact: 3
+    safety_related: false
+    cra_refs: [AI-I-2-l, AI-I-2-f]
+    attack_ics: [T0872]
+    emb3d: [TID-225, TID-218]
+    iec62443: [FR6]
+    measures: [security-logging, log-protection, config-integrity-check]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]

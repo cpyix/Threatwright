@@ -59,6 +59,22 @@ Greifen mehrere Regeln, gilt die strengste Grenze.
 
 Eine komplett eigene Methode liegt im Projekt unter `methods/<id>/method.yaml` und wird in `threatwright.yaml` mit `method: <id>` gewählt.
 
+## Teilmodelle und Rechtekontexte
+
+Steuerungssoftware auf einem Industrie-PC besteht meist aus mehreren Prozessen mit unterschiedlichen Rechten. Damit das Maschinenmodell übersichtlich bleibt, beschreiben Sie die Software in einem **Teilmodell**, das ein Element des Maschinenmodells verfeinert.
+
+**Verfeinern (`refines`).** Ein Element des Teilmodells nennt das Element, das es verfeinert, im Format `<modell>/<id>`, z. B. `refines: main/E-0019` am Steuerungsrechner im Teilmodell `software`. Ein Teilmodell gehört zu genau einem Modell. Es gibt weiterhin **eine Risikobewertung je Produkt**:
+- Das Dokument des Hauptmodells enthält das Teilmodell. Elemente und Datenflüsse stehen in einem eigenen Unterabschnitt, IDs des Teilmodells erscheinen mit Modellnamen (`software/T-0003`).
+- Risikoverteilung, Bedrohungen, Maßnahmen, Rückverfolgbarkeit, Freigaben und CRA-Abdeckung zählen Haupt- und Teilmodell zusammen. `threatwright build` erzeugt für das Teilmodell kein eigenes Dokument (mit `--model software` weiterhin möglich).
+- Bedrohungen am verfeinernden Element und an allem, was darauf läuft, decken das verfeinerte Element ab und umgekehrt. Eine Bedrohung wird also nur in einem der beiden Modelle bewertet. Bewertet man dieselbe Bibliotheksbedrohung in beiden, meldet `validate` die Warnung `duplicate-assessment`.
+- Faustregel: Im Hauptmodell bleibt, was das Gerät als Ganzes betrifft (Gehäuse, Lieferkette, physischer Zugang), ins Teilmodell gehört alles, was einzelne Prozesse betrifft.
+
+**Läuft auf (`runs_on`).** Ein Prozess (oder ein virtuelles Gerät, z. B. eine VM) nennt das Gerät desselben Modells, auf dem er läuft. Ohne eigene `zone` übernimmt er die Zone seines Hosts und damit dessen Umgebung für die Exposition. Hat ein Gerät eine Bedrohung mit STRIDE E (Übernahme), betrifft sie alles, was darauf läuft: Die Warnung `host-takeover-understated` meldet, wenn ein dort verarbeitetes Asset einen höheren Impact hat als die Bedrohung und in ihr fehlt. Eine feste Impact-Schwelle gibt es dabei nicht. Gerade eine niedrig bewertete Übernahme eines Hosts mit einer Sicherheitsfunktion ist der Fall, den die Regel finden soll.
+
+**Rechtekontext (`privilege`).** `level` ist `kernel`, `root`, `service` oder `user`, dazu optional `account` (z. B. `operator`) und `capabilities` (nur zur Dokumentation). Zwei Prozesse auf demselben Host mit unterschiedlichem `level` oder `account` liegen in verschiedenen Rechtekontexten. Ein Datenfluss zwischen ihnen ist ein **Grenzübergang** wie ein Fluss zwischen Zonen: Das Diagramm zeichnet ihn gepunktet, die Berichte zeigen ihn in der Spalte „Grenze“, und `privilege-boundary-gap` verlangt dort Bedrohungen mit S und E (am Fluss oder an der höher privilegierten Seite). Der Rechtekontext ändert die Exposition nicht. Er beschreibt, was ein Angreifer nach der Übernahme eines Prozesses als Nächstes erreichen kann.
+
+**Technische Angaben.** `listens_on` (Protokoll, Port bzw. Socket-Pfad, Interfaces `all`, `loopback` oder Name), `authentication` (`none`, `password`, `shared-secret`, `key`, `certificate`, `unknown`), `memory_safe` und `sbom_ref` (purl und/oder CPE der Komponente) ergeben im Bericht die Tabelle „Technische Angriffsfläche“. Ein Dienst auf allen Interfaces ohne bekannte Authentisierung braucht eine Bedrohung mit S oder E (`exposed-service-unauthenticated`). `sbom_ref` ist nur eine Referenz. Den Abgleich mit Schwachstellen übernehmen weiterhin die SBOM-Dateien (`sbom`, siehe [SBOM und Schwachstellen](sbom.md)).
+
 ## Qualitative Kriterien der TR (§5.14.3)
 
 Die TR nennt neben Anhang D qualitative Akzeptanzkriterien. Ein Beispiel: Ein mittleres oder höheres Risiko durch Fehlkonfiguration ist bei einem Laien als Nutzer nicht akzeptabel. Anhang D bezeichnet die TR selbst als experimentell. Das Werkzeug nutzt Anhang D, weil es sich berechnen und in der CI prüfen lässt. Die Kriterien aus §5.14.3 sollten Sie bei der Festlegung der Akzeptanzgrenzen trotzdem heranziehen.

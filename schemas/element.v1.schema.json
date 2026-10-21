@@ -1,8 +1,153 @@
 {
+  "$defs": {
+    "Listener": {
+      "additionalProperties": false,
+      "properties": {
+        "interfaces": {
+          "default": "all",
+          "title": "Interfaces",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "port": {
+          "anyOf": [
+            {
+              "maximum": 65535,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Port"
+        },
+        "protocol": {
+          "enum": [
+            "tcp",
+            "udp",
+            "unix"
+          ],
+          "title": "Protocol",
+          "type": "string"
+        }
+      },
+      "required": [
+        "protocol"
+      ],
+      "title": "Listener",
+      "type": "object"
+    },
+    "Privilege": {
+      "additionalProperties": false,
+      "description": "Rights of a process; a different level or account on the same host is a trust boundary.",
+      "properties": {
+        "account": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Account"
+        },
+        "capabilities": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Capabilities",
+          "type": "array"
+        },
+        "level": {
+          "enum": [
+            "kernel",
+            "root",
+            "service",
+            "user"
+          ],
+          "title": "Level",
+          "type": "string"
+        }
+      },
+      "required": [
+        "level"
+      ],
+      "title": "Privilege",
+      "type": "object"
+    },
+    "SbomRef": {
+      "additionalProperties": false,
+      "description": "Identity of the software component (package URL and/or CPE), for later SBOM matching.",
+      "properties": {
+        "cpe": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cpe"
+        },
+        "purl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Purl"
+        }
+      },
+      "title": "SbomRef",
+      "type": "object"
+    }
+  },
   "$id": "element.v1.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
+    "authentication": {
+      "anyOf": [
+        {
+          "enum": [
+            "none",
+            "password",
+            "shared-secret",
+            "key",
+            "certificate",
+            "unknown"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Authentication"
+    },
     "configurations": {
       "default": [],
       "items": {
@@ -56,6 +201,63 @@
       "default": null,
       "title": "Library Ref"
     },
+    "listens_on": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Listener"
+      },
+      "title": "Listens On",
+      "type": "array"
+    },
+    "memory_safe": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Memory Safe"
+    },
+    "privilege": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Privilege"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "refines": {
+      "anyOf": [
+        {
+          "pattern": "^[a-z0-9][a-z0-9._-]*/[A-Za-z][A-Za-z0-9_]*-[0-9]{4,}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Refines"
+    },
+    "runs_on": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z][A-Za-z0-9_]*-[0-9]{4,}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Runs On"
+    },
     "sbom": {
       "default": [],
       "items": {
@@ -64,6 +266,17 @@
       },
       "title": "Sbom",
       "type": "array"
+    },
+    "sbom_ref": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SbomRef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "schema_version": {
       "const": 1,

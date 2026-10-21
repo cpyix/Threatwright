@@ -7,6 +7,8 @@
   import { termForField } from '../glossary'
   import Assessment from './Assessment.svelte'
   import EvidenceRefs from './EvidenceRefs.svelte'
+  import Listeners from './Listeners.svelte'
+  import { effectiveZone } from '../topology'
   import Info from './Info.svelte'
   import CustomFieldInput from './CustomField.svelte'
   import MultiSelect from './MultiSelect.svelte'
@@ -39,8 +41,10 @@
 
   /** Fill empty environment fields from the zone of the first targeted element. */
   function prefillFromZone() {
-    const target = app.objects('elements').find((e) => draft.targets?.includes(e.id))
-    const zone = app.model?.meta.zones.find((z) => z.id === target?.zone)
+    const elements = app.objects('elements')
+    const target = elements.find((e) => draft.targets?.includes(e.id))
+    const zoneId = target ? effectiveZone(new Map(elements.map((e) => [e.id, e])), target) : null
+    const zone = app.model?.meta.zones.find((z) => z.id === zoneId)
     for (const [k, v] of Object.entries(zone?.environment ?? {})) {
       if (v && !draft.assessment?.[k]) setPath(draft, `assessment.${k}`, v)
     }
@@ -161,7 +165,7 @@
   </header>
   {#if error}<pre class="error" role="alert">{error}</pre>{/if}
 
-  {#each FIELDS[collection] as f (f.key)}
+  {#each FIELDS[collection].filter((f) => !f.kinds || f.kinds.includes(draft.kind)) as f (f.key)}
     {@const value = getPath(draft, f.key)}
     {@const term = termForField(collection, f.key)}
     <div class="field">
@@ -181,6 +185,8 @@
         {#if f.type === 'text' || f.type === 'date'}
           <input id={fid(f.key)} type={f.type === 'date' ? 'date' : 'text'} value={value ?? ''} oninput={(e) => set(f.key, e.currentTarget.value)} list={f.options ? `${fid(f.key)}-list` : undefined} data-testid="field-{f.key}" />
           {#if f.options}<datalist id="{fid(f.key)}-list">{#each f.options() as o}<option value={o.value}></option>{/each}</datalist>{/if}
+        {:else if f.type === 'listeners'}
+          <Listeners id={fid(f.key)} value={value ?? []} onchange={(v) => set(f.key, v.length ? v : '')} />
         {:else if f.type === 'evidence'}
           <EvidenceRefs id={fid(f.key)} value={value ?? []} onchange={(v) => set(f.key, v.length ? v : '')} />
         {:else if f.type === 'list'}
@@ -193,7 +199,7 @@
         {:else if f.type === 'select'}
           <select id={fid(f.key)} value={value ?? ''} onchange={(e) => set(f.key, e.currentTarget.value)} data-testid="field-{f.key}">
             <option value="">–</option>
-            {#each f.options?.() ?? [] as o}<option value={o.value}>{label(lang, o.label)}</option>{/each}
+            {#each (f.options?.() ?? []).filter((o) => f.key !== 'runs_on' || o.value !== draft.id) as o}<option value={o.value}>{label(lang, o.label)}</option>{/each}
           </select>
         {:else if f.type === 'tristate'}
           <select id={fid(f.key)} value={value === true ? 'yes' : value === false ? 'no' : ''} onchange={(e) => set(f.key, e.currentTarget.value === '' ? '' : e.currentTarget.value === 'yes')} data-testid="field-{f.key}">

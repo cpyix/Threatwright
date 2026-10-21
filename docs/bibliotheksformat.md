@@ -5,15 +5,16 @@ Bibliotheken liefern Bausteine:
 - **Bedrohungsvorlagen**
 - **Maßnahmenvorlagen**
 
-Mitgeliefert sind drei Bibliotheken (CC BY 4.0) unter `src/threatwright/libraries/`:
+Mitgeliefert sind vier Bibliotheken (CC BY 4.0) unter `src/threatwright/libraries/`:
 
 | Bibliothek | Produktart | Bezüge |
 |---|---|---|
 | `ot` | Maschinen und Anlagen | CRA |
 | `iot` | vernetzte Geräte, Consumer | ETSI EN 303 645; Funkgeräte müssen zusätzlich EN 18031 beachten (nicht abgebildet) |
 | `software` | Desktop-, Mobil- und Backend-Anwendungen | OWASP ASVS 5.0.0, MASVS v2 |
+| `embedded-linux` | Steuerungssoftware als mehrere Prozesse auf einem Linux-Industrie-PC (Teilmodell eines Maschinenmodells) | CRA, MITRE EMB3D, ATT&CK for ICS; baut auf `ot` auf |
 
-Die Produktart wird beim Anlegen des Projekts gewählt (`threatwright init --library ot|iot|software`, wiederholbar).
+Die Produktart wird beim Anlegen des Projekts gewählt (`threatwright init --library ot|iot|software|embedded-linux`, wiederholbar). `embedded-linux` nimmt `ot` automatisch mit auf, weil seine Bedrohungen auf OT-Maßnahmen verweisen.
 
 ## Aktivieren und eigene Bibliotheken
 
@@ -29,11 +30,13 @@ libraries: [ot, hausstandard]
 
 ```
 libraries/hausstandard/
-  library.yaml        # id, version, license, title (de/en)
+  library.yaml        # id, version, license, title (de/en), optional requires: [ot]
   elements.yaml       # elements: [...]
   threats/*.yaml      # threats: [...]
   measures/*.yaml     # measures: [...]
 ```
+
+`requires` nennt Bibliotheken, deren Elementtypen oder Maßnahmen diese Bibliothek verwendet. Sie müssen in `libraries:` vor ihr stehen, sonst meldet `validate` `library-invalid`. So verweist eine Bibliothek auf vorhandene Maßnahmen, statt sie zu kopieren.
 
 Die Aufteilung auf Dateien ist frei. Jede YAML-Datei enthält eine oder mehrere der Listen `elements:`, `threats:` und `measures:`.
 
@@ -50,6 +53,10 @@ elements:
     interfaces: [fieldbus, ethernet, usb]
     environment: {interface: known_network, access: restricted}   # Vorschlag
     properties: {firmware: true, default_password: possible}
+    # nur process/device, optional: Vorbelegung neuer Elemente dieses Typs
+    privilege: {level: root}                # kernel | root | service | user, account, capabilities
+    authentication: unknown                 # none | password | shared-secret | key | certificate | unknown
+    listens_on: [{protocol: tcp, port: 22, interfaces: all}]
     assets:
       - title:
           de: Steuerungsprogramm

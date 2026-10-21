@@ -14,7 +14,7 @@ Sie haben drei Möglichkeiten:
 threatwright init mein-produkt --name "Mein Produkt"
 ```
 
-Die Produktart wählen Sie mit `--library` (kurz `-l`): `ot` (Maschinen und Anlagen, Standard), `iot` (vernetzte Geräte, Consumer) oder `software`. Die Option ist wiederholbar, z. B. `-l iot -l software`. In der Oberfläche wählen Sie die Produktart per Ankreuzfeld auf der Startseite beim Anlegen.
+Die Produktart wählen Sie mit `--library` (kurz `-l`): `ot` (Maschinen und Anlagen, Standard), `iot` (vernetzte Geräte, Consumer), `software` oder `embedded-linux` (Steuerungssoftware auf einem Linux-Industrie-PC, bringt `ot` mit; das Beispiel legt ein Maschinenmodell und ein Teilmodell `software` an). Die Option ist wiederholbar, z. B. `-l iot -l software`. In der Oberfläche wählen Sie die Produktart per Ankreuzfeld auf der Startseite beim Anlegen.
 
 Das Werkzeug legt einen Ordner mit einem Teilmodell `main` an. Er enthält:
 - vier Standardzonen: geräteintern, lokal, Anlagennetz, extern. Ohne `ot` heißt die dritte Zone „Lokales Netz (LAN/WLAN)“ (Z-LAN).

@@ -101,7 +101,7 @@ Abschnittstypen und wählbare Spalten (Standardspalten **fett**):
 | `scope` | Modellbeschreibung, Ausbaustufen / Varianten, Zonen mit Umgebung | – |
 | `method` | Methode, Expositionsformel, **Hinweis zur Matrix-Lesart** (`inverted`/`literal`), **Akzeptanzgrenze**, wirksame Risikomatrix, Sonderregeln, Freigabeberechtigte | – |
 | `assets` | Assets mit TR-Klasse und C/I/A-Impact (inkl. Vererbung und Verstärker) | **id, title, asset_class, c, i, a**, protects, configurations, description |
-| `elements_and_flows` | Elemente und Datenflüsse | Elemente: **id, title, kind, zone, configurations**, description; Flüsse (`flow_columns`): **id, title, source, target, protocol, assets**, configurations, description |
+| `elements_and_flows` | Elemente und Datenflüsse, je Modell; ein Teilmodell bekommt eine eigene Zwischenüberschrift | Elemente: **id, title, kind, zone, configurations**, host, privilege, refines, description; Flüsse (`flow_columns`): **id, title, source, target, protocol, assets**, boundary, configurations, description. Ohne eigene Spaltenwahl kommen host, privilege, refines und boundary automatisch hinzu, sobald das Modell sie nutzt. Hat ein Element `listens_on`, `authentication`, `memory_safe` oder `sbom_ref`, folgt die Tabelle „Technische Angriffsfläche“ |
 | `threats` | Bedrohungen nach Risiko sortiert, danach je Bedrohung alle Angaben (STRIDE, Ziele, Bewertung, Exposition, Impact, Risiko, akzeptabel/zu behandeln, Maßnahmen, Restrisiko, CRA-Bezug, Status) | **id, title, stride, targets, risk, treatment, measures, status**, exposure, impact, residual_risk, cra_refs |
 | `rejected` | verworfene Bedrohungen mit Begründung; nicht in der Risikoverteilung | **id, title, rationale, by**, stride, targets |
 | `measures` | Maßnahmen mit Rückverweis auf Bedrohungen | **id, title, status, owner, evidence, threats**, kind, due, cra_refs |
@@ -199,6 +199,8 @@ PDF wird aus dem DOCX- (sonst ODT-) Dokument mit einem lokal installierten **Lib
 
 ## Datenmodell
 
+Ein Dokument mit `scope: model` enthält das Modell und alle Teilmodelle, die es verfeinern ([Methodik](methodik.md#teilmodelle-und-rechtekontexte)). IDs aus Teilmodellen tragen den Modellnamen als Präfix (`software/T-0003`), `model` nennt bei jedem Objekt das Modell.
+
 Alle Werte werden bei jedem Erzeugen neu berechnet und nie gespeichert. Die Vorlage sieht nur einfache Daten: Texte, Zahlen, Listen, Datumswerte. `None` erscheint als „–“, wenn die Blöcke verwendet werden; in eigenen Platzhaltern hilft `{{ x or "–" }}`.
 
 | Variable | Inhalt |
@@ -210,8 +212,8 @@ Alle Werte werden bei jedem Erzeugen neu berechnet und nie gespeichert. Die Vorl
 | `document` | `title` (Name der Vorlage), `template` (ID), `scope`, `version` und `date` (jüngster Eintrag der Änderungshistorie), `generator` |
 | `method` | `id`, `title`, `matrix_reading` (`inverted`/`literal`), `matrix_note`, `max_acceptable_risk`, `max_acceptable_label`, `acceptance_text`, `exposure_text`, `risk_levels[]` und `impact_levels[]` (`level`, `label`), `rules[]` (`id`, `label`, `enabled`, `source`, `max_acceptable_risk`, `impact_delta`), `approvers` ({Stufe: [Namen]}), `matrix[]` (`exposure`, `risks[]`, Lesart bereits angewendet) |
 | `assets[]` | `id`, `title`, `description`, `asset_class`, `c`, `i`, `a` (Impact 1–5 oder `None`), `protects`, `configurations`, `custom`, `model` |
-| `elements[]` | `id`, `title`, `description`, `kind`, `kind_label`, `zone`, `zone_title`, `configurations`, `sbom` (Dateien in `sbom/`), `custom` |
-| `flows[]` | `id`, `title`, `source`, `source_title`, `target`, `target_title`, `protocol`, `bidirectional`, `assets`, `configurations`, `custom` |
+| `elements[]` | `id`, `title`, `description`, `kind`, `kind_label`, `zone` (effektive Zone, ggf. vom Host), `zone_title`, `configurations`, `sbom` (Dateien in `sbom/`), `runs_on`, `runs_on_title`, `privilege` (`level`, `account`, `capabilities`), `privilege_label`, `refines`, `refines_title`, `refined_by[]`, `listens_on[]`, `listens_on_label`, `authentication`, `authentication_label`, `memory_safe`, `sbom_ref` (purl / CPE), `custom`, `model` |
+| `flows[]` | `id`, `title`, `source`, `source_title`, `target`, `target_title`, `protocol`, `bidirectional`, `assets`, `configurations`, `boundary` (`zone`, `privilege` oder `None`), `boundary_label`, `custom`, `model` |
 | `threats[]` | alle **nicht verworfenen** Bedrohungen, nach Risiko absteigend (siehe unten) |
 | `rejected_threats[]` | verworfene Bedrohungen, gleiche Felder |
 | `measures[]` | `id`, `title`, `kind`, `kind_label`, `compensating`, `owner`, `status`, `status_label`, `due`, `evidence`, `evidence_refs` (Links und Dateien unter `evidence/`), `cra_refs[]` (`id`, `title`), `threats[]` (Rückverweise `id`, `title`), `custom` |

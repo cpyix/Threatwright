@@ -250,6 +250,7 @@ def _model_data(
                 "status_label": t(f"measure_status.{d['status']}", lang),
                 "due": ms.model_dump()["due"],
                 "evidence": d["evidence"],
+                "evidence_refs": d["evidence_refs"],
                 "cra_refs": [{"id": c, "title": cra.get(c, "")} for c in d["cra_refs"]],
                 "threats": [
                     {"id": th["id"], "title": th["title"]}

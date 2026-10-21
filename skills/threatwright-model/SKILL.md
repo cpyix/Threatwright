@@ -181,6 +181,7 @@ owner: null                           # only if the user names one
 status: proposed                      # proposed | decided | in_progress | implemented
 due: null                             # YYYY-MM-DD
 evidence: null                        # only real evidence (document, test, link)
+evidence_refs: []                     # https links or files under <project>/evidence/, e.g. evidence/pentest-2026.pdf
 cra_refs: []
 ```
 

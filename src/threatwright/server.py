@@ -22,6 +22,7 @@ import time
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Literal
+from urllib.parse import quote
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, JSONResponse
@@ -47,6 +48,7 @@ from threatwright.method import (
 from threatwright.model.delete import delete_with_refs, deletion_plan
 from threatwright.model.objects import (
     COLLECTIONS,
+    EVIDENCE_DIR,
     Asset,
     DiagramLayout,
     ModelMeta,
@@ -76,6 +78,7 @@ MAX_BODY = 1 << 20
 UPLOAD_PATH = "/api/project/upload"
 OSCAL_UPLOAD_PATH = "/api/oscal/upload"
 SBOM_UPLOAD_PATH = "/api/sbom/upload"
+EVIDENCE_UPLOAD_PATH = "/api/evidence/upload"
 CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
     "font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; "
@@ -366,7 +369,7 @@ def create_app(
         if request.url.path.startswith("/api/"):
             if API_HEADER.lower() not in request.headers:  # cross-site requests cannot set it
                 return JSONResponse({"detail": f"missing {API_HEADER} header"}, status_code=403)
-            uploads = (UPLOAD_PATH, OSCAL_UPLOAD_PATH, SBOM_UPLOAD_PATH)
+            uploads = (UPLOAD_PATH, OSCAL_UPLOAD_PATH, SBOM_UPLOAD_PATH, EVIDENCE_UPLOAD_PATH)
             limit = archive.MAX_UPLOAD if request.url.path in uploads else MAX_BODY
             if int(request.headers.get("content-length") or 0) > limit:
                 return JSONResponse({"detail": "request too large"}, status_code=413)
@@ -835,6 +838,54 @@ def create_app(
             os.makedirs(target_dir, exist_ok=True)
             Path(target).write_bytes(bytes(data))
             return {"written": f"{folder}/{base_name}", "replaced": replaced, "count": count}
+
+    # --- evidence files of measures ------------------------------------------------
+
+    @app.post(EVIDENCE_UPLOAD_PATH)
+    async def evidence_upload(request: Request, name: str) -> dict[str, str]:
+        """Store a file in <project>/evidence/; the measure then references the returned path."""
+        stem = re.sub(r"[^\w. -]", "_", Path(name).name).strip(" .") or "evidence"
+        stem = stem if re.match(r"\w", stem) else f"_{stem}"
+        data = bytearray()
+        async for chunk in request.stream():
+            data += chunk
+            if len(data) > archive.MAX_UPLOAD:
+                raise HTTPException(413, f"file larger than {archive.MAX_UPLOAD >> 20} MB")
+        with session.lock:
+            folder = os.path.normpath(os.path.join(session.require().root.resolve(), EVIDENCE_DIR))
+            base, dot, ext = stem.rpartition(".")
+            candidate, n = stem, 1
+            while os.path.exists(os.path.join(folder, candidate)):  # never overwrite evidence
+                n += 1
+                candidate = f"{base}-{n}.{ext}" if dot and base else f"{stem}-{n}"
+            target = os.path.normpath(os.path.join(folder, candidate))
+            if not target.startswith(folder + os.sep):  # the check CodeQL recognises
+                raise HTTPException(400, "invalid file name")
+            os.makedirs(folder, exist_ok=True)
+            Path(target).write_bytes(bytes(data))
+            return {"ref": f"{EVIDENCE_DIR}/{candidate}"}
+
+    @app.get("/api/evidence")
+    def evidence_file(ref: str) -> Response:
+        """An evidence file of the project, always as a download (never rendered inline)."""
+        with session.lock:
+            root = session.require().root.resolve()
+        folder = os.path.normpath(os.path.join(root, EVIDENCE_DIR))
+        target = os.path.normpath(os.path.join(root, ref))
+        path = Path(target)
+        inside = [p for p in [path, *path.parents] if p.is_relative_to(folder)]  # incl. folder
+        if (
+            not target.startswith(folder + os.sep)
+            or any(p.is_symlink() for p in inside)  # no way out of the project via a link
+            or not path.is_file()
+        ):
+            raise HTTPException(404, "no such evidence file")
+        return Response(
+            path.read_bytes(),
+            media_type="application/octet-stream",
+            # RFC 6266/5987: non-ASCII names (umlauts) only in the encoded form
+            headers={"Content-Disposition": f"attachment; filename*=UTF-8''{quote(path.name)}"},
+        )
 
     @app.get("/api/models/{name}/vulnerabilities")
     def vulnerabilities(name: str) -> list[dict[str, Any]]:

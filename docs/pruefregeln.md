@@ -33,6 +33,7 @@ Die Oberfläche zeigt dieselben Meldungen, weil sie dieselbe Prüfung aufruft.
 | `rejection-without-rationale` | Verwerfung ohne Begründung |
 | `custom-required` | eigenes Pflichtfeld ist leer |
 | `custom-invalid` | eigenes Feld hat einen ungültigen Wert |
+| `evidence-missing` | Maßnahme verweist in `evidence_refs` auf eine Datei, die es unter `evidence/` nicht gibt |
 | `sbom-missing` | Element nennt in `sbom` eine Datei, die es in `sbom/` nicht gibt |
 | `sbom-invalid` | Datei in `sbom/` oder `vulnerabilities/` ist kein lesbares CycloneDX- bzw. CSAF-JSON |
 | `vulnerability-untreated` | Eine Schwachstelle betrifft eine Komponente des Elements (Stand betroffen oder in Prüfung), aber keine Bedrohung des Modells nennt sie in `vulnerabilities` ([SBOM und Schwachstellen](sbom.md)) |
@@ -54,4 +55,5 @@ Die Oberfläche zeigt dieselben Meldungen, weil sie dieselbe Prüfung aufruft.
 | `library-ref-unknown` | `library_ref` verweist auf einen Eintrag, den es nicht (mehr) gibt |
 | `unknown-cra-ref` | CRA-Bezug ist nicht im CRA-Katalog |
 | `cra-requirement-uncovered` | Grundlegende Anforderung aus CRA Anhang I ohne Bedrohung oder Maßnahme mit diesem CRA-Bezug und nicht in `cra_not_applicable` (`model.yaml`) begründet; erst geprüft, sobald das Modell Bedrohungen hat |
+| `implemented-without-evidence` | Maßnahme mit Status „umgesetzt“ ohne Nachweis: weder `evidence` (Text) noch `evidence_refs` (Datei oder Link) |
 | `acceptance-undocumented` | Bei einer Akzeptanz fehlt Name (`by`), Rolle (`role`) oder Datum (`date`) der Freigabe |

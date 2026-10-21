@@ -16,6 +16,11 @@ SCHEMA_VERSION: Literal[1] = 1
 Uuid = Annotated[uuidlib.UUID, PlainSerializer(str, return_type=str)]
 ObjectId = Annotated[str, Field(pattern=r"^[A-Za-z][A-Za-z0-9_]*-[0-9]{4,}$")]
 Stride = Literal["S", "T", "R", "I", "D", "E"]
+EVIDENCE_DIR = "evidence"
+EvidenceRef = Annotated[
+    # every path segment starts with a word character: no "..", no absolute paths
+    str, Field(pattern=r"^(https?://\S+|evidence(/\w[\w. -]*)+)$")
+]
 # plain file name in the project folder sbom/ (no paths)
 SbomFile = Annotated[str, Field(pattern=r"^[A-Za-z0-9_][A-Za-z0-9._-]*\.json$")]
 
@@ -233,6 +238,8 @@ class Measure(ModelObject):
     status: MeasureStatus = "proposed"
     due: datetime.date | None = None
     evidence: str | None = None
+    # https links or files in the project folder evidence/ (path relative to the project)
+    evidence_refs: list[EvidenceRef] = []
     cra_refs: list[str] = []
     oscal_ref: OscalRef | None = None
 

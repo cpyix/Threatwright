@@ -106,7 +106,7 @@ def _getters(f: Filters) -> dict[str, dict[str, Callable[[Ctx], str]]]:
             "status": lambda m: m["status_label"],
             "owner": lambda m: _s(m["owner"]),
             "due": lambda m: f["date"](m["due"]) if m["due"] else DASH,
-            "evidence": lambda m: _s(m["evidence"]),
+            "evidence": lambda m: _s([x for x in (m["evidence"], *m["evidence_refs"]) if x]),
             "threats": lambda m: _refs(m["threats"]),
             "cra_refs": lambda m: _refs(m["cra_refs"]),
         },

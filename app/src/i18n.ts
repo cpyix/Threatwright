@@ -320,6 +320,11 @@ const de = {
   vuln_not_affected: 'nicht betroffen',
   vuln_create_threat: 'Bedrohung anlegen',
   vuln_threat_title: 'Bekannte Schwachstelle',
+  evidence_refs: 'Nachweisdateien und Links',
+  evidence_link: 'Link zum Nachweis',
+  evidence_link_hint: 'Ein Link beginnt mit https:// oder http://.',
+  evidence_add_link: 'Link hinzufügen',
+  evidence_add_file: 'Datei hinzufügen (wird nach evidence/ kopiert)',
 } as const
 
 export type Key = keyof typeof de
@@ -643,6 +648,11 @@ const en: Record<Key, string> = {
   vuln_not_affected: 'not affected',
   vuln_create_threat: 'Create threat',
   vuln_threat_title: 'Known vulnerability',
+  evidence_refs: 'Evidence files and links',
+  evidence_link: 'Link to evidence',
+  evidence_link_hint: 'A link starts with https:// or http://.',
+  evidence_add_link: 'Add link',
+  evidence_add_file: 'Add file (copied to evidence/)',
 }
 
 // Enum values stored in files (English identifiers) -> display labels.

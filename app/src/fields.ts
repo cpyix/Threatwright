@@ -4,7 +4,7 @@ import { app } from './state.svelte'
 import type { Collection, Obj } from './types'
 
 export type Option = { value: string; label: string }
-export type FieldType = 'text' | 'longtext' | 'select' | 'multi' | 'bool' | 'tristate' | 'number' | 'date' | 'list'
+export type FieldType = 'text' | 'longtext' | 'select' | 'multi' | 'bool' | 'tristate' | 'number' | 'date' | 'list' | 'evidence'
 
 export interface Field {
   key: string // dotted path into the object
@@ -100,6 +100,7 @@ export const FIELDS: Record<Collection, Field[]> = {
     { key: 'owner', label: 'owner', type: 'text' },
     { key: 'due', label: 'due', type: 'date' },
     { key: 'evidence', label: 'evidence', type: 'longtext' },
+    { key: 'evidence_refs', label: 'evidence_refs', type: 'evidence' },
     { key: 'cra_refs', label: 'cra_refs', type: 'multi', options: cra },
     { key: 'description', label: 'description', type: 'longtext' },
   ],

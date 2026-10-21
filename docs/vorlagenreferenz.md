@@ -214,7 +214,7 @@ Alle Werte werden bei jedem Erzeugen neu berechnet und nie gespeichert. Die Vorl
 | `flows[]` | `id`, `title`, `source`, `source_title`, `target`, `target_title`, `protocol`, `bidirectional`, `assets`, `configurations`, `custom` |
 | `threats[]` | alle **nicht verworfenen** Bedrohungen, nach Risiko absteigend (siehe unten) |
 | `rejected_threats[]` | verworfene Bedrohungen, gleiche Felder |
-| `measures[]` | `id`, `title`, `kind`, `kind_label`, `compensating`, `owner`, `status`, `status_label`, `due`, `evidence`, `cra_refs[]` (`id`, `title`), `threats[]` (Rückverweise `id`, `title`), `custom` |
+| `measures[]` | `id`, `title`, `kind`, `kind_label`, `compensating`, `owner`, `status`, `status_label`, `due`, `evidence`, `evidence_refs` (Links und Dateien unter `evidence/`), `cra_refs[]` (`id`, `title`), `threats[]` (Rückverweise `id`, `title`), `custom` |
 | `questions[]` | `id`, `title`, `addressee`, `status`, `status_label`, `answer`, `threats[]` |
 | `traceability[]` | je Bedrohung und Maßnahme: `threat`, `threat_title`, `risk`, `measure`, `measure_title`, `measure_status`, `cra_refs[]` |
 | `risk_distribution[]` | je Risikostufe (hoch nach niedrig): `level`, `label`, `count`, `acceptable` |

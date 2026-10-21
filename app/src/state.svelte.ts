@@ -13,6 +13,7 @@ export type View =
   | { kind: 'controls' }
   | { kind: 'cra' }
   | { kind: 'vulnerabilities' }
+  | { kind: 'changes' }
   | { kind: 'documents' }
   | { kind: 'objects'; collection: Collection; selected: string | null }
   | { kind: 'history' }

@@ -6,6 +6,7 @@
   import ClipboardCheck from '@lucide/svelte/icons/clipboard-check'
   import FileText from '@lucide/svelte/icons/file-text'
   import FolderOpen from '@lucide/svelte/icons/folder-open'
+  import GitCompare from '@lucide/svelte/icons/git-compare'
   import Gem from '@lucide/svelte/icons/gem'
   import Grid3x3 from '@lucide/svelte/icons/grid-3x3'
   import HistoryIcon from '@lucide/svelte/icons/history'
@@ -24,6 +25,7 @@
   import { PRODUCT_NAME } from './branding'
   import { tr, type Key } from './i18n'
   import Assistant from './lib/Assistant.svelte'
+  import Changes from './lib/Changes.svelte'
   import Controls from './lib/Controls.svelte'
   import CraRequirements from './lib/CraRequirements.svelte'
   import Coverage from './lib/Coverage.svelte'
@@ -139,6 +141,7 @@
             items: [
               simple('validation', CircleCheckBig),
               simple('cra', ClipboardCheck),
+              simple('changes', GitCompare),
               simple('documents', FileText),
               simple('controls', ListChecks),
             ],
@@ -281,6 +284,8 @@
       <Controls />
     {:else if app.view.kind === 'cra'}
       <CraRequirements />
+    {:else if app.view.kind === 'changes'}
+      <Changes />
     {:else if app.view.kind === 'vulnerabilities'}
       <Vulnerabilities />
     {:else if app.view.kind === 'documents'}

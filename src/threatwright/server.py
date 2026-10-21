@@ -70,7 +70,14 @@ from threatwright.render import (
 )
 from threatwright.rules import relative, validate
 from threatwright.scaffold import PRODUCT_LIBRARIES, ProjectExists, create_project
-from threatwright.vcs import VcsError, changed_objects, release_tags
+from threatwright.vcs import (
+    VcsError,
+    changed_objects,
+    load_project_at,
+    release_tags,
+    render_diff,
+    semantic_diff,
+)
 
 WEB_DIR = Path(__file__).parent / "web"
 API_HEADER = "X-Threatwright"  # any value; its presence forces a CORS preflight (CSRF)
@@ -938,6 +945,22 @@ def create_app(
             "models": {m: sorted(ids) for m, ids in changed.items()},
             "tags": tags,
         }
+
+    @app.get("/api/vcs/diff")
+    def vcs_diff(since: str = "HEAD", format: str = "json") -> Any:
+        """Semantic change evidence: revision `since` against the state in the editor."""
+        with session.lock:
+            project = session.require()
+            method = need_method()
+            try:
+                old = load_project_at(project.root, since)
+            except VcsError as exc:
+                raise HTTPException(422, str(exc)) from exc
+            diff = semantic_diff(old, project, method, since, "")  # "": the working copy
+        if format == "md":
+            text = render_diff(diff, "md", project.config.language)
+            return Response(text, media_type="text/markdown; charset=utf-8")
+        return asdict(diff)
 
     # --- OSCAL import and ARC applicability (M6) ------------------------------------
 

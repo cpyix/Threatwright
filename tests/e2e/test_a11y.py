@@ -17,6 +17,7 @@ VIEWS = [
     "vulnerabilities",
     "validation",
     "cra",
+    "changes",
     "settings",
 ]
 

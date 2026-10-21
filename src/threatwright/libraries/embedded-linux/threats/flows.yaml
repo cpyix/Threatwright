@@ -1,0 +1,205 @@
+# Threat templates for remote shell, outgoing e-mail and USB input devices.
+threats:
+  # --- remote shell ------------------------------------------------------------------
+  - id: lx-ssh-weak-credentials
+    rev: 1
+    stride: [S, T]
+    applies_to: [lx-remote-shell, lx-os-service]
+    title:
+      de: Unbefugte Anmeldung über {element}
+      en: Unauthorised login via {element}
+    scenario:
+      de: >-
+        Der Shell-Zugang erlaubt die direkte Anmeldung als root mit Passwort, und
+        die Geräte einer Baureihe teilen dieselben Zugangsdaten. Ein Angreifer im
+        Anlagennetz meldet sich mit bekannt gewordenen Zugangsdaten an.
+      en: >-
+        The shell access allows direct login as root with a password, and the
+        devices of a product line share the same credentials. An attacker in the
+        plant network logs in with leaked credentials.
+    consequence:
+      de: >-
+        Der Angreifer hat volle Kontrolle über den Steuerungsrechner und kann
+        Steuerungssoftware und Parameter verändern. Personen können gefährdet
+        werden.
+      en: >-
+        The attacker has full control of the industrial PC and can change
+        control software and parameters. Persons can be endangered.
+    environment: {interface: known_network, access: non_restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-b]
+    attack_ics: [T0859, T1694, T0886]
+    emb3d: [TID-311, TID-328]
+    iec62443: [FR1]
+    measures: [unique-device-credentials, strong-authentication, account-lockout, least-privilege-services, firewall-allowlist]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-ssh-host-key-mitm
+    rev: 1
+    stride: [T, I]
+    applies_to: [lx-remote-shell]
+    title:
+      de: Zwischenschalten in die Verbindung {element}
+      en: Adversary in the middle of the connection {element}
+    scenario:
+      de: >-
+        Alle Geräte werden aus demselben Image erzeugt und tragen deshalb
+        denselben Host-Schlüssel, oder Servicewerkzeuge prüfen den Host-Schlüssel
+        nicht. Ein Angreifer im selben Netz gibt sich als Gerät aus und leitet die
+        Verbindung weiter.
+      en: >-
+        All devices are created from the same image and therefore carry the same
+        host key, or service tools do not verify the host key. An attacker in the
+        same network poses as the device and relays the connection.
+    consequence:
+      de: >-
+        Zugangsdaten des Servicepersonals und übertragene Dateien fließen ab;
+        eingegebene Befehle und übertragene Software können verändert werden.
+      en: >-
+        Credentials of service staff and transferred files leak; entered
+        commands and transferred software can be altered.
+    environment: {interface: known_network, access: non_restricted}
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-I-2-e, AI-I-2-f]
+    attack_ics: [T0830]
+    emb3d: [TID-317, TID-316]
+    iec62443: [FR1, FR4]
+    measures: [unique-device-credentials, certificate-management, service-personnel-training]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-ssh-connection-flood
+    rev: 1
+    stride: [D]
+    applies_to: [lx-remote-shell, lx-os-service]
+    title:
+      de: Blockieren des Servicezugangs {element}
+      en: Blocking the service access {element}
+    scenario:
+      de: >-
+        Ein Angreifer öffnet fortlaufend Verbindungen zum Shell-Dienst, ohne sich
+        anzumelden. Der Dienst nimmt keine weiteren Verbindungen an, und die
+        Verbindungsversuche belasten CPU und Netzwerkstack des Rechners.
+      en: >-
+        An attacker continuously opens connections to the shell service without
+        logging in. The service accepts no further connections, and the attempts
+        load CPU and network stack of the machine.
+    consequence:
+      de: >-
+        Service und Fehlerbehebung sind nicht möglich. Teilt sich der Dienst die
+        CPU mit dem Echtzeitprozess, kann auch die Steuerung gestört werden.
+      en: >-
+        Service and troubleshooting are not possible. If the service shares the
+        CPU with the real-time process, control can also be disturbed.
+    environment: {interface: known_network, access: non_restricted}
+    impact: 3
+    safety_related: false
+    cra_refs: [AI-I-2-h, AI-I-2-j]
+    attack_ics: [T0814]
+    emb3d: [TID-405]
+    iec62443: [FR7]
+    measures: [dos-rate-limiting, firewall-allowlist, lx-rt-resource-isolation, remote-access-on-demand]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  # --- outgoing e-mail ---------------------------------------------------------------
+  - id: lx-smtp-interception
+    rev: 1
+    stride: [T, I]
+    applies_to: [lx-smtp-out]
+    title:
+      de: Mitlesen und Verändern von Meldungen über {element}
+      en: Reading and altering messages via {element}
+    scenario:
+      de: >-
+        Alarm- und Statusmails werden ohne Transportverschlüsselung versendet,
+        und die SMTP-Zugangsdaten liegen im Klartext auf dem Gerät. Ein Angreifer
+        auf dem Übertragungsweg liest Produktionsdaten und Zugangsdaten mit und
+        verändert Meldungen.
+      en: >-
+        Alarm and status e-mails are sent without transport encryption, and the
+        SMTP credentials are stored in plain text on the device. An attacker on
+        the transmission path reads production data and credentials and alters
+        messages.
+    consequence:
+      de: >-
+        Abfluss von Betriebsdaten; mit den Zugangsdaten kann der Angreifer im
+        Namen der Maschine Mails an Betreiber und Service senden.
+      en: >-
+        Leakage of operating data; with the credentials the attacker can send
+        e-mails in the name of the machine to operator and service.
+    environment: {interface: external_network, access: non_restricted}
+    impact: 3
+    safety_related: false
+    cra_refs: [AI-I-2-e, AI-I-2-f, AI-I-2-g]
+    attack_ics: [T0842, T0830]
+    emb3d: [TID-408]
+    iec62443: [FR4]
+    measures: [data-encryption-transit, secrets-protected-storage, data-minimisation]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-smtp-alarm-suppression
+    rev: 1
+    stride: [D]
+    applies_to: [lx-smtp-out]
+    title:
+      de: Unterdrückung von Alarmmeldungen über {element}
+      en: Suppression of alarm messages via {element}
+    scenario:
+      de: >-
+        Ein Angreifer, der einen Angriff vorbereitet, blockiert den Mailversand
+        der Maschine im Netz oder auf dem Gerät. Die Maschine meldet nicht, dass
+        der Versand fehlschlägt.
+      en: >-
+        An attacker preparing an attack blocks the e-mail delivery of the
+        machine in the network or on the device. The machine does not report that
+        delivery fails.
+    consequence:
+      de: >-
+        Alarme zu Störungen oder Sicherheitsereignissen erreichen niemanden;
+        der Angriff bleibt länger unbemerkt.
+      en: >-
+        Alarms about faults or security events reach nobody; the attack remains
+        unnoticed for longer.
+    environment: {interface: known_network, access: non_restricted}
+    impact: 2
+    safety_related: false
+    cra_refs: [AI-I-2-h, AI-I-2-l]
+    attack_ics: [T0878]
+    iec62443: [FR6]
+    measures: [local-autonomy, network-monitoring-ids, security-logging]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20"]
+
+  # --- USB input devices -------------------------------------------------------------
+  - id: lx-usb-hid-injection
+    rev: 1
+    stride: [T, I]
+    applies_to: [lx-usb-hid, lx-local-hmi]
+    title:
+      de: Manipuliertes Eingabegerät an {element}
+      en: Manipulated input device on {element}
+    scenario:
+      de: >-
+        Ein Angreifer ersetzt Tastatur oder Barcodeleser der Maschine durch ein
+        präpariertes Gerät oder schaltet einen Adapter dazwischen. Das Gerät
+        erzeugt eigene Eingaben in der Bedienoberfläche und zeichnet die
+        Eingaben der Bediener auf.
+      en: >-
+        An attacker replaces keyboard or barcode reader of the machine with a
+        crafted device or inserts an adapter. The device generates its own input
+        in the operator interface and records operator input.
+    consequence:
+      de: >-
+        Bedienhandlungen erfolgen unter der Kennung des angemeldeten Bedieners,
+        und Passwörter fließen ab.
+      en: >-
+        Operations are executed under the identity of the logged-in operator,
+        and passwords leak.
+    environment: {interface: local, access: public_restricted}
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-I-2-j, AI-I-2-d, AI-I-2-e]
+    attack_ics: [T0847]
+    iec62443: [FR2, FR4]
+    measures: [usb-port-control, kiosk-mode, physical-access-control, tamper-alarm]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20"]

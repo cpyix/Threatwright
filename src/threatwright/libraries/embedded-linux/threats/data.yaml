@@ -1,0 +1,333 @@
+# Threat templates for shared memory, source code on the target and the update
+# staging area.
+threats:
+  # --- shared memory -----------------------------------------------------------------
+  - id: lx-shm-foreign-writer
+    rev: 1
+    stride: [T]
+    applies_to: [lx-shared-memory, lx-rt-control, lx-local-hmi, lx-app-layer]
+    title:
+      de: Anderer Prozess verändert Daten im Shared Memory von {element}
+      en: Another process modifies data in the shared memory of {element}
+    scenario:
+      de: >-
+        Steuerung, Bedienoberfläche und Anwendungsschicht tauschen Prozessabbild,
+        Sollwerte und Befehle über ein gemeinsames Shared-Memory-Segment aus,
+        das alle beteiligten Prozesse beschreiben dürfen oder das für alle
+        Benutzer freigegeben ist. Ein Angreifer, der einen dieser Prozesse
+        übernommen hat, schreibt direkt Sollwerte, Freigabebits oder
+        Ausgangswerte in das Segment. Der Steuerungsprozess übernimmt die Werte
+        ohne Prüfung.
+      en: >-
+        Controller, operator interface and application layer exchange process
+        image, set points and commands via a common shared memory segment that
+        all involved processes may write or that is open to all users. An
+        attacker who has taken over one of these processes writes set points,
+        enable bits or output values directly into the segment. The control
+        process takes the values without checks.
+    consequence:
+      de: >-
+        Rechteprüfungen der Bedienoberfläche werden umgangen; die Steuerung
+        führt manipulierte Sollwerte aus. Unerwartete Bewegungen können Personen
+        gefährden.
+      en: >-
+        Permission checks of the operator interface are bypassed; the controller
+        executes manipulated set points. Unexpected movements can endanger
+        persons.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    attack_ics: [T0835, T0836]
+    emb3d: [TID-304, TID-204]
+    iec62443: [FR2, FR3]
+    measures: [lx-shm-permissions, parameter-plausibility, lx-service-sandboxing, safety-separation]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-shm-readout
+    rev: 1
+    stride: [I]
+    applies_to: [lx-shared-memory]
+    title:
+      de: Unbefugtes Auslesen von {element}
+      en: Unauthorised readout of {element}
+    scenario:
+      de: >-
+        Das Segment unter /dev/shm oder als System-V-Segment ist für alle
+        Benutzer lesbar. Ein Angreifer mit einem beliebigen lokalen Konto blendet
+        es ein und liest Prozessdaten, Rezepte, Sitzungstokens oder Zugangsdaten,
+        die Prozesse dort zwischenspeichern.
+      en: >-
+        The segment under /dev/shm or as System V segment is readable by all
+        users. An attacker with any local account maps it and reads process
+        data, recipes, session tokens or credentials that processes buffer
+        there.
+    consequence:
+      de: >-
+        Abfluss von Produktions-Know-how und von Tokens, mit denen sich der
+        Angreifer gegenüber anderen Prozessen als berechtigt ausgibt.
+      en: >-
+        Leakage of production know-how and of tokens with which the attacker
+        poses as authorised towards other processes.
+    environment: {interface: local, access: restricted}
+    impact: 3
+    safety_related: false
+    cra_refs: [AI-I-2-e, AI-I-2-g]
+    attack_ics: [T0893]
+    emb3d: [TID-223]
+    iec62443: [FR4]
+    measures: [lx-shm-permissions, data-minimisation, secrets-protected-storage]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-shm-lock-starvation
+    rev: 1
+    stride: [D]
+    applies_to: [lx-shared-memory, lx-rt-control]
+    title:
+      de: Blockieren des Datenaustauschs über {element}
+      en: Blocking the data exchange via {element}
+    scenario:
+      de: >-
+        Der Zugriff auf das Segment wird über Mutexe, Semaphoren oder
+        Ringpuffer-Indizes im Segment selbst koordiniert. Ein Angreifer mit
+        Schreibzugriff hält eine Sperre dauerhaft, setzt Indizes auf ungültige
+        Werte oder überschreibt Verwaltungsdaten. Der Echtzeitprozess wartet
+        auf die Sperre oder liest außerhalb des Puffers.
+      en: >-
+        Access to the segment is coordinated via mutexes, semaphores or ring
+        buffer indices in the segment itself. An attacker with write access holds
+        a lock permanently, sets indices to invalid values or overwrites
+        management data. The real-time process waits for the lock or reads
+        outside the buffer.
+    consequence:
+      de: >-
+        Der Steuerungsprozess hängt oder stürzt ab, die Maschine stoppt
+        unkontrolliert.
+      en: >-
+        The control process hangs or crashes; the machine stops in an
+        uncontrolled way.
+    environment: {interface: local, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-h, AI-I-2-k]
+    attack_ics: [T0813]
+    emb3d: [TID-404]
+    iec62443: [FR7]
+    measures: [lx-shm-permissions, lx-hardware-watchdog, watchdog-safe-state]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-datastore-change-untraced
+    rev: 1
+    stride: [R]
+    applies_to: [lx-shared-memory, lx-source-on-target, lx-update-staging]
+    title:
+      de: Änderungen an {element} lassen sich keinem Verursacher zuordnen
+      en: Changes to {element} cannot be attributed to an originator
+    scenario:
+      de: >-
+        Mehrere Prozesse oder Konten schreiben in {element}, ohne dass Schreiber,
+        Zeitpunkt und Inhalt festgehalten werden. Ein Angreifer verändert Werte,
+        Quelltexte oder abgelegte Pakete und kann später nicht von legitimen
+        Änderungen unterschieden werden.
+      en: >-
+        Several processes or accounts write to {element} without writer, time and
+        content being recorded. An attacker alters values, source files or
+        stored packages and later cannot be distinguished from legitimate
+        changes.
+    consequence:
+      de: >-
+        Manipulationen bleiben unaufgeklärt und werden als Fehlbedienung oder
+        Softwarefehler gewertet.
+      en: >-
+        Manipulations remain unresolved and are taken for operating errors or
+        software bugs.
+    environment: {interface: local, access: restricted}
+    impact: 2
+    safety_related: false
+    cra_refs: [AI-I-2-l]
+    attack_ics: [T0872]
+    emb3d: [TID-225]
+    iec62443: [FR6]
+    measures: [security-logging, lx-shm-permissions, log-protection]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  # --- source code on target ---------------------------------------------------------
+  - id: lx-source-exfiltration
+    rev: 1
+    stride: [I]
+    applies_to: [lx-source-on-target, lx-build-tools]
+    title:
+      de: Abfluss von Quellcode und Build-Artefakten über {element}
+      en: Leakage of source code and build artefacts via {element}
+    scenario:
+      de: >-
+        Quelltexte und Build-Artefakte der Steuerungssoftware liegen
+        unverschlüsselt auf dem Seriengerät. Ein Angreifer mit Shell-Zugang oder
+        ausgebautem Datenträger kopiert sie und analysiert sie in Ruhe auf
+        Schwachstellen und Schlüssel.
+      en: >-
+        Source files and build artefacts of the control software reside
+        unencrypted on the production device. An attacker with shell access or a
+        removed storage medium copies them and analyses them at leisure for
+        vulnerabilities and keys.
+    consequence:
+      de: >-
+        Verlust von Know-how, Nachbau durch Dritte und gezielte Angriffe auf die
+        gesamte Baureihe.
+      en: >-
+        Loss of know-how, replication by third parties and targeted attacks on
+        the whole product line.
+    environment: {interface: local, access: restricted}
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-I-2-e, AI-I-2-j]
+    attack_ics: [T0882, T0893]
+    emb3d: [TID-115]
+    iec62443: [FR4]
+    measures: [lx-no-toolchain-on-target, data-encryption-rest, engineering-project-protection]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-storage-exhaustion
+    rev: 1
+    stride: [D]
+    applies_to: [lx-update-staging, lx-source-on-target]
+    title:
+      de: Füllen oder Löschen von {element} legt Update und Betrieb lahm
+      en: Filling or deleting {element} disables update and operation
+    scenario:
+      de: >-
+        {element} liegt auf derselben Partition wie Betriebssystem, Logs und
+        Laufzeitdaten. Ein Angreifer legt große Dateien ab, lässt einen Download
+        endlos laufen oder löscht benötigte Dateien. Updates brechen ab, und
+        Dienste, die Dateien schreiben müssen, stellen ihre Arbeit ein.
+      en: >-
+        {element} resides on the same partition as operating system, logs and
+        runtime data. An attacker stores large files, lets a download run
+        endlessly or deletes required files. Updates abort and services that
+        need to write files stop working.
+    consequence:
+      de: >-
+        Sicherheitsupdates lassen sich nicht einspielen, ein abgebrochenes Update
+        kann das System unstartbar machen, und die Maschine steht still.
+      en: >-
+        Security updates cannot be installed, an aborted update can render the
+        system unbootable, and the machine stands still.
+    environment: {interface: local, access: restricted}
+    impact: 3
+    safety_related: false
+    cra_refs: [AI-I-2-h, AI-I-2-c]
+    attack_ics: [T0809, T0826]
+    emb3d: [TID-217]
+    iec62443: [FR7]
+    measures: [lx-staging-verify-on-install, lx-rt-resource-isolation, backup-restore]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  # --- update staging ------------------------------------------------------------------
+  - id: lx-update-no-signature
+    rev: 1
+    stride: [T, E]
+    applies_to: [lx-update-staging, ipc-linux]
+    title:
+      de: Update aus {element} wird ohne Signaturprüfung installiert
+      en: Update from {element} is installed without signature check
+    scenario:
+      de: >-
+        Der Update-Mechanismus installiert jedes Paket, das in der Update-Ablage
+        liegt oder von einem USB-Datenträger mit passendem Dateinamen kommt. Er
+        prüft höchstens eine Prüfsumme, die im Paket selbst steht. Ein Angreifer
+        legt ein präpariertes Paket ab, dessen Installationsskript als root
+        ausgeführt wird.
+      en: >-
+        The update mechanism installs every package that lies in the staging
+        area or comes from a USB medium with a matching file name. It checks at
+        most a checksum contained in the package itself. An attacker places a
+        crafted package whose install script is executed as root.
+    consequence:
+      de: >-
+        Dauerhafte Hintertür oder manipulierte Steuerungssoftware auf dem
+        Rechner, verteilt über den regulären Update-Weg auch auf weitere
+        Maschinen. Fehlansteuerung kann Personen gefährden.
+      en: >-
+        Persistent backdoor or manipulated control software on the machine,
+        distributed via the regular update path to further machines as well.
+        Faulty control can endanger persons.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-II-7, AI-I-2-c]
+    attack_ics: [T1693, T0847]
+    emb3d: [TID-211, TID-213]
+    iec62443: [FR3]
+    measures: [signed-updates, update-transport-protection, anti-rollback, lx-staging-verify-on-install]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-update-staging-swap
+    rev: 1
+    stride: [T]
+    applies_to: [lx-update-staging]
+    title:
+      de: Austausch eines geprüften Pakets in {element} vor der Installation
+      en: Swap of a verified package in {element} before installation
+    scenario:
+      de: >-
+        Der Update-Mechanismus prüft die Signatur des Pakets und öffnet es für
+        die Installation anschließend erneut über den Dateinamen. Die Ablage ist
+        für einen weniger privilegierten Dienst beschreibbar. Ein Angreifer, der
+        diesen Dienst kontrolliert, ersetzt die Datei zwischen Prüfung und
+        Installation.
+      en: >-
+        The update mechanism verifies the package signature and then reopens it
+        by file name for installation. The staging area is writable by a less
+        privileged service. An attacker controlling this service replaces the
+        file between verification and installation.
+    consequence:
+      de: >-
+        Die Signaturprüfung wird wirkungslos; ein beliebiges Paket wird mit
+        root-Rechten installiert.
+      en: >-
+        The signature check becomes ineffective; an arbitrary package is
+        installed with root privileges.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: false
+    cra_refs: [AI-I-2-f, AI-II-7]
+    attack_ics: [T1693]
+    emb3d: [TID-213]
+    iec62443: [FR3]
+    measures: [lx-staging-verify-on-install, signed-updates]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-update-package-disclosure
+    rev: 1
+    stride: [I]
+    applies_to: [lx-update-staging]
+    title:
+      de: Auslesen von Update-Paketen aus {element}
+      en: Readout of update packages from {element}
+    scenario:
+      de: >-
+        Update-Pakete liegen unverschlüsselt und für alle Benutzer lesbar in der
+        Ablage. Sie enthalten neben Programmen auch Konfigurationen,
+        Standardzugänge oder private Schlüssel. Ein Angreifer kopiert sie über
+        eine Diagnosefunktion, eine Shell oder einen ausgebauten Datenträger.
+      en: >-
+        Update packages reside unencrypted and world-readable in the staging
+        area. Besides programs they contain configurations, default access data
+        or private keys. An attacker copies them via a diagnostic function, a
+        shell or a removed storage medium.
+    consequence:
+      de: >-
+        Der Angreifer analysiert die Software auf Schwachstellen und verwendet
+        enthaltene Schlüssel gegen alle Geräte der Baureihe.
+      en: >-
+        The attacker analyses the software for vulnerabilities and uses contained
+        keys against all devices of the product line.
+    environment: {interface: local, access: restricted}
+    impact: 3
+    safety_related: false
+    cra_refs: [AI-I-2-e]
+    attack_ics: [T0893]
+    emb3d: [TID-215, TID-328]
+    iec62443: [FR4]
+    measures: [lx-staging-verify-on-install, secrets-protected-storage, data-encryption-rest]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]

@@ -38,7 +38,13 @@ PRODUCT_LIBRARIES: dict[str, tuple[str, str]] = {
     "ot": ("Maschine oder Anlage", "Machine or plant"),
     "iot": ("Vernetztes Gerät, IoT, Consumer", "Connected device, IoT, consumer"),
     "software": ("Software", "Software"),
+    "embedded-linux": (
+        "Steuerungssoftware auf Embedded-Linux",
+        "Control software on embedded Linux",
+    ),
 }
+# Product types that build on another library (its measures and element types).
+REQUIRED_LIBRARIES: dict[str, list[str]] = {"embedded-linux": ["ot"]}
 
 # Without "ot" there is no plant network: the third zone is the local network.
 LAN_ZONE = ("Lokales Netz (LAN/WLAN)", "Local network (LAN/WLAN)", "known_network")
@@ -66,6 +72,7 @@ def create_project(
             f"libraries must be a non-empty list of {', '.join(PRODUCT_LIBRARIES)}"
             + (f" (unknown: {', '.join(unknown)})" if unknown else "")
         )
+    libs = [*libs, *(req for lib in libs for req in REQUIRED_LIBRARIES.get(lib, []))]
     libs = [lib for lib in PRODUCT_LIBRARIES if lib in libs]
     if (path / PROJECT_FILE).exists():
         raise ProjectExists(f"{path / PROJECT_FILE} already exists")
@@ -97,7 +104,8 @@ def create_project(
         if example:
             from threatwright.examples import fill_example  # imports the library machinery
 
-            fill_example(project, libs[0])
+            # the most specific product type: embedded-linux builds on ot
+            fill_example(project, "embedded-linux" if "embedded-linux" in libs else libs[0])
     project.save()
     gitignore = path / ".gitignore"
     if not gitignore.exists():

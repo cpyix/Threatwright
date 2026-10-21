@@ -1,0 +1,103 @@
+# Threat templates for external actors with system or programming access.
+threats:
+  - id: lx-technician-impersonation
+    rev: 1
+    stride: [S]
+    applies_to: [lx-service-technician]
+    title:
+      de: Angreifer gibt sich als {element} aus
+      en: Attacker poses as {element}
+    scenario:
+      de: >-
+        Ein Angreifer meldet sich beim Betreiber als Servicetechniker des
+        Herstellers, etwa per Telefon oder E-Mail, und erhält Fernzugang oder
+        Zutritt zur Maschine. Alternativ nutzt er gestohlene Zugangsdaten eines
+        echten Technikers.
+      en: >-
+        An attacker contacts the operator as a service technician of the
+        manufacturer, for example by phone or e-mail, and obtains remote access
+        or entry to the machine. Alternatively they use stolen credentials of a
+        real technician.
+    consequence:
+      de: >-
+        Der Angreifer erhält Systemzugang mit Servicerechten und kann Software
+        und Parameter verändern.
+      en: >-
+        The attacker gains system access with service rights and can change
+        software and parameters.
+    environment: {interface: external_network, access: non_restricted, user: instructed}
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-I-2-d]
+    attack_ics: [T0859, T0822]
+    emb3d: [TID-311]
+    iec62443: [FR1]
+    measures: [mfa-remote-access, time-limited-service-access, remote-access-on-demand, service-personnel-training]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-external-actions-unattributed
+    rev: 1
+    stride: [R]
+    applies_to: [lx-service-technician, lx-app-program-author]
+    title:
+      de: Handlungen von {element} sind nicht nachvollziehbar
+      en: Actions of {element} are not traceable
+    scenario:
+      de: >-
+        Techniker arbeiten mit einem gemeinsamen root-Konto, und Anwenderprogramme
+        werden ohne Angabe von Autor und Version geladen. Ein Angreifer, der
+        diesen Zugang nutzt, ist von legitimen Eingriffen nicht zu
+        unterscheiden.
+      en: >-
+        Technicians work with a shared root account, and application programs
+        are loaded without author and version. An attacker using this access
+        cannot be distinguished from legitimate actions.
+    consequence:
+      de: >-
+        Manipulationen lassen sich keiner Person zuordnen; Verantwortung und
+        Einstiegspunkt bleiben ungeklärt.
+      en: >-
+        Manipulations cannot be attributed to a person; responsibility and entry
+        point remain unclear.
+    environment: {interface: local, access: restricted, user: skilled}
+    impact: 3
+    safety_related: false
+    cra_refs: [AI-I-2-l]
+    attack_ics: [T0872]
+    emb3d: [TID-225]
+    iec62443: [FR1, FR6]
+    measures: [remote-access-session-logging, security-logging, program-integrity-check, change-management]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-app-author-impersonation
+    rev: 1
+    stride: [S, T]
+    applies_to: [lx-app-program-author]
+    title:
+      de: Fremdes Anwenderprogramm unter dem Namen von {element}
+      en: Foreign application program under the name of {element}
+    scenario:
+      de: >-
+        Anwenderprogramme werden ohne Herkunftsnachweis angenommen. Ein Angreifer
+        mit Zugriff auf den Programmierrechner oder die Projektablage spielt ein
+        verändertes Programm ein, das als Version des berechtigten Autors gilt.
+      en: >-
+        Application programs are accepted without proof of origin. An attacker
+        with access to the programming computer or the project repository loads
+        a modified program that passes as a version of the authorised author.
+    consequence:
+      de: >-
+        Manipulierte Logik läuft mit den Rechten des Host-Prozesses und kann
+        Personen gefährden.
+      en: >-
+        Manipulated logic runs with the rights of the host process and can
+        endanger persons.
+    environment: {interface: known_network, access: restricted, user: skilled}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    attack_ics: [T0843, T0873]
+    emb3d: [TID-302, TID-303]
+    iec62443: [FR1, FR3]
+    measures: [program-integrity-check, engineering-project-protection, engineering-tool-integrity, lx-app-runtime-isolation]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]

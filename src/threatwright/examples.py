@@ -7,14 +7,24 @@ Everything is marked as an example; no real product data.
 """
 
 import datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal
 
 from threatwright import assistant
-from threatwright.library import load_libraries
+from threatwright.library import Libraries, load_libraries
 from threatwright.method import Method, evaluate, load_method
-from threatwright.model.objects import Asset, ChangelogEntry, Decision, Flow, Measure, Threat
-from threatwright.model.store import Project
+from threatwright.model.objects import (
+    Asset,
+    ChangelogEntry,
+    Decision,
+    Element,
+    Flow,
+    Listener,
+    Measure,
+    ModelMeta,
+    Threat,
+)
+from threatwright.model.store import Project, SubModel
 
 Lang = Literal["de", "en"]
 
@@ -29,6 +39,17 @@ class Example:
     adopt: dict[str, int]  # element key: first n suggestions
     # zone: (access, user); the interface comes from the project template
     environment: dict[str, tuple[str, str]]
+    hosts: dict[str, str] = field(default_factory=dict)  # element key: key of its host (runs_on)
+    listens: dict[str, list[dict[str, object]]] = field(default_factory=dict)  # listens_on
+
+
+@dataclass(frozen=True)
+class SubExample:
+    """A sub-model refining one element of the main model (one assessment per product)."""
+
+    name: str
+    example: Example
+    refines: tuple[str, str]  # (key in the sub-model, key in the main model)
 
 
 EXAMPLES: dict[str, Example] = {
@@ -129,6 +150,102 @@ EXAMPLES: dict[str, Example] = {
             "Z-EXTERNAL": ("non_restricted", "skilled"),
         },
     ),
+    "embedded-linux": Example(
+        (
+            "Beispielmaschine mit Linux-Steuerungsrechner",
+            "Example machine with Linux industrial PC",
+        ),
+        (
+            "Beispielmodell: Maschine mit Linux-Steuerungsrechner, Antrieb, Bedienpanel und "
+            "Engineering-Rechner. Die Software auf dem Steuerungsrechner ist im Teilmodell "
+            "„software“ verfeinert.",
+            "Example model: machine with Linux industrial PC, drive, operator panel and "
+            "engineering workstation. The software on the industrial PC is refined in the "
+            "sub-model 'software'.",
+        ),
+        {
+            "ipc": ("ipc-linux", "Z-PLANT", "Steuerungsrechner", "Industrial PC"),
+            "drive": ("drive", "Z-INTERNAL", "Achsantrieb", "Axis drive"),
+            "hmi": ("hmi", "Z-LOCAL", "Bedienpanel", "Operator panel"),
+            "ews": (
+                "engineering-workstation",
+                "Z-PLANT",
+                "Engineering-Rechner",
+                "Engineering workstation",
+            ),
+        },
+        [
+            ("hmi", "ipc", "ip-network"),
+            ("ipc", "drive", "fieldbus-ethercat"),
+            ("ews", "ipc", "ip-network"),
+        ],
+        {"drive": 2, "hmi": 2, "ews": 1},
+        {
+            "Z-INTERNAL": ("restricted", "non_user_related"),
+            "Z-LOCAL": ("public_restricted", "instructed"),
+            "Z-PLANT": ("restricted", "skilled"),
+            "Z-EXTERNAL": ("non_restricted", "skilled"),
+        },
+    ),
+}
+
+SUBMODELS: dict[str, SubExample] = {
+    "embedded-linux": SubExample(
+        "software",
+        Example(
+            ("Steuerungssoftware (Beispiel)", "Control software (example)"),
+            (
+                "Teilmodell des Steuerungsrechners: Prozesse mit ihren Rechten, lokale Dienste, "
+                "Shared Memory, Kernel und Update-Bereitstellung.",
+                "Sub-model of the industrial PC: processes with their rights, local services, "
+                "shared memory, kernel and update staging.",
+            ),
+            {
+                "host": ("ipc-linux", "Z-PLANT", "Steuerungsrechner", "Industrial PC"),
+                "rt": ("lx-rt-control", "", "Echtzeit-Steuerung", "Real-time control"),
+                "fb": ("lx-fieldbus-master", "", "Feldbus-Master", "Fieldbus master"),
+                "ui": ("lx-local-hmi", "", "Lokale Bedienoberfläche", "Local operator UI"),
+                "svc": ("lx-network-daemon", "", "Diagnosedienst", "Diagnostics service"),
+                "sshd": ("lx-os-service", "", "SSH-Dienst", "SSH service"),
+                "kernel": ("lx-kernel", "", "Linux-Kernel mit RT-Erweiterung", "Linux kernel (RT)"),
+                "kmod": ("lx-kernel-module", "", "Feldbus-Treiber", "Fieldbus driver"),
+                "shm": (
+                    "lx-shared-memory",
+                    "Z-PLANT",
+                    "Prozessabbild (Shared Memory)",
+                    "Process image (shared memory)",
+                ),
+                "staging": (
+                    "lx-update-staging",
+                    "Z-PLANT",
+                    "Update-Bereitstellung",
+                    "Update staging",
+                ),
+                "tech": (
+                    "lx-service-technician",
+                    "Z-PLANT",
+                    "Servicetechniker",
+                    "Service technician",
+                ),
+            },
+            [
+                ("ui", "rt", "lx-local-ipc"),
+                ("svc", "rt", "lx-local-ipc"),
+                ("rt", "shm", "lx-local-ipc"),
+                ("fb", "shm", "lx-local-ipc"),
+                ("tech", "sshd", "lx-remote-shell"),
+            ],
+            {"rt": 2, "svc": 2, "ui": 1, "kmod": 1, "shm": 1},
+            {},
+            hosts={k: "host" for k in ("rt", "fb", "ui", "svc", "sshd", "kernel", "kmod")},
+            listens={
+                "svc": [{"protocol": "tcp", "port": 5000, "interfaces": "all"}],
+                "sshd": [{"protocol": "tcp", "port": 22, "interfaces": "all"}],
+                "ui": [{"protocol": "unix", "path": "/run/control/ui.sock"}],
+            },
+        ),
+        ("host", "ipc"),
+    ),
 }
 
 
@@ -138,14 +255,37 @@ def _security(method: Method, asset: Asset) -> bool:
 
 
 def fill_example(project: Project, kind: str, today: datetime.date | None = None) -> None:
-    """Fill the main model of a freshly created `tr` project with the example of `kind`."""
-    example = EXAMPLES[kind]
+    """Fill the main model of a freshly created `tr` project with the example of `kind`,
+    plus the sub-model that refines one of its elements, if the product type has one."""
     today = today or datetime.date.today()
-    lang: Lang = project.config.language
-    de = lang == "de"
     libs = load_libraries(project.config.libraries, project.root)
     method = load_method(project.root, project.config)
-    sub = project.models["main"]
+    main = project.models["main"]
+    ids = _fill(project, main, EXAMPLES[kind], libs, method, today)
+    part = SUBMODELS.get(kind)
+    if part is None:
+        return
+    sub = SubModel(part.name, ModelMeta(title=part.name))
+    sub.meta.zones = [z.model_copy(deep=True) for z in main.meta.zones]  # same environment
+    sub.meta.configurations = [c.model_copy() for c in main.meta.configurations]
+    project.models[part.name] = sub
+    sub_ids = _fill(project, sub, part.example, libs, method, today)
+    host = sub.objects["elements"][sub_ids[part.refines[0]]]
+    if isinstance(host, Element):
+        host.refines = f"{main.name}/{ids[part.refines[1]]}"
+
+
+def _fill(
+    project: Project,
+    sub: SubModel,
+    example: Example,
+    libs: Libraries,
+    method: Method,
+    today: datetime.date,
+) -> dict[str, str]:
+    """Elements, flows, adopted and assessed threats of one model; returns key -> element id."""
+    lang: Lang = project.config.language
+    de = lang == "de"
     sub.meta.title = example.title[0 if de else 1]
     sub.meta.description = example.description[0 if de else 1]
     for zone in sub.meta.zones:
@@ -167,9 +307,11 @@ def fill_example(project: Project, kind: str, today: datetime.date | None = None
     for n, (key, (etype, zone_id, t_de, t_en)) in enumerate(example.elements.items()):
         position = (40.0 + n * 220, 40.0 + zone_row.get(zone_id, 0) * 160)
         before = set(sub.objects["assets"])
+        host = ids.get(example.hosts.get(key, ""))
         element = assistant.add_element(
-            sub, libs, project.config, etype, t_de if de else t_en, zone_id, position
+            sub, libs, project.config, etype, t_de if de else t_en, zone_id or None, position, host
         )
+        element.listens_on = [Listener.model_validate(x) for x in example.listens.get(key, [])]
         ids[key] = element.id
         # security assets (keys, logs) inherit their impact from what they protect
         new = [a for i, a in sub.objects["assets"].items() if i not in before]
@@ -231,3 +373,4 @@ def fill_example(project: Project, kind: str, today: datetime.date | None = None
         m.evidence = "Beispiel: Prüfbericht" if de else "Example: test report"
     project.config.support_until = today.replace(year=today.year + 5, day=min(today.day, 28))
     project.config.next_review = today.replace(year=today.year + 1, day=min(today.day, 28))
+    return ids

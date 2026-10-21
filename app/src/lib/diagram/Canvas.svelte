@@ -5,6 +5,7 @@
     Controls,
     MarkerType,
     Panel,
+    type Connection,
     SvelteFlow,
     useSvelteFlow,
     type Edge,
@@ -19,12 +20,14 @@
   import AlignStartVertical from '@lucide/svelte/icons/align-start-vertical'
   import AlignVerticalDistributeCenter from '@lucide/svelte/icons/align-vertical-distribute-center'
   import { untrack } from 'svelte'
+  import { facing, type Side } from './route'
   import { api } from '../../api'
   import { tr, type Key } from '../../i18n'
   import { app } from '../../state.svelte'
-  import type { ElementType, ModelPayload, Note, Obj } from '../../types'
+  import type { EdgeLayout, ElementType, ModelPayload, Note, Obj } from '../../types'
   import Legend from './Legend.svelte'
   import ElementNode from './ElementNode.svelte'
+  import FlowEdge from './FlowEdge.svelte'
   import NoteNode from './NoteNode.svelte'
   import ZoneNode from './ZoneNode.svelte'
 
@@ -52,6 +55,7 @@
   const H = 64
   const PAD = 24
   const nodeTypes = { element: ElementNode, zone: ZoneNode, note: NoteNode }
+  const edgeTypes = { flow: FlowEdge }
   const { screenToFlowPosition, fitView } = useSvelteFlow()
 
   let nodes = $state.raw<Node[]>([])
@@ -76,13 +80,8 @@
   const matches = (q: string, ...fields: (string | null | undefined)[]) =>
     !q || fields.some((f) => f?.toLowerCase().includes(q))
 
-  /** Handles facing each other: side by side -> right/left, above each other -> bottom/top. */
-  function sides(a: { x: number; y: number }, b: { x: number; y: number }): [string, string] {
-    const dx = b.x - a.x
-    const dy = b.y - a.y
-    if (Math.abs(dx) * H >= Math.abs(dy) * W) return dx >= 0 ? ['right', 'left'] : ['left', 'right']
-    return dy >= 0 ? ['bottom', 'top'] : ['top', 'bottom']
-  }
+  /** Stored routes (sides, bend points) of the data flows; layout data, never model content. */
+  const routes = (): Record<string, EdgeLayout> => structuredClone($state.snapshot(app.model?.layout.edges ?? {}))
 
   function zoneNodes(positions: Map<string, { x: number; y: number }>, shown: Set<string>): Node[] {
     const out: Node[] = []
@@ -161,21 +160,34 @@
     })
     nodes = [...zoneNodes(positions, shown), ...elementNodes, ...noteNodes]
     const zoneOf = new Map(app.objects('elements').map((e) => [e.id, e.zone]))
+    const stored = model.layout.edges ?? {}
+    // parallel connections without an own route get spread apart instead of drawn on top
+    const pairKey = (f: Obj) => [f.source, f.target].sort().join('|')
+    const parallel = new Map<string, string[]>()
+    for (const f of app.objects('flows'))
+      if (!stored[f.id]?.points?.length) parallel.set(pairKey(f), [...(parallel.get(pairKey(f)) ?? []), f.id])
+    const wasSelectedEdge = new Set(untrack(() => edges.filter((e) => e.selected).map((e) => e.id)))
     edges = app.objects('flows').map((f) => {
-      // anchors follow the geometry, so a connection never jumps to a far side of the box
-      const [sourceHandle, targetHandle] =
+      // anchors follow the geometry unless the user chose a side, so a connection never
+      // jumps to a far side of the box by itself
+      const [autoSource, autoTarget] =
         positions.has(f.source) && positions.has(f.target)
-          ? sides(positions.get(f.source)!, positions.get(f.target)!)
-          : ['right', 'left']
+          ? facing(positions.get(f.source)!, positions.get(f.target)!, W, H)
+          : (['right', 'left'] as const)
+      const route = stored[f.id] ?? {}
+      const group = parallel.get(pairKey(f)) ?? [f.id]
+      const shift = (group.indexOf(f.id) - (group.length - 1) / 2) * 18
       const hit = matches(q, f.id, f.title, f.protocol)
       if (q && hit && flowShown(f)) hits.push(f.source, f.target)
       return {
       id: f.id,
       source: f.source,
       target: f.target,
-      sourceHandle,
-      targetHandle,
-      type: 'smoothstep',
+      sourceHandle: route.source_side ?? autoSource,
+      targetHandle: route.target_side ?? autoTarget,
+      type: 'flow',
+      selected: wasSelectedEdge.has(f.id),
+      data: { points: route.points ?? [], shift: group.length > 1 ? shift : 0, onpoints: setPoints },
       label: f.title,
       markerEnd: { type: MarkerType.ArrowClosed },
       markerStart: f.bidirectional ? { type: MarkerType.ArrowClosed } : undefined,
@@ -253,11 +265,60 @@
     return out
   }
 
-  async function saveLayout(layout: Record<string, { x: number; y: number }>, notes = currentNotes()) {
-    await api('PUT', `/models/${app.modelName}/layout`, { nodes: layout, notes })
-    if (app.model) app.model.layout = { nodes: layout, notes }
+  async function saveLayout(
+    layout: Record<string, { x: number; y: number }>,
+    notes = currentNotes(),
+    edgeRoutes = routes(),
+  ) {
+    await api('PUT', `/models/${app.modelName}/layout`, { nodes: layout, edges: edgeRoutes, notes })
+    if (app.model) app.model.layout = { nodes: layout, edges: edgeRoutes, notes }
     await app.refreshProject()
     build()
+  }
+
+  /** Bend points of one connection, from dragging, adding or removing them on the canvas. */
+  async function setPoints(id: string, points: { x: number; y: number }[]) {
+    const all = routes()
+    const current = edges.find((e) => e.id === id)
+    // keep the sides the line is drawn with now, so adding a point does not flip them
+    all[id] = {
+      source_side: (current?.sourceHandle as EdgeLayout['source_side']) ?? null,
+      target_side: (current?.targetHandle as EdgeLayout['target_side']) ?? null,
+      points: points.map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) })),
+    }
+    await saveLayout(currentLayout(), currentNotes(), all)
+  }
+
+  /** Back to the automatic route: sides facing each other, no bend points. */
+  export async function resetRoute(id: string) {
+    const all = routes()
+    delete all[id]
+    await saveLayout(currentLayout(), currentNotes(), all)
+  }
+
+  const selectedEdge = $derived(edges.find((e) => e.selected && !e.hidden)?.id ?? null)
+
+  /** Dragging an end of a connection: another side of the same element, or another element. */
+  async function onreconnect(old: Edge, c: Connection) {
+    // the anchor drag may report the ends the other way round
+    const swapped = c.source === old.target && c.target === old.source && c.source !== c.target
+    const [source, target] = swapped ? [c.target, c.source] : [c.source, c.target]
+    const [sourceSide, targetSide] = swapped ? [c.targetHandle, c.sourceHandle] : [c.sourceHandle, c.targetHandle]
+    if (source === target) return
+    if (source !== old.source || target !== old.target) {
+      const flow = app.objects('flows').find((f) => f.id === old.id)
+      if (!flow) return
+      const r = await api<{ model: ModelPayload }>('PUT', `/models/${app.modelName}/flows/${old.id}`, {
+        ...$state.snapshot(flow),
+        source,
+        target,
+      })
+      await app.afterChange(r.model)
+    }
+    const all = routes()
+    // the old bend points belonged to the old ends: start over with the new sides
+    all[old.id] = { source_side: (sourceSide as EdgeLayout['source_side']) ?? null, target_side: (targetSide as EdgeLayout['target_side']) ?? null, points: [] }
+    await saveLayout(currentLayout(), currentNotes(), all)
   }
 
   async function setNoteText(id: string, text: string) {
@@ -432,14 +493,58 @@
       })),
     })
     const layout: Record<string, { x: number; y: number }> = {}
+    const origin = new Map<string, { x: number; y: number }>([['root', { x: 40, y: 40 }]]) // container -> offset
     for (const c of graph.children ?? []) {
       const ox = (c.x ?? 0) + 40
       const oy = (c.y ?? 0) + 40
+      origin.set(c.id, { x: ox, y: oy })
       if (!c.children?.length) layout[c.id] = { x: Math.round(ox), y: Math.round(oy) }
       for (const g of c.children ?? []) layout[g.id] = { x: Math.round(ox + (g.x ?? 0)), y: Math.round(oy + (g.y ?? 0)) }
     }
-    await saveLayout(layout)
+    await saveLayout(layout, currentNotes(), elkRoutes(graph.edges ?? [], layout, origin))
     fitView({ maxZoom: 1 })
+  }
+
+  type ElkEdge = {
+    id: string
+    container?: string
+    sections?: { startPoint: { x: number; y: number }; endPoint: { x: number; y: number }; bendPoints?: { x: number; y: number }[] }[]
+  }
+
+  /** ELK's orthogonal routes as stored routes: the sides it attached to and its bend points. */
+  function elkRoutes(
+    elkEdges: ElkEdge[],
+    layout: Record<string, { x: number; y: number }>,
+    origin: Map<string, { x: number; y: number }>,
+  ): Record<string, EdgeLayout> {
+    const out: Record<string, EdgeLayout> = {}
+    const sideOf = (p: { x: number; y: number }, box: { x: number; y: number }): Side => {
+      const d = { left: Math.abs(p.x - box.x), right: Math.abs(p.x - box.x - W), top: Math.abs(p.y - box.y), bottom: Math.abs(p.y - box.y - H) }
+      return (Object.keys(d) as Side[]).reduce((a, b) => (d[b] < d[a] ? b : a))
+    }
+    for (const e of elkEdges) {
+      const flow = app.objects('flows').find((f) => f.id === e.id)
+      const s = e.sections?.[0]
+      if (!flow || !s || !layout[flow.source] || !layout[flow.target]) continue
+      const o = origin.get(e.container ?? 'root') ?? origin.get('root')!
+      const abs = (p: { x: number; y: number }) => ({ x: Math.round(p.x + o.x), y: Math.round(p.y + o.y) })
+      const src = layout[flow.source]
+      const dst = layout[flow.target]
+      const sourceSide = sideOf(abs(s.startPoint), src)
+      const targetSide = sideOf(abs(s.endPoint), dst)
+      const points = (s.bendPoints ?? []).map(abs)
+      // our anchors sit in the middle of a side; move the first and last bend onto that line
+      const mid = (box: { x: number; y: number }, side: Side) =>
+        side === 'left' || side === 'right' ? { axis: 'y' as const, v: box.y + H / 2 } : { axis: 'x' as const, v: box.x + W / 2 }
+      if (points.length) {
+        const first = mid(src, sourceSide)
+        points[0] = { ...points[0], [first.axis]: first.v }
+        const last = mid(dst, targetSide)
+        points[points.length - 1] = { ...points[points.length - 1], [last.axis]: last.v }
+      }
+      out[e.id] = { source_side: sourceSide, target_side: targetSide, points }
+    }
+    return out
   }
 </script>
 
@@ -448,6 +553,9 @@
     bind:nodes
     bind:edges
     {nodeTypes}
+    {edgeTypes}
+    {onreconnect}
+    elevateEdgesOnSelect
     connectionMode={ConnectionMode.Loose}
     colorMode="system"
     deleteKey={null}
@@ -465,6 +573,14 @@
     <Background />
     <Controls />
     <Legend />
+    {#if selectedEdge}
+      <Panel position="bottom-center">
+        <div class="arrange" role="toolbar" aria-label={tr(app.lang, 'route')} data-testid="route-tools">
+          <span class="count">{tr(app.lang, 'route_help')}</span>
+          <button type="button" class="text" onclick={() => resetRoute(selectedEdge!)} data-testid="route-reset">{tr(app.lang, 'route_reset')}</button>
+        </div>
+      </Panel>
+    {/if}
     {#if picked.length >= 2}
       <Panel position="top-center">
         <div class="arrange" role="toolbar" aria-label={tr(app.lang, 'arrange')} data-testid="arrange">
@@ -495,6 +611,19 @@
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: var(--surface);
+  }
+  /* the selected connection stands out, so it is clear where it goes */
+  .canvas :global(.svelte-flow__edge.selected .svelte-flow__edge-path),
+  .canvas :global(.svelte-flow__edge:hover .svelte-flow__edge-path) {
+    stroke: var(--accent);
+    stroke-width: 3px;
+  }
+  .arrange button.text {
+    width: auto;
+    white-space: nowrap;
+    padding: 0 8px;
+    border-color: var(--border);
+    font-size: 12px;
   }
   .canvas :global(.svelte-flow__edge.high-risk path) {
     stroke: var(--error);

@@ -142,10 +142,27 @@ class DiagramNote(Strict):
     text: str
 
 
+Side = Literal["top", "right", "bottom", "left"]
+
+
+class Point(Strict):
+    x: float
+    y: float
+
+
+class EdgeLayout(Strict):
+    """Route of one data flow: the node sides it attaches to and its bend points."""
+
+    source_side: Side | None = None  # None: the side facing the other end
+    target_side: Side | None = None
+    points: list[Point] = []  # absolute canvas coordinates; empty: automatic route
+
+
 class DiagramLayout(Versioned):
-    """Content of diagram.layout.yaml: positions and canvas notes, never model content."""
+    """Content of diagram.layout.yaml: positions, routes and canvas notes, never model content."""
 
     nodes: dict[str, NodeLayout] = {}
+    edges: dict[str, EdgeLayout] = {}  # flow id -> route
     notes: dict[str, DiagramNote] = {}
 
 

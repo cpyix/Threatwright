@@ -54,6 +54,15 @@ export interface Note {
   text: string
 }
 
+export type Side = 'top' | 'right' | 'bottom' | 'left'
+
+/** Route of a data flow in the diagram: attached sides and bend points. */
+export interface EdgeLayout {
+  source_side?: Side | null
+  target_side?: Side | null
+  points?: { x: number; y: number }[]
+}
+
 export interface ModelPayload {
   name: string
   meta: {
@@ -66,7 +75,11 @@ export interface ModelPayload {
   objects: Record<Collection, Obj[]>
   evaluations: Record<string, ThreatEvaluation>
   max_risks: Record<string, number>
-  layout: { nodes: Record<string, { x: number; y: number }>; notes: Record<string, Note> }
+  layout: {
+    nodes: Record<string, { x: number; y: number }>
+    edges?: Record<string, EdgeLayout>
+    notes: Record<string, Note>
+  }
   asset_impacts: Record<string, Record<'C' | 'I' | 'A', number | null>>
 }
 

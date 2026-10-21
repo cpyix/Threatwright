@@ -771,10 +771,16 @@ def create_app(
         with session.lock:
             sub = session.model(name)
             try:
-                # notes are optional in the body, so a positions-only update keeps them
-                notes = body.get("notes", sub.layout.model_dump(mode="json")["notes"])
+                # notes and routes are optional in the body, so a positions-only update keeps them
+                current = sub.layout.model_dump(mode="json")
+                notes = body.get("notes", current["notes"])
+                edges = body.get("edges", current["edges"])
+                if isinstance(edges, dict):  # routes of deleted flows are dropped
+                    edges = {k: v for k, v in edges.items() if k in sub.objects["flows"]}
                 nodes = body.get("nodes", {})
-                layout = DiagramLayout.model_validate({"nodes": nodes, "notes": notes})
+                layout = DiagramLayout.model_validate(
+                    {"nodes": nodes, "edges": edges, "notes": notes}
+                )
             except ValidationError as exc:
                 raise HTTPException(422, json.loads(exc.json(include_url=False))) from exc
             if layout != sub.layout:

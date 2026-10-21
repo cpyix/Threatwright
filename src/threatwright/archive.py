@@ -5,6 +5,7 @@ import os
 import shutil
 import stat
 import zipfile
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -82,6 +83,7 @@ def unpack(data: bytes, workspace: Path, folder: str) -> Path:
 
 def describe(folder: Path) -> dict[str, Any]:
     """Name and archive flag from the project config; the folder name if it cannot be read."""
+    doc: Mapping[str, Any]
     try:
         doc = read_yaml(folder / PROJECT_FILE)
     except (LoadError, OSError):

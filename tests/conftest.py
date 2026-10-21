@@ -106,17 +106,30 @@ def _serve(project: Path | None, root: Path | None = None) -> Iterator[str]:
     thread.join(5)
 
 
+def _set_language(project: Path, lang: str) -> None:
+    """An open project fixes the UI language, so each GUI run gets a project in its language."""
+    config = project / "threatwright.yaml"
+    config.write_text(
+        config.read_text(encoding="utf-8").replace("language: de", f"language: {lang}"),
+        encoding="utf-8",
+    )
+
+
 @pytest.fixture
-def gui(project_dir: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[str]:
+def gui(
+    project_dir: Path, ui_lang: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> Iterator[str]:
     monkeypatch.setenv("THREATWRIGHT_CONFIG_DIR", str(tmp_path / "config"))
+    _set_language(project_dir, ui_lang)
     yield from _serve(project_dir)
 
 
 @pytest.fixture
-def workspace(project_dir: Path, tmp_path: Path) -> Path:
+def workspace(project_dir: Path, ui_lang: str, tmp_path: Path) -> Path:
     """Server workspace holding one project, 'machine-a'."""
     ws = tmp_path / "workspace"
     shutil.copytree(project_dir, ws / "machine-a")
+    _set_language(ws / "machine-a", ui_lang)
     return ws
 
 

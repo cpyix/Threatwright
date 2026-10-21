@@ -43,6 +43,7 @@ from threatwright.method import (
     load_method,
     suggest_impact,
 )
+from threatwright.model.delete import delete_with_refs, deletion_plan
 from threatwright.model.objects import (
     COLLECTIONS,
     Asset,
@@ -630,15 +631,31 @@ def create_app(
             session.changed()
             return {"id": new_id, "updated": updated, "model": model_payload(project.models[name])}
 
+    @app.get("/api/models/{name}/{collection}/{obj_id}/delete-plan")
+    def delete_plan(name: str, collection: str, obj_id: str) -> dict[str, list[str]]:
+        """What deleting an element or flow takes along, for the confirmation dialog."""
+        if collection not in ("elements", "flows"):
+            raise HTTPException(404, "only elements and flows have a deletion plan")
+        with session.lock:
+            try:
+                return deletion_plan(session.model(name), collection, obj_id)
+            except KeyError as exc:
+                raise HTTPException(404, f"{obj_id} not found") from exc
+
     @app.delete("/api/models/{name}/{collection}/{obj_id}")
-    def delete_object(name: str, collection: str, obj_id: str) -> dict[str, Any]:
+    def delete_object(
+        name: str, collection: str, obj_id: str, cascade: bool = False
+    ) -> dict[str, Any]:
         _collection(collection)
         with session.lock:
             sub = session.model(name)
             if obj_id not in sub.objects[collection]:
                 raise HTTPException(404, f"{obj_id} not found")
             session.checkpoint()
-            del sub.objects[collection][obj_id]
+            if collection in ("elements", "flows"):
+                delete_with_refs(sub, collection, obj_id, cascade)
+            else:
+                del sub.objects[collection][obj_id]
             return model_payload(sub)
 
     # --- diagram, library and assistant (M4) ----------------------------------------

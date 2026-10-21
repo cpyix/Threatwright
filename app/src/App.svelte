@@ -34,6 +34,7 @@
   import Setup from './lib/Setup.svelte'
   import Start from './lib/Start.svelte'
   import Validation from './lib/Validation.svelte'
+  import { loading } from './loading.svelte'
   import { app, type View } from './state.svelte'
   import type { Collection } from './types'
 
@@ -164,6 +165,9 @@
   <title>{app.project ? `${app.project.config.name} – ${PRODUCT_NAME}` : PRODUCT_NAME}</title>
 </svelte:head>
 
+{#if loading.count > 0}
+  <div class="busy-bar" role="progressbar" aria-label={tr(lang, 'loading')} data-testid="busy-bar"></div>
+{/if}
 <header class="top">
   <strong class="brand">{PRODUCT_NAME}</strong>
   {#if app.project}
@@ -186,9 +190,11 @@
   {:else}
     <span class="spacer"></span>
   {/if}
-  <button onclick={() => app.setLang(lang === 'de' ? 'en' : 'de')} aria-label="Sprache / language">
-    {lang === 'de' ? 'EN' : 'DE'}
-  </button>
+  {#if !app.project}
+    <button onclick={() => app.setLang(lang === 'de' ? 'en' : 'de')} aria-label="Sprache / language">
+      {lang === 'de' ? 'EN' : 'DE'}
+    </button>
+  {/if}
 </header>
 
 {#if app.recovery}
@@ -278,6 +284,44 @@
 </div>
 
 <style>
+  /* global loading bar; appears only after 250 ms so quick requests do not flicker */
+  .busy-bar {
+    position: fixed;
+    inset: 0 0 auto;
+    height: 3px;
+    z-index: 1000;
+    overflow: hidden;
+    opacity: 0;
+    animation: busy-show 0s 250ms forwards;
+    pointer-events: none;
+  }
+  .busy-bar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    width: 40%;
+    background: var(--accent);
+    animation: busy-slide 1.1s ease-in-out infinite;
+  }
+  @keyframes busy-show {
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes busy-slide {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(250%);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .busy-bar::after {
+      width: 100%;
+      animation: none;
+    }
+  }
   .top {
     display: flex;
     align-items: center;

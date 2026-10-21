@@ -3,7 +3,9 @@
 // grants, so they cannot send requests on the user's behalf (CSRF). The login, if
 // any, is HTTP Basic Auth handled by the browser.
 
-const HEADER = { 'X-Threatwright': '1' }
+import { track } from './loading.svelte'
+
+const HEADER ={ 'X-Threatwright': '1' }
 
 export class ApiError extends Error {
   constructor(
@@ -23,7 +25,12 @@ function formatDetail(detail: unknown): string {
   return typeof detail === 'string' ? detail : JSON.stringify(detail)
 }
 
-export async function api<T>(method: string, path: string, body?: unknown): Promise<T> {
+/** `quiet` keeps background requests (polling, autosave) out of the loading bar. */
+export function api<T>(method: string, path: string, body?: unknown, quiet = false): Promise<T> {
+  return track(request<T>(method, path, body), quiet)
+}
+
+async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(`/api${path}`, {
     method,
     headers: { ...HEADER, 'Content-Type': 'application/json' },
@@ -37,7 +44,9 @@ export async function api<T>(method: string, path: string, body?: unknown): Prom
 }
 
 /** Send a file as raw request body (e.g. a zipped project or an OSCAL JSON file). */
-export async function upload<T>(path: string, file: Blob): Promise<T> {
+export const upload = <T>(path: string, file: Blob): Promise<T> => track(sendFile<T>(path, file))
+
+async function sendFile<T>(path: string, file: Blob): Promise<T> {
   const response = await fetch(`/api${path}`, {
     method: 'POST',
     headers: { ...HEADER, 'Content-Type': file.type || 'application/octet-stream' },
@@ -52,7 +61,7 @@ export async function upload<T>(path: string, file: Blob): Promise<T> {
 
 /** Download an API resource (e.g. the diagram SVG) as a file. */
 export async function download(path: string, filename: string): Promise<void> {
-  const response = await fetch(`/api${path}`, { headers: HEADER })
+  const response = await track(fetch(`/api${path}`, { headers: HEADER }))
   if (!response.ok) {
     const data = await response.json().catch(() => ({ detail: response.statusText }))
     throw new ApiError(response.status, data.detail)

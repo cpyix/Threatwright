@@ -79,11 +79,33 @@
     }
   }
 
+  // Elements and flows take connections along and may leave threats and measures behind: ask first.
+  type Plan = { flows: string[]; threats: string[]; measures: string[] }
+  let plan = $state<Plan | null>(null)
+  let confirm: HTMLDialogElement | undefined = $state()
+  const objPath = $derived(`/models/${app.modelName}/${collection}/${draft.id}`)
+
   async function remove() {
-    const model = await api<ModelPayload>('DELETE', `/models/${app.modelName}/${collection}/${draft.id}`)
+    if (collection === 'elements' || collection === 'flows') {
+      const p = await api<Plan>('GET', `${objPath}/delete-plan`)
+      if (p.flows.length || p.threats.length || p.measures.length) {
+        plan = p
+        confirm?.showModal()
+        return
+      }
+    }
+    await removeNow(false)
+  }
+
+  async function removeNow(cascade: boolean) {
+    const model = await api<ModelPayload>('DELETE', `${objPath}?cascade=${cascade}`)
+    confirm?.close()
     await app.afterChange(model)
     onclose()
   }
+
+  const titled = (coll: Collection, ids: string[]) =>
+    ids.map((id) => `${id} ${app.objects(coll).find((o) => o.id === id)?.title ?? ''}`)
 
   async function rename() {
     error = ''
@@ -132,7 +154,7 @@
     {/if}
     <div class="actions">
       <button type="submit" class="primary" data-testid="apply">{isNew ? tr(lang, 'create') : tr(lang, 'apply')}</button>
-      {#if !isNew}<button type="button" onclick={remove}>{tr(lang, 'delete')}</button>{/if}
+      {#if !isNew}<button type="button" onclick={remove} data-testid="delete">{tr(lang, 'delete')}</button>{/if}
       <button type="button" onclick={onclose}>{tr(lang, 'cancel')}</button>
     </div>
   </header>
@@ -156,7 +178,8 @@
           {#if term}<Info {term} />{/if}
         </span>
         {#if f.type === 'text' || f.type === 'date'}
-          <input id={fid(f.key)} type={f.type === 'date' ? 'date' : 'text'} value={value ?? ''} oninput={(e) => set(f.key, e.currentTarget.value)} data-testid="field-{f.key}" />
+          <input id={fid(f.key)} type={f.type === 'date' ? 'date' : 'text'} value={value ?? ''} oninput={(e) => set(f.key, e.currentTarget.value)} list={f.options ? `${fid(f.key)}-list` : undefined} data-testid="field-{f.key}" />
+          {#if f.options}<datalist id="{fid(f.key)}-list">{#each f.options() as o}<option value={o.value}></option>{/each}</datalist>{/if}
         {:else if f.type === 'number'}
           <input id={fid(f.key)} type="number" step="0.1" min="0" value={value ?? ''} oninput={(e) => set(f.key, e.currentTarget.value === '' ? '' : Number(e.currentTarget.value))} />
         {:else if f.type === 'longtext'}
@@ -197,7 +220,61 @@
   {/if}
 </form>
 
+<dialog bind:this={confirm} onclose={() => (plan = null)} aria-labelledby="delete-q" data-testid="delete-dialog">
+  {#if plan}
+    <h2 id="delete-q">{tr(lang, 'delete_confirm')}: {draft.id} {draft.title}</h2>
+    {#if plan.flows.length}
+      <p>{tr(lang, 'delete_flows')}</p>
+      <ul>{#each titled('flows', plan.flows) as t}<li>{t}</li>{/each}</ul>
+    {/if}
+    {#if plan.threats.length || plan.measures.length}
+      <p>{tr(lang, 'delete_related')}</p>
+      <ul>
+        {#each titled('threats', plan.threats) as t}<li>{t}</li>{/each}
+        {#each titled('measures', plan.measures) as t}<li>{t}</li>{/each}
+      </ul>
+      <p class="muted">{tr(lang, 'delete_keep_hint')}</p>
+      <div class="dialog-actions">
+        <button class="primary" onclick={() => removeNow(true)} data-testid="delete-cascade">{tr(lang, 'delete_with_related')}</button>
+        <button onclick={() => removeNow(false)} data-testid="delete-keep">{tr(lang, 'delete_keep_related')}</button>
+        <button onclick={() => confirm?.close()}>{tr(lang, 'cancel')}</button>
+      </div>
+    {:else}
+      <div class="dialog-actions">
+        <button class="primary" onclick={() => removeNow(false)} data-testid="delete-keep">{tr(lang, 'delete')}</button>
+        <button onclick={() => confirm?.close()}>{tr(lang, 'cancel')}</button>
+      </div>
+    {/if}
+    <p class="muted small">{tr(lang, 'delete_undo_hint')}</p>
+  {/if}
+</dialog>
+
 <style>
+  dialog {
+    max-width: 34rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    padding: 1rem 1.25rem;
+  }
+  dialog::backdrop {
+    background: rgb(0 0 0 / 0.4);
+  }
+  dialog ul {
+    max-height: 12rem;
+    overflow: auto;
+    padding-left: 1.2rem;
+  }
+  dialog .small {
+    font-size: 0.85em;
+  }
+  .dialog-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
   .form {
     display: grid;
     grid-template-columns: minmax(0, 1fr);

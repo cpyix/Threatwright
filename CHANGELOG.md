@@ -2,6 +2,11 @@
 
 Projects from earlier releases open unchanged (ADR-0015); all new fields are optional, so the file format stays at schema version 1. Older releases refuse files that use a new field.
 
+## 0.4.1
+
+- **SVG export matches the canvas.** "Export SVG" in the diagram now saves the diagram exactly as drawn, including chosen sides, bend points and icons, as plain SVG without embedded HTML, so Word, PowerPoint and Inkscape show it too.
+- **Well-formed SVG for external entities.** The server-side SVG (report, `/diagram.svg`) no longer writes a duplicate `stroke` attribute for external entities, which strict XML readers rejected.
+
 ## 0.4.0
 
 ### CRA evidence

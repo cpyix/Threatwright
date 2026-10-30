@@ -43,6 +43,42 @@ def _level(value: Any, f: Filters, kind: str = "risk_label") -> str:
     return DASH if value is None else f"{value} – {f[kind](value)}"
 
 
+def _refinement(e: Ctx, tr: Callable[[str], str]) -> str:
+    parts = []
+    if e["refines"]:
+        parts.append(f"{tr('refines_note')} {e['refines']} {e['refines_title']}".strip())
+    if e["refined_by"]:
+        parts.append(f"{tr('refined_by')} {', '.join(e['refined_by'])}")
+    return "; ".join(parts) or DASH
+
+
+# optional element/flow columns, added to the default columns when any row has a value
+TOPOLOGY_COLUMNS: dict[str, dict[str, tuple[str, ...]]] = {
+    "elements": {
+        "host": ("runs_on",),
+        "privilege": ("privilege",),
+        "refines": ("refines", "refined_by"),
+    },
+    "flows": {"boundary": ("boundary",)},
+}
+ATTACK_SURFACE = ("listens_on", "authentication", "memory_safe", "sbom_ref")
+
+
+def _with_topology(kind: str, items: list[Ctx], columns: list[str] | None) -> list[str] | None:
+    if columns is not None:  # chosen in template.yaml
+        return columns
+    extra = [
+        col
+        for col, keys in TOPOLOGY_COLUMNS[kind].items()
+        if any(item[k] not in (None, []) for item in items for k in keys)
+    ]
+    if not extra:
+        return None
+    default = COLUMNS[kind][0]
+    pos = default.index("zone") + 1 if "zone" in default else len(default)
+    return [*default[:pos], *extra, *default[pos:]]
+
+
 def _getters(f: Filters) -> dict[str, dict[str, Callable[[Ctx], str]]]:
     tr = f["t"]
     return {
@@ -62,6 +98,9 @@ def _getters(f: Filters) -> dict[str, dict[str, Callable[[Ctx], str]]]:
             "title": lambda e: e["title"],
             "kind": lambda e: e["kind_label"],
             "zone": lambda e: _s(e["zone_title"]),
+            "host": lambda e: f"{e['runs_on']} {e['runs_on_title']}" if e["runs_on"] else DASH,
+            "privilege": lambda e: _s(e["privilege_label"]),
+            "refines": lambda e: _refinement(e, tr),
             "configurations": lambda e: _s(e["configurations"]),
             "description": lambda e: _s(e["description"]),
         },
@@ -71,9 +110,19 @@ def _getters(f: Filters) -> dict[str, dict[str, Callable[[Ctx], str]]]:
             "source": lambda x: f"{x['source']} {x['source_title']}".strip(),
             "target": lambda x: f"{x['target']} {x['target_title']}".strip(),
             "protocol": lambda x: _s(x["protocol"]),
+            "boundary": lambda x: _s(x["boundary_label"]),
             "assets": lambda x: _s(x["assets"]),
             "configurations": lambda x: _s(x["configurations"]),
             "description": lambda x: _s(x["description"]),
+        },
+        "attack_surface": {
+            "element": lambda e: f"{e['id']} {e['title']}",
+            "listens_on": lambda e: _s(e["listens_on_label"]),
+            "authentication": lambda e: _s(e["authentication_label"]),
+            "memory_safe": lambda e: (
+                DASH if e["memory_safe"] is None else f["yesno"](e["memory_safe"])
+            ),
+            "sbom_ref": lambda e: _s(e["sbom_ref"]),
         },
         "threats": {
             "id": lambda th: th["id"],
@@ -312,12 +361,28 @@ class _Builder:
         return self.table("assets", self.ctx["assets"], s.columns)
 
     def elements_and_flows(self, s: Section) -> list[Block]:
-        return [
-            {"kind": "h2", "text": self.t("elements")},
-            *self.table("elements", self.ctx["elements"], s.columns),
-            {"kind": "h2", "text": self.t("flows")},
-            *self.table("flows", self.ctx["flows"], s.flow_columns),
-        ]
+        """Per model; a sub-model gets its own sub-heading naming the element it refines."""
+        out: list[Block] = []
+        models = self.ctx["models"]
+        for m in models:
+            elements = [e for e in self.ctx["elements"] if e["model"] == m["name"]]
+            flows = [x for x in self.ctx["flows"] if x["model"] == m["name"]]
+            if len(models) > 1:
+                refs = sorted({e["refines"] for e in elements if e["refines"]})
+                label = self.t("submodel") if refs else self.t("model")
+                note = f" ({self.t('refines_note')} {', '.join(refs)})" if refs else ""
+                out.append({"kind": "h2", "text": f"{label}: {m['title']}{note}"})
+            out += [
+                {"kind": "h2", "text": self.t("elements")},
+                *self.table("elements", elements, _with_topology("elements", elements, s.columns)),
+                {"kind": "h2", "text": self.t("flows")},
+                *self.table("flows", flows, _with_topology("flows", flows, s.flow_columns)),
+            ]
+            surface = [e for e in elements if any(e[k] not in (None, []) for k in ATTACK_SURFACE)]
+            if surface:
+                out.append({"kind": "h2", "text": self.t("attack_surface")})
+                out += self.table("attack_surface", surface, None)
+        return out
 
     def threats(self, s: Section) -> list[Block]:
         out = self.table("threats", self.ctx["threats"], s.columns)

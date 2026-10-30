@@ -22,8 +22,9 @@ from ruamel.yaml.comments import CommentedMap
 
 from threatwright.library import Libraries, MeasureTemplate
 from threatwright.method import Cia, Method, asset_impact, load_method
-from threatwright.model.objects import Asset, Element, Environment, Flow, Strict, Threat
+from threatwright.model.objects import Asset, Element, Environment, Strict, Threat
 from threatwright.model.store import Project, merge_into, read_yaml, to_plain, write_yaml
+from threatwright.topology import effective_zone, handled_assets
 
 OVERRIDES_FILE = Path("profiles") / "arc-overrides.yaml"
 SCENARIO_PART = "risk-scenario"
@@ -112,7 +113,6 @@ def _parts(project: Project, model_name: str, method: Method, combined: bool) ->
     sub = project.models[model_name]
     assets = cast(dict[str, Asset], sub.objects["assets"])
     elements = cast(dict[str, Element], sub.objects["elements"])
-    flows = cast(dict[str, Flow], sub.objects["flows"])
     threats = cast(dict[str, Threat], sub.objects["threats"])
     zones = {z.id: z.environment for z in sub.meta.zones}
 
@@ -125,10 +125,10 @@ def _parts(project: Project, model_name: str, method: Method, combined: bool) ->
 
     parts: list[_Part] = []
     for el in elements.values():
-        handled = [a for f in flows.values() if el.id in (f.source, f.target) for a in f.assets]
-        handled += [a for t in threats.values() if el.id in t.targets for a in t.assets]
-        env = zones.get(el.zone) if el.zone else None
-        parts.append(_Part(f"{el.id} {el.title}", _env(env or Environment()), info(handled)))
+        zone = effective_zone(sub, el)
+        env = zones.get(zone) if zone else None
+        handled = info(handled_assets(sub, el.id))
+        parts.append(_Part(f"{el.id} {el.title}", _env(env or Environment()), handled))
     for t in threats.values():
         parts.append(_Part(f"{t.id} {t.title}", _env(t.assessment), info(t.assets)))
     if combined:  # §6.3 (p. 54-55): one profile of all assets and all environments

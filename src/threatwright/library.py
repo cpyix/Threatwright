@@ -14,7 +14,16 @@ from typing import Any, Literal
 
 from pydantic import Field, ValidationError
 
-from threatwright.model.objects import Environment, MeasureKind, OscalRef, Strict, Stride
+from threatwright.model.objects import (
+    Authentication,
+    Environment,
+    Listener,
+    MeasureKind,
+    OscalRef,
+    Privilege,
+    Strict,
+    Stride,
+)
 from threatwright.model.store import Issue, LoadError, Project, read_yaml, to_plain
 
 BUILTIN_LIBRARIES = Path(__file__).parent / "libraries"
@@ -70,6 +79,10 @@ class ElementType(BaseEntry):
     assets: list[LibAsset] = []
     environment: Environment = Environment()
     properties: dict[str, bool | str | None] = {}
+    # defaults for new elements of this type (processes and devices)
+    privilege: Privilege | None = None
+    authentication: Authentication | None = None
+    listens_on: list[Listener] = []
 
 
 class ThreatTemplate(BaseEntry):
@@ -118,6 +131,7 @@ class Manifest(Strict):
     license: str
     description: I18n | None = None
     attribution: list[str] = []
+    requires: list[str] = []  # libraries that must be active before this one (measures, types)
 
 
 class Catalog(Strict):
@@ -206,6 +220,7 @@ def load_libraries(names: list[str], project_root: Path | None = None) -> Librar
                 )
                 continue
             _load_one(cached, name, folder)
+        _check_requires(cached, names, project_root)
         _check_integrity(cached)
         if len(_CACHE) > 16:  # ponytail: tiny cache, cleared wholesale
             _CACHE.clear()
@@ -261,6 +276,20 @@ def _load_one(libs: Libraries, name: str, folder: Path) -> None:
                     problem(path, f"{key}.{n}.id", f"duplicate {kind} id '{entry.id}'")
                 target[entry.id] = entry
                 libs.origin[(kind, entry.id)] = name
+
+
+def _check_requires(libs: Libraries, names: list[str], project_root: Path | None) -> None:
+    for name, manifest in libs.manifests.items():
+        for req in manifest.requires:
+            if req not in names[: names.index(name)]:
+                libs.issues.append(
+                    Issue(
+                        project_root,
+                        "libraries",
+                        f"library '{name}' needs '{req}' listed before it",
+                        "library-invalid",
+                    )
+                )
 
 
 def _check_integrity(libs: Libraries) -> None:

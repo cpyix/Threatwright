@@ -5,6 +5,7 @@ or that belongs to a threat referencing it. Requirements that do not apply need
 a rationale in `cra_not_applicable` of model.yaml (CRA Art. 13(4), Annex VII).
 """
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from functools import cache
 from typing import Literal
@@ -35,13 +36,26 @@ def annex_i() -> dict[str, dict[str, str]]:
     return {k: v for k, v in entries.items() if k.startswith(ANNEX_I) and isinstance(v, dict)}
 
 
-def coverage(sub: SubModel) -> list[Requirement]:
-    threats = [t for t in sub.objects["threats"].values() if isinstance(t, Threat)]
-    measures = {i: m for i, m in sub.objects["measures"].items() if isinstance(m, Measure)}
+def coverage(sub: SubModel, parts: Sequence[SubModel] = ()) -> list[Requirement]:
+    """`parts`: sub-models refining `sub`, same product (one assessment); their ids get
+    the model name as prefix (`software/T-0001`), ids are only unique within a model."""
+
+    def key(m: SubModel, obj_id: str) -> str:
+        return obj_id if m is sub else f"{m.name}/{obj_id}"
+
+    threats: list[tuple[str, Threat, list[str]]] = []
+    measures: dict[str, Measure] = {}
+    for m in (sub, *parts):
+        for i, t in m.objects["threats"].items():
+            if isinstance(t, Threat):
+                threats.append((key(m, i), t, [key(m, x) for x in t.measures]))
+        measures |= {
+            key(m, i): o for i, o in m.objects["measures"].items() if isinstance(o, Measure)
+        }
     rows = []
     for req_id, entry in annex_i().items():
-        hit = sorted(t.id for t in threats if req_id in t.cra_refs and t.status != "rejected")
-        via_threat = {m for t in threats if t.id in hit for m in t.measures}
+        hit = sorted(k for k, t, _ in threats if req_id in t.cra_refs and t.status != "rejected")
+        via_threat = {m for k, _, ms in threats if k in hit for m in ms}
         ms = sorted(i for i, m in measures.items() if req_id in m.cra_refs or i in via_threat)
         rationale = sub.meta.cra_not_applicable.get(req_id)
         status: Status

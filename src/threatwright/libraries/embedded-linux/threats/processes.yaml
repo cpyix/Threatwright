@@ -1,0 +1,788 @@
+# Threat templates for processes on the same Linux host: local IPC, real-time
+# control, fieldbus master, application layer, local UI, user management,
+# watchdog and build tools.
+threats:
+  # --- local trust between processes -----------------------------------------------
+  - id: lx-ipc-spoofed-peer
+    rev: 1
+    stride: [S, T]
+    applies_to: [lx-local-ipc, lx-rt-control, lx-network-daemon, lx-local-hmi, lx-user-management, lx-watchdog]
+    title:
+      de: Fremder lokaler Prozess gibt sich gegenüber {element} als vertrauter Partner aus
+      en: Foreign local process poses as a trusted peer towards {element}
+    scenario:
+      de: >-
+        Die Prozesse auf dem Rechner sprechen über Unix-Sockets, TCP auf
+        Loopback oder D-Bus miteinander und vertrauen jedem lokalen Absender. Ein
+        Angreifer, der Code mit beliebigen Benutzerrechten ausführt, etwa über
+        eine Lücke in der Bedienoberfläche, verbindet sich mit dem Socket und gibt
+        sich als Bedienoberfläche, Steuerungsprozess oder Watchdog aus.
+      en: >-
+        The processes on the machine talk to each other via Unix sockets, TCP on
+        loopback or D-Bus and trust every local sender. An attacker who executes
+        code with any user rights, for example through a flaw in the operator
+        interface, connects to the socket and poses as the operator interface,
+        control process or watchdog.
+    consequence:
+      de: >-
+        Befehle mit voller Berechtigung werden angenommen, obwohl der Angreifer
+        nur ein unprivilegiertes Konto hat. Sollwerte, Betriebsart und
+        Freigaben lassen sich ändern; Personen können gefährdet werden.
+      en: >-
+        Commands with full authority are accepted although the attacker only has
+        an unprivileged account. Set points, operating mode and enables can be
+        changed; persons can be endangered.
+    environment: {interface: local, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T0849, T1692]
+    emb3d: [TID-406, TID-204]
+    iec62443: [FR1, FR2]
+    measures: [lx-unix-socket-peer-auth, lx-loopback-binding, lx-service-sandboxing]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-ipc-data-leak
+    rev: 1
+    stride: [I]
+    applies_to: [lx-local-ipc]
+    title:
+      de: Unbefugtes Mitlesen über {element}
+      en: Unauthorised reading via {element}
+    scenario:
+      de: >-
+        Socket-Dateien sind für alle Benutzer les- und schreibbar, abstrakte
+        Unix-Sockets haben keine Dateirechte, und Zugangsdaten werden als
+        Kommandozeilenargument oder Umgebungsvariable an Kindprozesse
+        übergeben. Ein Angreifer mit einem beliebigen lokalen Konto fragt
+        Zustände, Rezepte oder Tokens ab oder liest sie aus /proc.
+      en: >-
+        Socket files are readable and writable by all users, abstract Unix sockets
+        have no file permissions, and credentials are passed to child processes
+        as command line arguments or environment variables. An attacker with any
+        local account queries states, recipes or tokens or reads them from
+        /proc.
+    consequence:
+      de: >-
+        Abfluss von Produktionsdaten und Zugangsdaten, die den Zugriff auf
+        weitere Dienste oder höhere Rechte ermöglichen.
+      en: >-
+        Leakage of production data and credentials that enable access to further
+        services or higher privileges.
+    environment: {interface: local, access: restricted}
+    impact: 3
+    safety_related: false
+    cra_refs: [AI-I-2-e, AI-I-2-d]
+    attack_ics: [T0893]
+    emb3d: [TID-204]
+    iec62443: [FR4]
+    measures: [lx-unix-socket-peer-auth, secrets-protected-storage, lx-service-sandboxing]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-ipc-signal-flood
+    rev: 1
+    stride: [D]
+    applies_to: [lx-local-ipc, lx-rt-control, lx-watchdog]
+    title:
+      de: Lokaler Angreifer blockiert oder beendet {element} über Signale und Nachrichten
+      en: Local attacker blocks or terminates {element} via signals and messages
+    scenario:
+      de: >-
+        Mehrere Prozesse laufen unter demselben Benutzer, häufig root. Ein
+        Angreifer, der einen davon übernommen hat, sendet SIGSTOP oder SIGKILL an
+        andere Prozesse, füllt Socket-Puffer und Message-Queues oder hält
+        Verbindungen offen, bis der Empfänger keine neuen mehr annimmt.
+      en: >-
+        Several processes run under the same user, often root. An attacker who
+        has taken over one of them sends SIGSTOP or SIGKILL to other processes,
+        fills socket buffers and message queues or keeps connections open until
+        the receiver accepts no new ones.
+    consequence:
+      de: >-
+        Steuerung, Überwachung oder Bedienung stehen still. Fehlt eine
+        unabhängige Überwachung, bleibt die Maschine in einem undefinierten
+        Zustand.
+      en: >-
+        Control, supervision or operation come to a halt. Without independent
+        supervision the machine remains in an undefined state.
+    environment: {interface: local, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-h, AI-I-2-k]
+    attack_ics: [T0881, T0813]
+    emb3d: [TID-222]
+    iec62443: [FR7]
+    measures: [lx-service-sandboxing, lx-rt-resource-isolation, lx-hardware-watchdog, watchdog-safe-state]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-local-resource-exhaustion
+    rev: 1
+    stride: [D]
+    applies_to: [lx-rt-control, lx-fieldbus-master, lx-build-tools, lx-local-hmi, lx-kernel, soft-plc]
+    title:
+      de: Lokaler Prozess entzieht {element} CPU, Speicher oder Echtzeitpriorität
+      en: Local process deprives {element} of CPU, memory or real-time priority
+    scenario:
+      de: >-
+        Ein Angreifer mit lokaler Codeausführung startet Prozesse mit
+        SCHED_FIFO und höchster Priorität, belegt alle CPU-Kerne einschließlich
+        des isolierten Echtzeitkerns, erzeugt Speicherdruck bis zum OOM-Killer
+        oder füllt das Dateisystem, etwa durch einen Build-Lauf oder eine
+        Fork-Schleife.
+      en: >-
+        An attacker with local code execution starts processes with SCHED_FIFO
+        and highest priority, occupies all CPU cores including the isolated
+        real-time core, creates memory pressure up to the OOM killer or fills
+        the file system, for example through a build run or a fork loop.
+    consequence:
+      de: >-
+        Zykluszeitverletzungen und Feldbus-Timeouts führen zum Stillstand oder zu
+        ruckartigen Bewegungen. Beendet der OOM-Killer den Steuerungsprozess,
+        bleibt die Maschine ohne Steuerung.
+      en: >-
+        Cycle time violations and fieldbus timeouts lead to standstill or jerky
+        movements. If the OOM killer terminates the control process, the machine
+        is left without control.
+    environment: {interface: local, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-h, AI-I-2-k]
+    attack_ics: [T0813, T0814]
+    emb3d: [TID-304]
+    iec62443: [FR7]
+    measures: [lx-rt-resource-isolation, lx-service-sandboxing, watchdog-safe-state, lx-hardware-watchdog]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-process-code-injection
+    rev: 1
+    stride: [T, E]
+    applies_to: [lx-rt-control, lx-fieldbus-master, lx-app-layer, lx-local-hmi]
+    title:
+      de: Einschleusen von Code in den laufenden Prozess {element}
+      en: Injection of code into the running process {element}
+    scenario:
+      de: >-
+        Ein Angreifer mit demselben Benutzerkonto oder mit root hängt sich per
+        ptrace an {element}, schreibt über /proc/<pid>/mem in den Speicher oder
+        setzt LD_PRELOAD bzw. ersetzt eine nachgeladene Bibliothek in einem
+        beschreibbaren Pfad. Beim nächsten Start oder sofort läuft sein Code im
+        Prozess und verändert Logik oder Ausgaben.
+      en: >-
+        An attacker with the same user account or root attaches to {element} via
+        ptrace, writes to its memory via /proc/<pid>/mem or sets LD_PRELOAD or
+        replaces a dynamically loaded library in a writable path. At the next
+        start or immediately, their code runs in the process and changes logic or
+        outputs.
+    consequence:
+      de: >-
+        Verdeckte Manipulation der Steuerungslogik, die in Programmprüfungen
+        nicht auffällt, weil das Programm auf dem Datenträger unverändert ist.
+        Fehlansteuerung kann Personen gefährden.
+      en: >-
+        Covert manipulation of the control logic that does not show in program
+        checks because the program on disk is unchanged. Faulty control can
+        endanger persons.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-I-2-k]
+    attack_ics: [T0874, T0889]
+    emb3d: [TID-304, TID-301]
+    iec62443: [FR3]
+    measures: [lx-service-sandboxing, application-allowlisting, os-hardening]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-process-memory-dump
+    rev: 1
+    stride: [I]
+    applies_to: [lx-rt-control, lx-fieldbus-master, lx-app-layer, lx-user-management, lx-network-daemon]
+    title:
+      de: Auslesen des Prozessspeichers von {element}
+      en: Readout of the process memory of {element}
+    scenario:
+      de: >-
+        Ein Angreifer mit lokalem Zugang liest den Speicher von {element} über
+        /proc/<pid>/mem, ptrace oder einen Core-Dump, den das System bei einem
+        provozierten Absturz in ein für alle lesbares Verzeichnis schreibt. Im
+        Speicher liegen Steuerungsprogramm, Anwenderprogramme anderer Kunden,
+        Schlüssel und Sitzungsdaten im Klartext.
+      en: >-
+        An attacker with local access reads the memory of {element} via
+        /proc/<pid>/mem, ptrace or a core dump that the system writes to a
+        world-readable directory after a provoked crash. The memory holds the
+        control program, application programs of other customers, keys and
+        session data in plain text.
+    consequence:
+      de: >-
+        Verlust von Programm-Know-how und Schlüsseln, mit denen der Angreifer
+        weitere Geräte der Baureihe angreifen kann.
+      en: >-
+        Loss of program know-how and keys that the attacker can use against
+        further devices of the product line.
+    environment: {interface: local, access: restricted}
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-I-2-e]
+    attack_ics: [T0882, T0893]
+    emb3d: [TID-223]
+    iec62443: [FR4]
+    measures: [lx-service-sandboxing, os-hardening, secrets-protected-storage, lx-app-runtime-isolation]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-process-actions-unattributed
+    rev: 1
+    stride: [R]
+    applies_to: [lx-network-daemon, lx-os-service, lx-rt-control, lx-fieldbus-master, lx-app-layer, lx-local-hmi, lx-user-management, lx-watchdog, lx-build-tools]
+    title:
+      de: Eingriffe über {element} lassen sich keiner Person zuordnen
+      en: Actions via {element} cannot be attributed to a person
+    scenario:
+      de: >-
+        {element} führt Befehle, Programmänderungen oder Konfigurationswechsel
+        aus, ohne Absender, Benutzer und Zeitpunkt festzuhalten, oder schreibt
+        nur in ein lokales Journal. Ein Angreifer mit root-Rechten löscht oder
+        verändert die Einträge anschließend und verwischt so seine Spuren.
+      en: >-
+        {element} executes commands, program changes or configuration changes
+        without recording sender, user and time, or writes only to a local
+        journal. An attacker with root privileges then deletes or alters the
+        entries and covers their tracks.
+    consequence:
+      de: >-
+        Der Vorfall lässt sich nicht aufklären, der Einstiegspunkt bleibt offen
+        und Manipulationen werden als Bedienfehler gewertet.
+      en: >-
+        The incident cannot be investigated, the entry point remains open and
+        manipulations are taken for operating errors.
+    environment: {interface: local, access: restricted}
+    impact: 3
+    safety_related: false
+    cra_refs: [AI-I-2-l]
+    attack_ics: [T0872]
+    emb3d: [TID-225]
+    iec62443: [FR2, FR6]
+    measures: [security-logging, log-protection, time-synchronization]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  # --- fieldbus master ---------------------------------------------------------------
+  - id: lx-fieldbus-response-parser-exploit
+    rev: 1
+    stride: [T, E]
+    applies_to: [lx-fieldbus-master]
+    title:
+      de: Manipulierte Antworten von Feldbusgeräten übernehmen {element}
+      en: Manipulated responses from fieldbus devices take over {element}
+    scenario:
+      de: >-
+        {element} läuft als root und verarbeitet Antworten der Feldbusgeräte,
+        etwa Mailbox-, SDO- oder Diagnoseantworten und Gerätebeschreibungen. Ein
+        Angreifer hat ein Feldbusgerät kompromittiert oder ein eigenes Gerät
+        eingeschleift und sendet Antworten mit falschen Längenfeldern oder
+        unerwarteten Typen. Der Parser im Master prüft sie nicht und schreibt
+        über Puffergrenzen hinaus.
+      en: >-
+        {element} runs as root and processes responses from fieldbus devices,
+        such as mailbox, SDO or diagnostic responses and device descriptions. An
+        attacker has compromised a fieldbus device or inserted their own and
+        sends responses with wrong length fields or unexpected types. The parser
+        in the master does not check them and writes beyond buffer boundaries.
+    consequence:
+      de: >-
+        Der Angreifer gelangt vom Feldbus aus auf den Steuerungsrechner und
+        erhält root-Rechte. Von dort steuert er alle Achsen und Ausgänge;
+        Personen können gefährdet werden.
+      en: >-
+        The attacker moves from the fieldbus onto the industrial PC and gains
+        root privileges. From there they control all axes and outputs; persons
+        can be endangered.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-k, AI-I-2-f, AI-I-2-a]
+    attack_ics: [T0866]
+    emb3d: [TID-327, TID-113]
+    iec62443: [FR3]
+    measures: [lx-memory-safe-parsing, lx-service-sandboxing, fieldbus-topology-monitoring, fieldbus-physical-protection, exploit-mitigations]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-fieldbus-spoofed-process-values
+    rev: 1
+    stride: [S, T]
+    applies_to: [lx-fieldbus-master, lx-rt-control]
+    title:
+      de: Gefälschte Prozesswerte vom Feldbus werden von {element} übernommen
+      en: Forged process values from the fieldbus are accepted by {element}
+    scenario:
+      de: >-
+        Ein Angreifer ersetzt ein Feldbusgerät durch ein eigenes oder verändert
+        dessen Firmware. Das Gerät meldet sich mit der erwarteten Kennung und
+        liefert plausibel wirkende, aber falsche Eingangswerte, etwa Positionen,
+        Endlagen oder Temperaturen. {element} übernimmt sie ohne
+        Plausibilitätsprüfung ins Prozessabbild.
+      en: >-
+        An attacker replaces a fieldbus device with their own or modifies its
+        firmware. The device reports the expected identity and delivers
+        plausible-looking but false input values, such as positions, end
+        positions or temperatures. {element} takes them into the process image
+        without a plausibility check.
+    consequence:
+      de: >-
+        Die Steuerung reagiert auf einen falschen Maschinenzustand, fährt über
+        Endlagen hinaus oder unterdrückt Abschaltungen. Personen und Maschine
+        können geschädigt werden.
+      en: >-
+        The controller reacts to a false machine state, moves beyond end
+        positions or suppresses shutdowns. Persons and machine can be harmed.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-I-2-d]
+    attack_ics: [T0835, T0832]
+    emb3d: [TID-406]
+    iec62443: [FR3]
+    measures: [fieldbus-topology-monitoring, parameter-plausibility, safety-separation, fieldbus-physical-protection]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-fieldbus-raw-socket-abuse
+    rev: 1
+    stride: [E, T]
+    applies_to: [lx-fieldbus-master, lx-app-layer]
+    title:
+      de: Missbrauch des Rohzugriffs auf den Feldbus über {element}
+      en: Abuse of raw fieldbus access via {element}
+    scenario:
+      de: >-
+        Der Feldbus-Master benötigt Rohzugriff auf die Netzwerkkarte zum Feldbus.
+        Dieses Recht steht allen Prozessen des Hosts zu, weil sie unter root
+        laufen oder CAP_NET_RAW geerbt haben. Ein Angreifer, der einen dieser
+        Prozesse übernommen hat, sendet eigene Feldbus-Telegramme, schreibt
+        Ausgänge direkt oder ändert Parameter von Antrieben.
+      en: >-
+        The fieldbus master needs raw access to the network card towards the
+        fieldbus. This right is available to all processes of the host because
+        they run as root or have inherited CAP_NET_RAW. An attacker who has taken
+        over one of these processes sends their own fieldbus frames, writes
+        outputs directly or changes drive parameters.
+    consequence:
+      de: >-
+        Der Angreifer umgeht Steuerungslogik und Verriegelungen und steuert
+        Aktoren direkt an. Personen können gefährdet werden.
+      en: >-
+        The attacker bypasses control logic and interlocks and drives actuators
+        directly. Persons can be endangered.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-k]
+    attack_ics: [T0848, T1692, T0831]
+    emb3d: [TID-204]
+    iec62443: [FR2, FR5]
+    measures: [lx-service-sandboxing, least-privilege-services, fieldbus-mailbox-restriction, safety-separation]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  # --- application layer -------------------------------------------------------------
+  - id: lx-app-own-authz-check
+    rev: 1
+    stride: [S, E]
+    applies_to: [lx-app-layer]
+    title:
+      de: '{element} prüft Rechte selbst statt über den Host'
+      en: '{element} checks permissions itself instead of via the host'
+    scenario:
+      de: >-
+        Anwenderprogramme in {element} entscheiden selbst, ob ein Benutzer eine
+        Funktion ausführen darf, etwa anhand eines übergebenen Rollennamens oder
+        einer eigenen Passwortabfrage. Die Host-Schnittstellen, die sie aufrufen,
+        prüfen keine Rechte mehr. Ein Angreifer übergibt eine gefälschte Rolle
+        oder lädt ein Programm, das die Host-Schnittstellen direkt aufruft.
+      en: >-
+        Application programs in {element} decide themselves whether a user may
+        execute a function, for example based on a passed role name or an own
+        password prompt. The host interfaces they call no longer check
+        permissions. An attacker passes a forged role or loads a program that
+        calls the host interfaces directly.
+    consequence:
+      de: >-
+        Das Rechtesystem der Steuerung wird umgangen. Geschützte Funktionen wie
+        Parameteränderung, Betriebsartenwahl oder Programmladen sind für jeden
+        erreichbar.
+      en: >-
+        The permission system of the controller is bypassed. Protected functions
+        such as parameter change, mode selection or program loading are
+        reachable by anyone.
+    environment: {interface: local, access: restricted, user: skilled}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-d]
+    attack_ics: [T0871, T0858]
+    emb3d: [TID-204]
+    iec62443: [FR1, FR2]
+    measures: [lx-host-enforced-authz, role-based-access, lx-app-runtime-isolation]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-app-malicious-program
+    rev: 1
+    stride: [T, E]
+    applies_to: [lx-app-layer, soft-plc]
+    title:
+      de: Schadcode im Anwenderprogramm läuft mit den Rechten von {element}
+      en: Malicious code in an application program runs with the rights of {element}
+    scenario:
+      de: >-
+        Anwenderprogramme laufen im Host-Prozess und damit als root. Ein
+        Angreifer lädt über das Engineering-Tool, einen USB-Datenträger oder
+        einen kompromittierten Programmierrechner ein Programm, das neben der
+        Steuerungsfunktion Systemaufrufe ausführt: Dateien schreiben, Prozesse
+        starten, Netzwerkverbindungen öffnen.
+      en: >-
+        Application programs run inside the host process and therefore as root.
+        An attacker loads, via the engineering tool, a USB medium or a
+        compromised programming computer, a program that besides the control
+        function executes system calls: writing files, starting processes,
+        opening network connections.
+    consequence:
+      de: >-
+        Das Anwenderprogramm wird zur Hintertür mit vollen Systemrechten. Der
+        Angreifer kann die Maschine fehlsteuern und sich dauerhaft festsetzen.
+      en: >-
+        The application program becomes a backdoor with full system rights. The
+        attacker can cause faulty control of the machine and establish
+        persistence.
+    environment: {interface: local, access: restricted, user: skilled}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-f, AI-I-2-k, AI-I-2-d]
+    attack_ics: [T0843, T0889]
+    emb3d: [TID-302, TID-305]
+    iec62443: [FR2, FR3]
+    measures: [lx-app-runtime-isolation, lx-host-enforced-authz, program-integrity-check, engineering-project-protection]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-app-blocks-host
+    rev: 1
+    stride: [D]
+    applies_to: [lx-app-layer]
+    title:
+      de: Anwenderprogramm blockiert den Host-Prozess über {element}
+      en: Application program blocks the host process via {element}
+    scenario:
+      de: >-
+        Ein Angreifer lädt ein Anwenderprogramm mit einer Endlosschleife, einem
+        Speicherleck oder einer gezielten Ausnahme in {element}. Da es im selben
+        Prozess wie die Steuerung läuft, blockiert es deren Threads oder bringt
+        den gesamten Prozess zum Absturz.
+      en: >-
+        An attacker loads an application program with an endless loop, a memory
+        leak or a deliberate exception into {element}. Because it runs in the
+        same process as the controller, it blocks the controller threads or
+        crashes the whole process.
+    consequence:
+      de: >-
+        Steuerung und Bedienung fallen gleichzeitig aus. Ohne unabhängige
+        Überwachung bleibt die Maschine in einem undefinierten Zustand.
+      en: >-
+        Control and operation fail at the same time. Without independent
+        supervision the machine remains in an undefined state.
+    environment: {interface: local, access: restricted, user: skilled}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-h]
+    attack_ics: [T0813, T0821]
+    emb3d: [TID-304]
+    iec62443: [FR7]
+    measures: [lx-app-runtime-isolation, lx-rt-resource-isolation, watchdog-safe-state]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  # --- local operator interface ------------------------------------------------------
+  - id: lx-hmi-console-escape
+    rev: 1
+    stride: [E, T]
+    applies_to: [lx-local-hmi, ipc-linux]
+    title:
+      de: Ausbruch aus {element} auf eine Konsole des Linux-Systems
+      en: Escape from {element} to a console of the Linux system
+    scenario:
+      de: >-
+        Ein Bediener oder Besucher an der Maschine wechselt mit
+        Strg+Alt+F1 bis F6 auf eine Textkonsole mit Login, öffnet über einen
+        Datei- oder Druckdialog der Oberfläche ein Terminal, nutzt die
+        SysRq-Tastenkombinationen oder beendet die Oberfläche, worauf der
+        Fenstermanager oder eine Shell erscheint.
+      en: >-
+        An operator or visitor at the machine switches with Ctrl+Alt+F1 to F6 to
+        a text console with login, opens a terminal through a file or print
+        dialog of the interface, uses the SysRq key combinations or terminates
+        the interface, after which the window manager or a shell appears.
+    consequence:
+      de: >-
+        Der Angreifer erhält eine Shell mit den Rechten des Bedienerkontos und
+        damit Zugang zu lokalen Diensten, Dateien und Netz. Über weitere Lücken
+        folgt root.
+      en: >-
+        The attacker obtains a shell with the rights of the operator account and
+        thus access to local services, files and network. Root follows through
+        further flaws.
+    environment: {interface: local, access: public_restricted, user: instructed}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-j]
+    attack_ics: [T0823]
+    emb3d: [TID-205]
+    iec62443: [FR2]
+    measures: [kiosk-mode, os-hardening, application-allowlisting]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-hmi-display-injection
+    rev: 1
+    stride: [S, T, I]
+    applies_to: [lx-local-hmi]
+    title:
+      de: Fremder Prozess liest oder bedient die Oberfläche {element}
+      en: Foreign process reads or operates the interface {element}
+    scenario:
+      de: >-
+        Die Oberfläche läuft unter X11, und andere lokale Prozesse dürfen sich
+        mit dem Display verbinden. Ein Angreifer mit Codeausführung auf dem
+        Rechner erstellt Bildschirmfotos, liest Tastatureingaben mit oder
+        erzeugt synthetische Klicks und Tastendrücke, die die Oberfläche wie
+        Eingaben des Bedieners behandelt.
+      en: >-
+        The interface runs under X11 and other local processes may connect to
+        the display. An attacker with code execution on the machine takes
+        screenshots, records keyboard input or generates synthetic clicks and key
+        presses that the interface treats like operator input.
+    consequence:
+      de: >-
+        Passwörter werden abgegriffen, und Bedienhandlungen werden im Namen des
+        angemeldeten Bedieners ausgeführt, etwa Start oder Parameteränderung.
+      en: >-
+        Passwords are captured and operations are executed in the name of the
+        logged-in operator, for example start or parameter change.
+    environment: {interface: local, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-e]
+    attack_ics: [T0852, T0832]
+    emb3d: [TID-204]
+    iec62443: [FR2, FR4]
+    measures: [kiosk-mode, lx-service-sandboxing, os-hardening]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  # --- user and rights management ----------------------------------------------------
+  - id: lx-usermgmt-credential-readout
+    rev: 1
+    stride: [I]
+    applies_to: [lx-user-management]
+    title:
+      de: Auslesen der Zugangsdaten aus {element}
+      en: Readout of credentials from {element}
+    scenario:
+      de: >-
+        {element} speichert Benutzerkonten in einer eigenen Datei oder Datenbank,
+        die für andere Prozesse lesbar ist, mit schwachen oder ungesalzenen
+        Hashes. Ein Angreifer mit lokalem Zugang oder über einen Datei-Download
+        einer Diagnosefunktion kopiert die Datei und knackt die Passwörter
+        offline.
+      en: >-
+        {element} stores user accounts in an own file or database that is
+        readable by other processes, with weak or unsalted hashes. An attacker
+        with local access or through a file download of a diagnostic function
+        copies the file and cracks the passwords offline.
+    consequence:
+      de: >-
+        Der Angreifer meldet sich mit gültigen Konten an, auch mit Service- und
+        Administratorrollen, und auf weiteren Maschinen mit gleichen Passwörtern.
+      en: >-
+        The attacker logs in with valid accounts, including service and
+        administrator roles, and on further machines with the same passwords.
+    environment: {interface: local, access: restricted}
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-I-2-e, AI-I-2-d]
+    attack_ics: [T0859]
+    emb3d: [TID-329]
+    iec62443: [FR1, FR4]
+    measures: [secrets-protected-storage, lx-service-sandboxing, unique-device-credentials]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-usermgmt-role-tampering
+    rev: 1
+    stride: [T, E]
+    applies_to: [lx-user-management]
+    title:
+      de: Unbefugte Änderung von Rollen und Rechten in {element}
+      en: Unauthorised change of roles and rights in {element}
+    scenario:
+      de: >-
+        Die Rollenzuordnung liegt in einer beschreibbaren Konfigurationsdatei,
+        oder {element} bietet eine lokale Schnittstelle zum Anlegen von Konten,
+        die den Aufrufer nicht prüft. Ein Angreifer mit einem Bedienerkonto legt
+        ein Administratorkonto an oder weist sich selbst die Service-Rolle zu.
+      en: >-
+        The role assignment is stored in a writable configuration file, or
+        {element} offers a local interface for creating accounts that does not
+        verify the caller. An attacker with an operator account creates an
+        administrator account or assigns the service role to themselves.
+    consequence:
+      de: >-
+        Der Angreifer erhält dauerhaft volle Rechte über die Steuerung und kann
+        sicherheitsrelevante Parameter und Programme ändern.
+      en: >-
+        The attacker permanently gains full rights over the controller and can
+        change safety-relevant parameters and programs.
+    environment: {interface: local, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    attack_ics: [T0892]
+    emb3d: [TID-312, TID-313]
+    iec62443: [FR1, FR2]
+    measures: [lx-unix-socket-peer-auth, config-integrity-check, role-based-access, security-logging]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-usermgmt-brute-force
+    rev: 1
+    stride: [S]
+    applies_to: [lx-user-management, lx-local-hmi, lx-network-daemon]
+    title:
+      de: Erraten von Passwörtern über {element}
+      en: Guessing passwords via {element}
+    scenario:
+      de: >-
+        Die Anmeldung über {element} begrenzt Fehlversuche nicht. Ein Angreifer
+        probiert automatisiert Passwortlisten oder kurze PINs aus, lokal über ein
+        Skript oder aus dem Netz über den Dienst, der die Anmeldung weiterreicht.
+      en: >-
+        Login via {element} does not limit failed attempts. An attacker
+        automatically tries password lists or short PINs, locally via a script or
+        from the network via the service that forwards the login.
+    consequence:
+      de: >-
+        Der Angreifer übernimmt ein Bediener-, Service- oder Administratorkonto
+        und handelt unter fremder Identität.
+      en: >-
+        The attacker takes over an operator, service or administrator account
+        and acts under another identity.
+    environment: {interface: known_network, access: non_restricted}
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-I-2-d]
+    attack_ics: [T0859]
+    emb3d: [TID-314]
+    iec62443: [FR1]
+    measures: [account-lockout, strong-authentication, security-logging]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  # --- watchdog ----------------------------------------------------------------------
+  - id: lx-watchdog-disabled
+    rev: 1
+    stride: [T, D, E]
+    applies_to: [lx-watchdog, lx-rt-control]
+    title:
+      de: Angreifer schaltet die Überwachung durch {element} ab
+      en: Attacker switches off the supervision by {element}
+    scenario:
+      de: >-
+        Ein Angreifer mit root-Rechten beendet den Watchdog-Prozess, schreibt
+        das Magic-Close-Zeichen auf /dev/watchdog, ändert die Timeout-Zeit oder
+        speist im Namen des Steuerungsprozesses Lebenszeichen ein. Anschließend
+        hält er den Steuerungsprozess an oder verändert ihn, ohne dass die
+        Maschine in den sicheren Zustand geht.
+      en: >-
+        An attacker with root privileges terminates the watchdog process, writes
+        the magic close character to /dev/watchdog, changes the timeout or feeds
+        heartbeats on behalf of the control process. They then halt or modify the
+        control process without the machine going into the safe state.
+    consequence:
+      de: >-
+        Ausfall oder Manipulation der Steuerung bleiben unerkannt; Ausgänge
+        behalten ihren letzten Wert. Bewegungen laufen unkontrolliert weiter und
+        können Personen gefährden.
+      en: >-
+        Failure or manipulation of the controller remain undetected; outputs keep
+        their last value. Movements continue uncontrolled and can endanger
+        persons.
+    environment: {interface: local, access: restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-h, AI-I-2-f, AI-I-2-k]
+    attack_ics: [T0881, T0837]
+    emb3d: [TID-222]
+    iec62443: [FR3, FR7]
+    measures: [lx-hardware-watchdog, watchdog-safe-state, safety-separation, lx-unix-socket-peer-auth]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  # --- build tools -------------------------------------------------------------------
+  - id: lx-toolchain-on-target
+    rev: 1
+    stride: [E, T]
+    applies_to: [lx-build-tools, lx-source-on-target]
+    title:
+      de: Angreifer nutzt Compiler und Quellcode über {element}
+      en: Attacker uses compiler and source code via {element}
+    scenario:
+      de: >-
+        Auf dem Seriengerät sind Compiler, Header und der Quellcode von Treibern
+        oder Steuerungskomponenten installiert. Ein Angreifer mit einem
+        unprivilegierten Konto übersetzt vor Ort einen passenden Exploit, ein
+        Kernelmodul oder eine veränderte Version der Steuerungssoftware und
+        ersetzt damit das Original.
+      en: >-
+        Compiler, headers and the source code of drivers or control components
+        are installed on the production device. An attacker with an
+        unprivileged account builds a matching exploit, a kernel module or a
+        modified version of the control software on site and replaces the
+        original with it.
+    consequence:
+      de: >-
+        Angriffe werden ohne Werkzeugtransfer möglich und passen exakt zum
+        Zielsystem. Eine manipulierte Steuerungssoftware kann Personen gefährden.
+      en: >-
+        Attacks become possible without tool transfer and fit the target system
+        exactly. Manipulated control software can endanger persons.
+    environment: {interface: local, access: restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-j, AI-I-2-f]
+    attack_ics: [T1701, T0867]
+    emb3d: [TID-205]
+    iec62443: [FR2, FR3]
+    measures: [lx-no-toolchain-on-target, application-allowlisting, program-integrity-check]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-build-dependency-spoofing
+    rev: 1
+    stride: [S, T]
+    applies_to: [lx-build-tools]
+    title:
+      de: Gefälschte Abhängigkeiten werden von {element} eingebunden
+      en: Forged dependencies are included by {element}
+    scenario:
+      de: >-
+        Die Build-Werkzeuge auf dem Gerät laden Bibliotheken oder Pakete aus
+        einem Paketspiegel, einem Netzlaufwerk oder von einem USB-Datenträger.
+        Ein Angreifer stellt ein Paket mit gleichem Namen und höherer Version
+        bereit oder leitet die Namensauflösung um. Das Werkzeug prüft keine
+        Signatur und baut den Schadcode ein.
+      en: >-
+        The build tools on the device fetch libraries or packages from a package
+        mirror, a network share or a USB medium. An attacker provides a package
+        with the same name and a higher version or redirects name resolution. The
+        tool does not check a signature and builds the malicious code in.
+
+    consequence:
+      de: >-
+        Vor Ort gebaute Anwenderprogramme oder Treiber enthalten Schadcode, der
+        mit den Rechten des Host-Prozesses oder im Kernel läuft.
+      en: >-
+        Application programs or drivers built on site contain malicious code that
+        runs with the rights of the host process or in the kernel.
+    environment: {interface: known_network, access: restricted}
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-I-2-f, AI-II-1]
+    attack_ics: [T0862]
+    emb3d: [TID-302]
+    iec62443: [FR3]
+    measures: [lx-no-toolchain-on-target, engineering-tool-integrity, component-inventory-sbom]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]

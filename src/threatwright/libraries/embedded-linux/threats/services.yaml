@@ -1,0 +1,305 @@
+# Threat templates for network-facing daemons and operating system services.
+threats:
+  - id: lx-service-no-authentication
+    rev: 1
+    stride: [S, E]
+    applies_to: [lx-network-daemon, lx-os-service, lx-rt-control, lx-fieldbus-master, soft-plc]
+    title:
+      de: '{element} nimmt Befehle ohne Authentisierung an'
+      en: '{element} accepts commands without authentication'
+    scenario:
+      de: >-
+        {element} öffnet einen TCP-, UDP- oder Socket-Zugang, über den Befehle,
+        Parameter oder Programme angenommen werden. Der Dienst geht davon aus,
+        dass nur die eigene Bedienoberfläche oder das Engineering-Tool ihn
+        anspricht, und verlangt keine Anmeldung. Ein Angreifer im Anlagennetz
+        oder mit einem lokalen Prozess verbindet sich direkt und sendet Befehle
+        im Protokoll des Dienstes.
+      en: >-
+        {element} opens a TCP, UDP or socket endpoint that accepts commands,
+        parameters or programs. The service assumes that only its own operator
+        interface or the engineering tool talks to it and requires no login. An
+        attacker in the plant network or with a local process connects directly
+        and sends commands in the protocol of the service.
+    consequence:
+      de: >-
+        Der Angreifer ändert Sollwerte, startet oder stoppt Abläufe oder lädt
+        Programme mit den Rechten des Dienstes, häufig root. Unerwartete
+        Bewegungen können Personen gefährden.
+      en: >-
+        The attacker changes set points, starts or stops sequences or loads
+        programs with the rights of the service, often root. Unexpected
+        movements can endanger persons.
+    environment: {interface: known_network, access: non_restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-d, AI-I-2-b]
+    attack_ics: [T0886, T1692, T0843]
+    emb3d: [TID-310, TID-406]
+    iec62443: [FR1, FR2]
+    measures: [strong-authentication, lx-unix-socket-peer-auth, lx-loopback-binding, firewall-allowlist, role-based-access]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-service-listens-all-interfaces
+    rev: 1
+    stride: [S, T]
+    applies_to: [lx-network-daemon, lx-os-service, lx-rt-control, lx-local-hmi, lx-user-management]
+    title:
+      de: '{element} lauscht auf allen Netzwerkschnittstellen'
+      en: '{element} listens on all network interfaces'
+    scenario:
+      de: >-
+        {element} ist nur für die Kommunikation auf demselben Rechner oder in
+        einem Servicenetz gedacht, bindet sich aber an 0.0.0.0 bzw. ::. Damit ist
+        der Dienst auch über die Schnittstelle zum Anlagen- oder Büronetz und
+        gegebenenfalls über einen Fernwartungszugang erreichbar. Ein Angreifer
+        findet den Port per Scan und spricht den Dienst an, der für lokale Peers
+        vereinfachte oder keine Prüfungen vorsieht.
+      en: >-
+        {element} is intended only for communication on the same machine or in a
+        service network, but binds to 0.0.0.0 or ::. The service is therefore
+        also reachable via the interface towards the plant or office network and
+        possibly via a remote access path. An attacker finds the port by scanning
+        and talks to the service, which applies simplified or no checks for
+        local peers.
+    consequence:
+      de: >-
+        Eine nur lokal gedachte Funktion wird zur Netzwerk-Angriffsfläche. Der
+        Angreifer kann Steuerbefehle senden oder Schwachstellen des Dienstes aus
+        der Ferne ausnutzen.
+      en: >-
+        A function meant to be local becomes a network attack surface. The
+        attacker can send control commands or exploit vulnerabilities of the
+        service remotely.
+    environment: {interface: known_network, access: non_restricted}
+    impact: 4
+    safety_related: true
+    cra_refs: [AI-I-2-j, AI-I-2-b]
+    attack_ics: [T0846, T0885]
+    emb3d: [TID-310]
+    iec62443: [FR5, FR7]
+    measures: [lx-loopback-binding, unused-ports-closed, firewall-allowlist, os-hardening]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-root-process-external-input
+    rev: 1
+    stride: [E, T]
+    applies_to: [lx-network-daemon, lx-os-service, lx-rt-control, lx-fieldbus-master, lx-user-management, lx-watchdog, soft-plc]
+    title:
+      de: '{element} verarbeitet externe Eingaben mit root-Rechten'
+      en: '{element} processes external input with root privileges'
+    scenario:
+      de: >-
+        {element} läuft als root oder mit weitreichenden Capabilities und
+        verarbeitet selbst Daten aus Netzwerk, Feldbus, Dateien oder von anderen
+        Prozessen. Der Parser ist in C oder C++ geschrieben. Ein Angreifer sendet
+        ein präpariertes Telegramm mit falschen Längenangaben und löst einen
+        Pufferüberlauf oder Use-after-free aus, über den er eigenen Code im
+        Prozess ausführt.
+      en: >-
+        {element} runs as root or with extensive capabilities and itself parses
+        data from network, fieldbus, files or other processes. The parser is
+        written in C or C++. An attacker sends a crafted message with wrong length
+        fields and triggers a buffer overflow or use-after-free through which
+        they execute their own code in the process.
+    consequence:
+      de: >-
+        Eine einzige Speicherschwachstelle führt direkt zu root-Rechten auf dem
+        Steuerungsrechner und damit zur Kontrolle über Steuerung, Feldbus und
+        Aktoren. Personen können gefährdet werden.
+      en: >-
+        A single memory vulnerability leads directly to root privileges on the
+        industrial PC and thus to control of the controller, fieldbus and
+        actuators. Persons can be endangered.
+    environment: {interface: known_network, access: non_restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-k, AI-I-2-a, AI-I-2-d]
+    attack_ics: [T0866, T0890]
+    emb3d: [TID-327, TID-202]
+    iec62443: [FR2, FR3]
+    measures: [lx-memory-safe-parsing, lx-service-sandboxing, least-privilege-services, input-validation, exploit-mitigations, security-testing]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-service-protocol-dos
+    rev: 1
+    stride: [D]
+    applies_to: [lx-network-daemon, lx-os-service, lx-user-management, lx-local-hmi]
+    title:
+      de: Überlastung oder Absturz von {element} durch präparierte Anfragen
+      en: Overload or crash of {element} through crafted requests
+    scenario:
+      de: >-
+        Ein Angreifer öffnet sehr viele Verbindungen zu {element}, sendet
+        unvollständige Anfragen oder Telegramme, die eine Endlosschleife oder
+        einen Absturz auslösen. Der Dienst hat keine Begrenzung für
+        Verbindungen, Speicher oder Bearbeitungszeit und blockiert Threads, die
+        auch andere Funktionen bedienen.
+      en: >-
+        An attacker opens a large number of connections to {element}, sends
+        incomplete requests or messages that cause an endless loop or a crash.
+        The service has no limits on connections, memory or processing time and
+        blocks threads that also serve other functions.
+    consequence:
+      de: >-
+        Bedienung, Anmeldung oder Datenaustausch fallen aus. Verbraucht der
+        Dienst CPU oder Speicher des Rechners, verletzt auch der
+        Echtzeitprozess seine Zykluszeit und die Maschine stoppt.
+      en: >-
+        Operation, login or data exchange fail. If the service consumes CPU or
+        memory of the machine, the real-time process also misses its cycle time
+        and the machine stops.
+    environment: {interface: known_network, access: non_restricted}
+    impact: 3
+    safety_related: false
+    cra_refs: [AI-I-2-h, AI-I-2-i]
+    attack_ics: [T0814, T0815]
+    emb3d: [TID-404, TID-405]
+    iec62443: [FR7]
+    measures: [dos-rate-limiting, input-validation, lx-rt-resource-isolation, lx-service-sandboxing]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-service-traffic-sniffing
+    rev: 1
+    stride: [I, T]
+    applies_to: [lx-network-daemon, lx-os-service]
+    title:
+      de: Mitlesen und Verändern unverschlüsselter Kommunikation von {element}
+      en: Eavesdropping on and altering unencrypted communication of {element}
+    scenario:
+      de: >-
+        {element} überträgt Befehle, Prozessdaten, Projektdateien oder
+        Zugangsdaten im Klartext, etwa über ein eigenes Binärprotokoll ohne TLS.
+        Ein Angreifer im selben Netzsegment schneidet den Verkehr mit oder
+        schaltet sich per ARP-Spoofing dazwischen und verändert Antworten.
+      en: >-
+        {element} transfers commands, process data, project files or credentials
+        in plain text, for example over an own binary protocol without TLS. An
+        attacker in the same network segment captures the traffic or inserts
+        themselves via ARP spoofing and alters responses.
+    consequence:
+      de: >-
+        Abfluss von Know-how und Zugangsdaten. Veränderte Befehle oder
+        Rückmeldungen führen zu falscher Bedienung und Fehlansteuerung.
+      en: >-
+        Leakage of know-how and credentials. Altered commands or feedback lead to
+        wrong operation and faulty control.
+    environment: {interface: known_network, access: non_restricted}
+    impact: 4
+    safety_related: false
+    cra_refs: [AI-I-2-e, AI-I-2-f]
+    attack_ics: [T0842, T0830]
+    emb3d: [TID-408]
+    iec62443: [FR3, FR4]
+    measures: [data-encryption-transit, mutual-tls, network-segmentation]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-os-service-known-vulnerability
+    rev: 1
+    stride: [E, T]
+    applies_to: [lx-os-service, ipc-linux]
+    title:
+      de: Bekannte Schwachstelle in einem veralteten Systemdienst auf {element}
+      en: Known vulnerability in an outdated system service on {element}
+    scenario:
+      de: >-
+        Das Image enthält Distributionsdienste wie sshd, avahi oder rpcbind in
+        einer Version, die beim Einfrieren der Distribution aktuell war und seither
+        nicht aktualisiert wurde. Für die Version sind Schwachstellen mit
+        öffentlichem Exploit bekannt. Ein Angreifer ermittelt die Version über das
+        Banner und nutzt die Lücke aus.
+      en: >-
+        The image contains distribution services such as sshd, avahi or rpcbind
+        in a version that was current when the distribution was frozen and has
+        not been updated since. Vulnerabilities with public exploits are known
+        for that version. An attacker determines the version from the banner and
+        exploits the flaw.
+    consequence:
+      de: >-
+        Codeausführung mit root-Rechten ohne Zugangsdaten und damit volle
+        Kontrolle über den Steuerungsrechner.
+      en: >-
+        Code execution with root privileges without credentials and thus full
+        control of the industrial PC.
+    environment: {interface: known_network, access: non_restricted}
+    impact: 5
+    safety_related: true
+    cra_refs: [AI-I-2-a, AI-I-2-c, AI-II-1]
+    attack_ics: [T0866]
+    emb3d: [TID-202, TID-210]
+    iec62443: [FR3]
+    measures: [patch-management-os, component-inventory-sbom, supplier-vulnerability-monitoring, unused-ports-closed, os-hardening]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-service-discovery-recon
+    rev: 1
+    stride: [I]
+    applies_to: [lx-os-service, lx-network-daemon]
+    title:
+      de: '{element} verrät Dienste, Versionen und Gerätedaten im Netz'
+      en: '{element} reveals services, versions and device data on the network'
+    scenario:
+      de: >-
+        Dienste wie avahi (mDNS/DNS-SD), rpcbind oder eigene
+        Discovery-Protokolle beantworten Anfragen von jedem Teilnehmer mit
+        Hostnamen, Seriennummern, Softwareversionen und offenen Diensten. Ein
+        Angreifer sammelt diese Informationen ohne Anmeldung und wählt damit
+        passende Exploits aus.
+      en: >-
+        Services such as avahi (mDNS/DNS-SD), rpcbind or own discovery protocols
+        answer requests from any participant with host names, serial numbers,
+        software versions and open services. An attacker collects this
+        information without login and uses it to select suitable exploits.
+    consequence:
+      de: >-
+        Der Angriff wird gezielter und schneller. Die Informationen zeigen,
+        welche Geräte einer Baureihe mit welcher Version erreichbar sind.
+      en: >-
+        The attack becomes more targeted and faster. The information shows which
+        devices of a product line with which version are reachable.
+    environment: {interface: known_network, access: non_restricted}
+    impact: 2
+    safety_related: false
+    cra_refs: [AI-I-2-j, AI-I-2-e]
+    attack_ics: [T0846, T0888]
+    emb3d: [TID-224]
+    iec62443: [FR5]
+    measures: [unused-ports-closed, os-hardening, lx-loopback-binding]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]
+
+  - id: lx-diagnostic-disclosure
+    rev: 1
+    stride: [I]
+    applies_to: [lx-watchdog, lx-network-daemon, lx-os-service, lx-kernel, lx-kernel-module]
+    title:
+      de: Diagnose- und Statusausgaben von {element} geben interne Daten preis
+      en: Diagnostic and status output of {element} discloses internal data
+    scenario:
+      de: >-
+        {element} schreibt ausführliche Diagnosedaten in für alle lesbare
+        Dateien, Logs, /proc, /sys, debugfs oder eine Statusschnittstelle: interne
+        Speicheradressen, Prozesslisten, Konfiguration, Tokens oder Passwörter
+        in Kommandozeilen. Ein Angreifer mit einem unprivilegierten lokalen
+        Konto oder über einen Diagnosedienst liest diese Daten aus.
+      en: >-
+        {element} writes detailed diagnostic data to world-readable files, logs,
+        /proc, /sys, debugfs or a status interface: internal memory addresses,
+        process lists, configuration, tokens or passwords in command lines. An
+        attacker with an unprivileged local account or via a diagnostic service
+        reads this data.
+    consequence:
+      de: >-
+        Zugangsdaten und Kernel-Adressen erleichtern die Rechteausweitung und
+        das Umgehen von Schutzmechanismen wie Adressraum-Randomisierung.
+      en: >-
+        Credentials and kernel addresses ease privilege escalation and bypassing
+        protection such as address space randomisation.
+    environment: {interface: local, access: restricted}
+    impact: 3
+    safety_related: false
+    cra_refs: [AI-I-2-e, AI-I-2-k]
+    attack_ics: [T0893]
+    emb3d: [TID-224, TID-226]
+    iec62443: [FR4]
+    measures: [debug-interfaces-disabled, os-hardening, secrets-protected-storage]
+    sources: ["generic embedded Linux threat knowledge; ATT&CK for ICS v20; MITRE EMB3D"]

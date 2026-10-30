@@ -39,7 +39,7 @@ my-product/
       questions/Q-0001.yaml    open questions
 ```
 
-Create a project with `threatwright init my-product --name "My product" --language en` (template `tr` is the TR-03183-1 default with four zones; the OT library is the default). Choose the product type with `--library`/`-l ot|iot|software` (repeatable, e.g. `-l iot -l software`); without `ot` the third zone is `Z-LAN` (local network, LAN/WLAN).
+Create a project with `threatwright init my-product --name "My product" --language en` (template `tr` is the TR-03183-1 default with four zones; the OT library is the default). Choose the product type with `--library`/`-l ot|iot|software|embedded-linux` (repeatable; `embedded-linux` brings `ot` along, e.g. `-l iot -l software`); without `ot` the third zone is `Z-LAN` (local network, LAN/WLAN).
 
 Id prefixes: `E` elements, `F` flows, `A` assets, `T` threats, `M` measures, `Q` questions; ids look like `T-0007` (pattern `^[A-Za-z][A-Za-z0-9_]*-[0-9]{4,}$`).
 
@@ -89,6 +89,22 @@ sbom: [firmware.cdx.json]             # optional: CycloneDX files in <project>/s
 stride_not_relevant:                  # optional, rationale required
   R: No user actions on this device; logging happens in the HMI.
 ```
+
+Processes and devices may also carry (all optional):
+
+```yaml
+runs_on: E-0001                       # device of the same model it runs on; no zone -> host's zone
+privilege: {level: root, account: null, capabilities: [CAP_SYS_NICE]}  # kernel|root|service|user
+listens_on:
+  - {protocol: tcp, port: 5000, interfaces: all}        # all | loopback | interface name
+  - {protocol: unix, path: /run/control/ui.sock}        # unix: path instead of port
+authentication: none                  # none|password|shared-secret|key|certificate|unknown
+memory_safe: false
+sbom_ref: {purl: "pkg:generic/rt-control@2.1", cpe: null}  # also allowed on data stores
+refines: main/E-0019                  # any kind: element of another model this one details
+```
+
+`runs_on` and `privilege` are not allowed on data stores and external entities (schema error). A model whose elements `refines` elements of another model is a sub-model: it belongs to exactly one model, is rendered inside that model's document and shares its threat coverage. Do not assess the same library threat on the refined element and again in the sub-model (`duplicate-assessment`). Two processes on the same host with a different `privilege.level` or `account` are separated by a privilege boundary; a flow between them needs threats with S and E (`privilege-boundary-gap`).
 
 ### Flow
 

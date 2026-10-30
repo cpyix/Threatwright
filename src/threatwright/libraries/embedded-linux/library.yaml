@@ -1,0 +1,30 @@
+schema_version: 1
+id: embedded-linux
+version: 0.1.0
+title:
+  de: Embedded-Linux-Bibliothek für Steuerungssoftware auf Industrie-PCs
+  en: Embedded Linux library for control software on industrial PCs
+license: CC-BY-4.0
+description:
+  de: >-
+    Generische Element-, Bedrohungs- und Maßnahmenvorlagen für Steuerungssoftware,
+    die als mehrere Prozesse auf einem Linux-Industrie-PC läuft: Echtzeit-Steuerung
+    mit Feldbus-Master, lokale Bedienoberfläche, eigene Netzwerkdienste,
+    Betriebssystemdienste, Shared Memory, Anwenderprogramme im Host-Prozess,
+    Echtzeit-Kernel mit Modulen und Update-Mechanismus. Gedacht als Teilmodell,
+    das ein Element eines Maschinenmodells verfeinert. Setzt die OT-Bibliothek
+    voraus und verweist auf deren Maßnahmen. Vorschläge, keine vollständige
+    Analyse; jede Übernahme ist im Produktkontext zu prüfen.
+  en: >-
+    Generic element, threat and measure templates for control software running
+    as several processes on a Linux industrial PC: real-time control with
+    fieldbus master, local operator interface, own network daemons, operating
+    system services, shared memory, application programs inside the host
+    process, real-time kernel with modules and update mechanism. Intended as a
+    sub-model that refines an element of a machine model. Requires the OT
+    library and refers to its measures. Suggestions, not a complete analysis;
+    review every entry in the context of your product.
+requires: [ot]
+attribution:
+  - MITRE ATT&CK for ICS and MITRE EMB3D identifiers (c) The MITRE Corporation, used with permission.
+  - CRA requirement mapping after BSI TR-03183-1 v1.0.0, Annex B.

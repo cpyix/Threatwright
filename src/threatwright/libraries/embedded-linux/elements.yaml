@@ -1,0 +1,457 @@
+# Element types for control software on a Linux industrial PC (sub-model).
+# Processes carry runs_on (the industrial PC) and a privilege context in the model;
+# privilege/authentication below are defaults for new elements. Ports are
+# product-specific, so no listens_on defaults are given.
+# environment = suggestion only; asset_class values refer to TR-03183-1 Tables 1-3.
+elements:
+  # --- processes -----------------------------------------------------------------
+  - id: lx-network-daemon
+    category: linux-processes
+    name: {de: Eigener Netzwerkdienst, en: Own network daemon}
+    kind: process
+    icon: server
+    description:
+      de: >-
+        Eigener TCP- oder UDP-Dienst des Produkts, etwa für Engineering, Diagnose,
+        Datenaustausch mit übergeordneten Systemen oder die Anbindung der
+        Bedienoberfläche.
+      en: >-
+        Own TCP or UDP daemon of the product, for example for engineering,
+        diagnostics, data exchange with higher-level systems or the connection of
+        the operator interface.
+    interfaces: [ethernet, ipc]
+    environment: {interface: known_network, access: restricted}
+    properties: {parses_external_input: true}
+    privilege: {level: service}
+    authentication: unknown
+    assets:
+      - title: {de: Dienstfunktion, en: Service function}
+        asset_class: Functions.Essential
+      - title: {de: Übertragene Prozess- und Konfigurationsdaten, en: Transferred process and configuration data}
+        asset_class: BusinessData.Important
+  - id: lx-os-service
+    category: linux-processes
+    name: {de: Betriebssystemdienst, en: Operating system service}
+    kind: process
+    icon: server
+    description:
+      de: >-
+        Dienst der Linux-Distribution, etwa sshd, avahi, rpcbind, ein Zeit- oder
+        Druckdienst. Wird mit dem Image ausgeliefert, nicht vom Hersteller selbst
+        entwickelt.
+      en: >-
+        Service of the Linux distribution, such as sshd, avahi, rpcbind, a time or
+        print service. Shipped with the image, not developed by the manufacturer.
+    interfaces: [ethernet]
+    environment: {interface: known_network, access: restricted}
+    properties: {third_party: true}
+    privilege: {level: root}
+    assets:
+      - title: {de: Systemdienst, en: System service}
+        asset_class: Functions.NonEssential
+      - title: {de: Dienstkonfiguration, en: Service configuration}
+        asset_class: Security.PublicConfiguration
+  - id: lx-rt-control
+    category: linux-processes
+    name: {de: Echtzeit-Steuerungsprozess, en: Real-time control process}
+    kind: process
+    icon: soft-plc
+    description:
+      de: >-
+        Zyklischer Echtzeitprozess, der Steuerungslogik, Bahnplanung oder
+        Regelung ausführt und den Feldbus-Master bedient. Läuft mit hoher
+        Echtzeitpriorität.
+      en: >-
+        Cyclic real-time process that executes control logic, motion planning or
+        closed-loop control and drives the fieldbus master. Runs with high
+        real-time priority.
+    interfaces: [ipc, fieldbus]
+    environment: {interface: local, access: restricted}
+    properties: {real_time: true}
+    privilege: {level: root}
+    assets:
+      - title: {de: Echtzeit-Steuerungsfunktion, en: Real-time control function}
+        asset_class: Functions.Essential
+      - title: {de: Steuerungsprogramm und Maschinenparameter, en: Control program and machine parameters}
+        asset_class: BusinessData.Important
+      - title: {de: Sicherheitsbezogene Überwachungen, en: Safety-related monitoring}
+        asset_class: Functions.Safety
+        rationale:
+          de: Nur wenn der Prozess Schutzfunktionen mitträgt
+          en: Only if the process contributes to protective functions
+  - id: lx-fieldbus-master
+    category: linux-processes
+    name: {de: Feldbus-Master-Stack, en: Fieldbus master stack}
+    kind: process
+    icon: soft-plc
+    description:
+      de: >-
+        Master-Stack für EtherCAT, PROFINET oder einen anderen Feldbus, als eigener
+        Prozess oder im Echtzeitprozess integriert. Benötigt Rohzugriff auf die
+        Netzwerkschnittstelle zum Feldbus.
+      en: >-
+        Master stack for EtherCAT, PROFINET or another fieldbus, as a separate
+        process or integrated in the real-time process. Needs raw access to the
+        network interface towards the fieldbus.
+    interfaces: [fieldbus, ipc]
+    environment: {interface: local, access: restricted}
+    properties: {raw_socket: true}
+    privilege: {level: root, capabilities: [CAP_NET_RAW, CAP_SYS_NICE]}
+    assets:
+      - title: {de: Zyklischer Prozessdatenaustausch, en: Cyclic process data exchange}
+        asset_class: Functions.Essential
+      - title: {de: Feldbus-Konfiguration und Topologie, en: Fieldbus configuration and topology}
+        asset_class: Other.Configuration
+  - id: lx-app-layer
+    category: linux-processes
+    name: {de: Anwendungsschicht im Host-Prozess, en: Application layer in the host process}
+    kind: process
+    icon: process
+    description:
+      de: >-
+        Erweiterungs- oder Anwendungsschicht, in der kundenspezifische
+        Anwenderprogramme, Skripte oder Plug-ins innerhalb des Host-Prozesses
+        laufen. Hat dieselben Rechte wie der Host-Prozess.
+      en: >-
+        Extension or application layer in which customer application programs,
+        scripts or plug-ins run inside the host process. Has the same rights as
+        the host process.
+    interfaces: [ipc]
+    environment: {interface: local, access: restricted, user: skilled}
+    properties: {runs_customer_code: true}
+    privilege: {level: root}
+    assets:
+      - title: {de: Anwenderprogramme, en: Application programs}
+        asset_class: BusinessData.Important
+      - title: {de: Anwendungsfunktion, en: Application function}
+        asset_class: Functions.Essential
+      - title: {de: Rechteprüfung des Hosts, en: Permission checks of the host}
+        asset_class: Security.Mechanism
+  - id: lx-local-hmi
+    category: linux-processes
+    name: {de: Lokale Bedienoberfläche, en: Local operator interface}
+    kind: process
+    icon: hmi
+    description:
+      de: >-
+        Bedienoberfläche, die auf demselben Rechner läuft und über Bildschirm,
+        Touch und Tastatur bedient wird. Kommuniziert lokal mit dem
+        Steuerungsprozess.
+      en: >-
+        Operator interface running on the same machine, operated via screen,
+        touch and keyboard. Communicates locally with the control process.
+    interfaces: [display, touch, usb, ipc]
+    environment: {interface: local, access: public_restricted, user: instructed}
+    properties: {kiosk: unknown}
+    privilege: {level: user, account: operator}
+    authentication: password
+    assets:
+      - title: {de: Bedien- und Beobachtungsfunktion, en: Operating and monitoring function}
+        asset_class: Functions.Essential
+      - title: {de: Sollwerte und Rezepte, en: Set points and recipes}
+        asset_class: BusinessData.Important
+  - id: lx-user-management
+    category: linux-processes
+    name: {de: Benutzer- und Rechteverwaltung, en: User and rights management}
+    kind: process
+    icon: key
+    description:
+      de: >-
+        Dienst, der Benutzerkonten, Rollen und Berechtigungen der Steuerung
+        verwaltet und Anmeldungen der anderen Prozesse prüft.
+      en: >-
+        Service that manages user accounts, roles and permissions of the control
+        system and verifies logins for the other processes.
+    interfaces: [ipc]
+    environment: {interface: local, access: restricted}
+    properties: {}
+    privilege: {level: root}
+    authentication: password
+    assets:
+      - title: {de: Zugangsdaten und Passwort-Hashes, en: Credentials and password hashes}
+        asset_class: Security.Secrets
+      - title: {de: Rollen und Berechtigungen, en: Roles and permissions}
+        asset_class: Security.Mechanism
+      - title: {de: Benutzerkonten, en: User accounts}
+        asset_class: PII.TechnicalNecessary
+  - id: lx-watchdog
+    category: linux-processes
+    name: {de: Watchdog / Supervisor, en: Watchdog / supervisor}
+    kind: process
+    icon: alarm
+    description:
+      de: >-
+        Prozess, der die anderen Prozesse überwacht, bei Ausfall neu startet oder
+        die Maschine in einen sicheren Zustand bringt und den Hardware-Watchdog
+        bedient.
+      en: >-
+        Process that monitors the other processes, restarts them on failure or
+        brings the machine into a safe state, and services the hardware
+        watchdog.
+    interfaces: [ipc]
+    environment: {interface: local, access: restricted}
+    properties: {}
+    privilege: {level: root}
+    assets:
+      - title: {de: Überwachungsfunktion, en: Supervision function}
+        asset_class: Functions.Essential
+      - title: {de: Überführung in sicheren Zustand, en: Transition to safe state}
+        asset_class: Security.Mechanism
+  - id: lx-build-tools
+    category: linux-processes
+    name: {de: Build-Werkzeuge auf dem Zielsystem, en: Build tools on the target}
+    kind: process
+    icon: workstation
+    description:
+      de: >-
+        Compiler, Linker, Interpreter oder Paketwerkzeuge, die auf dem
+        Seriengerät installiert sind, etwa um Anwenderprogramme oder Treiber vor
+        Ort zu übersetzen.
+      en: >-
+        Compiler, linker, interpreter or package tools installed on the
+        production device, for example to build application programs or drivers
+        on site.
+    interfaces: [ipc]
+    environment: {interface: local, access: restricted, user: skilled}
+    properties: {}
+    privilege: {level: user}
+    assets:
+      - title: {de: Übersetzte Programme, en: Built programs}
+        asset_class: BusinessData.Important
+
+  # --- platform ------------------------------------------------------------------
+  - id: lx-firmware-uefi
+    category: linux-platform
+    name: {de: Firmware / BIOS / UEFI, en: Firmware / BIOS / UEFI}
+    kind: process
+    icon: ipc
+    description:
+      de: >-
+        Firmware des Mainboards mit Setup, Bootreihenfolge und Bootloader, die vor
+        dem Betriebssystem läuft.
+      en: >-
+        Mainboard firmware with setup, boot order and boot loader, running before
+        the operating system.
+    interfaces: [usb, ethernet, display]
+    environment: {interface: local, access: restricted}
+    properties: {firmware: true}
+    privilege: {level: kernel}
+    assets:
+      - title: {de: Startkette, en: Boot chain}
+        asset_class: Security.Mechanism
+      - title: {de: Firmware-Einstellungen, en: Firmware settings}
+        asset_class: Other.Configuration
+  - id: lx-kernel
+    category: linux-platform
+    name: {de: Linux-Kernel mit Echtzeit-Patch, en: Linux kernel with real-time patch}
+    kind: process
+    icon: ipc
+    description:
+      de: >-
+        Eigener oder angepasster Linux-Kernel einschließlich Echtzeit-Erweiterung,
+        der Prozesse, Speicher und Geräte verwaltet.
+      en: >-
+        Own or customised Linux kernel including real-time extension, managing
+        processes, memory and devices.
+    interfaces: [usb, ethernet, fieldbus]
+    environment: {interface: local, access: restricted}
+    properties: {real_time: true}
+    privilege: {level: kernel}
+    assets:
+      - title: {de: Prozess- und Speichertrennung, en: Process and memory isolation}
+        asset_class: Security.Mechanism
+      - title: {de: Echtzeitverhalten, en: Real-time behaviour}
+        asset_class: Functions.Essential
+  - id: lx-kernel-module
+    category: linux-platform
+    name: {de: Kernelmodul / Treiber, en: Kernel module / driver}
+    kind: process
+    icon: process
+    description:
+      de: >-
+        Eigenes oder zugekauftes Kernelmodul, etwa für Feldbus-Netzwerkkarte,
+        E/A-Karte, Echtzeit-Erweiterung oder Spezialhardware.
+      en: >-
+        Own or purchased kernel module, for example for the fieldbus network
+        card, I/O card, real-time extension or special hardware.
+    interfaces: [fieldbus, ipc]
+    environment: {interface: local, access: restricted}
+    properties: {}
+    privilege: {level: kernel}
+    assets:
+      - title: {de: Hardwarezugriff, en: Hardware access}
+        asset_class: Functions.Essential
+      - title: {de: Kernel-Integrität, en: Kernel integrity}
+        asset_class: Security.Mechanism
+
+  # --- data stores ---------------------------------------------------------------
+  - id: lx-shared-memory
+    category: data
+    name: {de: Shared-Memory-Segment, en: Shared memory segment}
+    kind: datastore
+    icon: datastore
+    description:
+      de: >-
+        Gemeinsamer Speicherbereich, über den Prozesse Prozessabbild, Sollwerte,
+        Zustände oder Befehle austauschen, etwa POSIX- oder System-V-Shared-Memory.
+      en: >-
+        Shared memory area through which processes exchange process image, set
+        points, states or commands, for example POSIX or System V shared memory.
+    interfaces: [ipc]
+    environment: {interface: local, access: restricted}
+    properties: {}
+    assets:
+      - title: {de: Prozessabbild und Sollwerte, en: Process image and set points}
+        asset_class: BusinessData.Important
+      - title: {de: Befehle an die Steuerung, en: Commands to the controller}
+        asset_class: Functions.CommunicationLocal
+  - id: lx-source-on-target
+    category: data
+    name: {de: Quellcode und Build-Artefakte auf dem Gerät, en: Source code and build artefacts on the device}
+    kind: datastore
+    icon: directory
+    description:
+      de: >-
+        Quelltexte, Header, Objektdateien und Build-Skripte, die auf dem
+        Seriengerät liegen, etwa für Treiber oder Anwenderprogramme.
+      en: >-
+        Source files, headers, object files and build scripts stored on the
+        production device, for example for drivers or application programs.
+    interfaces: []
+    environment: {interface: local, access: restricted}
+    properties: {}
+    assets:
+      - title: {de: Quellcode und Know-how, en: Source code and know-how}
+        asset_class: BusinessData.Important
+  - id: lx-update-staging
+    category: data
+    name: {de: Update-Ablage, en: Update staging area}
+    kind: datastore
+    icon: patch
+    description:
+      de: >-
+        Verzeichnis oder Partition, in der heruntergeladene oder von USB kopierte
+        Update-Pakete bis zur Installation liegen.
+      en: >-
+        Directory or partition holding update packages downloaded or copied from
+        USB until they are installed.
+    interfaces: [usb, ethernet]
+    environment: {interface: local, access: restricted}
+    properties: {}
+    assets:
+      - title: {de: Update-Pakete, en: Update packages}
+        asset_class: Security.Mechanism
+      - title: {de: Software-Know-how in den Paketen, en: Software know-how in the packages}
+        asset_class: BusinessData.Important
+
+  # --- flows ---------------------------------------------------------------------
+  - id: lx-local-ipc
+    category: flows
+    name: {de: Lokale Interprozesskommunikation, en: Local inter-process communication}
+    kind: flow
+    description:
+      de: >-
+        Unix-Socket, TCP über Loopback, Pipes, D-Bus oder Signale zwischen den
+        Prozessen auf demselben Rechner.
+      en: >-
+        Unix socket, TCP over loopback, pipes, D-Bus or signals between the
+        processes on the same machine.
+    interfaces: [ipc]
+    environment: {interface: local, access: restricted}
+    properties: {authentication: none, encryption: none}
+    assets:
+      - title: {de: Befehle und Zustände, en: Commands and states}
+        asset_class: Functions.CommunicationLocal
+  - id: lx-remote-shell
+    category: flows
+    name: {de: Remote-Shell (SSH), en: Remote shell (SSH)}
+    kind: flow
+    description:
+      de: >-
+        Interaktive oder skriptgesteuerte Shell-Verbindung, meist SSH, für
+        Service, Diagnose und Dateiübertragung.
+      en: >-
+        Interactive or scripted shell connection, usually SSH, for service,
+        diagnostics and file transfer.
+    interfaces: [ethernet]
+    environment: {interface: known_network, access: restricted, user: skilled}
+    properties: {authentication: password-or-key, encryption: true}
+    assets:
+      - title: {de: Administrativer Zugang, en: Administrative access}
+        asset_class: Functions.CommunicationNetwork
+      - title: {de: Zugangsdaten und Host-Schlüssel, en: Credentials and host keys}
+        asset_class: Security.Secrets
+  - id: lx-smtp-out
+    category: flows
+    name: {de: Ausgehende E-Mail (SMTP), en: Outgoing e-mail (SMTP)}
+    kind: flow
+    description:
+      de: >-
+        Versand von Alarm-, Status- oder Berichtsmails vom Gerät an einen
+        Mailserver des Betreibers oder einen externen Dienst.
+      en: >-
+        Sending of alarm, status or report e-mails from the device to a mail
+        server of the operator or an external service.
+    interfaces: [ethernet]
+    environment: {interface: external_network, access: non_restricted}
+    properties: {authentication: password, encryption: optional}
+    assets:
+      - title: {de: Alarm- und Statusmeldungen, en: Alarm and status messages}
+        asset_class: Functions.CommunicationNetwork
+      - title: {de: SMTP-Zugangsdaten, en: SMTP credentials}
+        asset_class: Security.Secrets
+  - id: lx-usb-hid
+    category: flows
+    name: {de: USB-Eingabegeräte (HID), en: USB input devices (HID)}
+    kind: flow
+    description:
+      de: >-
+        Tastatur, Maus, Touch-Controller oder Barcodeleser, die per USB als HID
+        angeschlossen sind.
+      en: >-
+        Keyboard, mouse, touch controller or barcode reader connected via USB as
+        HID.
+    interfaces: [usb]
+    environment: {interface: local, access: public_restricted, user: instructed}
+    properties: {authentication: none}
+    assets:
+      - title: {de: Bedieneingaben, en: Operator input}
+        asset_class: Functions.CommunicationLocal
+
+  # --- external actors -----------------------------------------------------------
+  - id: lx-service-technician
+    category: linux-actors
+    name: {de: Entwickler oder Servicetechniker mit Systemzugang, en: Developer or service technician with system access}
+    kind: external
+    icon: laptop
+    description:
+      de: >-
+        Person, die über Shell, Service-Konto oder Konsole Zugriff auf das
+        Betriebssystem des Rechners hat.
+      en: >-
+        Person with access to the operating system of the machine via shell,
+        service account or console.
+    interfaces: [ethernet, usb]
+    environment: {interface: local, access: movable, user: skilled}
+    properties: {}
+    assets:
+      - title: {de: Service-Zugangsdaten, en: Service credentials}
+        asset_class: Security.Secrets
+  - id: lx-app-program-author
+    category: linux-actors
+    name: {de: Autor des Anwenderprogramms, en: Author of the application program}
+    kind: external
+    icon: workstation
+    description:
+      de: >-
+        Programmierer beim Maschinenbauer oder Betreiber, der Anwenderprogramme
+        für die Anwendungsschicht erstellt und einspielt.
+      en: >-
+        Programmer at the machine builder or operator who creates and loads
+        application programs for the application layer.
+    interfaces: [ethernet, usb]
+    environment: {interface: known_network, access: restricted, user: skilled}
+    properties: {}
+    assets:
+      - title: {de: Anwenderprogramme in Entwicklung, en: Application programs under development}
+        asset_class: BusinessData.Important

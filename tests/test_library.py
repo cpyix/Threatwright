@@ -8,7 +8,13 @@ from conftest import FIXTURE, ROOT
 from typer.testing import CliRunner
 
 from threatwright.cli import app
-from threatwright.library import CATALOG_NAMES, CATALOGS, check_library_refs, load_libraries
+from threatwright.library import (
+    CATALOG_NAMES,
+    CATALOGS,
+    Libraries,
+    check_library_refs,
+    load_libraries,
+)
 from threatwright.method import load_method
 from threatwright.model.objects import ProjectConfig
 from threatwright.model.store import Project
@@ -18,7 +24,29 @@ runner = CliRunner()
 
 
 # Minimum (elements, threats, measures) per bundled library.
-BUNDLED = {"ot": (25, 120, 80), "iot": (12, 30, 20), "software": (12, 30, 20)}
+BUNDLED = {
+    "ot": (25, 120, 80),
+    "iot": (12, 30, 20),
+    "software": (12, 30, 20),
+    "embedded-linux": (20, 45, 10),
+}
+REQUIRES = {"embedded-linux": ["ot"]}  # library.yaml `requires`
+
+
+def _own(name: str) -> Libraries:
+    """Library `name` with what it requires loaded first, reduced to its own entries."""
+    libs = load_libraries([*REQUIRES.get(name, []), name])
+    keep = {k for (kind, k), lib in libs.origin.items() if lib == name}
+    return Libraries(
+        libs.manifests,
+        {k: v for k, v in libs.elements.items() if k in keep},
+        {k: v for k, v in libs.threats.items() if k in keep},
+        {k: v for k, v in libs.measures.items() if k in keep},
+        libs.origin,
+        libs.issues,
+    )
+
+
 # software threats without an honest ASVS/MASVS fit (native desktop issues); they
 # must cite a CWE instead. Keep this as small as possible.
 NO_CATALOG_FIT = {"library-search-path-hijack"}
@@ -26,7 +54,7 @@ NO_CATALOG_FIT = {"library-search-path-hijack"}
 
 @pytest.mark.parametrize("name", list(BUNDLED))
 def test_bundled_library_is_complete_and_valid(name: str) -> None:
-    libs = load_libraries([name])
+    libs = _own(name)
     assert libs.issues == []
     n_el, n_th, n_me = BUNDLED[name]
     assert len(libs.elements) >= n_el
@@ -56,12 +84,12 @@ def test_bundled_library_is_complete_and_valid(name: str) -> None:
 def test_bundled_libraries_do_not_collide() -> None:
     # A later library overrides same-kind same-ID entries of an earlier one, so
     # bundled libraries must never share an ID or combining them loses content.
-    loaded = {n: load_libraries([n]) for n in BUNDLED}
+    loaded = {n: _own(n) for n in BUNDLED}
     for a, b in itertools.combinations(BUNDLED, 2):
         for kind in ("elements", "threats", "measures"):
             shared = set(getattr(loaded[a], kind)) & set(getattr(loaded[b], kind))
             assert not shared, f"{a} and {b} share {kind} {sorted(shared)}"
-    assert load_libraries(list(BUNDLED)).issues == []
+    assert load_libraries(list(BUNDLED)).issues == []  # dict order: ot before embedded-linux
 
 
 def own_library(root: Path) -> None:
@@ -154,3 +182,44 @@ def test_new_catalog_refs_are_checked(tmp_path: Path) -> None:
         ("own/threat/t.asvs", "unknown reference 'V0.0.0'"),
     ]
     assert set(CATALOG_NAMES) == {p.stem for p in CATALOGS.glob("*.yaml")}
+
+
+def test_required_library_must_be_listed_before(tmp_path: Path) -> None:
+    lib = tmp_path / "libraries" / "child"
+    lib.mkdir(parents=True)
+    (lib / "library.yaml").write_text(
+        "schema_version: 1\nid: child\nversion: '1'\nlicense: proprietary\nrequires: [ot]\n"
+        "title:\n  de: Kind\n  en: Child\n",
+        encoding="utf-8",
+    )
+    assert load_libraries(["ot", "child"], tmp_path).issues == []
+    for names in (["child"], ["child", "ot"]):
+        issues = load_libraries(names, tmp_path).issues
+        assert [i.code for i in issues] == ["library-invalid"]
+        assert "needs 'ot'" in issues[0].message
+
+
+def test_element_type_defaults_are_applied(tmp_path: Path) -> None:
+    from threatwright import assistant
+    from threatwright.model.objects import ModelMeta
+    from threatwright.model.store import SubModel
+
+    lib = tmp_path / "libraries" / "own"
+    lib.mkdir(parents=True)
+    (lib / "library.yaml").write_text(
+        "schema_version: 1\nid: own\nversion: '1'\nlicense: x\ntitle: {de: E, en: O}\n",
+        encoding="utf-8",
+    )
+    (lib / "elements.yaml").write_text(
+        "elements:\n  - id: daemon\n    kind: process\n    name: {de: Dienst, en: Daemon}\n"
+        "    privilege: {level: service, account: svc}\n    authentication: unknown\n"
+        "    listens_on: [{protocol: tcp, port: 5000}]\n",
+        encoding="utf-8",
+    )
+    libs = load_libraries(["own"], tmp_path)
+    assert libs.issues == []
+    sub = SubModel("main", ModelMeta(title="m"))
+    el = assistant.add_element(sub, libs, ProjectConfig(name="p"), "daemon", runs_on="E-0009")
+    assert el.privilege is not None and el.privilege.account == "svc"
+    assert el.authentication == "unknown" and el.listens_on[0].port == 5000
+    assert el.runs_on == "E-0009"

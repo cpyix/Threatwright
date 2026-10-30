@@ -9,7 +9,7 @@
   let newPath = $state('')
   let newName = $state('')
   let template = $state<'tr' | 'empty'>('tr')
-  const PRODUCT_TYPES = ['ot', 'iot', 'software'] as const // order of scaffold.PRODUCT_LIBRARIES
+  const PRODUCT_TYPES = ['ot', 'iot', 'software', 'embedded-linux'] as const // order of scaffold.PRODUCT_LIBRARIES
   let libraries = $state<string[]>(['ot'])
   let example = $state(false)
   let language = $state(app.lang)

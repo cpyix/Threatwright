@@ -303,7 +303,12 @@ def _with_libraries(project_dir: Path, libraries: list[str], own: bool = False) 
 
 def test_add_libraries(project_dir: Path) -> None:
     client = _with_libraries(project_dir, ["ot"])
-    assert client.get("/api/project").json()["product_libraries"] == ["ot", "iot", "software"]
+    assert client.get("/api/project").json()["product_libraries"] == [
+        "ot",
+        "iot",
+        "software",
+        "embedded-linux",
+    ]
     assert "iot-device" not in {e["id"] for e in client.get("/api/library").json()["elements"]}
     r = client.post("/api/project/libraries", json={"add": ["iot"]})
     assert r.status_code == 200
@@ -318,3 +323,15 @@ def test_add_libraries_keeps_own_library(project_dir: Path) -> None:
     client = _with_libraries(project_dir, ["own", "ot"], own=True)
     r = client.post("/api/project/libraries", json={"add": ["software"]})
     assert r.json()["config"]["libraries"] == ["own", "ot", "software"]
+
+
+def test_add_embedded_linux_brings_ot(project_dir: Path) -> None:
+    client = _with_libraries(project_dir, ["software"])
+    r = client.post("/api/project/libraries", json={"add": ["embedded-linux"]})
+    assert r.json()["config"]["libraries"] == ["software", "ot", "embedded-linux"]
+    lib = client.get("/api/library").json()
+    assert {"id": "embedded-linux"}.items() <= next(
+        x for x in lib["libraries"] if x["id"] == "embedded-linux"
+    ).items()
+    origin = {e["id"]: e["library"] for e in lib["elements"]}
+    assert origin["lx-rt-control"] == "embedded-linux" and origin["plc"] == "ot"

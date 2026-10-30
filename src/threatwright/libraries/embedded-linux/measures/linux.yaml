@@ -1,0 +1,365 @@
+# Linux-specific measures without an equivalent in the OT library.
+measures:
+  - id: lx-loopback-binding
+    rev: 1
+    title:
+      de: Lokale Dienste nur an Loopback oder eine bestimmte Schnittstelle binden
+      en: Bind local services to loopback or a specific interface only
+    description:
+      de: >-
+        Dienste, die nur auf demselben Rechner gebraucht werden, binden sich an
+        127.0.0.1 bzw. ::1 oder nutzen einen Unix-Socket. Dienste für ein
+        Servicenetz binden sich nur an die zugehörige Schnittstelle, nicht an
+        0.0.0.0. Die Bindung ist fest konfiguriert und wird beim Start geprüft.
+      en: >-
+        Services needed only on the same machine bind to 127.0.0.1 or ::1 or use
+        a Unix socket. Services for a service network bind only to the
+        corresponding interface, not to 0.0.0.0. The binding is fixed in the
+        configuration and checked at start.
+    kind: technical
+    compensating: false
+    evidence:
+      de: Liste der lauschenden Sockets (ss -tulpn) im Auslieferungszustand mit Begründung je Schnittstelle.
+      en: List of listening sockets (ss -tulpn) in the delivery state with a justification per interface.
+    cra_refs: [AI-I-2-j, AI-I-2-b]
+    iec62443: [FR5, FR7]
+    sources: ["generic embedded Linux security practice"]
+
+  - id: lx-unix-socket-peer-auth
+    rev: 1
+    title:
+      de: Rechte und Peer-Prüfung für lokale Sockets
+      en: Permissions and peer check for local sockets
+    description:
+      de: >-
+        Lokale Schnittstellen zwischen Prozessen laufen über Unix-Sockets im
+        Dateisystem mit restriktiven Rechten und eigener Gruppe statt über
+        Loopback-TCP oder abstrakte Sockets. Der Server prüft beim Verbindungsaufbau
+        Benutzer und Prozess des Aufrufers (SO_PEERCRED) und erlaubt je Aufrufer
+        nur die vorgesehenen Befehle.
+      en: >-
+        Local interfaces between processes use Unix sockets in the file system
+        with restrictive permissions and a dedicated group instead of loopback
+        TCP or abstract sockets. On connection the server checks user and
+        process of the caller (SO_PEERCRED) and allows only the intended commands
+        per caller.
+    kind: technical
+    compensating: false
+    evidence:
+      de: Rechte der Socket-Dateien, Designbeschreibung der Peer-Prüfung, Test mit abgewiesenem fremdem Prozess.
+      en: Permissions of the socket files, design description of the peer check, test with a foreign process being rejected.
+    cra_refs: [AI-I-2-d, AI-I-2-f]
+    iec62443: [FR1, FR2]
+    sources: ["generic embedded Linux security practice"]
+
+  - id: lx-kernel-module-signing
+    rev: 1
+    title:
+      de: Signierte Kernelmodule und gesperrtes Nachladen
+      en: Signed kernel modules and locked module loading
+    description:
+      de: >-
+        Der Kernel lädt nur Module mit gültiger Signatur (module.sig_enforce) und
+        läuft im Lockdown-Modus. Nach dem Start werden keine weiteren Module
+        benötigt; das Nachladen wird dann gesperrt (kernel.modules_disabled=1).
+        Unnötige Treiber, etwa für ungenutzte USB-Geräteklassen, sind nicht im
+        Image enthalten.
+      en: >-
+        The kernel loads only modules with a valid signature (module.sig_enforce)
+        and runs in lockdown mode. After boot no further modules are needed;
+        loading is then locked (kernel.modules_disabled=1). Unneeded drivers, for
+        example for unused USB device classes, are not part of the image.
+    kind: technical
+    compensating: false
+    evidence:
+      de: Kernel-Konfiguration, Test mit abgewiesenem unsigniertem Modul und mit Laden nach Sperre.
+      en: Kernel configuration, test with an unsigned module being rejected and with loading after the lock.
+    cra_refs: [AI-I-2-f, AI-I-2-j, AI-I-2-k]
+    iec62443: [FR3]
+    sources: ["generic embedded Linux security practice"]
+
+  - id: lx-no-toolchain-on-target
+    rev: 1
+    title:
+      de: Keine Build-Werkzeuge und Quellen im Serien-Image
+      en: No build tools and sources in the production image
+    description:
+      de: >-
+        Das Serien-Image enthält keine Compiler, Header, Debugger, Quelltexte
+        oder Build-Artefakte. Anwenderprogramme und Treiber werden außerhalb des
+        Geräts gebaut und signiert eingespielt. Werden Werkzeuge im Service
+        gebraucht, kommen sie zeitweise und protokolliert auf das Gerät.
+      en: >-
+        The production image contains no compilers, headers, debuggers, source
+        files or build artefacts. Application programs and drivers are built
+        outside the device and loaded signed. Where tools are needed in service,
+        they are put on the device temporarily and logged.
+    kind: design
+    compensating: false
+    evidence:
+      de: Paketliste bzw. SBOM des Serien-Images ohne Entwicklungspakete.
+      en: Package list or SBOM of the production image without development packages.
+    cra_refs: [AI-I-2-j, AI-I-2-e]
+    iec62443: [FR3]
+    sources: ["generic embedded Linux security practice"]
+
+  - id: lx-shm-permissions
+    rev: 1
+    title:
+      de: Zugriffsrechte und Trennung im Shared Memory
+      en: Access rights and separation in shared memory
+    description:
+      de: >-
+        Jedes Segment hat genau einen schreibenden Prozess; Rückrichtungen laufen
+        über eigene Segmente. Rechte erlauben nur den beteiligten Konten Zugriff,
+        andere Prozesse erhalten nur Lesezugriff oder keinen. Der Empfänger prüft
+        Werte auf Plausibilität und Verwaltungsdaten wie Indizes auf Gültigkeit
+        und blockiert nicht unbegrenzt auf Sperren.
+      en: >-
+        Each segment has exactly one writing process; reverse directions use own
+        segments. Permissions allow access only to the involved accounts; other
+        processes get read access or none. The receiver checks values for
+        plausibility and management data such as indices for validity and does
+        not block indefinitely on locks.
+    kind: technical
+    compensating: false
+    evidence:
+      de: Übersicht der Segmente mit Schreiber, Lesern und Rechten; Test mit unzulässigem Schreibzugriff.
+      en: Overview of the segments with writer, readers and permissions; test with an inadmissible write access.
+    cra_refs: [AI-I-2-f, AI-I-2-d, AI-I-2-h]
+    iec62443: [FR2, FR3]
+    sources: ["generic embedded Linux security practice"]
+
+  - id: lx-boot-protection
+    rev: 1
+    title:
+      de: Geschützte Bootreihenfolge und Firmware-Einstellungen
+      en: Protected boot order and firmware settings
+    description:
+      de: >-
+        Die Firmware startet nur vom internen Systemdatenträger; Start von USB,
+        SD-Karte und Netzwerk ist deaktiviert. Setup und Bootloader sind mit einem
+        gerätespezifischen Passwort geschützt, die Kernel-Kommandozeile ist nicht
+        änderbar. Der Firmware-Flash ist gegen Schreiben aus dem Betriebssystem
+        gesperrt.
+      en: >-
+        The firmware boots only from the internal system drive; booting from
+        USB, SD card and network is disabled. Setup and boot loader are protected
+        with a device-specific password; the kernel command line cannot be
+        changed. The firmware flash is locked against writes from the operating
+        system.
+    kind: technical
+    compensating: false
+    evidence:
+      de: Dokumentierte Firmware-Einstellungen, Test eines abgewiesenen Starts von USB.
+      en: Documented firmware settings, test of a rejected boot from USB.
+    cra_refs: [AI-I-2-d, AI-I-2-f, AI-I-2-b]
+    iec62443: [FR1, FR3]
+    sources: ["generic embedded Linux security practice"]
+
+  - id: lx-host-enforced-authz
+    rev: 1
+    title:
+      de: Rechteprüfung im Host statt in der Anwendungsschicht
+      en: Permission checks in the host instead of the application layer
+    description:
+      de: >-
+        Jede Host-Schnittstelle, die Anwenderprogramme aufrufen, prüft selbst
+        Benutzer, Rolle und Betriebszustand über die Rechteverwaltung des Hosts.
+        Anwenderprogramme können Rollen nicht selbst behaupten, sondern erhalten
+        nur die Rechte, die ihnen beim Laden zugewiesen wurden.
+      en: >-
+        Every host interface called by application programs itself checks user,
+        role and operating state via the permission management of the host.
+        Application programs cannot claim roles themselves but receive only the
+        rights assigned to them at load time.
+    kind: design
+    compensating: false
+    evidence:
+      de: Schnittstellenbeschreibung mit Rechten je Funktion, Test eines Aufrufs ohne Berechtigung.
+      en: Interface description with rights per function, test of a call without permission.
+    cra_refs: [AI-I-2-d]
+    iec62443: [FR2]
+    sources: ["generic embedded Linux security practice"]
+
+  - id: lx-service-sandboxing
+    rev: 1
+    title:
+      de: Abschottung der Prozesse mit Linux-Mitteln
+      en: Process confinement with Linux mechanisms
+    description:
+      de: >-
+        Jeder Prozess läuft unter einem eigenen Konto und wird über systemd oder
+        Namespaces abgeschottet: NoNewPrivileges, ProtectSystem, PrivateTmp,
+        CapabilityBoundingSet nur mit benötigten Capabilities, Systemaufruf-Filter
+        (seccomp). ptrace auf fremde Prozesse ist gesperrt (Yama), Core-Dumps
+        sind abgeschaltet oder geschützt abgelegt.
+      en: >-
+        Each process runs under its own account and is confined via systemd or
+        namespaces: NoNewPrivileges, ProtectSystem, PrivateTmp,
+        CapabilityBoundingSet with only the needed capabilities, system call
+        filter (seccomp). ptrace on other processes is blocked (Yama), core dumps
+        are disabled or stored protected.
+    kind: technical
+    compensating: false
+    evidence:
+      de: Unit-Dateien bzw. Startkonfiguration je Prozess, Ausgabe von systemd-analyze security.
+      en: Unit files or start configuration per process, output of systemd-analyze security.
+    cra_refs: [AI-I-2-k, AI-I-2-d]
+    iec62443: [FR2, FR3]
+    sources: ["generic embedded Linux security practice"]
+
+  - id: lx-hardware-watchdog
+    rev: 1
+    title:
+      de: Unabhängiger Hardware-Watchdog
+      en: Independent hardware watchdog
+    description:
+      de: >-
+        Ein Hardware-Watchdog wird vom Steuerungsprozess selbst bedient und lässt
+        sich vom Betriebssystem nicht abschalten (nowayout, kein Magic Close).
+        Bleibt das Lebenszeichen aus, schaltet die Hardware die Ausgänge in den
+        sicheren Zustand, unabhängig von Software auf dem Rechner. Das
+        Lebenszeichen hängt an der tatsächlichen Zyklusbearbeitung.
+      en: >-
+        A hardware watchdog is serviced by the control process itself and
+        cannot be disabled by the operating system (nowayout, no magic close). If
+        the heartbeat stops, the hardware switches the outputs to the safe state
+        independently of software on the machine. The heartbeat is tied to the
+        actual cycle processing.
+    kind: technical
+    compensating: false
+    evidence:
+      de: Designbeschreibung, Test mit angehaltenem Steuerungsprozess und mit beendetem Watchdog-Dienst.
+      en: Design description, test with a halted control process and with a terminated watchdog service.
+    cra_refs: [AI-I-2-h, AI-I-2-k]
+    iec62443: [FR3, FR7]
+    sources: ["generic embedded Linux security practice"]
+
+  - id: lx-memory-safe-parsing
+    rev: 1
+    title:
+      de: Speichersichere Verarbeitung externer Eingaben
+      en: Memory-safe processing of external input
+    description:
+      de: >-
+        Parser für Netzwerk-, Feldbus-, Datei- und ioctl-Eingaben werden in einer
+        speichersicheren Sprache geschrieben oder in einem getrennten Prozess
+        ohne Rechte ausgeführt. Bestehender C/C++-Code wird mit Sanitizern und
+        Fuzzing getestet.
+      en: >-
+        Parsers for network, fieldbus, file and ioctl input are written in a
+        memory-safe language or run in a separate process without privileges.
+        Existing C/C++ code is tested with sanitizers and fuzzing.
+    kind: design
+    compensating: false
+    evidence:
+      de: Liste der Parser mit Sprache bzw. Isolierung, Fuzzing-Berichte.
+      en: List of parsers with language or isolation, fuzzing reports.
+    cra_refs: [AI-I-2-k, AI-I-2-a]
+    iec62443: [FR3]
+    sources: ["generic embedded Linux security practice"]
+
+  - id: lx-rt-resource-isolation
+    rev: 1
+    title:
+      de: Ressourcentrennung für den Echtzeitbetrieb
+      en: Resource isolation for real-time operation
+    description:
+      de: >-
+        Echtzeitprozesse laufen auf isolierten CPU-Kernen. Nicht-Echtzeitprozesse
+        erhalten über cgroups Grenzen für CPU, Speicher, Prozessanzahl und
+        Datenträger und dürfen keine Echtzeitpriorität setzen. Der
+        Steuerungsprozess ist vom OOM-Killer ausgenommen, Logs und Ablagen liegen
+        auf eigenen Partitionen.
+      en: >-
+        Real-time processes run on isolated CPU cores. Non-real-time processes
+        get cgroup limits for CPU, memory, number of processes and storage and may
+        not set real-time priority. The control process is exempt from the OOM
+        killer; logs and staging areas reside on own partitions.
+    kind: technical
+    compensating: false
+    evidence:
+      de: Konfiguration von CPU-Isolation und cgroups, Lasttest mit Messung der Zykluszeit.
+      en: Configuration of CPU isolation and cgroups, load test with cycle time measurement.
+    cra_refs: [AI-I-2-h]
+    iec62443: [FR7]
+    sources: ["generic embedded Linux security practice"]
+
+  - id: lx-app-runtime-isolation
+    rev: 1
+    title:
+      de: Isolierte Laufzeit für Anwenderprogramme
+      en: Isolated runtime for application programs
+    description:
+      de: >-
+        Anwenderprogramme laufen in einem eigenen Prozess oder einer Sandbox ohne
+        root-Rechte und erreichen das System nur über eine definierte
+        Host-Schnittstelle. Direkte Systemaufrufe, Dateizugriffe außerhalb ihres
+        Bereichs und Netzwerkverbindungen sind gesperrt. Laufzeit und Speicher
+        sind begrenzt, ein Absturz beendet nicht die Steuerung.
+      en: >-
+        Application programs run in an own process or sandbox without root
+        privileges and reach the system only via a defined host interface. Direct
+        system calls, file access outside their area and network connections are
+        blocked. Run time and memory are limited; a crash does not terminate the
+        controller.
+    kind: technical
+    compensating: false
+    evidence:
+      de: Architekturbeschreibung der Laufzeit, Test mit unzulässigem Systemaufruf und Endlosschleife.
+      en: Architecture description of the runtime, test with an inadmissible system call and an endless loop.
+    cra_refs: [AI-I-2-k, AI-I-2-d, AI-I-2-h]
+    iec62443: [FR2, FR3, FR7]
+    sources: ["generic embedded Linux security practice"]
+
+  - id: lx-driver-access-control
+    rev: 1
+    title:
+      de: Zugriffsschutz für Geräteschnittstellen eigener Treiber
+      en: Access control for device interfaces of own drivers
+    description:
+      de: >-
+        Gerätedateien eigener Treiber gehören einem eigenen Konto oder einer
+        Gruppe und sind nur für den zuständigen Prozess zugänglich (udev-Regeln).
+        Der Treiber prüft ioctl-Argumente und blendet nur die benötigten
+        Registerbereiche ein; /dev/mem und /dev/port sind nicht verfügbar.
+      en: >-
+        Device files of own drivers belong to a dedicated account or group and
+        are accessible only to the responsible process (udev rules). The driver
+        checks ioctl arguments and maps only the required register ranges;
+        /dev/mem and /dev/port are not available.
+    kind: technical
+    compensating: false
+    evidence:
+      de: udev-Regeln und Rechte der Gerätedateien, Code-Review der ioctl-Prüfungen.
+      en: udev rules and permissions of the device files, code review of the ioctl checks.
+    cra_refs: [AI-I-2-d, AI-I-2-k]
+    iec62443: [FR2]
+    sources: ["generic embedded Linux security practice"]
+
+  - id: lx-staging-verify-on-install
+    rev: 1
+    title:
+      de: Geschützte Update-Ablage und Installation des geprüften Pakets
+      en: Protected staging area and installation of the verified package
+    description:
+      de: >-
+        Die Update-Ablage liegt auf einer eigenen Partition, ist nur für den
+        Update-Dienst beschreibbar und für andere nicht lesbar. Das Paket wird
+        in einen geschützten Bereich kopiert, dort geprüft und genau diese Kopie
+        installiert, bevorzugt in eine zweite Systempartition (A/B) mit
+        Rückfallmöglichkeit.
+      en: >-
+        The staging area resides on an own partition, is writable only by the
+        update service and not readable by others. The package is copied into a
+        protected area, verified there, and exactly this copy is installed,
+        preferably into a second system partition (A/B) with fallback.
+    kind: technical
+    compensating: false
+    evidence:
+      de: Designbeschreibung des Update-Ablaufs, Rechte der Ablage, Test eines abgebrochenen Updates.
+      en: Design description of the update flow, permissions of the staging area, test of an aborted update.
+    cra_refs: [AI-I-2-f, AI-II-7, AI-I-2-h]
+    iec62443: [FR3]
+    sources: ["generic embedded Linux security practice"]

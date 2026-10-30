@@ -168,6 +168,7 @@ class ProductType(StrEnum):  # keys of scaffold.PRODUCT_LIBRARIES
     ot = "ot"
     iot = "iot"
     software = "software"
+    embedded_linux = "embedded-linux"
 
 
 @app.command("init")

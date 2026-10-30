@@ -50,11 +50,35 @@ COLUMNS: dict[str, tuple[list[str], list[str]]] = {
     ),
     "elements": (
         ["id", "title", "kind", "zone", "configurations"],
-        ["id", "title", "kind", "zone", "configurations", "description"],
+        [
+            "id",
+            "title",
+            "kind",
+            "zone",
+            "host",
+            "privilege",
+            "refines",
+            "configurations",
+            "description",
+        ],
     ),
     "flows": (
         ["id", "title", "source", "target", "protocol", "assets"],
-        ["id", "title", "source", "target", "protocol", "assets", "configurations", "description"],
+        [
+            "id",
+            "title",
+            "source",
+            "target",
+            "protocol",
+            "boundary",
+            "assets",
+            "configurations",
+            "description",
+        ],
+    ),
+    "attack_surface": (
+        ["element", "listens_on", "authentication", "memory_safe", "sbom_ref"],
+        ["element", "listens_on", "authentication", "memory_safe", "sbom_ref"],
     ),
     "threats": (
         ["id", "title", "stride", "targets", "risk", "treatment", "measures", "status"],
